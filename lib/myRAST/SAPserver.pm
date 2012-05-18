@@ -17,7 +17,7 @@
 # http://www.theseed.org/LICENSE.TXT.
 #
 
-package myRAST::SAPserver;
+package SAPserver;
 
     use strict;
     use base qw(ClientThing);
