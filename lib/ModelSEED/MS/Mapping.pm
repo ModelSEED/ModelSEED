@@ -8,6 +8,9 @@
 use strict;
 use ModelSEED::MS::DB::Mapping;
 package ModelSEED::MS::Mapping;
+use Class::Autouse qw(
+    SAPserver
+);
 use ModelSEED::MS::RoleSet;
 use ModelSEED::MS::RoleSetRole;
 use Moose;
@@ -30,6 +33,14 @@ extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 buildSubsystemRoleSets
+=cut
+sub buildSubsystemRoleSets {
+    my ($self) = @_;
+    # get subsystems
+    my $SAP = SAPserver->new();
+
+}
 
 =head3 buildSubsystemReactionSets
 Definition:

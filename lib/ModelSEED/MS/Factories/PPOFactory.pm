@@ -312,13 +312,14 @@ sub createBiochemistry {
 	print "Handling reactions!\n" if($args->{verbose});
 	#Adding reactions to biochemistry 		
 	my $rxns = $args->{database}->get_objects("reaction");
+	my $directionTranslation = {"<=>" => "=","<=" => "<","=>" => ">"};
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $data = {
 			locked => "0",
 			name => $rxns->[$i]->name(),
 			abbreviation => $rxns->[$i]->abbrev(),
-			reversibility => $rxns->[$i]->reversibility(),
-			thermoReversibility => $rxns->[$i]->thermoReversibility(),
+			reversibility => $directionTranslation->{$rxns->[$i]->reversibility()},
+			thermoReversibility => $directionTranslation->{$rxns->[$i]->thermoReversibility()},
 			defaultProtons => 0,
 			deltaG => $rxns->[$i]->deltaG(),
 			deltaGErr => $rxns->[$i]->deltaGErr(),
@@ -334,44 +335,15 @@ sub createBiochemistry {
 		$rxn->loadFromEquation({
 			equation => $rxns->[$i]->equation(),
 			aliasType => "ModelSEED",
-			direction => $rxns->[$i]->thermoReversibility()
 		});
-#		my $code = $rxn->equationCode();
-#		if (!defined($codeHash->{$code})) {
-#			#Adding the new core reaction and reaction to the database
-#			$codeHash->{$code} = $rxn;
-#			$biochemistry->add("reactions",$rxn);
-#		}
         $biochemistry->add("reactions", $rxn);
-		#Adding structural cues
-		if ($args->{addStructuralCues} == 1) {
-            my $cueListString = $rxns->[$i]->structuralCues();
-			next unless(defined($cueListString) && length($cueListString) > 0 && @{$rxn->reactionCues} == 0 );
-            # PPO uses different delmiter from Model flat-files
-            my $cueDelimiter = $self->_getDelimiterRegex($cueListString);
-            my $list = [split(/$cueDelimiter/, $rxns->[$i]->structuralCues)];
-            for (my $j=0;$j < @{$list}; $j++) {
-                my ($name, $count) = split(/:/, $list->[$j]);
-                unless( defined $name && defined $count ) {
-                    warn "Bad cue: " . $list->[$j] . " for " . $rxns->[$i]->id . "\n";
-                    next;
-                }
-                my $cue = $biochemistry->queryObject("cues",{name => $name} );
-                if (!defined($cue)) {
-                    $cue = $biochemistry->add("cues",{
-                        locked => "0",
-                        name => $name,
-                        abbreviation => $name,
-                        smallMolecule => 0,
-                        priority => -1
-                    });
-                }
-                $rxn->add("reactionCues",{
-                    cue_uuid => $cue->uuid(),
-                    count => $count,
-                });
-            }
-        }
+		print $rxns->[$i]->id()."\n";
+		$biochemistry->addAlias({
+			attribute => "reactions",
+			aliasName => "ModelSEED",
+			alias => $rxns->[$i]->id(),
+			uuid => $rxn->uuid()
+		});
 		#Adding ModelSEED ID and EC numbers as aliases
 		my $ecnumbers = [];
 		if (defined($rxns->[$i]->enzyme()) && length($rxns->[$i]->enzyme()) > 0) {
@@ -382,12 +354,6 @@ sub createBiochemistry {
 		 		}
 		 	}
 		}
-		$biochemistry->addAlias({
-			attribute => "reactions",
-			aliasName => "ModelSEED",
-			alias => $rxns->[$i]->id(),
-			uuid => $rxn->uuid()
-		});
 		for (my $j=0; $j < @{$ecnumbers}; $j++) {
 			$biochemistry->addAlias({
 				attribute => "reactions",
@@ -396,6 +362,35 @@ sub createBiochemistry {
 				uuid => $rxn->uuid()
 			});
 		}
+		#Adding structural cues
+		if ($args->{addStructuralCues} == 1) {
+            my $cueListString = $rxns->[$i]->structuralCues();
+			next unless(defined($cueListString) && length($cueListString) > 0 && @{$rxn->reactionCues} == 0 );
+            # PPO uses different delmiter from Model flat-files
+            my $cueDelimiter = $self->_getDelimiterRegex($cueListString);
+            my $list = [split(/$cueDelimiter/, $rxns->[$i]->structuralCues)];
+            for (my $j=0;$j < @{$list}; $j++) {
+                my ($name, $count) = split(/:/, $list->[$j]);
+                if( defined $name && defined $count ) {
+	                my $cue = $biochemistry->queryObject("cues",{name => $name} );
+	                if (!defined($cue)) {
+	                    $cue = $biochemistry->add("cues",{
+	                        locked => "0",
+	                        name => $name,
+	                        abbreviation => $name,
+	                        smallMolecule => 0,
+	                        priority => -1
+	                    });
+	                }
+	                $rxn->add("reactionCues",{
+	                    cue_uuid => $cue->uuid(),
+	                    count => $count,
+	                });
+                } else {
+                	warn "Bad cue: " . $list->[$j] . " for " . $rxns->[$i]->id . "\n";
+                }
+            }
+        }
 	}
 	if ($args->{addAliases} == 1) {
 		$self->addAliases({
@@ -867,7 +862,8 @@ sub createAnnotation {
 sub _getDelimiterRegex {
     my ($self, $string) = @_;
     my $DelimiterRegex = qr{;};
-    $DelimiterRegex = qr{\|} if(split(/\|/, $string) > 1);
+    my @array = split(/\|/, $string);
+    $DelimiterRegex = qr{\|} if(@array > 1);
     return $DelimiterRegex;
 }
 

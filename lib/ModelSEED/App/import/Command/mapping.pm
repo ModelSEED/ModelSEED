@@ -36,6 +36,7 @@ END
 sub opt_spec {
     return (
         ["biochemistry|b:s", "Reference to biochemistry to use for import"],
+        ["model|m:s", "String for a model id to use as biochemistry source"],
         ["location|l:s", "Where are you importing from. Defaults to 'model_seed'"],
         ["store|s:s", "Identify which store to save the mapping to"],
         ["verbose|v", "Print detailed output of import status"],

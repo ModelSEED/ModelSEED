@@ -20,7 +20,7 @@ A Factory that uses an FBAMODEL server to pull construct a model.
 
 =cut
 package ModelSEED::MS::Factories::FBAMODELFactory;
-use ModelSEED::Client::FBAMODEL;
+use FBAMODELClient;
 use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::Auth::Factory
@@ -34,7 +34,7 @@ use namespace::autoclean;
 
 has auth => ( is => 'ro', isa => "ModelSEED::Auth", required => 1);
 has store => ( is => 'ro', isa => "ModelSEED::Store", required => 1);
-has client => ( is => 'ro', isa => "ModelSEED::Client::FBAMODEL", lazy => 1, builder => '_build_client');
+has client => ( is => 'ro', isa => "FBAMODELClient", lazy => 1, builder => '_build_client');
 has auth_config => ( is => 'ro', isa => 'HashRef', lazy => 1, builder => '_build_auth_config');
 
 sub listAvailableModels {
@@ -130,7 +130,7 @@ sub createModel {
 }
 
 sub _build_client {
-    return ModelSEED::Client::FBAMODEL->new();
+    return FBAMODELClient->new();
 }
 sub _build_auth_config {
     my ($self) = @_;
