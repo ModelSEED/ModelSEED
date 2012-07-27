@@ -40,6 +40,7 @@ sub get_data {
 
 sub save_data {
     my ($self, $ref, $object, $config, $auth) = @_;
+    $auth = $config unless(defined($auth));
     $ref = $self->_cast_ref($ref);
     my ($oldUUID, $update_alias);
     if ($ref->id_type eq 'alias') {
