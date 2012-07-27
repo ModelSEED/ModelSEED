@@ -1,1 +1,3 @@
-perl "/Users/chenry/code/Model-SEED-core/bin/mscli.pl" $*
+#!/bin/sh
+cd $(dirname $0)
+perl "mscli.pl" $*

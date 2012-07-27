@@ -63,18 +63,18 @@ package ModelSEED::MS::Factories::Annotation;
 use common::sense;
 use Moose;
 use Class::Autouse qw(
-	ModelSEED::MS::Mapping
-	ModelSEED::MS::Annotation
-	ModelSEED::utilities
-	ModelSEED::MS::Utilities::GlobalFunctions
+    ModelSEED::MS::Mapping
+    ModelSEED::MS::Annotation
+    ModelSEED::utilities
+    ModelSEED::MS::Utilities::GlobalFunctions
     Bio::KBase::CDMI::Client
-    SAPserver
-    MSSeedSupportClient
+    ModelSEED::Client::SAP
+    ModelSEED::Client::MSSeedSupport
 );
 has auth => (is => 'rw', isa => 'ModelSEED::Auth');
-has sapsvr => ( is => 'rw', isa => 'SAPserver', lazy => 1, builder => '_build_sapsvr' );
+has sapsvr => ( is => 'rw', isa => 'ModelSEED::Client::SAP', lazy => 1, builder => '_build_sapsvr' );
 has kbsvr => ( is => 'rw', isa => 'Bio::KBase::CDMI::Client', lazy => 1, builder => '_build_kbsvr');
-has msseedsvr => ( is => 'rw', isa => 'MSSeedSupportClient', lazy => 1, builder => '_build_msseedsvr' );
+has msseedsvr => ( is => 'rw', isa => 'ModelSEED::Client::MSSeedSupport', lazy => 1, builder => '_build_msseedsvr' );
 has om => ( is => 'rw', isa => 'ModelSEED::Store');
 sub availableGenomes {
     my $self = shift @_;
@@ -391,9 +391,9 @@ sub _getArgs {
 }
 
 # Builders
-sub _build_sapsvr { return SAPserver->new(); }
+sub _build_sapsvr { return ModelSEED::Client::SAP->new(); }
 sub _build_kbsvr { return Bio::KBase::CDMI::Client->new("http://bio-data-1.mcs.anl.gov/services/cdmi_api") };
-sub _build_msseedsvr { return MSSeedSupportClient->new(); }
+sub _build_msseedsvr { return ModelSEED::Client::MSSeedSupport->new(); }
 
 __PACKAGE__->meta->make_immutable;
 1;

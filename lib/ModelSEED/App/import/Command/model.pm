@@ -5,7 +5,6 @@ use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::MS::Factories::FBAMODELFactory
     ModelSEED::MS::Factories::PPOFactory
-    ModelSEED::FIGMODEL
     ModelSEED::Database::Composite
     ModelSEED::Reference
     ModelSEED::App::Helpers
@@ -75,17 +74,18 @@ sub execute {
             store => $store
         );
     } elsif($opts->{source} eq 'local') {
-        my $figmodel = ModelSEED::FIGMODEL->new();
-        if($auth->isa("ModelSEED::Auth::Basic")) {
-            $figmodel->authenticate({
-                username => $auth->username,
-                password => $auth->password
-            });
-        }
-        $factory = ModelSEED::MS::Factories::PPOFactory->new(
-            figmodel => $figmodel,
-            namespace => $auth->username,
-        );
+	die "Error: Cannot import from local database in new system";
+        # my $figmodel = ModelSEED::FIGMODEL->new();
+        # if($auth->isa("ModelSEED::Auth::Basic")) {
+        #     $figmodel->authenticate({
+        #         username => $auth->username,
+        #         password => $auth->password
+        #     });
+        # }
+        # $factory = ModelSEED::MS::Factories::PPOFactory->new(
+        #     figmodel => $figmodel,
+        #     namespace => $auth->username,
+        # );
     } else {
         die "Unknown source: " . $opts->{source} . "\n";
     }

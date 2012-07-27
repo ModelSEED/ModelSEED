@@ -36,7 +36,7 @@ use ModelSEED::Auth;
 use Class::Autouse qw(
     HTTP::Request
     ModelSEED::Configuration
-    MSSeedSupportClient
+    ModelSEED::Client::MSSeedSupport
 );
 
 has username => ( is => 'ro', isa => 'Str', required => 1);
@@ -74,7 +74,7 @@ sub wrap_http_request {
 # What is the relationship between Auth and MS::User objects?
 sub download_from_seed {
     my ($self, $Store) = @_;
-    my $svr = MSSeedSupportClient->new();
+    my $svr = ModelSEED::Client::MSSeedSupport->new();
     my $info = $svr->get_user_info({
         username => $self->username,
         password => $self->password

@@ -3,7 +3,10 @@ package ModelSEED::App::mseed::Command::login;
 use Module::Load;
 use Try::Tiny;
 use Term::ReadKey;
-use Class::Autouse qw(ModelSEED::Configuration MSAccountManagementClient);
+use Class::Autouse qw(
+    ModelSEED::Configuration
+    ModelSEED::Client::MSAccountManagement
+);
 use base 'App::Cmd::Command';
 
 use Data::Dumper;
@@ -53,7 +56,7 @@ sub import_seed_account {
     my ($self, $username, $password, $conf) = @_;
 
     # get the user data
-    my $svr = MSAccountManagementClient->new();
+    my $svr = ModelSEED::Client::MSAccountManagement->new();
 
     my $output;
     try {

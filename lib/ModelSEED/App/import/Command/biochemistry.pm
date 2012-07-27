@@ -65,33 +65,34 @@ sub execute {
     my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $bio;
     if($opts->{location} && $opts->{location} eq 'local') {
-        # Cannot go further unless we're using basic auth (legacy)
-        unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
-            $self->usage_error("Cannot import from local unless you are logged in")
-        }
-        # Get the biochemistry object from the local PPO
-        my $figmodel = ModelSEED::FIGMODEL->new({
-            username => $auth->username,
-            password => $auth->password,
-        });
-        if ($opts->{model}) {
-            my $mdl_id = $opts->{model};
-            my $mdl = $figmodel->get_model($mdl_id);
-            $self->usage_error("Could not find model: $mdl_id") unless(defined($mdl));
-            $figmodel = $mdl->figmodel();
-        }
-        my $factory = ModelSEED::MS::Factories::PPOFactory->new({
-            figmodel => $figmodel,
-            namespace => $auth->username,
-        });
-        $bio = $factory->createBiochemistry({
-                name => $alias,
-                addAliases => 1,
-                addStructuralCues => 1,
-                addStructure => 1,
-                addPk => 1,
-                verbose => $opts->{verbose},
-        });
+	die "Error: cannot import from local database using the new system";
+        # # Cannot go further unless we're using basic auth (legacy)
+        # unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
+        #     $self->usage_error("Cannot import from local unless you are logged in")
+        # }
+        # # Get the biochemistry object from the local PPO
+        # my $figmodel = ModelSEED::FIGMODEL->new({
+        #     username => $auth->username,
+        #     password => $auth->password,
+        # });
+        # if ($opts->{model}) {
+        #     my $mdl_id = $opts->{model};
+        #     my $mdl = $figmodel->get_model($mdl_id);
+        #     $self->usage_error("Could not find model: $mdl_id") unless(defined($mdl));
+        #     $figmodel = $mdl->figmodel();
+        # }
+        # my $factory = ModelSEED::MS::Factories::PPOFactory->new({
+        #     figmodel => $figmodel,
+        #     namespace => $auth->username,
+        # });
+        # $bio = $factory->createBiochemistry({
+        #         name => $alias,
+        #         addAliases => 1,
+        #         addStructuralCues => 1,
+        #         addStructure => 1,
+        #         addPk => 1,
+        #         verbose => $opts->{verbose},
+        # });
     } else {
         # Just fetch a pre-built biochemistry from the web
         my $url = "http://bioseed.mcs.anl.gov/~devoid/json_objects/FullBiochemistry.json.gz";

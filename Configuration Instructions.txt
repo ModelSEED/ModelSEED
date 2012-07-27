@@ -1,2 +1,0 @@
-See instructions at:
-http://bionet.mcs.anl.gov/index.php/Configuring_the_Model_SEED_Distribution

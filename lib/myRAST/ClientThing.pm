@@ -21,11 +21,10 @@ use strict;
 # http://www.theseed.org/LICENSE.TXT.
 #
 
-package ClientThing;
+package myRAST::ClientThing;
 
     use strict;
     use YAML;
-    use ErrorMessage;
     use Carp;
     no warnings qw(once);
     use POSIX;

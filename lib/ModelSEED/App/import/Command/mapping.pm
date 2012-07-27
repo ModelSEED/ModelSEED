@@ -69,34 +69,35 @@ sub execute {
     my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $map;
     if($opts->{location} && $opts->{location} eq 'local') {
+	die "Error: Cannot load mapping from local database in new system";
         # Get the biochemistry object
-        my $bio_ref = $opts->{biochemistry};
-        $bio_ref = $helpers->process_ref_string(
-            $bio_ref, "biochemistry", $auth->username
-        );
-        if(!defined($bio_ref)) {
-            $bio_ref = ModelSEED::Configuration->instance->config->{'biochemistry'};
-        }
-        warn "Using $bio_ref biochemistry while importing mapping\n" if($opts->{verbose});
-        my $bio = $store->get_object($bio_ref);
-        # Cannot go further unless we're using basic auth (legacy)
-        unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
-            $self->usage_error("Cannot import from local unless you are logged in")
-        }
-        # Get the mapping object from the local PPO
-        my $figmodel = ModelSEED::FIGMODEL->new({
-            username => $auth->username,
-            password => $auth->password,
-        });
-        my $factory = ModelSEED::MS::Factories::PPOFactory->new({
-            figmodel => $figmodel,
-            namespace => $auth->username,
-        });
-        $map = $factory->createMapping({
-                name => $alias,
-                biochemistry => $bio,
-                verbose => $opts->{verbose},
-        });
+        # my $bio_ref = $opts->{biochemistry};
+        # $bio_ref = $helpers->process_ref_string(
+        #     $bio_ref, "biochemistry", $auth->username
+        # );
+        # if(!defined($bio_ref)) {
+        #     $bio_ref = ModelSEED::Configuration->instance->config->{'biochemistry'};
+        # }
+        # warn "Using $bio_ref biochemistry while importing mapping\n" if($opts->{verbose});
+        # my $bio = $store->get_object($bio_ref);
+        # # Cannot go further unless we're using basic auth (legacy)
+        # unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
+        #     $self->usage_error("Cannot import from local unless you are logged in")
+        # }
+        # # Get the mapping object from the local PPO
+        # my $figmodel = ModelSEED::FIGMODEL->new({
+        #     username => $auth->username,
+        #     password => $auth->password,
+        # });
+        # my $factory = ModelSEED::MS::Factories::PPOFactory->new({
+        #     figmodel => $figmodel,
+        #     namespace => $auth->username,
+        # });
+        # $map = $factory->createMapping({
+        #         name => $alias,
+        #         biochemistry => $bio,
+        #         verbose => $opts->{verbose},
+        # });
     } else {
         # Just fetch a pre-built mapping from the web
         my $url = "http://bioseed.mcs.anl.gov/~devoid/json_objects/FullMapping.json.gz";

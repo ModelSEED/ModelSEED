@@ -2,13 +2,6 @@
 use FindBin qw($Bin);
 use lib $Bin.'/../config';
 use lib $Bin.'/../lib';
-use lib $Bin.'/../lib/ModelSEED';
-use lib $Bin.'/../lib/myRAST';
-use lib $Bin.'/../lib/PPO';
-use lib $Bin.'/../lib/FigKernelPackages';
-use lib $Bin.'/../lib/ModelSEED/ModelSEEDClients';
-use ModelSEEDbootstrap;
-use Class::Autouse;
 use Class::Autouse qw(
     ModelSEED::App::mseed
     ModelSEED::App::bio
@@ -17,8 +10,6 @@ use Class::Autouse qw(
     ModelSEED::App::model
     ModelSEED::App::stores
     ModelSEED::App::mapping
-    ModelSEED::ModelDriver
-    ModelSEED::Interface::interface
 );
 $|=1;
 #Determine which subscript the user is calling
@@ -37,8 +28,6 @@ if ($target eq "ms") {
 	ModelSEED::App::stores->run;
 } elsif ($target eq "import") {
 	ModelSEED::App::import->run;
-} elsif ($target eq "modeldriver") {
-	ModelSEED::ModelDriver->run(@ARGV);
 }
 
 =pod
