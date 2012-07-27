@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use File::Path qw(mkpath);
+use FindBin qw($Bin);
+
+my $msdir = "$Bin";
+$msdir =~ s/\/bin$//;
+
+# create directories (only config for now)
+if (!-d "$msdir/config") {
+    mkpath "$msdir/config";
+}
+
+# Creating config/ModelSEEDbootstrap.pm
+my $perl5libs = [
+    "$msdir/local/lib/perl5",  # only if it's a local install
+    "$msdir/lib"
+];
+
+my $bootstrap = "";
+foreach my $lib (@$perl5libs) {
+    $bootstrap .= "use lib '$lib';\n";
+}
+$bootstrap .= "1;\n";
+
+my $source = 'export PATH=$PATH:' . $msdir . "/bin\n";
+foreach my $lib (@$perl5libs) {
+    $source .= 'PERL5LIB=$PERL5LIB:' . $lib . "\n";
+}
+$source .= "export PERL5LIB\n";
+
+open (BOOTSTRAP, ">$msdir/config/ModelSEEDbootstrap.pm") or die $!;
+print BOOTSTRAP $bootstrap;
+close BOOTSTRAP;
+
+open (SOURCE, ">$msdir/config/source-me.sh") or die $!;
+print SOURCE $source;
+close SOURCE;
