@@ -11,6 +11,7 @@
 ########################################################################
 #TODO: refactor code, too much repeating yourself now.
 =pod
+
 =head1 ModelSEED::MS::Factories::Annotation
 
 A factory for producing an Annotation object from several data
@@ -46,7 +47,7 @@ Build an annotation object from configuration information. <$config> is a hash r
 that must contain the key C<genome_id>, with the genome to import. In addition, C<mapping>
 or C<mapping_uuid> must be supplied. Optional parameters:
 
-=over4
+=over 4
 
 =item C<source>: PubSEED, KBase, RAST
 
@@ -68,13 +69,13 @@ use Class::Autouse qw(
 	ModelSEED::utilities
 	ModelSEED::MS::Utilities::GlobalFunctions
     Bio::KBase::CDMI::Client
-    SAPserver
-    MSSeedSupportClient
+    ModelSEED::Client::SAP
+    ModelSEED::Client::MSSeedSupport
 );
 has auth => (is => 'rw', isa => 'ModelSEED::Auth');
-has sapsvr => ( is => 'rw', isa => 'SAPserver', lazy => 1, builder => '_build_sapsvr' );
+has sapsvr => ( is => 'rw', isa => 'ModelSEED::Client::SAP', lazy => 1, builder => '_build_sapsvr' );
 has kbsvr => ( is => 'rw', isa => 'Bio::KBase::CDMI::Client', lazy => 1, builder => '_build_kbsvr');
-has msseedsvr => ( is => 'rw', isa => 'MSSeedSupportClient', lazy => 1, builder => '_build_msseedsvr' );
+has msseedsvr => ( is => 'rw', isa => 'ModelSEED::Client::MSSeedSupport', lazy => 1, builder => '_build_msseedsvr' );
 has om => ( is => 'rw', isa => 'ModelSEED::Store');
 sub availableGenomes {
     my $self = shift @_;
@@ -391,9 +392,9 @@ sub _getArgs {
 }
 
 # Builders
-sub _build_sapsvr { return SAPserver->new(); }
+sub _build_sapsvr { return ModelSEED::Client::SAP->new(); }
 sub _build_kbsvr { return Bio::KBase::CDMI::Client->new("http://bio-data-1.mcs.anl.gov/services/cdmi_api") };
-sub _build_msseedsvr { return MSSeedSupportClient->new(); }
+sub _build_msseedsvr { return ModelSEED::Client::MSSeedSupport->new(); }
 
 __PACKAGE__->meta->make_immutable;
 1;

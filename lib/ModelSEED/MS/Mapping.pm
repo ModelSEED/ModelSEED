@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::Mapping;
 package ModelSEED::MS::Mapping;
 use Class::Autouse qw(
-    SAPserver
+    ModelSEED::Client::SAP
 );
 use ModelSEED::MS::RoleSet;
 use ModelSEED::MS::RoleSetRole;
@@ -38,7 +38,7 @@ extends 'ModelSEED::MS::DB::Mapping';
 sub buildSubsystemRoleSets {
     my ($self) = @_;
     # get subsystems
-    my $SAP = SAPserver->new();
+    my $SAP = ModelSEED::Client::SAP->new();
 
 }
 

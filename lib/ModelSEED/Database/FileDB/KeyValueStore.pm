@@ -11,9 +11,8 @@ use IO::Compress::Gzip qw(gzip);
 use IO::Uncompress::Gunzip qw(gunzip);
 use Scalar::Util qw(looks_like_number);
 
-=head
+=head2  TODO
 
-TODO
   * Figure out better way to handle delimiters (for querying into metadata: aliases.main)
       - for now changed from '.' to '..' to avoid conflicts
   * Put index file back in memory (stored in moose object)
@@ -33,18 +32,17 @@ my $LOCK_EXT  = 'lock';
 has directory => (is => 'rw', isa => 'Str', required => 1);
 has filename  => (is => 'rw', isa => 'Str', default => 'database');
 
-=head
+=head2 Index Structure
 
-Index Structure
-{
-    ids => { $id => [start, end] }
+    {
+        ids => { $id => [start, end] }
 
-    end_pos => int
+        end_pos => int
 
-    num_del => int
+        num_del => int
 
-    ordered_ids => [id, id, id, ...]
-}
+        ordered_ids => [id, id, id, ...]
+    }
 
 =cut
 
@@ -215,79 +213,76 @@ sub _perform_transaction {
 # much duplicate logic here for locking, should be fixed
 # with _perform_transaction rewrite
 
-=head
-sub rebuild_data {
-    my ($self) = @_;
-
-    # get locked filehandles for index and data files
-    my $file = $self->filename;
-
-    # use a semaphore to lock the files
-    open LOCK, ">$file.$LOCK_EXT" or die "";
-    flock LOCK, LOCK_EX or die "";
-
-    open INDEX, "<$file.$INDEX_EXT" or die "";
-    my $index = _decode(<INDEX>);
-    close INDEX;
-
-    if ($index->{num_del} == 0) {
-	# no need to rebuild
-	return 1;
-    }
-
-    open DATA, "<$file.$DATA_EXT" or die "";
-
-    # open INDEX_TEMP first
-    open INDEX_TEMP, ">$file.$INDEX_EXT.tmp" or die "";
-    open DATA_TEMP, ">$file.$DATA_EXT.tmp" or die "";
-
-    my $end = -1;
-    my $uuids = []; # new ordered uuid list
-    foreach my $uuid (@{$index->{ordered_uuids}}) {
-	if (defined($index->{uuid_index}->{$uuid})) {
-	    my $uuid_hash = $index->{uuid_index}->{$uuid};
-	    my $length = $uuid_hash->{end} - $uuid_hash->{start} + 1;
-
-	    # seek and read the object
-	    my $data;
-	    seek DATA, $uuid_hash->{start}, 0 or die "";
-	    read DATA, $data, $length;
-
-	    # set the new start and end positions
-	    $uuid_hash->{start} = $end + 1;
-	    $uuid_hash->{end} = $end + $length;
-
-	    # print object to temp file
-	    print DATA_TEMP $data;
-
-	    $end += $length;
-	    push(@$uuids, $uuid);
-	}
-    }
-
-    $end++;
-    $index->{num_del} = 0;
-    $index->{end_pos} = $end;
-    $index->{ordered_uuids} = $uuids;
-
-    close DATA;
-    close DATA_TEMP;
-
-    print INDEX_TEMP _encode($index);
-    close INDEX_TEMP;
-
-    # only point we could get corrupted is between next two statements
-    # in '_do_while_locked' check if .dat.tmp exists, but not .int.tmp
-    # if it does then indicates we failed here, so rename data
-    rename "$file.$INDEX_EXT.tmp", "$file.$INDEX_EXT";
-    rename "$file.$DATA_EXT.tmp", "$file.$DATA_EXT";
-
-    close LOCK;
-
-    return 1;
-}
-
-=cut
+#sub rebuild_data {
+#    my ($self) = @_;
+#
+#    # get locked filehandles for index and data files
+#    my $file = $self->filename;
+#
+#    # use a semaphore to lock the files
+#    open LOCK, ">$file.$LOCK_EXT" or die "";
+#    flock LOCK, LOCK_EX or die "";
+#
+#    open INDEX, "<$file.$INDEX_EXT" or die "";
+#    my $index = _decode(<INDEX>);
+#    close INDEX;
+#
+#    if ($index->{num_del} == 0) {
+#	# no need to rebuild
+#	return 1;
+#    }
+#
+#    open DATA, "<$file.$DATA_EXT" or die "";
+#
+#    # open INDEX_TEMP first
+#    open INDEX_TEMP, ">$file.$INDEX_EXT.tmp" or die "";
+#    open DATA_TEMP, ">$file.$DATA_EXT.tmp" or die "";
+#
+#    my $end = -1;
+#    my $uuids = []; # new ordered uuid list
+#    foreach my $uuid (@{$index->{ordered_uuids}}) {
+#	if (defined($index->{uuid_index}->{$uuid})) {
+#	    my $uuid_hash = $index->{uuid_index}->{$uuid};
+#	    my $length = $uuid_hash->{end} - $uuid_hash->{start} + 1;
+#
+#	    # seek and read the object
+#	    my $data;
+#	    seek DATA, $uuid_hash->{start}, 0 or die "";
+#	    read DATA, $data, $length;
+#
+#	    # set the new start and end positions
+#	    $uuid_hash->{start} = $end + 1;
+#	    $uuid_hash->{end} = $end + $length;
+#
+#	    # print object to temp file
+#	    print DATA_TEMP $data;
+#
+#	    $end += $length;
+#	    push(@$uuids, $uuid);
+#	}
+#    }
+#
+#    $end++;
+#    $index->{num_del} = 0;
+#    $index->{end_pos} = $end;
+#    $index->{ordered_uuids} = $uuids;
+#
+#    close DATA;
+#    close DATA_TEMP;
+#
+#    print INDEX_TEMP _encode($index);
+#    close INDEX_TEMP;
+#
+#    # only point we could get corrupted is between next two statements
+#    # in '_do_while_locked' check if .dat.tmp exists, but not .int.tmp
+#    # if it does then indicates we failed here, so rename data
+#    rename "$file.$INDEX_EXT.tmp", "$file.$INDEX_EXT";
+#    rename "$file.$DATA_EXT.tmp", "$file.$DATA_EXT";
+#
+#    close LOCK;
+#
+#    return 1;
+#}
 
 sub has_object {
     my ($self, @args) = @_;

@@ -96,7 +96,6 @@ use Moose::Util::TypeConstraints;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
-    ModelSEED::Database::MongoDB
     ModelSEED::Database::MongoDBSimple
 );
 with 'ModelSEED::Database';

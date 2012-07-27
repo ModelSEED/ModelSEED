@@ -9,6 +9,7 @@
 # Date of module creation: 2012-07-25
 ########################################################################
 =pod
+
 =head1 ModelSEED::Table
 
 A basic table object
