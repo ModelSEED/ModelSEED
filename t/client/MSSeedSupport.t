@@ -1,13 +1,13 @@
 use strict;
 use warnings;
-use Data::Dumper;
-use Test::More tests => 5;
-use lib "../../../myRAST/";
-use lib "../";
+use Test::More tests => 2;
 use ModelSEED::Client::MSSeedSupport;
 
 my $mss = ModelSEED::Client::MSSeedSupport->new();
+ok defined $mss;
+ok $mss->methods > 0;
 
+=cut
 #Testing each server function
 {
     my $usrdata = $mss->get_user_info({
