@@ -87,9 +87,28 @@ has JSON => (
     init_arg => undef
 );
 
+# possible user configuration variables with their default options
+# set to undef to make it optional
+sub _possible_user_options {
+    return {
+        ERROR_DIR => $ENV{HOME} . '/.modelseed_error',
+        MFATK_CACHE => '/tmp', # TODO: this will fail on windows, figure out better way to handle tmp
+        MFATK_BIN => undef,
+        CPLEX_LICENCE => undef
+    }
+}
+
+
+sub user_options {
+    my ($self) = @_;
+    return $self->config->{user_options};
+}
+
 sub _buildConfig {
     my ($self) = @_;
-    my $default = { error_dir => $ENV{HOME} . "/.modelseed_error" };
+    my $default = {
+        user_options => $self->_possible_user_options
+    };
     if (-f $self->filename) {
         local $/;
         open(my $fh, "<", $self->filename) || die "$!";
