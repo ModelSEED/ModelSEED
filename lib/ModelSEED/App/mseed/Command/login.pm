@@ -9,8 +9,6 @@ use Class::Autouse qw(
 );
 use base 'App::Cmd::Command';
 
-use Data::Dumper;
-
 sub abstract { "Login as a user" }
 sub usage { "%c COMMAND [username]" }
 sub validate_args {
