@@ -15,6 +15,7 @@ extends 'ModelSEED::MS::DB::Biochemistry';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has definition => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
+has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
 
 
 #***********************************************************************************************************
@@ -24,6 +25,15 @@ sub _builddefinition {
 	my ($self) = @_;
 	return $self->createEquation({format=>"name",hashed=>0});
 }
+sub _builddataDirectory {
+	my ($self) = @_;
+	my $config = ModelSEED::Configuration->new();
+	if (defined($config->user_options()->{MFATK_CACHE})) {
+		return $config->user_options()->{MFATK_CACHE}."/";
+	}
+	return ModelSEED::utilities::MODELSEEDCORE()."/data/";
+}
+
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -45,7 +55,7 @@ sub printDBFiles {
 	$args = ModelSEED::utilities::ARGS($args,[],{
 		forceprint => 0
 	});
-	my $path = ModelSEED::utilities::MODELSEEDCORE()."/data/fbafiles/";
+	my $path = $self->dataDirectory()."/fbafiles/";
 	if (!-d $path) {
 		File::Path::mkpath ($path);
 	}

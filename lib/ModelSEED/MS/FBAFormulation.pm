@@ -19,6 +19,8 @@ has jobPath => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', 
 has jobDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildjobdirectory' );
 has command => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, default => '' );
 has mfatoolkitBinary => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitBinary' );
+has mfatoolkitDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitDirectory' );
+has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
 has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
@@ -39,7 +41,7 @@ sub _buildjobid {
 
 sub _buildjobpath {
 	my ($self) = @_;
-	my $path = ModelSEED::utilities::MODELSEEDCORE()."/data/fbajobs";
+	my $path = $self->dataDirectory()."fbajobs";
 	if (!-d $path) {
 		File::Path::mkpath ($path);
 	}
@@ -53,27 +55,38 @@ sub _buildjobdirectory {
 
 sub _buildmfatoolkitBinary {
 	my ($self) = @_;
-	if (defined($ENV{"MFAToolkitBinary"}) && -e $ENV{"MFAToolkitBinary"}) {
-		return $ENV{"MFAToolkitBinary"};
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/bin/MFAToolkit") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/bin/MFAToolkit";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/bin/MFAToolkit.exe") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/bin/MFAToolkit.exe";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/bin/mfatoolkit") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/bin/mfatoolkit";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/bin/mfatoolkit.exe") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/bin/mfatoolkit.exe";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/MFAToolkit") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/MFAToolkit";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/MFAToolkit.exe") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/MFAToolkit.exe";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
-	} elsif (-e ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit.exe") {
-		return ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit.exe";
+	my $config = ModelSEED::Configuration->new();
+	my $bin;
+	if (defined($config->user_options()->{MFATK_BIN})) {
+		$bin = $config->user_options()->{MFATK_BIN};
 	} else {
+		$bin = ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
+		if ($^O =~ m/^MSWin/) {
+			$bin .= ".exe";
+		}
+	}
+	if (!-e $bin) {
 		ModelSEED::utilities::ERROR("Could not find MFAToolkit executable");
 	}
+	return $bin;
+}
+
+sub _buildmfatoolkitDirectory {
+	my ($self) = @_;
+	my $bin = $self->mfatoolkitBinary();
+	if ($bin =~ m/^(.+\/)[^\/]+$/) {
+		return $1;
+	}
+	return "";
+}
+
+sub _builddataDirectory {
+	my ($self) = @_;
+	my $config = ModelSEED::Configuration->new();
+	if (defined($config->user_options()->{MFATK_CACHE})) {
+		return $config->user_options()->{MFATK_CACHE}."/";
+	}
+	return ModelSEED::utilities::MODELSEEDCORE()."/data/";
 }
 
 sub _buildreadableObjective {
@@ -442,13 +455,14 @@ sub createJobDirectory {
 	}
 	ModelSEED::utilities::PRINTFILE($directory."media.tbl",$mediaData);
 	#Set StringDBFile.txt
-	my $dataDir = ModelSEED::utilities::MODELSEEDCORE()."/data/";
+	my $mfatkdir = $self->mfatoolkitDirectory();
+	my $dataDir = $self->dataDirectory();
 	my $biochemid = $model->biochemistry()->uuid();
 	my $stringdb = [
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
-		"compound\tid\tSINGLEFILE\t".$dataDir."ReactionDB/compounds/\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
+		"compound\tid\tSINGLEFILE\t\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
 		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$dataDir."fbafiles/".$biochemid."-reactions.tbl\tTAB\t|\tid",
-		"cue\tNAME\tSINGLEFILE\t\t".$dataDir."ReactionDB/MFAToolkitInputFiles/cueTable.txt\tTAB\t|\tNAME",
+		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/cueTable.txt\tTAB\t|\tNAME",
 		"media\tID\tSINGLEFILE\t".$dataDir."ReactionDB/Media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
 	];
 	ModelSEED::utilities::PRINTFILE($directory."StringDBFile.txt",$stringdb);
@@ -458,7 +472,7 @@ sub createJobDirectory {
 	];
 	ModelSEED::utilities::PRINTFILE($directory."runMFAToolkit.sh",$exec);
 	chmod 0775,$directory."runMFAToolkit.sh";
-	$self->command($self->mfatoolkitBinary().' resetparameter "MFA input directory" "'.$dataDir.'ReactionDB/" parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"');
+	$self->command($self->mfatoolkitBinary().' parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"');
 }
 =head3 parseObjectiveTerms
 Definition:
