@@ -92,7 +92,7 @@ has JSON => (
 sub _possible_user_options {
     return {
         ERROR_DIR => $ENV{HOME} . '/.modelseed_error',
-        MFATK_CACHE => '/tmp', # TODO: this will fail on windows, figure out better way to handle tmp
+        MFATK_CACHE => '/tmp', #Actually, this appears to work fine in windows.
         MFATK_BIN => undef,
         CPLEX_LICENCE => undef
     }

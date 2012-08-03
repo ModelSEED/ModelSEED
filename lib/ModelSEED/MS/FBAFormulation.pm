@@ -21,6 +21,7 @@ has command => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', 
 has mfatoolkitBinary => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitBinary' );
 has mfatoolkitDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitDirectory' );
 has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
+has cplexLicense => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcplexLicense' );
 has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
@@ -87,6 +88,15 @@ sub _builddataDirectory {
 		return $config->user_options()->{MFATK_CACHE}."/";
 	}
 	return ModelSEED::utilities::MODELSEEDCORE()."/data/";
+}
+
+sub _buildcplexLicense {
+	my ($self) = @_;
+	my $config = ModelSEED::Configuration->new();
+	if (defined($config->user_options()->{CPLEX_LICENCE})) {
+		return $config->user_options()->{CPLEX_LICENCE};
+	}
+	return undef;
 }
 
 sub _buildreadableObjective {
@@ -220,7 +230,11 @@ sub createJobDirectory {
 	#Selecting the solver based on whether the problem is MILP
 	my $solver = "GLPK";
 	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
-		$solver = "CPLEX";
+		if (defined($self->cplexLicense()) && -e $self->cplexLicense()) {
+			$solver = "CPLEX";
+		} else {
+			$solver = "SCIP";
+		}
 	}
 	#Setting gene KO
 	my $geneKO = "none";
@@ -365,14 +379,12 @@ sub createJobDirectory {
 		"database root output directory" => $self->jobPath()."/",
 		"database root input directory" => $self->jobDirectory()."/",
 	};
-	my $exe = "MFAToolkit.exe";
 	if ($^O =~ m/^MSWin/) {
-		$parameters->{"scip executable"} = "../../optimization/scip.exe";
+		$parameters->{"scip executable"} = "scip.exe";
 		$parameters->{"perl directory"} = "C:/Perl/bin/perl.exe";
 		$parameters->{"os"} = "windows";
 	} else {
-		$exe = "mfatoolkit";
-		$parameters->{"scip executable"} = "../../optimization/scip";
+		$parameters->{"scip executable"} = "scip";
 		$parameters->{"perl directory"} = "/usr/bin/perl";
 		$parameters->{"os"} = "linux";
 		

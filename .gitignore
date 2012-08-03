@@ -31,3 +31,5 @@ local/
 .carton/
 MYMETA.*
 src
+lib/perl5/
+man/*
