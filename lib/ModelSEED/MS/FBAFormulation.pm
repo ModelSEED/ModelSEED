@@ -96,7 +96,7 @@ sub _buildcplexLicense {
 	if (defined($config->user_options()->{CPLEX_LICENCE})) {
 		return $config->user_options()->{CPLEX_LICENCE};
 	}
-	return undef;
+	return "";
 }
 
 sub _buildreadableObjective {
@@ -230,7 +230,7 @@ sub createJobDirectory {
 	#Selecting the solver based on whether the problem is MILP
 	my $solver = "GLPK";
 	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
-		if (defined($self->cplexLicense()) && -e $self->cplexLicense()) {
+		if (-e $self->cplexLicense()) {
 			$solver = "CPLEX";
 		} else {
 			$solver = "SCIP";
