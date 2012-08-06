@@ -379,6 +379,9 @@ sub createJobDirectory {
 		"database root output directory" => $self->jobPath()."/",
 		"database root input directory" => $self->jobDirectory()."/",
 	};
+	if ($solver eq "SCIP") {
+		$parameters->{"use simple variable and constraint names"} = 1;
+	}
 	if ($^O =~ m/^MSWin/) {
 		$parameters->{"scip executable"} = "scip.exe";
 		$parameters->{"perl directory"} = "C:/Perl/bin/perl.exe";
