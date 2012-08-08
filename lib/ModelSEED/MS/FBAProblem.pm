@@ -44,10 +44,11 @@ Description:
 =cut
 sub clearProblem {
 	my ($self) = @_;
-	$self->clearSubObject("variables");
-	$self->clearSubObject("constraints");
-	$self->clearSubObject("objectiveTerms");
+	$self->variables([]);
+	$self->constraints([]);
+	$self->objectiveTerms([]);
 }
+
 =head3 printLPfile
 Definition:
 	void ModelSEED::MS::FBAProblem->printLPfile({
