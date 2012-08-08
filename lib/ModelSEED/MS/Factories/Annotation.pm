@@ -49,13 +49,21 @@ or C<mapping_uuid> must be supplied. Optional parameters:
 
 =over 4
 
-=item C<source>: PubSEED, KBase, RAST
+=item source
 
-=item C<verbose>: Print verbose status information
+One of PubSEED, KBase, RAST.
 
-=item C<mapping_uuid>: UUID of mapping object to use
+=item verbose
 
-=item C<mapping>: MS::Mapping object to use
+Print verbose status information.
+
+=item mapping_uuid
+
+UUID of mapping object to use.
+
+=item mapping>
+
+L<ModelSEED::MS::Mapping> object to use.
 
 =back
 
