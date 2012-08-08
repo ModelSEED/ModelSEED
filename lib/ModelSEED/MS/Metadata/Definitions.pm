@@ -614,30 +614,93 @@ $objectDefinitions->{User} = {
 };
 
 $objectDefinitions->{Biochemistry} = {
-	parents => ["ModelSEED::Store"],
-	class => 'indexed',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'defaultNameSpace',printOrder => 2,perm => 'rw',type => 'Str',len => 32,req => 0,default => "ModelSEED"},
-		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
-		{name => 'locked',printOrder => -1,perm => 'rw',type => 'Bool',req => 0,default => "1"},
-		{name => 'public',printOrder => -1,perm => 'rw',type => 'Bool',req => 0,default => "0"},
-		{name => 'name',printOrder => 1,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-	],
-	subobjects => [
-		{name => "compartments",printOrder => 0,class => "Compartment",type => "child"},
-		{name => "compounds",printOrder => 3,class => "Compound",type => "child"},
-		{name => "reactions",printOrder => 4,class => "Reaction",type => "child"},
-		{name => "media",printOrder => 2,class => "Media",type => "child"},
-		{name => "compoundSets",class => "CompoundSet",type => "child"},
-		{name => "reactionSets",class => "ReactionSet",type => "child"},
-		{name => "aliasSets",class => "AliasSet",type => "child"},
-		{name => "cues",printOrder => 1,class => "Cue",type => "encompassed"},
-	],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid alias) ],
-    version => 1.0,
+    parents    => ["ModelSEED::Store"],
+    class      => 'indexed',
+    attributes => [
+        {
+            name       => 'uuid',
+            printOrder => 0,
+            perm       => 'rw',
+            type       => 'ModelSEED::uuid',
+            req        => 0,
+        },
+        {
+            name       => 'defaultNameSpace',
+            printOrder => 2,
+            perm       => 'rw',
+            type       => 'Str',
+            len        => 32,
+            req        => 0,
+            default    => "ModelSEED",
+            description => "The name of an [[AliasSet|#wiki-AliasSet]] to use in aliasSets for reaction and compound ids",
+        },
+        {
+            name       => 'modDate',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Str',
+            req        => 0,
+        },
+        {
+            name       => 'locked',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Bool',
+            req        => 0,
+            default    => "1"
+        },
+        {
+            name       => 'public',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Bool',
+            req        => 0,
+            default    => "0"
+        },
+        {
+            name       => 'name',
+            printOrder => 1,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => ""
+        },
+    ],
+    subobjects => [
+        {
+            name       => "compartments",
+            printOrder => 0,
+            class      => "Compartment",
+            type       => "child"
+        },
+        {
+            name       => "compounds",
+            printOrder => 3,
+            class      => "Compound",
+            type       => "child"
+        },
+        {
+            name       => "reactions",
+            printOrder => 4,
+            class      => "Reaction",
+            type       => "child"
+        },
+        { name => "media", printOrder => 2, class => "Media", type => "child" },
+        { name => "compoundSets", class => "CompoundSet", type => "child" },
+        { name => "reactionSets", class => "ReactionSet", type => "child" },
+        { name => "aliasSets",    class => "AliasSet",    type => "child" },
+        {
+            name       => "cues",
+            printOrder => 1,
+            class      => "Cue",
+            type       => "encompassed",
+            description => "Structural cues for parts of compund structures",
+        },
+    ],
+    primarykeys        => [qw(uuid)],
+    links              => [],
+    reference_id_types => [qw(uuid alias)],
+    version            => 1.0,
 };
 
 $objectDefinitions->{AliasSet} = {
@@ -659,20 +722,63 @@ $objectDefinitions->{AliasSet} = {
 };
 
 $objectDefinitions->{Compartment} = {
-	parents => ['Biochemistry'],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',len => 36,req => 1},
-		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
-		{name => 'locked',printOrder => -1,perm => 'rw',type => 'Int',req => 0,default => "0"},
-		{name => 'id',printOrder => 1,perm => 'rw',type => 'Str',len => 2,req => 1},
-		{name => 'name',printOrder => 2,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'hierarchy',printOrder => 3,perm => 'rw',type => 'Int',req => 0,default => ""},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid) ],
+    parents    => ['Biochemistry'],
+    class      => 'child',
+    attributes => [
+        {
+            name       => 'uuid',
+            printOrder => 0,
+            perm       => 'rw',
+            type       => 'ModelSEED::uuid',
+            len        => 36,
+            req        => 1,
+        },
+        {
+            name       => 'modDate',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Str',
+            req        => 0,
+        },
+        {
+            name       => 'locked',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Int',
+            req        => 0,
+            default    => "0",
+        },
+        {
+            name       => 'id',
+            printOrder => 1,
+            perm       => 'rw',
+            type       => 'Str',
+            len        => 2,
+            req        => 1,
+            description => "Single charachter identifer for the compartment, e.g. 'e' or 'c'.",
+        },
+        {
+            name       => 'name',
+            printOrder => 2,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => "",
+        },
+        {
+            name       => 'hierarchy',
+            printOrder => 3,
+            perm       => 'rw',
+            type       => 'Int',
+            req        => 0,
+            default    => "",
+            description => "Index indicating the position of a compartment relative to other compartments. Extracellular is 0. A compartment contained within another compartment has an index that is +1 over the outer comaprtment.",
+        },
+    ],
+    subobjects         => [],
+    primarykeys        => [qw(uuid)],
+    links              => [],
+    reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{Cue} = {
@@ -704,31 +810,126 @@ $objectDefinitions->{Cue} = {
 };
 
 $objectDefinitions->{Compound} = {
-	alias => "Biochemistry",
-	parents => ['Biochemistry'],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',len => 36,req => 0},
-		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
-		{name => 'locked',printOrder => -1,perm => 'rw',type => 'Int',req => 0,default => "0"},
-		{name => 'name',printOrder => 1,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'abbreviation',printOrder => 2,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'cksum',printOrder => -1,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'unchargedFormula',printOrder => -1,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'formula',printOrder => 3,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'mass',printOrder => 4,perm => 'rw',type => 'Num',req => 0},
-		{name => 'defaultCharge',printOrder => 5,perm => 'rw',type => 'Num',req => 0,default => 0},
-		{name => 'deltaG',printOrder => 6,perm => 'rw',type => 'Num',req => 0},
-		{name => 'deltaGErr',printOrder => 7,perm => 'rw',type => 'Num',req => 0},
-	],
-	subobjects => [
-		{name => "compoundCues",class => "CompoundCue",type => "encompassed"},
-		{name => "structures",class => "CompoundStructure",type => "encompassed"},
-		{name => "pks",class => "CompoundPk",type => "encompassed"},
-	],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid) ],
+    alias      => "Biochemistry",
+    parents    => ['Biochemistry'],
+    class      => 'child',
+    attributes => [
+        {
+            name       => 'uuid',
+            printOrder => 0,
+            perm       => 'rw',
+            type       => 'ModelSEED::uuid',
+            len        => 36,
+            req        => 0
+        },
+        {
+            name       => 'modDate',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Str',
+            req        => 0
+        },
+        {
+            name       => 'locked',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'Int',
+            req        => 0,
+            default    => "0"
+        },
+        {
+            name       => 'name',
+            printOrder => 1,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => ""
+        },
+        {
+            name       => 'abbreviation',
+            printOrder => 2,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => ""
+        },
+        {
+            name        => 'cksum',
+            printOrder  => -1,
+            perm        => 'rw',
+            type        => 'ModelSEED::varchar',
+            req         => 0,
+            default     => "",
+            description => "A computed hash for the compound, not currently implemented",
+        },
+        {
+            name       => 'unchargedFormula',
+            printOrder => -1,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => "",
+            description => "Formula for compound if it does not have a ionic charge.",
+        },
+        {
+            name       => 'formula',
+            printOrder => 3,
+            perm       => 'rw',
+            type       => 'ModelSEED::varchar',
+            req        => 0,
+            default    => "",
+            description => "Formula for the compound at pH 7.",
+        },
+        {
+            name       => 'mass',
+            printOrder => 4,
+            perm       => 'rw',
+            type       => 'Num',
+            req        => 0,
+            description => "Atomic mass of the compound",
+        },
+        {
+            name       => 'defaultCharge',
+            printOrder => 5,
+            perm       => 'rw',
+            type       => 'Num',
+            req        => 0,
+            default    => 0,
+            description => "Computed charge for compound at pH 7.",
+        },
+        {
+            name       => 'deltaG',
+            printOrder => 6,
+            perm       => 'rw',
+            type       => 'Num',
+            req        => 0,
+            description => "Computed Gibbs free energy value for compound at pH 7.",
+        },
+        {
+            name       => 'deltaGErr',
+            printOrder => 7,
+            perm       => 'rw',
+            type       => 'Num',
+            req        => 0,
+            description => "Error bound on Gibbs free energy compoutation for compound.",
+        },
+    ],
+    subobjects => [
+        {
+            name  => "compoundCues",
+            class => "CompoundCue",
+            type  => "encompassed"
+        },
+        {
+            name  => "structures",
+            class => "CompoundStructure",
+            type  => "encompassed"
+        },
+        { name => "pks", class => "CompoundPk", type => "encompassed" },
+    ],
+    primarykeys        => [qw(uuid)],
+    links              => [],
+    reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{CompoundCue} = {
