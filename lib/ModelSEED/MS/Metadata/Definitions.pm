@@ -364,7 +364,7 @@ $objectDefinitions->{ReactionSetMultiplier} = {
 	subobjects => [],
 	primarykeys => [ qw(uuid) ],
 	links => [
-		{name => "reactionset",attribute => "reactionset_uuid",parent => "Biochemistry",method=>"reactionsets"}
+		{name => "reactionset",attribute => "reactionset_uuid",parent => "Biochemistry",method=>"reactionSets"}
 	],
     reference_id_types => [ qw(uuid) ],
 };
@@ -1035,16 +1035,71 @@ $objectDefinitions->{Reagent} = {
 $objectDefinitions->{Media} = {
 	parents => ['Biochemistry'],
 	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
-		{name => 'locked',printOrder => -1,perm => 'rw',type => 'Int',req => 0,default => "0"},
-		{name => 'isDefined',printOrder => 4,perm => 'rw',type => 'Bool',req => 0,default => "0"},
-		{name => 'isMinimal',printOrder => 5,perm => 'rw',type => 'Bool',req => 0,default => "0"},
-		{name => 'id',printOrder => 1,perm => 'rw',type => 'Str',len => 32,req => 1},
-		{name => 'name',printOrder => 2,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'type',printOrder => 6,perm => 'rw',type => 'Str',len => 1,req => 0,default => "unknown"},#minimal,defined,predictedminimal,undefined,unknown
-	],
+        attributes => [
+            {
+                name       => 'uuid',
+                printOrder => 0,
+                perm       => 'rw',
+                type       => 'ModelSEED::uuid',
+                req        => 0
+            },
+            {
+                name       => 'modDate',
+                printOrder => -1,
+                perm       => 'rw',
+                type       => 'Str',
+                req        => 0
+            },
+            {
+                name       => 'locked',
+                printOrder => -1,
+                perm       => 'rw',
+                type       => 'Int',
+                req        => 0,
+                default    => "0"
+            },
+            {
+                name       => 'isDefined',
+                printOrder => 4,
+                perm       => 'rw',
+                type       => 'Bool',
+                req        => 0,
+                default    => "0"
+            },
+            {
+                name       => 'isMinimal',
+                printOrder => 5,
+                perm       => 'rw',
+                type       => 'Bool',
+                req        => 0,
+                default    => "0"
+            },
+            {
+                name       => 'id',
+                printOrder => 1,
+                perm       => 'rw',
+                type       => 'Str',
+                len        => 32,
+                req        => 1
+            },
+            {
+                name       => 'name',
+                printOrder => 2,
+                perm       => 'rw',
+                type       => 'ModelSEED::varchar',
+                req        => 0,
+                default    => ""
+            },
+            {
+                name       => 'type',
+                printOrder => 6,
+                perm       => 'rw',
+                type       => 'Str',
+                len        => 1,
+                req        => 0,
+                default    => "unknown"
+            },
+          ],
 	subobjects => [
 		{name => "mediacompounds",class => "MediaCompound",type => "encompassed"},
 	],
@@ -1604,165 +1659,165 @@ $objectDefinitions->{ComplexReaction} = {
 };
 
 #ORPHANED OBJECTS THAT STILL NEED TO BE BUILT INTO AN OBJECT TREE
-$objectDefinitions->{Strain} = {
-	parents => ['Genome'],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
-		{name => 'name',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-		{name => 'source',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 1},
-		{name => 'class',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
-	],
-	subobjects => [
-		{name => "deletions",class => "Deletion",type => "child"},
-		{name => "insertions",class => "Insertion",type => "child"},
-	],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid) ],
-};
-
-$objectDefinitions->{Deletion} = {
-	parents => ['Genome'],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'start',printOrder => 0,perm => 'rw',type => 'Int',req => 0},
-		{name => 'stop',printOrder => 0,perm => 'rw',type => 'Int',req => 0,default => ""},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid) ],
-};
-
-$objectDefinitions->{Insertion} = {
-	parents => ['Genome'],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'insertionTarget',printOrder => 0,perm => 'rw',type => 'Int',req => 0},
-		{name => 'sequence',printOrder => 0,perm => 'rw',type => 'Str',req => 0,default => ""},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [],
-    reference_id_types => [ qw(uuid) ],
-};
-
-$objectDefinitions->{Experiment} = {
-	parents => ["ModelSEED::Store"],
-	class => 'indexed',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'genome_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#I think this should be Strain.Right now, we’re linking an experiment to a single GenomeUUID here, but I think it makes more sense to link to a single StrainUUID, which is what we do in the Price DB.  
-		{name => 'name',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'description',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'institution',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'source',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "genome",attribute => "genome_uuid",parent => "ModelSEED::Store",method=>"genomes"},
-	],
-    reference_id_types => [ qw(uuid alias) ],
-    version => 1.0,
-};
-
-$objectDefinitions->{ExperimentDataPoint} = {
-	parents => ["Experiment"],
-	class => 'child',
-	attributes => [
-		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'strain_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#Not needed if it’s in the experiment table? I think we need to be consistent in defining where in these tables to put e.g. genetic perturbations done in an experiment.
-		{name => 'media_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'pH',printOrder => 0,perm => 'rw',type => 'Num',req => 0},
-		{name => 'temperature',printOrder => 0,perm => 'rw',type => 'Num',req => 0},
-		{name => 'buffers',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#There could be multiple buffers in a single media. Would this be listed in the Media table? Multiple buffers in single media isn’t something we’ve run across yet and seems like a rarity at best, since their purpose is maintaining pH.  We discussed just listing the buffer here, without amount, because the target pH should dictate the amount of buffer. 
-		{name => 'phenotype',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'notes',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'growthMeasurement',printOrder => 0,perm => 'rw',type => 'Num',req => 0},#Would these be better in their own table? IT’s just another type of measurement just like the flux, metabolite, etc... One reason to keep the growth measurements here is unit consistency; moving them to the other table with the other flux measurements would require a clear division between growth rates and secretion/uptake rates to distinguish between 1/h and mmol/gDW/h. Rather than do that, I think keeping them in separate tables makes for an easy, logical division. 
-		{name => 'growthMeasurementType',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#Would these be better in their own table?
-	],
-	subobjects => [
-		{name => "fluxMeasurements",class => "FluxMeasurement",type => "child"},
-		{name => "uptakeMeasurements",class => "UptakeMeasurement",type => "child"},
-		{name => "metaboliteMeasurements",class => "MetaboliteMeasurement",type => "child"},
-		{name => "geneMeasurements",class => "GeneMeasurement",type => "child"},
-	],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "strain",attribute => "strain_uuid",parent => "Genome",method=>"strains"},
-		{name => "media",attribute => "media_uuid",parent => "Biochemistry",method=>"media"},
-	],
-    reference_id_types => [ qw(uuid) ],
-};
-
-$objectDefinitions->{FluxMeasurement} = {
-	parents => ["ExperimentDataPoint"],
-	class => 'encompassed',
-	attributes => [
-		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#This could get confusing. Make sure the rate is defined relative to the way that the reaction itself is defined (i.e. even if the directionality of the reaction is <= we should define the rate relative to the forward direction, and if it is consistent with the directionality constraint it would be negative)
-		{name => 'reacton_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'compartment_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'type',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "reaction",attribute => "reacton_uuid",parent => "Biochemistry",method=>"reactions"},
-		{name => "compartment",attribute => "compartment_uuid",parent => "Biochemistry",method=>"compartments"},
-	],
-};
-
-$objectDefinitions->{UptakeMeasurement} = {
-	parents => ["ExperimentDataPoint"],
-	class => 'encompassed',
-	attributes => [
-		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'compound_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'type',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "compound",attribute => "compound_uuid",parent => "Biochemistry",method=>"compounds"},
-	],
-};
-
-$objectDefinitions->{MetaboliteMeasurement} = {
-	parents => ["ExperimentDataPoint"],
-	class => 'encompassed',
-	attributes => [
-		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#In metabolomic experiments it is often hard to measure precisely whether a metabolite is present or not. and (even more so) it’s concentration. However, I imagine it is possible to guess a “probability” of particular compounds being present or not. I wanted to talk to one of the guys at Argonne (The guy who was trying to schedule the workshop for KBase) about metabolomics but we ran out of time. We should consult with a metabolomics expert on what a realistic thing to put into this table would be.
-		{name => 'compound_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'compartment_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#I changed this from “extracellular [0/1]” since we could techincally measure them in any given compartment, not just cytosol vs. extracellular
-		{name => 'method',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "compound",attribute => "compound_uuid",parent => "Biochemistry",method=>"compounds"},
-		{name => "compartment",attribute => "compartment_uuid",parent => "Biochemistry",method=>"compartments"},
-	],
-};
-
-$objectDefinitions->{GeneMeasurement} = {
-	parents => ["ExperimentDataPoint"],
-	class => 'encompassed',
-	attributes => [
-		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-		{name => 'feature_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'method',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
-	],
-	subobjects => [],
-	primarykeys => [ qw(uuid) ],
-	links => [
-		{name => "feature",attribute => "feature_uuid",parent => "Genome",method=>"features"},
-	],
-};
+#$objectDefinitions->{Strain} = {
+#	parents => ['Genome'],
+#	class => 'child',
+#	attributes => [
+#		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'name',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
+#		{name => 'source',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 1},
+#		{name => 'class',printOrder => 0,perm => 'rw',type => 'ModelSEED::varchar',req => 0,default => ""},
+#	],
+#	subobjects => [
+#		{name => "deletions",class => "Deletion",type => "child"},
+#		{name => "insertions",class => "Insertion",type => "child"},
+#	],
+#	primarykeys => [ qw(uuid) ],
+#	links => [],
+#    reference_id_types => [ qw(uuid) ],
+#};
+#
+#$objectDefinitions->{Deletion} = {
+#	parents => ['Genome'],
+#	class => 'child',
+#	attributes => [
+#		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'start',printOrder => 0,perm => 'rw',type => 'Int',req => 0},
+#		{name => 'stop',printOrder => 0,perm => 'rw',type => 'Int',req => 0,default => ""},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [],
+#    reference_id_types => [ qw(uuid) ],
+#};
+#
+#$objectDefinitions->{Insertion} = {
+#	parents => ['Genome'],
+#	class => 'child',
+#	attributes => [
+#		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'insertionTarget',printOrder => 0,perm => 'rw',type => 'Int',req => 0},
+#		{name => 'sequence',printOrder => 0,perm => 'rw',type => 'Str',req => 0,default => ""},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [],
+#    reference_id_types => [ qw(uuid) ],
+#};
+#
+#$objectDefinitions->{Experiment} = {
+#	parents => ["ModelSEED::Store"],
+#	class => 'indexed',
+#	attributes => [
+#		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'genome_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#I think this should be Strain.Right now, we’re linking an experiment to a single GenomeUUID here, but I think it makes more sense to link to a single StrainUUID, which is what we do in the Price DB.  
+#		{name => 'name',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'description',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'institution',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'source',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "genome",attribute => "genome_uuid",parent => "ModelSEED::Store",method=>"genomes"},
+#	],
+#    reference_id_types => [ qw(uuid alias) ],
+#    version => 1.0,
+#};
+#
+#$objectDefinitions->{ExperimentDataPoint} = {
+#	parents => ["Experiment"],
+#	class => 'child',
+#	attributes => [
+#		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'strain_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#Not needed if it’s in the experiment table? I think we need to be consistent in defining where in these tables to put e.g. genetic perturbations done in an experiment.
+#		{name => 'media_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'pH',printOrder => 0,perm => 'rw',type => 'Num',req => 0},
+#		{name => 'temperature',printOrder => 0,perm => 'rw',type => 'Num',req => 0},
+#		{name => 'buffers',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#There could be multiple buffers in a single media. Would this be listed in the Media table? Multiple buffers in single media isn’t something we’ve run across yet and seems like a rarity at best, since their purpose is maintaining pH.  We discussed just listing the buffer here, without amount, because the target pH should dictate the amount of buffer. 
+#		{name => 'phenotype',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'notes',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'growthMeasurement',printOrder => 0,perm => 'rw',type => 'Num',req => 0},#Would these be better in their own table? IT’s just another type of measurement just like the flux, metabolite, etc... One reason to keep the growth measurements here is unit consistency; moving them to the other table with the other flux measurements would require a clear division between growth rates and secretion/uptake rates to distinguish between 1/h and mmol/gDW/h. Rather than do that, I think keeping them in separate tables makes for an easy, logical division. 
+#		{name => 'growthMeasurementType',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#Would these be better in their own table?
+#	],
+#	subobjects => [
+#		{name => "fluxMeasurements",class => "FluxMeasurement",type => "child"},
+#		{name => "uptakeMeasurements",class => "UptakeMeasurement",type => "child"},
+#		{name => "metaboliteMeasurements",class => "MetaboliteMeasurement",type => "child"},
+#		{name => "geneMeasurements",class => "GeneMeasurement",type => "child"},
+#	],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "strain",attribute => "strain_uuid",parent => "Genome",method=>"strains"},
+#		{name => "media",attribute => "media_uuid",parent => "Biochemistry",method=>"media"},
+#	],
+#    reference_id_types => [ qw(uuid) ],
+#};
+#
+#$objectDefinitions->{FluxMeasurement} = {
+#	parents => ["ExperimentDataPoint"],
+#	class => 'encompassed',
+#	attributes => [
+#		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#This could get confusing. Make sure the rate is defined relative to the way that the reaction itself is defined (i.e. even if the directionality of the reaction is <= we should define the rate relative to the forward direction, and if it is consistent with the directionality constraint it would be negative)
+#		{name => 'reacton_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'compartment_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'type',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "reaction",attribute => "reacton_uuid",parent => "Biochemistry",method=>"reactions"},
+#		{name => "compartment",attribute => "compartment_uuid",parent => "Biochemistry",method=>"compartments"},
+#	],
+#};
+#
+#$objectDefinitions->{UptakeMeasurement} = {
+#	parents => ["ExperimentDataPoint"],
+#	class => 'encompassed',
+#	attributes => [
+#		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'compound_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'type',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "compound",attribute => "compound_uuid",parent => "Biochemistry",method=>"compounds"},
+#	],
+#};
+#
+#$objectDefinitions->{MetaboliteMeasurement} = {
+#	parents => ["ExperimentDataPoint"],
+#	class => 'encompassed',
+#	attributes => [
+#		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},#In metabolomic experiments it is often hard to measure precisely whether a metabolite is present or not. and (even more so) it’s concentration. However, I imagine it is possible to guess a “probability” of particular compounds being present or not. I wanted to talk to one of the guys at Argonne (The guy who was trying to schedule the workshop for KBase) about metabolomics but we ran out of time. We should consult with a metabolomics expert on what a realistic thing to put into this table would be.
+#		{name => 'compound_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'compartment_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},#I changed this from “extracellular [0/1]” since we could techincally measure them in any given compartment, not just cytosol vs. extracellular
+#		{name => 'method',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "compound",attribute => "compound_uuid",parent => "Biochemistry",method=>"compounds"},
+#		{name => "compartment",attribute => "compartment_uuid",parent => "Biochemistry",method=>"compartments"},
+#	],
+#};
+#
+#$objectDefinitions->{GeneMeasurement} = {
+#	parents => ["ExperimentDataPoint"],
+#	class => 'encompassed',
+#	attributes => [
+#		{name => 'value',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#		{name => 'feature_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+#		{name => 'method',printOrder => 0,perm => 'rw',type => 'Str',req => 0},
+#	],
+#	subobjects => [],
+#	primarykeys => [ qw(uuid) ],
+#	links => [
+#		{name => "feature",attribute => "feature_uuid",parent => "Genome",method=>"features"},
+#	],
+#};
 
 sub objectDefinitions {
 	return $objectDefinitions;
