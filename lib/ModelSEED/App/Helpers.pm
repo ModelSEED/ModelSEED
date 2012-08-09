@@ -37,7 +37,7 @@ sub handle_ref_lookup {
         return JSON->new->utf8(1)->encode($d);
     } elsif($opts->{full}) {
         my $object = $store->get_object($ref);
-        return join("\n", @{$object->createReadableStringArray}) . "\n";
+        return $object->toReadableString();
     } else {
         return "$type/". $data->{$attribute_name} . "\n";
     }

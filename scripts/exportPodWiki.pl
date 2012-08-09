@@ -60,6 +60,7 @@ foreach my $name (keys %$name2path) {
     $parser->parse_from_file($path, $tmpfile);
     open(my $fh, "<", $tmpfile);
     my $rows = processPackageLinks($fh, $name2rename);
+    $rows = highlightSyntax($rows);
     close($fh);
     my $finalPath = "$dest/".$name2rename->{$name}.".pod";
     unlink $finalPath;
@@ -98,5 +99,27 @@ sub processPackageLinks {
         push(@$rtv, $newline);
     }
     return $rtv;
+}
+
+sub highlightSyntax {
+    my ($rows) = @_;
+    my $out = [];
+    my $l   = @$rows;
+    for(my $i=0; $i<$l; $i++) {
+        my $start = $rows->[$i-1] if $i > 0;
+        next unless defined $start;
+        if($start =~ /^\s*$/ && $rows->[$i] =~ /^\s+\S+/) {
+            push(@$out, "```perl\n");
+            while($rows->[$i] =~ /^\s+\S+/ && $i < $l) {
+                push(@$out, $rows->[$i]);
+                $i += 1;
+            }
+            push(@$out, "```\n");
+            push(@$out, "\n");
+        } else {
+            push(@$out, $rows->[$i]);
+        }
+    }
+    return $out;
 }
 
