@@ -21,6 +21,10 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type =>
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
+has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
+has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
+has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '0', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '0', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
@@ -91,6 +95,38 @@ my $attributes = [
             'printOrder' => 0,
             'name' => 'fbaFormulation_uuid',
             'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'mediaHypothesis',
+            'default' => '0',
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'biomassHypothesis',
+            'default' => '0',
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'gprHypothesis',
+            'default' => '0',
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'reactionAdditionHypothesis',
+            'default' => '1',
+            'type' => 'Bool',
             'perm' => 'rw'
           },
           {
@@ -206,7 +242,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, balancedReactionsOnly => 2, guaranteedReaction_uuids => 3, blacklistedReaction_uuids => 4, allowableCompartment_uuids => 5, reactionActivationBonus => 6, drainFluxMultiplier => 7, directionalityMultiplier => 8, deltaGMultiplier => 9, noStructureMultiplier => 10, noDeltaGMultiplier => 11, biomassTransporterMultiplier => 12, singleTransporterMultiplier => 13, transporterMultiplier => 14, modDate => 15};
+my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, mediaHypothesis => 2, biomassHypothesis => 3, gprHypothesis => 4, reactionAdditionHypothesis => 5, balancedReactionsOnly => 6, guaranteedReaction_uuids => 7, blacklistedReaction_uuids => 8, allowableCompartment_uuids => 9, reactionActivationBonus => 10, drainFluxMultiplier => 11, directionalityMultiplier => 12, deltaGMultiplier => 13, noStructureMultiplier => 14, noDeltaGMultiplier => 15, biomassTransporterMultiplier => 16, singleTransporterMultiplier => 17, transporterMultiplier => 18, modDate => 19};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

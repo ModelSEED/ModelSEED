@@ -352,5 +352,33 @@ sub findCreateEquivalentReaction {
 	return $outrxn;
 }
 
+=head3 validate
+Definition:
+	void ModelSEED::MS::Biochemistry->validate();
+Description:
+	This command runs a series of tests on the biochemistry data to ensure that it is valid
+=cut
+sub validate {
+	my ($self) = @_;
+	my $errors = [];
+	#Check uniqueness of compound names and abbreviations
+	my $cpds = $self->compounds();
+	my $nameHash;
+	my $abbrevHash;
+	foreach my $cpd (@{$cpds}) {
+		if (defined($nameHash->{$cpd->name()})) {
+			push(@{$errors},"Compound names match: ".$cpd->name().": ".$cpd->uuid()."(".$cpd->id().")\t".$nameHash->{$cpd->name()}->uuid()."(".$cpd->id().")");
+		} else {
+			$nameHash->{$cpd->name()} = $cpd;
+		}
+		if (defined($abbrevHash->{$cpd->abbreviation()})) {
+			push(@{$errors},"Compound abbreviations match: ".$cpd->abbreviation().": ".$cpd->uuid()."(".$cpd->id().")\t".$abbrevHash->{$cpd->abbreviation()}->uuid()."(".$cpd->id().")");
+		} else {
+			$abbrevHash->{$cpd->abbreviation()} = $cpd;
+		}
+	}
+	return $errors;
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
