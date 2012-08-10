@@ -31,10 +31,13 @@ package Moose::Meta::Attribute::Custom::Typed;
 sub register_implementation { 'ModelSEED::Meta::Attribute::Typed' }
 package ModelSEED::MS::BaseObject;
 =pod
+
 =head1 ModelSEED::MS::BaseObject
+
 =head2 SYNOPSIS
 
 =head2 METHODS
+
 =head3 Initialization
 
 =head4 new
