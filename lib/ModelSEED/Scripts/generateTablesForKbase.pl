@@ -77,7 +77,7 @@ sub _poll_prefix {
 
 sub _check_server {
     my ($self, $prefix, $msid, $uuid) = @_;
-    $self->_poll_prefix($prefix);
+    #$self->_poll_prefix($prefix);
     my $kbid;
     if ( defined $msid ) {
         $kbid = $self->kbid_from_msid($msid);
@@ -133,6 +133,7 @@ sub registerUUID {
 sub allocateIds {
     my ($self, $prefix, $count) = @_;
     my ($start) = $self->idServer->allocate_id_range($prefix, $count);
+    $start = 0 unless defined $start; # TEMP fix
     return [ map { $prefix.".$_" } $start..($start+$count-1) ];
 }
 
