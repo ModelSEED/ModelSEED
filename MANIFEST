@@ -1,4 +1,3 @@
-carton.lock
 lib/Bio/KBase/CDMI/Client.pm
 lib/ModelSEED/App/bio.pm
 lib/ModelSEED/App/bio/Command/aliasSet.pm
@@ -234,17 +233,17 @@ lib/ModelSEED/MS/Utilities/GlobalFunctions.pm
 lib/ModelSEED/MS/Utilities/SimpleTable.pm
 lib/ModelSEED/MS/Variable.pm
 lib/ModelSEED/Reference.pm
-lib/ModelSEED/Scripts/ChargeMolfiles.pl
-lib/ModelSEED/Scripts/delete-old-files.pl
-lib/ModelSEED/Scripts/diffDirectories.pl
-lib/ModelSEED/Scripts/exportPodWiki.pl
-lib/ModelSEED/Scripts/generateTablesForKbase.pl
-lib/ModelSEED/Scripts/ms-create-wiki-docs.pl
 lib/ModelSEED/Store.pm
 lib/ModelSEED/Table.pm
 lib/ModelSEED/utilities.pm
 lib/ModelSEED/Version.pm
 lib/myRAST/ClientThing.pm
+scripts/ChargeMolfiles.pl
+scripts/delete-old-files.pl
+scripts/diffDirectories.pl
+scripts/exportPodWiki.pl
+scripts/generateTablesForKbase.pl
+scripts/ms-create-wiki-docs.pl
 LICENSE.TXT
 MANIFEST			This list of files
 MANIFEST.bak
@@ -269,3 +268,13 @@ t/Reference.t
 t/require.t
 t/Store.t
 t/table.t
+scripts/exportMSObjectWiki.pl
+lib/ModelSEED/Database/FileDB/test/kvstore_speed.pl
+lib/ModelSEED/MS/DB/GapgenFormulation.pm
+lib/ModelSEED/MS/DB/GapgenSolution.pm
+lib/ModelSEED/MS/DB/GapgenSolutionReaction.pm
+lib/ModelSEED/MS/Factories/ModelTable.pm
+lib/ModelSEED/MS/GapgenFormulation.pm
+lib/ModelSEED/MS/GapgenSolution.pm
+lib/ModelSEED/MS/GapgenSolutionReaction.pm
+scripts/install.sh

@@ -294,12 +294,76 @@ $objectDefinitions->{FBAMetaboliteProductionResult} = {
 	]
 };
 
+$objectDefinitions->{GapgenFormulation} = {
+	parents => ['Model'],
+	class => 'child',
+	attributes => [
+		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'fbaFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'mediaHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'biomassHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'gprHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'reactionRemovalHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "1"},
+		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
+	],
+	subobjects => [
+		{name => "gapgenSolutions",class => "GapgenSolution",type => "encompassed"},
+	],
+	primarykeys => [ qw(uuid) ],
+	links => [
+		{name => "fbaFormulation",attribute => "fbaFormulation_uuid",parent => "Model",method=>"fbaFormulations"},
+	],
+    reference_id_types => [ qw(uuid) ],
+};
+
+$objectDefinitions->{GapgenSolution} = {
+	parents => ['GapgenFormulation'],
+	class => 'child',
+	attributes => [
+		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
+		{name => 'solutionCost',printOrder => 0,perm => 'rw',type => 'Num',req => 0,default => "1"},
+		{name => 'biomassSupplement_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
+		{name => 'mediaRemoval_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
+		{name => 'additionalKO_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
+	],
+	subobjects => [
+		{name => "gapgenSolutionReactions",class => "GapgenSolutionReaction",type => "encompassed"},
+	],
+	primarykeys => [ qw(uuid) ],
+	links => [
+		{name => "biomassSupplements",attribute => "biomassSupplement_uuids",parent => "Model",method=>"modelcompounds",array => 1},
+		{name => "mediaRemovals",attribute => "mediaRemovals_uuids",parent => "Model",method=>"modelcompounds",array => 1},
+		{name => "additionalKOs",attribute => "additionalKO_uuids",parent => "Model",method=>"modelreactions",array => 1},
+	],
+    reference_id_types => [ qw(uuid) ],
+};
+
+$objectDefinitions->{GapgenSolutionReaction} = {
+	parents => ['GapgenSolution'],
+	class => 'child',
+	attributes => [
+		{name => 'modelreaction_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 1},
+		{name => 'direction',printOrder => 0,perm => 'rw',type => 'Str',req => 0,default => "1"},
+	],
+	subobjects => [],
+	primarykeys => [ qw(uuid) ],
+	links => [
+		{name => "modelreaction",attribute => "modelreaction_uuid",parent => "Model",method=>"modelreactions"},
+	],
+    reference_id_types => [ qw(uuid) ],
+};
+
 $objectDefinitions->{GapfillingFormulation} = {
 	parents => ['Model'],
 	class => 'child',
 	attributes => [
 		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
 		{name => 'fbaFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'mediaHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'biomassHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'gprHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
+		{name => 'reactionAdditionHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "1"},
 		{name => 'balancedReactionsOnly',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "1"},
 		{name => 'guaranteedReaction_uuids',printOrder => 0,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
 		{name => 'blacklistedReaction_uuids',printOrder => 0,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
@@ -376,12 +440,19 @@ $objectDefinitions->{GapfillingSolution} = {
 		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
 		{name => 'modDate',printOrder => -1,perm => 'rw',type => 'Str',req => 0},
 		{name => 'solutionCost',printOrder => 0,perm => 'rw',type => 'Num',req => 0,default => "1"},
+		{name => 'biomassRemoval_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
+		{name => 'mediaSupplement_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
+		{name => 'koRestore_uuids',printOrder => -1,perm => 'rw',type => 'ArrayRef',req => 0,default => "sub{return [];}"},
 	],
 	subobjects => [
 		{name => "gapfillingSolutionReactions",class => "GapfillingSolutionReaction",type => "encompassed"},
 	],
 	primarykeys => [ qw(uuid) ],
-	links => [],
+	links => [
+		{name => "biomassRemovals",attribute => "biomassRemoval_uuids",parent => "Model",method=>"modelcompounds",array => 1},
+		{name => "mediaSupplements",attribute => "mediaSupplement_uuids",parent => "Model",method=>"modelcompounds",array => 1},
+		{name => "koRestores",attribute => "koRestore_uuids",parent => "Model",method=>"modelreactions",array => 1},
+	],
     reference_id_types => [ qw(uuid) ],
 };
 

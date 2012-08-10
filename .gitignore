@@ -7,8 +7,6 @@ data/*
 .includepath
 .project
 .metadata/*
-bin/*.sh
-bin/*.cmd
 config
 logs/*
 *.ilk
@@ -31,3 +29,6 @@ local/
 .carton/
 MYMETA.*
 src
+lib/perl5/
+man/*
+MANIFEST.bak

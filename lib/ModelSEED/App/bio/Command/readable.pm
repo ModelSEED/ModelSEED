@@ -14,6 +14,6 @@ sub execute {
     my $helper = ModelSEED::App::Helpers->new();
     my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Must specify an biochemistry to use") unless(defined($biochemistry));
-    print join("\n", @{$biochemistry->createReadableStringArray});
+    print $biochemistry->toReadableString();
 }
 1;

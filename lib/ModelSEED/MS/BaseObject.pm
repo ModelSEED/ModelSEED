@@ -10,7 +10,6 @@ use DateTime;
 use Data::UUID;
 use JSON;
 use Module::Load;
-
 package ModelSEED::Meta::Attribute::Typed;
 use Moose;
 use namespace::autoclean;
@@ -28,11 +27,92 @@ has printOrder => (
       predicate => 'has_printOrder',
       default => '-1',
 );
-
 package Moose::Meta::Attribute::Custom::Typed;
 sub register_implementation { 'ModelSEED::Meta::Attribute::Typed' }
-
 package ModelSEED::MS::BaseObject;
+=pod
+
+=head1 ModelSEED::MS::BaseObject
+
+=head2 SYNOPSIS
+
+=head2 METHODS
+
+=head3 Initialization
+
+=head4 new
+
+    my $obj = ModelSEED::MS::Object->new();   # Initialize object with default parameters
+    my $obj = ModelSEED::MS::Object->new(\%); # Initialize object with hashref of parameters
+    my $obj = ModelSEED::MS::Object->new(%);  # Initialize object with hash of parameters
+
+=head3 Serialization
+
+=head4 serializeToDB
+
+Return a simple perl hash that can be passed to a JSON serializer.
+
+    my $data = $object->serializeToDB();
+
+=head4 toJSON
+
+    my $string = $object->toJSON(\%);
+
+Serialize object to JSON. A hash reference of options may be passed
+as the first argument. Currently only one option is available C<pp>
+which will pretty-print the ouptut.
+
+=head4 createHTML
+
+    my $string = $object->createHTML();
+
+Returns an HTML document for the object.
+
+=head4 toReadableString
+
+    my $string = $object->toReadableString();
+
+=head3 Object Traversal
+
+=head4 getAlias
+
+=head4 getAliases
+
+=head4 defaultNameSpace
+
+=head4 getLinkedObject
+
+=head4 getLinkedObjectArray
+
+=head4 store
+
+=head4 biochemisry
+
+=head4 annotation
+
+=head4 mapping
+
+=head4 fbaproblem
+
+=head3 Object Manipulation
+
+=head4 add
+
+=head4 remove
+
+=head3 Helper Functions
+
+=head4 interpretReference
+
+=head4 parseReferenceList
+
+=head3 Schema Versioning
+
+=head4 __version__
+
+=head4 __upgrade__
+
+=cut
 use Moose;
 use namespace::autoclean;
 use ModelSEED::utilities;
@@ -127,11 +207,6 @@ sub toJSON {
     my $JSON = JSON->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
     return $JSON->encode($data)
-}
-sub printJSONFile {
-    my ($self,$filename,$args) = @_;
-    my $text = $self->toJSON($args);
-    ModelSEED::utilities::PRINTFILE($filename,[$text]);
 }
 
 ######################################################################
@@ -234,7 +309,7 @@ sub parseReferenceList {
 sub createHTML {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{internal => 0});
-	my $data = $self->createReadableData();
+	my $data = $self->_createReadableData();
 	my $output = [];
 	if ($args->{internal} == 0) {
 		push(@{$output},(
@@ -344,10 +419,10 @@ sub createHTML {
 	return $html;
 }
 
-sub createReadableStringArray {
-	my ($self) = @_;
+sub toReadableString {
+	my ($self, $asArray) = @_;
 	my $output = ["Attributes {"];
-	my $data = $self->createReadableData();
+	my $data = $self->_createReadableData();
 	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
 		push(@{$output},"\t".$data->{attributes}->{headings}->[$i].":".$data->{attributes}->{data}->[0]->[$i])
 	}
@@ -368,19 +443,20 @@ sub createReadableStringArray {
 			if (defined($objects->[0])) {
 				push(@{$output},$rs." objects {");
 				for (my $j=0; $j < @{$objects}; $j++) {
-					push(@{$output},@{$objects->[$j]->createReadableStringArray()});
+					push(@{$output},@{$objects->[$j]->toReadableString("asArray")});
 				}
 				push(@{$output},"}");
 			}
 		}
 	}
+    return join("\n", @$output) unless defined $asArray;
 	return $output;
 }
 
-sub createReadableData {
+sub _createReadableData {
 	my ($self) = @_;
 	my $data;
-	my ($sortedAtt,$sortedSO,$sortedRS) = $self->getReadableAttributes();
+	my ($sortedAtt,$sortedSO,$sortedRS) = $self->_getReadableAttributes();
 	$data->{attributes}->{headings} = $sortedAtt;
 	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
 		my $att = $data->{attributes}->{headings}->[$i];
@@ -391,7 +467,7 @@ sub createReadableData {
 		my $soData = {name => $so};
 		my $objects = $self->$so();
 		if (defined($objects->[0])) {
-			my ($sortedAtt,$sortedSO) = $objects->[0]->getReadableAttributes();
+			my ($sortedAtt,$sortedSO) = $objects->[0]->_getReadableAttributes();
 			$soData->{headings} = $sortedAtt;
 			for (my $j=0; $j < @{$objects}; $j++) {
 				for (my $k=0; $k < @{$sortedAtt}; $k++) {
@@ -408,7 +484,7 @@ sub createReadableData {
 	return $data;
  }
  
-sub getReadableAttributes {
+sub _getReadableAttributes {
 	my ($self) = @_;
 	my $priority = {};
 	my $attributes = [];
@@ -437,10 +513,6 @@ sub getReadableAttributes {
 ######################################################################
 #SubObject manipulation functions
 ######################################################################
-sub clearSubObject {
-    my ($self, $attribute) = @_;
-	$self->$attribute([]);	
-}
 
 sub add {
     my ($self, $attribute, $data_or_object) = @_;
@@ -576,10 +648,6 @@ sub fbaproblem {
         return $parent->fbaproblem();
     }
     ModelSEED::utilities::ERROR("Cannot find fbaproblem object in tree!");
-}
-
-sub objectmanager {
-    return $_[0]->store;
 }
 
 sub store {

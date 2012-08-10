@@ -14,6 +14,6 @@ sub execute {
     my $helper = ModelSEED::App::Helpers->new();
     my ($annotation, $annoRef) = $helper->get_object("annotation", $args, $store);
     $self->usage_error("Must specify an annotation to use") unless(defined($annotation));
-    print join("\n", @{$annotation->createReadableStringArray});
+    print $annotation->toReadableString();
 }
 1;

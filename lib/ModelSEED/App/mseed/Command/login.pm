@@ -20,11 +20,16 @@ sub execute {
     my ($self, $opt, $args) = @_;
     my $username = $args->[0];
 
+    my $password;
     print "Enter password: ";
-    ReadMode 2;
-    my $password = ReadLine 0;
-    ReadMode 0;
-    chomp($password);
+    if ($^O =~ m/^MSWin/) {
+    	$password = <STDIN>;#Please don't remove this unless you've tested that it works in windows... readkey didn't work
+    } else {
+   		ReadMode 2;
+    	$password = ReadLine 0;
+    	ReadMode 0;
+    	chomp($password);
+    }
     print "\n";
 
     my $conf = ModelSEED::Configuration->new();
