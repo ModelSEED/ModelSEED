@@ -221,8 +221,8 @@ sub createJobDirectory {
 	}
 	ModelSEED::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
 	#Setting drain max based on media
-	my $media = $self->media();
-	if ($media->name() eq "Complete") {
+	my $primMedia = $self->media();
+	if ($primMedia->name() eq "Complete") {
 		if ($self->defaultMaxDrainFlux() <= 0) {
 			$self->defaultMaxDrainFlux($self->defaultMaxFlux());
 		}
@@ -318,31 +318,7 @@ sub createJobDirectory {
 		$comboDeletions = "none";
 	}
 	#Creating FBA experiment file
-	my $fbaExpFile = "none";
-	my $fbaSims = $self->fbaPhenotypeSimulations();
-	if (@{$fbaSims} > 0) {
-		$fbaExpFile = "FBAExperiment.txt";
-		my $phenoData = ["Label\tKO\tMedia"];
-		for (my $i=0; $i < @{$fbaSims}; $i++) {
-			my $phenoko = "none";
-			for (my $j=0; $j < @{$fbaSims->[$i]->geneKO()}; $j++) {
-				if ($phenoko eq "none") {
-					$phenoko = $fbaSims->[$i]->geneKO()->[$j]->id();
-				} else {
-					$phenoko .= ";".$fbaSims->[$i]->geneKO()->[$j]->id();
-				}
-			}
-			for (my $j=0; $j < @{$fbaSims->[$i]->reactionKO()}; $j++) {
-				if ($phenoko eq "none") {
-					$phenoko = $fbaSims->[$i]->reactionKO()->[$j]->id();
-				} else {
-					$phenoko .= ";".$fbaSims->[$i]->reactionKO()->[$j]->id();
-				}
-			}
-			push(@{$phenoData},$fbaSims->[$i]->label()."\t".$phenoko."\t".$fbaSims->[$i]->media()->name());
-		}
-		ModelSEED::utilities::PRINTFILE($directory.$fbaExpFile,$phenoData);
-	}
+	my $fbaExpFile = $self->setupFBAExperiments();
 	#Setting parameters
 	my $parameters = {
 		"perform MFA" => 1,
@@ -390,7 +366,6 @@ sub createJobDirectory {
 		$parameters->{"scip executable"} = "scip";
 		$parameters->{"perl directory"} = "/usr/bin/perl";
 		$parameters->{"os"} = "linux";
-		
 	}
 	#Setting thermodynamic constraints
 	if ($self->thermodynamicConstraints() eq "none") {
@@ -422,51 +397,56 @@ sub createJobDirectory {
 	}
 	ModelSEED::utilities::PRINTFILE($directory."SpecializedParameters.txt",$paramData);
 	#Printing specialized bounds
-	my $userBounds = {};
-	my $mediaCpds = $media->mediacompounds();
-	for (my $i=0; $i < @{$mediaCpds}; $i++) {
-		$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
-			max => $mediaCpds->[$i]->maxFlux(),
-			min => $mediaCpds->[$i]->minFlux()
-		};
-	}
+	my $medialist = [$primMedia];
+	push(@{$medialist},@{$self->secondaryMedia()});
+	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS"];
 	my $cpdbnds = $self->fbaCompoundBounds();
-	for (my $i=0; $i < @{$cpdbnds}; $i++) {
-		$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
-			max => $cpdbnds->[$i]->upperBound(),
-			min => $cpdbnds->[$i]->lowerBound()
-		};
-	}
 	my $rxnbnds = $self->fbaReactionBounds();
-	for (my $i=0; $i < @{$rxnbnds}; $i++) {
-		$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
-			max => $rxnbnds->[$i]->upperBound(),
-			min => $rxnbnds->[$i]->lowerBound()
-		};
-	}
-	my $dataArrays;
-	foreach my $var (keys(%{$userBounds})) {
-		foreach my $comp (keys(%{$userBounds->{$var}})) {
-			foreach my $type (keys(%{$userBounds->{$var}->{$comp}})) {
-				push(@{$dataArrays->{var}},$var);
-				push(@{$dataArrays->{type}},$type);
-				push(@{$dataArrays->{min}},$userBounds->{$var}->{$comp}->{$type}->{min});
-				push(@{$dataArrays->{max}},$userBounds->{$var}->{$comp}->{$type}->{max});
-				push(@{$dataArrays->{comp}},$comp);
+	foreach my $media (@{$medialist}) {
+		my $userBounds = {};
+		my $mediaCpds = $media->mediacompounds();
+		for (my $i=0; $i < @{$mediaCpds}; $i++) {
+			$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
+				max => $mediaCpds->[$i]->maxFlux(),
+				min => $mediaCpds->[$i]->minFlux()
+			};
+		}
+		for (my $i=0; $i < @{$cpdbnds}; $i++) {
+			$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
+				max => $cpdbnds->[$i]->upperBound(),
+				min => $cpdbnds->[$i]->lowerBound()
+			};
+		}
+		for (my $i=0; $i < @{$rxnbnds}; $i++) {
+			$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
+				max => $rxnbnds->[$i]->upperBound(),
+				min => $rxnbnds->[$i]->lowerBound()
+			};
+		}
+		my $dataArrays;
+		foreach my $var (keys(%{$userBounds})) {
+			foreach my $comp (keys(%{$userBounds->{$var}})) {
+				foreach my $type (keys(%{$userBounds->{$var}->{$comp}})) {
+					push(@{$dataArrays->{var}},$var);
+					push(@{$dataArrays->{type}},$type);
+					push(@{$dataArrays->{min}},$userBounds->{$var}->{$comp}->{$type}->{min});
+					push(@{$dataArrays->{max}},$userBounds->{$var}->{$comp}->{$type}->{max});
+					push(@{$dataArrays->{comp}},$comp);
+				}
 			}
 		}
-	}
-	my $mediaData = ["ID\tNAMES\tVARIABLES\tTYPES\tMAX\tMIN\tCOMPARTMENTS"];
-	$mediaData->[1] = $self->media()->name()."\t".$self->media()->name()."\t";
-	if (defined($dataArrays->{var}) && @{$dataArrays->{var}} > 0) {
-		$mediaData->[1] .= 
-			join("|",@{$dataArrays->{var}})."\t".
-			join("|",@{$dataArrays->{type}})."\t".
-			join("|",@{$dataArrays->{max}})."\t".
-			join("|",@{$dataArrays->{min}})."\t".
-			join("|",@{$dataArrays->{comp}});
-	} else {
-		$mediaData->[1] .= "\t\t\t\t";
+		my $newLine = $media->name()."\t".$media->name()."\t";
+		if (defined($dataArrays->{var}) && @{$dataArrays->{var}} > 0) {
+			$newLine .= 
+				join("|",@{$dataArrays->{var}})."\t".
+				join("|",@{$dataArrays->{type}})."\t".
+				join("|",@{$dataArrays->{max}})."\t".
+				join("|",@{$dataArrays->{min}})."\t".
+				join("|",@{$dataArrays->{comp}});
+		} else {
+			$newLine .= "\t\t\t\t";
+		}
+		push(@{$mediaData},$newLine);
 	}
 	ModelSEED::utilities::PRINTFILE($directory."media.tbl",$mediaData);
 	#Set StringDBFile.txt
@@ -477,7 +457,7 @@ sub createJobDirectory {
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
 		"compound\tid\tSINGLEFILE\t\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
 		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$dataDir."fbafiles/".$biochemid."-reactions.tbl\tTAB\t|\tid",
-		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/cueTable.txt\tTAB\t|\tNAME",
+		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/MFAToolkit/cueTable.txt\tTAB\t|\tNAME",
 		"media\tID\tSINGLEFILE\t".$dataDir."ReactionDB/Media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
 	];
 	ModelSEED::utilities::PRINTFILE($directory."StringDBFile.txt",$stringdb);
@@ -488,6 +468,171 @@ sub createJobDirectory {
 	ModelSEED::utilities::PRINTFILE($directory."runMFAToolkit.sh",$exec);
 	chmod 0775,$directory."runMFAToolkit.sh";
 	$self->command($self->mfatoolkitBinary().' parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"');
+}
+=head3 setupFBAExperiments
+Definition:
+	string:FBA experiment filename = setupFBAExperiments());
+Description:
+	Converts phenotype simulation specs into an FBA experiment file for the MFAToolkit
+=cut
+sub setupFBAExperiments {
+	my ($self) = @_;
+	my $fbaExpFile = "none";
+	my $fbaSims = $self->fbaPhenotypeSimulations();
+	if (@{$fbaSims} > 0) {
+		$fbaExpFile = "FBAExperiment.txt";
+		my $phenoData = ["Label\tKO\tMedia"];
+		my $mediaHash = {};
+		my $tempMediaIndex = 1;
+		for (my $i=0; $i < @{$fbaSims}; $i++) {
+			my $phenoko = "none";
+			my $addnlCpds = $fbaSims->[$i]->additionalCpd_uuids();
+			my $media = $fbaSims->[$i]->media()->name();
+			if (@{$addnlCpds} > 0) {
+				if (!defined($mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))})) {
+					$mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))} = $self->createTemporaryMedia({
+						name => "Temp".$tempMediaIndex,
+						media => $fbaSims->[$i]->media(),
+						additionalCpd => $fbaSims->[$i]->additionalCpds()
+					});
+					$tempMediaIndex++;
+				}
+				$media = $mediaHash->{$media.":".join("|",sort(@{$addnlCpds}))}->name();
+			} else {
+				$mediaHash->{$media} = $fbaSims->[$i]->media();
+			}
+			for (my $j=0; $j < @{$fbaSims->[$i]->geneKOs()}; $j++) {
+				if ($phenoko eq "none" && $fbaSims->[$i]->geneKOs()->[$j]->id() =~ m/(\w+\.\d+)$/) {
+					$phenoko = $1;
+				} elsif ($fbaSims->[$i]->geneKOs()->[$j]->id() =~ m/(\w+\.\d+)$/) {
+					$phenoko .= ";".$1;
+				}
+			}
+			for (my $j=0; $j < @{$fbaSims->[$i]->reactionKOs()}; $j++) {
+				if ($phenoko eq "none") {
+					$phenoko = $fbaSims->[$i]->reactionKOs()->[$j]->id();
+				} else {
+					$phenoko .= ";".$fbaSims->[$i]->reactionKOs()->[$j]->id();
+				}
+			}
+			push(@{$phenoData},$fbaSims->[$i]->uuid()."\t".$phenoko."\t".$media);
+		}
+		#Adding all additional media used as secondary media to FBAFormulation
+		foreach my $tempmedia (keys(%{$mediaHash})) {
+			if ($tempmedia ne $self->media()->name()) {
+				push(@{$self->secondaryMedia_uuids()},$mediaHash->{$tempmedia}->uuid());
+				push(@{$self->secondaryMedia()},$mediaHash->{$tempmedia});
+			}
+		}
+		ModelSEED::utilities::PRINTFILE($self->jobDirectory()."/".$fbaExpFile,$phenoData);
+	}
+	return $fbaExpFile;
+}
+=head3 createTemporaryMedia
+Definition:
+	ModelSEED::MS::Media = createTemporaryMedia({
+		name => "Temp".$tempMediaIndex,
+		media => $fbaSims->[$i]->media(),
+		additionalCpd => $fbaSims->[$i]->additionalCpds()
+	});
+Description:
+	Creates a temporary media conditions with the specified base media plus the specified additional compounds
+=cut
+sub createTemporaryMedia {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["name","media","additionalCpd"],{});
+	my $newMedia = ModelSEED::MS::Media->new({
+		isDefined => 1,
+		isMinimal => 0,
+		id => $args->{name},
+		name => $args->{name},
+		type => "temporary"
+	});
+	$newMedia->parent($self->biochemistry());
+	my $cpds = $args->{media}->mediacompounds();
+	my $cpdHash = {};
+	foreach my $cpd (@{$cpds}) {
+		$cpdHash->{$cpd->compound_uuid()} = {
+			compound_uuid => $cpd->compound_uuid(),
+			concentration => $cpd->concentration(),
+			maxFlux => $cpd->maxFlux(),
+			minFlux => $cpd->minFlux(),
+		};
+	}
+	foreach my $cpd (@{$args->{additionalCpd}}) {
+		$cpdHash->{$cpd->compound_uuid()} = {
+			compound_uuid => $cpd->uuid(),
+			concentration => 0.001,
+			maxFlux => 100,
+			minFlux => -100,
+		};
+	}
+	foreach my $cpd (keys(%{$cpdHash})) {
+		$newMedia->add("mediacompounds",$cpd);	
+	}
+	return $newMedia;
+}
+=head3 parsePhenotypeSimulations
+Definition:
+	void parsePhenotypeSimulations(
+		[{}]
+	);
+Description:
+	Parses array of hashes with phenotype specifications
+=cut
+sub parsePhenotypeSimulations {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["fbaPhenotypeSimulations"],{});
+	my $phenos = $args->{fbaPhenotypeSimulations};
+	for (my $i=0; $i < @{$phenos};$i++) {
+		my ($addnluuids,$addnlcpds,$genokouuids,$genekos,$reactionkouuids,$reactionkos) = ([],[],[],[],[],[]);
+		my $pheno = $phenos->[$i];
+		(my $obj,my $type) = $self->interpretReference($pheno->{media},"Media");
+		if (defined($pheno->{geneKOs})) {
+			foreach my $gene (@{$pheno->{geneKOs}}) {
+				(my $obj) = $self->interpretReference($gene,"Feature");
+				if (defined($obj)) {
+					push(@{$genekos},$obj);
+					push(@{$genokouuids},$obj->uuid());
+				}
+			}
+		}
+		if (defined($pheno->{reactionKOs})) {
+			foreach my $gene (@{$pheno->{reactionKOs}}) {
+				(my $obj) = $self->interpretReference($gene,"Reaction");
+				if (defined($obj)) {
+					push(@{$reactionkos},$obj);
+					push(@{$reactionkouuids},$obj->uuid());
+				}
+			}
+		}
+		if (defined($pheno->{additionalCpds})) {
+			foreach my $gene (@{$pheno->{additionalCpds}}) {
+				(my $obj) = $self->interpretReference($gene,"Compound");
+				if (defined($obj)) {
+					push(@{$addnlcpds},$obj);
+					push(@{$addnluuids},$obj->uuid());
+				}
+			}
+		}
+		if (defined($obj)) {
+			$self->add("fbaPhenotypeSimulations",{
+				media => $obj,
+				media_uuid => $obj->uuid(),
+				label => $i,
+				pH => $pheno->{pH},
+				temperature => $pheno->{temperature},
+				label => $pheno->{label},
+				additionalCpd_uuids => $addnluuids,
+				additionalCpds => $addnlcpds,
+				geneKO_uuids => $genokouuids,
+				geneKOs => $genekos,
+				reactionKO_uuids => $reactionkouuids,
+				reactionKOs => $reactionkos,
+				observedGrowthFraction => $pheno->{growth}
+			});
+		}
+	}
 }
 =head3 parseObjectiveTerms
 Definition:

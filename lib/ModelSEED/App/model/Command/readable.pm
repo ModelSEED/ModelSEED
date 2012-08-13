@@ -14,6 +14,6 @@ sub execute {
     my $helper = ModelSEED::App::Helpers->new();
     my ($model, $modelRef) = $helper->get_object("model", $args, $store);
     $self->usage_error("Must specify an model to use") unless(defined($model));
-    print join("\n", @{$model->createReadableStringArray});
+    print $model->toReadableString();
 }
 1;

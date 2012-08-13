@@ -244,10 +244,18 @@ sub _buildIndex {
 			if ($alwaysBuild == 1) {
 				$self->_build_object($att,$so_info);
 			}
+			my $data;
 			if ($so_info->{created} == 1) {
-				push(@{$newIndex->{$so_info->{object}->$subatt()}},$so_info);
+				$data = $so_info->{object}->$subatt();
 			} else {
-				push(@{$newIndex->{$so_info->{data}->{$subatt}}},$so_info);
+				$data = $so_info->{data}->{$subatt};
+			}
+			if (ref($data) eq "ARRAY") {
+				foreach my $item (@{$data}) {
+					push(@{$newIndex->{$item}},$so_info);
+				}
+			} else {
+				push(@{$newIndex->{$data}},$so_info);
 			}
 		}
 	}

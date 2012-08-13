@@ -297,8 +297,8 @@ foreach my $name (keys(%{$objects})) {
 
     #Finalizing
     push(@$output, "__PACKAGE__->meta->make_immutable;", "1;");
-    ModelSEED::utilities::PRINTFILE("../MS/DB/".$name.".pm",$output);
-    if (!-e "../MS/".$name.".pm") {
+    ModelSEED::utilities::PRINTFILE("../lib/ModelSEED/MS/DB/".$name.".pm",$output);
+    if (!-e "../lib/ModelSEED/MS/".$name.".pm") {
         $output = [
             "########################################################################",
             "# ModelSEED::MS::".$name." - This is the moose object corresponding to the ".$name." object",
@@ -336,6 +336,6 @@ foreach my $name (keys(%{$objects})) {
             "__PACKAGE__->meta->make_immutable;",
             "1;"
       ];
-        ModelSEED::utilities::PRINTFILE("../MS/".$name.".pm",$output);
+        ModelSEED::utilities::PRINTFILE("../lib/ModelSEED/MS/".$name.".pm",$output);
     }
 }

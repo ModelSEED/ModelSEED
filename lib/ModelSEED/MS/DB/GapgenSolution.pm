@@ -1,28 +1,28 @@
 ########################################################################
-# ModelSEED::MS::DB::GapfillingSolution - This is the moose object corresponding to the GapfillingSolution object
+# ModelSEED::MS::DB::GapgenSolution - This is the moose object corresponding to the GapgenSolution object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package ModelSEED::MS::DB::GapfillingSolution;
+package ModelSEED::MS::DB::GapgenSolution;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::GapfillingSolutionReaction;
+use ModelSEED::MS::GapgenSolutionReaction;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenFormulation', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has solutionCost => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has biomassRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has mediaSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has koRestore_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has biomassSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has mediaRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has additionalKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -30,34 +30,34 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # SUBOBJECTS:
-has gapfillingSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingSolutionReaction)', metaclass => 'Typed', reader => '_gapfillingSolutionReactions', printOrder => '-1');
+has gapgenSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapgenSolutionReaction)', metaclass => 'Typed', reader => '_gapgenSolutionReactions', printOrder => '-1');
 
 
 # LINKS:
-has biomassRemovals => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,biomassRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals');
-has mediaSupplements => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,mediaSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements');
-has koRestores => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]', type => 'link(Model,modelreactions,koRestore_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores');
+has biomassSupplements => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements');
+has mediaRemovals => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,mediaRemovals_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals');
+has additionalKOs => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
-sub _build_biomassRemovals {
+sub _build_biomassSupplements {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelcompounds',$self->biomassRemoval_uuids());
+  return $self->getLinkedObjectArray('Model','modelcompounds',$self->biomassSupplement_uuids());
 }
-sub _build_mediaSupplements {
+sub _build_mediaRemovals {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelcompounds',$self->mediaSupplement_uuids());
+  return $self->getLinkedObjectArray('Model','modelcompounds',$self->mediaRemovals_uuids());
 }
-sub _build_koRestores {
+sub _build_additionalKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelreactions',$self->koRestore_uuids());
+  return $self->getLinkedObjectArray('Model','modelreactions',$self->additionalKO_uuids());
 }
 
 
 # CONSTANTS:
-sub _type { return 'GapfillingSolution'; }
+sub _type { return 'GapgenSolution'; }
 
 my $attributes = [
           {
@@ -85,7 +85,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'biomassRemoval_uuids',
+            'name' => 'biomassSupplement_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -93,7 +93,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'mediaSupplement_uuids',
+            'name' => 'mediaRemoval_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -101,14 +101,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'koRestore_uuids',
+            'name' => 'additionalKO_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, solutionCost => 2, biomassRemoval_uuids => 3, mediaSupplement_uuids => 4, koRestore_uuids => 5};
+my $attribute_map = {uuid => 0, modDate => 1, solutionCost => 2, biomassSupplement_uuids => 3, mediaRemoval_uuids => 4, additionalKO_uuids => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -126,13 +126,13 @@ sub _attributes {
 my $subobjects = [
           {
             'printOrder' => -1,
-            'name' => 'gapfillingSolutionReactions',
+            'name' => 'gapgenSolutionReactions',
             'type' => 'encompassed',
-            'class' => 'GapfillingSolutionReaction'
+            'class' => 'GapgenSolutionReaction'
           }
         ];
 
-my $subobject_map = {gapfillingSolutionReactions => 0};
+my $subobject_map = {gapgenSolutionReactions => 0};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -149,9 +149,9 @@ sub _subobjects {
 
 
 # SUBOBJECT READERS:
-around 'gapfillingSolutionReactions' => sub {
+around 'gapgenSolutionReactions' => sub {
   my ($orig, $self) = @_;
-  return $self->_build_all_objects('gapfillingSolutionReactions');
+  return $self->_build_all_objects('gapgenSolutionReactions');
 };
 
 
