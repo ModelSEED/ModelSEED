@@ -333,7 +333,7 @@ sub parseFBAPhenotypeOutput {
 	my $directory = $self->parent()->jobDirectory();
 	if (-e $directory."/FBAExperimentOutput.txt") {
 		#Loading file results into a hash
-		my $tbl = ModelSEED::utilities::LOADTABLE($directory."/FBAExperimentOutput.txt",";");
+		my $tbl = ModelSEED::utilities::LOADTABLE($directory."/FBAExperimentOutput.txt","\t");
 		if (!defined($tbl->{data}->[0]->[5])) {
 			return ModelSEED::utilities::ERROR("output file did not contain necessary data");
 		}
@@ -357,8 +357,9 @@ sub parseFBAPhenotypeOutput {
 					dependantReactions => [],
 					dependantGenes => [],
 					fluxes => {},
-					class => "UN"
-				};
+					class => "UN",
+					fbaPhenotypeSimulation_uuid => $row->[0]
+				};		
 				if (defined($row->[6]) && length($row->[6]) > 0) {
 					chomp($row->[6]);
 					$phenoOutputHash->{$row->[0]}->{noGrowthCompounds} = [split(/;/,$row->[6])];

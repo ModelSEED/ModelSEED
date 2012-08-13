@@ -1046,6 +1046,30 @@ sub gapfillModel {
 	}
 	return undef;
 }
+=head3 gapgenModel
+Definition:
+	ModelSEED::MS::GapgenSolution = ModelSEED::MS::Model->gapgenModel({
+		gapgenFormulation => ModelSEED::MS::GapgenFormulation,
+		fbaFormulation => ModelSEED::MS::FBAFormulation
+	});
+Description:
+	Runs gapgeneration on the model and integrates the output gapgeneration solution
+=cut
+sub gapgenModel {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["gapgenFormulation"],{
+		fbaFormulation => undef,integrateSolution => 1
+	});
+	my $solution = $args->{gapgenFormulation}->runGapGeneration({
+		model => $self,
+		fbaFormulation => $args->{fbaFormulation}
+	});
+	if (defined($solution)) {
+		return $solution;	
+	}
+	return undef;
+}
+
 sub printExchangeFormat {
 	my ($self) = @_;
     my $textArray = [

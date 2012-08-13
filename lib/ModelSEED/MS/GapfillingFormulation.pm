@@ -134,6 +134,16 @@ sub prepareFBAFormulation {
 		if ($form->defaultMaxDrainFlux() < 10000) {
 			$form->defaultMaxDrainFlux(10000);
 		}	
+	} else {
+		my $mediacpds = $form->media()->mediacompounds();
+		foreach my $cpd (@{$mediacpds}) {
+			if ($cpd->maxFlux() > 0) {
+				$cpd->maxFlux(10000);
+			}
+			if ($cpd->minFlux() < 0) {
+				$cpd->minFlux(-10000);
+			}
+		}
 	}
 	$form->objectiveConstraintFraction(1);
 	$form->defaultMaxFlux(10000);
@@ -203,9 +213,52 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"subsystem coverage bonus"} = 1;
 	$form->parameters()->{"scenario coverage bonus"} = 1;
 	$form->parameters()->{"Add positive use variable constraints"} = 0;
+	$form->parameters()->{"Biomass modification hypothesis"} = 0;
+	$form->parameters()->{"Biomass component reaction penalty"} = 500;
+	if ($self->biomassHypothesis() == 1) {
+		$form->parameters()->{"Biomass modification hypothesis"} = 1;
+		$self->printBiomassComponentReactions();
+	}
+	if ($self->mediaHypothesis() == 1) {
+		
+	}
+	if ($self->gprHypothesis() == 1) {
+		
+	}
 	return $form;	
 }
-
+=head3 printBiomassComponentReactions
+Definition:
+	void ModelSEED::MS::GapfillingFormulation->printBiomassComponentReactions();
+Description:
+	Print biomass component reactions designed to simulate removal of biomass components from the model
+=cut
+sub printBiomassComponentReactions {
+	my ($self,$args) = @_;
+	my $form = $self->fbaFormulation();
+	my $filename = $form->jobDirectory()."/BiomassHypothesisEquations.txt";
+	my $output = ["id\tequation\tname"];
+	my $bio = $self->model()->biomasses()->[0];
+	my $biocpds = $bio->biomasscompounds();
+	my $cpdsWithProducts = {
+		cpd11493 => ["cpd12370"],
+		cpd15665 => ["cpd15666"],
+		cpd15667 => ["cpd15666"],
+		cpd15668 => ["cpd15666"],
+		cpd15669 => ["cpd15666"],
+		cpd00166 => ["cpd01997","cpd03422"],
+	};
+	foreach my $cpd (@{$biocpds}) {
+		if ($cpd->coefficient() < 0) {
+			my $equation = "=> ".$cpd->modelcompound()->compound()->id();
+			if (defined($cpdsWithProducts->{$cpd->modelcompound()->compound()->id()})) {
+				$equation = join(" + ",@{$cpdsWithProducts->{$cpd->modelcompound()->compound()->id()}})." ".$equation;
+			}
+			push(@{$output},$cpd->modelcompound()->compound()->id()."DrnRxn\t".$equation."\t".$cpd->modelcompound()->compound()->id()."DrnRxn");
+		}
+	}
+	ModelSEED::utilities::PRINTFILE($filename,$output);	
+}
 =head3 runGapFilling
 Definition:
 	ModelSEED::MS::GapfillingSolution = ModelSEED::MS::GapfillingFormulation->runGapFilling({
@@ -277,8 +330,25 @@ sub runGapFilling {
 							modelreaction_uuid => $mdlrxn->uuid(),
 							modelreaction => $mdlrxn,
 							direction => $direction
-						});
-						
+						});	
+					} elsif ($subarray->[$j] =~ m/([\+])(cpd\d\d\d\d\d)DrnRxn/) {
+						my $cpdid = $2;
+						my $sign = $1;
+						my $bio = $model->biomasses()->[0];
+						my $biocpds = $bio->biomasscompounds();
+						my $found = 0;
+						for (my $i=0; $i < @{$biocpds}; $i++) {
+							my $biocpd = $biocpds->[$i];
+							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+								$bio->remove("biomasscompounds",$biocpd);
+								$found = 1;
+								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+							}
+						}
+						if ($found == 0) {
+							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+						}
 					}
 				}
 			}

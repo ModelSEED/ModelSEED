@@ -204,7 +204,28 @@ sub LOADTABLE {
     }
     return $output;
 }
-
+=head3 PRINTTABLE
+Definition:
+	void ModelSEED::utilities::PRINTTABLE(string:filename,{}:table);
+Description:
+=cut
+sub PRINTTABLE {
+    my ($filename,$table) = @_;
+	my $fh;
+	if ($filename eq "STDOUT") {
+		$fh = \*STDOUT;
+	} else {
+		open($fh, ">", $filename) or die "Cannot open ".$filename.": $!";
+	}
+	my $delimiter = "\t";
+	print $fh join($delimiter,@{$table->{headings}})."\n";
+	foreach my $row (@{$table->{data}}) {
+		print $fh join($delimiter,@{$row})."\n";
+	}
+	if ($filename ne "STDOUT") {
+		close($fh);
+	}
+}
 =head3 MAKEXLS
 Definition:
 	{} = ModelSEED::utilities::MAKEXLS({

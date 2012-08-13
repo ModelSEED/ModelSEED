@@ -68,7 +68,11 @@ sub prepareFBAFormulation {
 	$form->decomposeReversibleFlux(1);
 	#Setting other important parameters
 	$form->parameters()->{"Perform gap generation"} = 1;
-	$form->parameters()->{"Gap generation media"} = "Carbon-D-Glucose";
+	$form->parameters()->{"Gap generation media"} = $self->referenceMedia()->name();
+	if ($self->referenceMedia()->name() ne $form->media()->name()) {
+		push(@{$form->secondaryMedia_uuids()},$self->referenceMedia()->uuid());
+		push(@{$form->secondaryMedia()},$self->referenceMedia());
+	}
 	$form->parameters()->{"Minimum flux for use variable positive constraint"} = 10;
 	$form->parameters()->{"Objective coefficient file"} = "NONE";
 	$form->parameters()->{"just print LP file"} = "0";
@@ -94,58 +98,62 @@ sub runGapGeneration {
 	#Running the gapfilling
 	my $fbaResults = $form->runFBA();
 	#Parsing gapfilling results
-	if (!-e $directory."GapfillingComplete.txt") {
-		print STDERR "Gapfilling failed!";
+	if (!-e $directory."/ProblemReport.txt") {
+		print STDERR "Gapgeneration failed!";
 		return undef;
 	}
-	my $filedata = ModelSEED::utilities::LOADFILE($directory."CompleteGapfillingOutput.txt");
-	my $gfsolution = $self->add("gapfillingSolutions",{});
-	my $count = 0;
-	my $model = $self->parent();
-	for (my $i=0; $i < @{$filedata}; $i++) {
-		if ($filedata->[$i] =~ m/^bio00001/) {
-			my $array = [split(/\t/,$filedata->[$i])];
-			if (defined($array->[1])) {
-				my $subarray = [split(/;/,$array->[1])];
-				for (my $j=0; $j < @{$subarray}; $j++) {
-					if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
-						my $rxnid = $2;
-						my $sign = $1;
-						my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-						}
-						my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
-						my $direction = ">";
-						if ($sign eq "-") {
-							$direction = "<";
-						}
-						if ($rxn->direction() ne $direction) {
-							$direction = "=";
-						}
-						if (defined($mdlrxn)) { 
-							$mdlrxn->direction("=");
-						} else {
-							$mdlrxn = $model->addReactionToModel({
-								reaction => $rxn,
-								direction => $direction
-							});
-						}
-						$count++;
-						$gfsolution->add("gapfillingSolutionReactions",{
-							modelreaction_uuid => $mdlrxn->uuid(),
-							modelreaction => $mdlrxn,
-							direction => $direction
+	my $tbl = ModelSEED::utilities::LOADTABLE($directory."/ProblemReport.txt",";");
+	my $column;
+	for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
+		if ($tbl->{headings}->[$i] eq "Notes") {
+			$column = $i;
+			last;
+		}
+	}
+	if (defined($column)) {
+		for (my $j=0; $j < @{$tbl->{data}}; $j++) {
+			my $row = $tbl->{data}->[$j];
+			if ($row->[$column] =~ m/^Recursive\sMILP\s([^)]+)/) {
+				my @SolutionList = split(/\|/,$1);
+				for (my $k=0; $k < @SolutionList; $k++) {
+					if ($SolutionList[$k] =~ m/(\d+):(.+)/) {
+						my $ggsolution = $self->add("gapgenSolutions",{
+							solutionCost => $1,
 						});
-						
+						my $rxns = [split(/,/,$2)];
+						for (my $m=0; $m < @{$rxns}; $m++) {
+							if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
+								my $rxnid = $2;
+								my $sign = $1;
+								my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
+								if (!defined($rxn)) {
+									ModelSEED::utilities::ERROR("Could not find gapgen reaction ".$rxnid."!");
+								}
+								my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
+								my $direction = ">";
+								if ($sign eq "-") {
+									$direction = "<";
+								}
+								$ggsolution->add("gapgenSolutionReactions",{
+									modelreaction_uuid => $mdlrxn->uuid(),
+									modelreaction => $mdlrxn,
+									direction => $direction
+								});
+								if ($mdlrxn->direction() eq $direction) {
+									$model->remove("modelreactions",$mdlrxn);
+								} elsif ($direction eq ">") {
+									$mdlrxn->direction("<");
+								} elsif ($direction eq "<") {
+									$mdlrxn->direction(">");
+								}
+							}
+						}
 					}
 				}
 			}
-			
 		}
 	}
-	$gfsolution->solutionCost($count);
-	return $gfsolution;
+	return $ggsolution;
 }
 
 __PACKAGE__->meta->make_immutable;

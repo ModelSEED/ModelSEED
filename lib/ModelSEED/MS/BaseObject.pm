@@ -545,7 +545,7 @@ sub add {
 sub remove {
     my ($self, $attribute, $object) = @_;
 
-    my $attr_info = $self->_attributes($attribute);
+    my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
         ModelSEED::utilities::ERROR("Object doesn't have attribute with name: $attribute");
     }
@@ -601,6 +601,17 @@ sub biochemistry {
         return $parent->biochemistry();
     }
     ModelSEED::utilities::ERROR("Cannot find Biochemistry object in tree!");
+}
+
+sub fbaformulation {
+    my ($self) = @_;
+    my $parent = $self->parent();
+    if (defined($parent) && ref($parent) eq "ModelSEED::MS::FBAFormulation") {
+        return $parent;
+    } elsif (defined($parent)) {
+        return $parent->fbaformulation();
+    }
+    ModelSEED::utilities::ERROR("Cannot find FBAFormulation object in tree!");
 }
 
 sub model {
