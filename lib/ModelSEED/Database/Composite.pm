@@ -93,11 +93,14 @@ See L<ModelSEED::Database> for methods.
 package ModelSEED::Database::Composite;
 use Moose;
 use Moose::Util::TypeConstraints;
+use ModelSEED::Exceptions;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
     ModelSEED::Database::MongoDBSimple
+    JSON::Any
 );
+use Try::Tiny;
 with 'ModelSEED::Database';
 
 role_type 'DB', { role => 'ModelSEED::Database' };
@@ -117,18 +120,22 @@ around BUILDARGS => sub {
     # use configuration if that's what we want
     if(defined($args->{use_config}) && $args->{use_config}) {
         my $Config = ModelSEED::Configuration->new();
-        die "Database Error" unless(defined($Config->config->{stores}));
+        ModelSEED::Exception::NoDatabase->throw() unless defined $Config->config->{stores};
         $args->{databases} = [ @{$Config->config->{stores}} ];
     }
-    foreach my $db (@{ $args->{databases} || [] }) {
-        if(ref($db) eq 'HASH') {
+    ModelSEED::Exception::NoDatabase->throw() unless @{$args->{databases}};
+    foreach my $db (@{$args->{databases}}) {
+        my %config = %$db;
+        try {
             my $class = $db->{class};
             $db = $class->new($db);
-        } elsif(ref($db) && $db->does("ModelSEED::Database")) {
-            next; 
-        } else {
-            die "Unknown argument to constructor: $db!";
-        }
+            die unless ref($db) && $db->does("ModelSEED::Database")
+        } catch {
+            ModelSEED::Exception::DatabaseConfigError->throw(
+                dbName => $config{name},
+                configText => JSON->new()->pretty(1)->encode(\%config),
+            );
+        };
     }
     return $class->$orig($args);
 };
