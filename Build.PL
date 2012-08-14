@@ -20,6 +20,7 @@ my $builder = Module::Build->new(
         "Data::UUID" => 0,
         "DateTime" => 0,
         "Devel::Size" => 0,
+        "Exception::Class" => 0,
         "File::Copy::Recursive" => 0,
         "HTTP::Message" => 0,
         "JSON::XS" => 0,
