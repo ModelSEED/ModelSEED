@@ -1,14 +1,14 @@
 package ModelSEED::App::mseed::Command::whoami;
 use base 'App::Cmd::Command';
-use ModelSEED::Configuration;
+use Class::Autouse qw(
+    ModelSEED::Auth::Factory
+);
 
 sub abstract { return "Return the currently logged in user" }
 sub execute {
     my ($self, $opts, $args) = @_;
-    my $conf = ModelSEED::Configuration->new();
-    my $username = $conf->config->{login}->{username};
-    $username = "public" unless(defined($username));
-    print $username ."\n";
+    my $auth = ModelSEED::Auth::Factory->new->from_config;
+    print $auth->username . "\n"
 }
 
 
