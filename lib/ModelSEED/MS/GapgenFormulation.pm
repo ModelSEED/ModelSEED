@@ -110,6 +110,7 @@ sub runGapGeneration {
 			last;
 		}
 	}
+    my $ggsolution;
 	if (defined($column)) {
 		for (my $j=0; $j < @{$tbl->{data}}; $j++) {
 			my $row = $tbl->{data}->[$j];
@@ -117,7 +118,7 @@ sub runGapGeneration {
 				my @SolutionList = split(/\|/,$1);
 				for (my $k=0; $k < @SolutionList; $k++) {
 					if ($SolutionList[$k] =~ m/(\d+):(.+)/) {
-						my $ggsolution = $self->add("gapgenSolutions",{
+						$ggsolution = $self->add("gapgenSolutions",{
 							solutionCost => $1,
 						});
 						my $rxns = [split(/,/,$2)];
@@ -125,11 +126,11 @@ sub runGapGeneration {
 							if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
 								my $rxnid = $2;
 								my $sign = $1;
-								my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
+								my $rxn = $self->biochemistry->queryObject("reactions",{id => $rxnid});
 								if (!defined($rxn)) {
 									ModelSEED::utilities::ERROR("Could not find gapgen reaction ".$rxnid."!");
 								}
-								my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
+								my $mdlrxn = $self->parent->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
 								my $direction = ">";
 								if ($sign eq "-") {
 									$direction = "<";
@@ -140,7 +141,7 @@ sub runGapGeneration {
 									direction => $direction
 								});
 								if ($mdlrxn->direction() eq $direction) {
-									$model->remove("modelreactions",$mdlrxn);
+									$self->parent->remove("modelreactions",$mdlrxn);
 								} elsif ($direction eq ">") {
 									$mdlrxn->direction("<");
 								} elsif ($direction eq "<") {
