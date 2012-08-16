@@ -23,6 +23,7 @@ my $builder = Module::Build->new(
         "Devel::Size" => 0,
         "Exception::Class" => 0,
         "File::Copy::Recursive" => 0,
+        "File::Path" => "2.08",
         "HTTP::Message" => 0,
         "JSON::XS" => 0,
         "JSON::Any" => 0,
