@@ -14,6 +14,7 @@ my $builder = Module::Build->new(
     },
     requires => {
         "App::Cmd" => 0,
+        "autodie" => 0,
         "Class::Autouse" => 0,
         "Clone" => 0,
         "Config::Tiny" => 0,
@@ -22,6 +23,7 @@ my $builder = Module::Build->new(
         "Devel::Size" => 0,
         "Exception::Class" => 0,
         "File::Copy::Recursive" => 0,
+        "File::Path" => "2.08",
         "HTTP::Message" => 0,
         "IO::Compress::Gzip" => 0,
         "IO::Uncompress::Gunzip" => 0,

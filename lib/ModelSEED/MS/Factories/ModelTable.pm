@@ -7,7 +7,7 @@ our $headers = [ "Reaction Id", "Direction", "Compartment Id", "GPR" ];
 
 sub toTable {
     my ($self, $model, $config) = @_;
-    $config->{with_headers} //= 0;
+    $config->{with_headers} = 0 unless defined $config->{with_headers};
     my $reactions = $model->modelreactions;
     my $rows = [];
     foreach my $reaction (@$reactions) {

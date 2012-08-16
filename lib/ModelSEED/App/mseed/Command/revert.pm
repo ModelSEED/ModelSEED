@@ -32,6 +32,7 @@ sub execute {
         # Error if we have no ancestors
         $self->usage_error("No previous version for $refStr");
     } elsif(@$ancestors > 1) {
+        my %ancestors = map { $_ => 1 } @$ancestors;
         # If we have more than one ancestor
         my $uuid;
         if(@$args > 0) {
@@ -43,7 +44,7 @@ sub execute {
                 $uuid = $ref->id;
             };
         }
-        if(defined($uuid) && $uuid ~~ @$ancestors) {
+        if(defined($uuid) && defined $ancestors{$uuid}) {
             # Do the revert if the uuid is in the
             # referece object's ancestor list
             $self->_revert($store, $ref, $uuid);           
