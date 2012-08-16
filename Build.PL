@@ -14,6 +14,7 @@ my $builder = Module::Build->new(
     },
     requires => {
         "App::Cmd" => 0,
+        "autodie" => 0,
         "Class::Autouse" => 0,
         "Clone" => 0,
         "Config::Tiny" => 0,
