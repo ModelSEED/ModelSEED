@@ -63,9 +63,12 @@ sub process_ref_string {
 sub get_base_ref {
     my ($self, $type, $username, $args, $options) = @_;
     my $ref;
-    my $from_stdin  = $options->{stdin} // 1;
-    my $from_config = $options->{config} // 1;
-    my $from_argv   = $options->{argv} // 1;
+    my $from_stdin  = $options->{stdin};
+    my $from_config = $options->{config};
+    my $from_argv   = $options->{argv};
+    $from_stdin  = 1 unless defined $from_stdin;
+    $from_config = 1 unless defined $from_config;
+    $from_argv   = 1 unless defined $from_argv;
     if($type ne "*") {
         my $arg = $args->[0];
         if($from_argv && $arg =~ /^$type\//) {
@@ -109,9 +112,12 @@ sub get_base_ref {
 sub get_base_refs {
     my ($self, $type, $args, $options) = @_;
     my $refs = [];
-    my $from_stdin  = $options->{stdin} // 1;
-    my $from_config = $options->{config} // 1;
-    my $from_argv   = $options->{argv} // 1;
+    my $from_stdin  = $options->{stdin};
+    my $from_config = $options->{config};
+    my $from_argv   = $options->{argv};
+    $from_stdin  = 1 unless defined $from_stdin;
+    $from_config = 1 unless defined $from_config;
+    $from_argv   = 1 unless defined $from_argv;
     if($from_argv) {
         foreach my $arg (@$args) {
             if($arg =~ /^$type\//) {
