@@ -129,13 +129,14 @@ sub determineColumns {
     my $types = $ref->base_types;
     my $type  = $types->[@$types - 1];
     my $with = [ "Reference" ];
+    my %with = map { $_ => 1 } @$with;
     push(@$with, @{$opts->{with} || []});
     if ( $opts->{verbose} ) {
         # If we asked for verbose, print out some default attributes
         my $additional_with = $self->verboseRules($type);
         foreach my $attr (@$additional_with) {
             # Append attributes unless we've already specified them
-            push(@$with, $attr) unless($attr ~~ @$with);
+            push(@$with, $attr) unless defined $with{$attr};
         }
     }
     return $with;
