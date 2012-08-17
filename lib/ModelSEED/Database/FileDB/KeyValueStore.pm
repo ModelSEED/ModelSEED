@@ -3,7 +3,7 @@ package ModelSEED::Database::FileDB::KeyValueStore;
 use Moose;
 use namespace::autoclean;
 
-use JSON::Any;
+use JSON::XS;
 use File::Path qw(make_path);
 #use File::stat; # for testing mod time
 use Fcntl qw( :flock );
@@ -11,17 +11,22 @@ use IO::Compress::Gzip qw(gzip);
 use IO::Uncompress::Gunzip qw(gunzip);
 use Scalar::Util qw(looks_like_number);
 
-=head2  TODO
+# versioning used to distinguish changes in data format
+my $DATA_VERSION = '0.50';
 
-  * Figure out better way to handle delimiters (for querying into metadata: aliases.main)
-      - for now changed from '.' to '..' to avoid conflicts
-  * Put index file back in memory (stored in moose object)
-      - test if changed via mod time and size
-      - should speed up data access (as long as index hasn't changed)
-      - would this work with the locking?
-  * Check for .tmp file in BUILD, if it exists then the previous index was not saved
-
-=cut
+# TODO:
+# * Figure out better way to handle delimiters (for querying into metadata: aliases.main)
+#     - for now changed from '.' to '..' to avoid conflicts
+# * Put index file back in memory (stored in moose object)
+#     - test if changed via mod time and size
+#     - should speed up data access (as long as index hasn't changed)
+#     - would this work with the locking?
+# * Check for .tmp file in BUILD, if it exists then the previous index was not saved
+# * Make version updating atomic
+#     - right now if a user cancels during an update the data could be corrupted
+#     - maybe this will be ok if the individual updates create tmp files and overwrite
+#        should probably not do this in the default transaction, but a custom one
+#     - shouldn't be a problem until (or if) we ever need to update the data
 
 my $INDEX_EXT = 'ind';
 my $META_EXT  = 'met';
@@ -32,19 +37,13 @@ my $LOCK_EXT  = 'lock';
 has directory => (is => 'rw', isa => 'Str', required => 1);
 has filename  => (is => 'rw', isa => 'Str', default => 'database');
 
-=head2 Index Structure
-
-    {
-        ids => { $id => [start, end] }
-
-        end_pos => int
-
-        num_del => int
-
-        ordered_ids => [id, id, id, ...]
-    }
-
-=cut
+# Index Structure
+#    {
+#        ids => { $id => [start, end] }
+#        end_pos => int
+#        num_del => int
+#        ordered_ids => [id, id, id, ...]
+#    }
 
 sub BUILD {
     my ($self) = @_;
@@ -61,7 +60,11 @@ sub BUILD {
     my $dat = -f "$file.$DATA_EXT";
 
     if ($ind && $met && $dat) {
-	# all exist
+	# all exist, check versioning
+        $self->_perform_transaction({
+            index => 'w',
+            data  => 'w',
+            meta  => 'w' }, \&_check_version);
     } elsif (!$ind && !$met && !$dat) {
 	# new database
 	my $index = _initialize_index();
@@ -89,10 +92,11 @@ sub BUILD {
 
 sub _initialize_index {
     return {
-	end_pos     => 0,
-	num_del     => 0,
-	ids         => {},
-	ordered_ids => []
+	end_pos      => 0,
+	num_del      => 0,
+	ids          => {},
+	ordered_ids  => [],
+        data_version => $DATA_VERSION
     };
 }
 
@@ -206,6 +210,34 @@ sub _perform_transaction {
     close LOCK;
 
     return $ret;
+}
+
+# check if the version of the data matches $DATA_VERSION
+sub _check_version {
+    my ($data, $id) = @_;
+
+    my $ver = $data->{index}->{data_version};
+
+    unless (defined($ver)) {
+        $ver = '0';
+    }
+
+    if ($ver eq $DATA_VERSION) {
+        return 1;
+    } else {
+        while ($ver ne $DATA_VERSION) {
+            $ver = _update_data($ver, $data);
+
+            if ($ver == -1) {
+                # error with version number, throw error and exit
+                die "Error, unknown version number encountered while updating data";
+            }
+        }
+    }
+
+    $data->{index}->{data_version} = $DATA_VERSION;
+
+    return (1, { index => 1, meta => 1 });
 }
 
 # removes deleted objects from the data file
@@ -634,13 +666,44 @@ sub _sleep_test {
 sub _encode {
     my ($data) = @_;
 
-    return JSON::Any->encode($data);
+    return encode_json($data);
 }
 
 sub _decode {
     my ($data) = @_;
 
-    return JSON::Any->decode($data);
+    return decode_json($data);
+}
+
+# updates to data format go here
+sub _update_data {
+    my ($ver, $data) = @_;
+
+    if ($ver eq '0') {
+        # no changes to data format since creation of module
+        return $DATA_VERSION;
+    } else {
+        return -1;
+    }
+
+    # example updates:
+    #   between version 0 and 0.50 we didn't change anything
+    #   between version 0.50 and 0.60 we changed index 'ids' to 'uuids',
+    #   between version 0.60 and current version we edit the data
+    #
+    # if ($ver eq '0') {
+    #     return '0.50';
+    # } elsif ($ver eq '0.50') {
+    #     my $index = $data->{index};
+    #     $index->{uuids} = $index->{ids};
+    #     delete $index->{ids};
+    #     return '0.60';
+    # } elsif ($ver eq '0.60') {
+    #     # edit data here...
+    #     return $DATA_VERSION;
+    # } else {
+    #     return -1;
+    # }
 }
 
 no Moose;
