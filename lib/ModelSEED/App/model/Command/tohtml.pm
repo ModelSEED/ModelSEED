@@ -7,6 +7,10 @@ use Class::Autouse qw(
 );
 sub abstract { return "Prints a readable format for the object" }
 sub usage_desc { return "model readable [< name | name]" }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 sub execute {
     my ($self, $opts, $args) = @_;
     my $auth  = ModelSEED::Auth::Factory->new->from_config;

@@ -15,6 +15,7 @@ sub usage_desc { return "ms get [reference || - < STDIN ] [options]"; }
 sub opt_spec {
     return (
         ["date|d", "Include a timestamp for when the objects was saved"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 sub description { return <<END;
@@ -25,6 +26,7 @@ END
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;

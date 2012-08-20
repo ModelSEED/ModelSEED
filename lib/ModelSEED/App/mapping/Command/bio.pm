@@ -11,11 +11,13 @@ sub opt_spec {
     return (
         ["raw|r", "Return raw JSON output"],
         ["full", "Return the full bio object in a readable form"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new();

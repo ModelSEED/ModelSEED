@@ -5,8 +5,13 @@ use Class::Autouse qw(
     ModelSEED::App::import
 );
 sub abstract { "Import genomes, models, etc. from external sources" }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 sub execute {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     {
         local @ARGV = @ARGV;
         my $arg0 = shift @ARGV;

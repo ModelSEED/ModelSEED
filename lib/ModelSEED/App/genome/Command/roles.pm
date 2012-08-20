@@ -13,9 +13,14 @@ sub description { return <<END;
 Print the roles that this genome has annotated features for.
 END
 }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $annotation = $self->_getAnnotation($args);
     $self->usage_error("Must specify an annotation to use") unless(defined($annotation));
     print map { $_->name ."\n" } @{$annotation->roles()};

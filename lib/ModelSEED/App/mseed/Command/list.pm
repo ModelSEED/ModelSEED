@@ -16,11 +16,13 @@ sub opt_spec {
         ["verbose|v", "Print out additional information about the object, tab-delimited"],
         ["mine", "Only list items that I own"],
         ["with|w:s@", "Append a tab-delimited column with this attribute"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $store  = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;

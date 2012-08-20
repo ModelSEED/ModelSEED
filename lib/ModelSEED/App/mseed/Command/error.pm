@@ -15,12 +15,14 @@ sub opt_spec {
     return (
         ["list|l",    "list all recent errors"],
         ["verbose|v", "verbose list output"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $n = 0;
     if(@$args) {
         $n = $args->[0];

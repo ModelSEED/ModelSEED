@@ -17,6 +17,7 @@ sub usage_desc { "stores add name --type type ..." }
 sub opt_spec {
     my $spec = [
         [ 'type=s', "Type of interface [".join('|', keys %$typeToClass) ."]" ],
+        ["help|h|?", "Print this usage information"],
     ];
     foreach my $type (values %$typeToArgs) {
         push(@$spec, values %{$type});
@@ -34,6 +35,7 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
+    print($self->usage) && exit if $opt->{help};
     my $name = shift @$args;
     unless (defined($name)) {
         $self->usage_error("Must provide name for database.");

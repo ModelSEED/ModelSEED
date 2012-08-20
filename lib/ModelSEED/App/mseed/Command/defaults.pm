@@ -24,11 +24,13 @@ sub opt_spec {
     return (
         ["set|s:s", "Set default attribute to string value"],
         ["unset|u", "Remove attribute value"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $blessed_params = {
         "biochemistry.alias.set" => \&_string,
         biochemistry => \&_ref,

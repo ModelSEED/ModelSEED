@@ -15,11 +15,13 @@ sub opt_spec {
         ["firstname|f=s", "First name for user"],
         ["lastname|l=s", "Last name for user"],
         ["email|e=s", "Email for user"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $username = $args->[0];
     my $conf = ModelSEED::Configuration->new();
     if (!defined($username) || length($username) == 0) {
@@ -42,9 +44,9 @@ sub execute {
     my $user = {
 		login => $username,
 		password => $password,
-		firstname => $opt->{firstname},
-		lastname => $opt->{lastname},
-		email => $opt->{email}
+		firstname => $opts->{firstname},
+		lastname => $opts->{lastname},
+		email => $opts->{email}
     };
     $conf->config->{users}->{$username} = $user;
     $conf->save();

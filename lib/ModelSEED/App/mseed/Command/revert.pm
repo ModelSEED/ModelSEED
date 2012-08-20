@@ -17,9 +17,14 @@ previous versions (e.g. two objects were 'merged') this command
 will prompt you to choose which version to use.
 END
 }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;
