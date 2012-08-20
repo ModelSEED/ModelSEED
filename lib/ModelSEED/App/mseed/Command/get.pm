@@ -73,6 +73,8 @@ sub execute {
     $delimiter = "\n" if($opts->{newline});
     if (defined $delimiter) {
         print $fh join($delimiter, map { $JSON->encode($_) } @$output);
+    } elsif(@$output == 1) {
+        print $fh $JSON->encode($output->[0]);
     } else {
         print $fh $JSON->encode($output);
     }

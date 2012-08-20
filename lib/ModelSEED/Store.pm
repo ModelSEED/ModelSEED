@@ -150,7 +150,7 @@ has database => ( is => 'ro', isa => 'ModelSEED::Database', lazy => 1, builder =
 sub create {
     my ($self, $type, $base_hash) = @_;
     $base_hash = {} unless(defined($base_hash));
-    my $className = uc(substr($type,0,1)).substr($type,1);
+    my $className = ucfirst($type);
     $className = "ModelSEED::MS::".$className;
     $self->_load_class($className);
     $base_hash->{parent} = $self unless(defined($base_hash->{parent}));
