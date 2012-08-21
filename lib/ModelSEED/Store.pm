@@ -224,7 +224,7 @@ sub get_data { return $_[0]->database->get_data(_addAuthToArgs(@_)); }
 sub save_data {
     my ($self, $ref, $data, $config) = @_;
     $config = {} unless(defined($config));
-    return $self->database->save_data($ref, $data, $config, $self->auth);
+    return $self->database->save_data($ref, $data, $self->auth, $config);
 }
 sub delete_data { return $_[0]->database->delete_data(_addAuthToArgs(@_)); }
 
