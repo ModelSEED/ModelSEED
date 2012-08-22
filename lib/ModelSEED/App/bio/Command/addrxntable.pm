@@ -11,7 +11,7 @@ sub opt_spec {
     return (
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["namespace|n:s", "Name space for aliases added"],
-        ["autoadd|a","Automatically add any missing compounds to DB"
+        ["autoadd|a","Automatically add any missing compounds to DB"]
     );
 }
 
