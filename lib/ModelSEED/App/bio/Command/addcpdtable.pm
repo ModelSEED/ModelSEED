@@ -5,7 +5,7 @@ use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::App::Helpers
 );
-sub abstract { return "Reads in a tab delimited table of compound data and adds them to the database" }
+sub abstract { return "Reads in table of compound data and adds them to the database" }
 sub usage_desc { return "bio addcpdtable [< biochemistry | biochemistry] [filename] [options]"; }
 sub opt_spec {
     return (

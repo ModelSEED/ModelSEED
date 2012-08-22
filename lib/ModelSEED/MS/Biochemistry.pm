@@ -469,7 +469,7 @@ sub addReactionFromHash {
 		return $rxn;
 	}
 	#Creating reaction from equation
-	my $rxn = ModelSEED::MS::Reaction->new({
+	$rxn = ModelSEED::MS::Reaction->new({
 		name => $args->{names}->[0],
 		abbreviation => $args->{abbreviation}->[0],
 		direction => $args->{direction}->[0],
@@ -478,26 +478,26 @@ sub addReactionFromHash {
 		status => "OK",
 		thermoReversibility => "="
 	});
-	$rxn->parent($biochemistry);
+	$rxn->parent($self);
 	$rxn->loadFromEquation({
 		equation => $args->{equation}->[0],
 		aliasType => $args->{aliasType},
 	});
 	my $code = $rxn->equationCode();
-	$searchRxn = $self->queryObject("reactions",{equationCode => $code});
+	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 	if (defined($searchRxn)) {
 		print STDERR "Reaction added with matching equation ".$args->{id}->[0]."!\n";
 		return $searchRxn;
 	}
-	$biochemistry->add("reactions", $rxn);
-	$biochemistry->addAlias({
+	$self->add("reactions", $rxn);
+	$self->addAlias({
 		attribute => "reactions",
 		aliasName => $args->{aliasType},
 		alias => $args->{id}->[0],
 		uuid => $rxn->uuid()
 	});
 	for (my $i=0;$i < @{$args->{names}}; $i++) {
-		$biochemistry->addAlias({
+		$self->addAlias({
 			attribute => "reactions",
 			aliasName => "name",
 			alias => $args->{names}->[$i],
@@ -505,7 +505,7 @@ sub addReactionFromHash {
 		});
 	}
 	for (my $i=0;$i < @{$args->{enzymes}}; $i++) {
-		$biochemistry->addAlias({
+		$self->addAlias({
 			attribute => "reactions",
 			aliasName => "Enzyme Class",
 			alias => $args->{enzymes}->[$i],
