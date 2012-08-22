@@ -250,9 +250,9 @@ sub printBiomassComponentReactions {
 	};
 	foreach my $cpd (@{$biocpds}) {
 		if ($cpd->coefficient() < 0) {
-			my $equation = "=> ".$cpd->modelcompound()->compound()->id();
+			my $equation = "=> ".$cpd->modelcompound()->compound()->id()."[b]";
 			if (defined($cpdsWithProducts->{$cpd->modelcompound()->compound()->id()})) {
-				$equation = join(" + ",@{$cpdsWithProducts->{$cpd->modelcompound()->compound()->id()}})." ".$equation;
+				$equation = join("[b] + ",@{$cpdsWithProducts->{$cpd->modelcompound()->compound()->id()}})."[b] ".$equation;
 			}
 			push(@{$output},$cpd->modelcompound()->compound()->id()."DrnRxn\t".$equation."\t".$cpd->modelcompound()->compound()->id()."DrnRxn");
 		}

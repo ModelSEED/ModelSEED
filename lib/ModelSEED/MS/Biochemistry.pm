@@ -379,6 +379,141 @@ sub validate {
 	}
 	return $errors;
 }
+=head3 addCompoundFromHash
+Definition:
+	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->addCompoundFromHash({[]});
+Description:
+	This command adds a single compound from an input hash
+=cut
+sub addCompoundFromHash {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["names","id"],{
+		aliasType => $self->defaultNameSpace(),
+		abbreviation => [$args->{names}->[0]],
+		formula => [""],
+		mass => [0],
+		charge => [0],
+		deltag => [10000],
+		deltagerr => [0]
+	});
+	#Checking for id uniqueness
+	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
+	if (defined($cpd)) {
+		print STDERR "Compound added with matching id ".$args->{id}->[0]."!\n";
+		return $cpd;
+	}
+	#Checking for name uniqueness
+	foreach my $name (@{$args->{names}}) {
+		my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
+		$cpd = $self->queryObjects("compounds",{searchnames => $name});
+		if (defined($cpd)) {
+			print STDERR "Compound added with matching name ".$name."!\n";
+			$self->addAlias({
+				attribute => "compounds",
+				aliasName => $args->{aliasType},
+				alias => $args->{id}->[0],
+				uuid => $cpd->uuid()
+			});
+			return $cpd;
+		}
+	}
+	#Actually creating compound
+	$cpd = $self->add("compounds",{
+		name => $args->{names}->[0],
+		abbreviation => $args->{abbreviation}->[0],
+		formula => $args->{formula}->[0],
+		mass => $args->{mass}->[0],
+		defaultCharge => $args->{charge}->[0],
+		deltaG => $args->{deltag}->[0],
+		deltaGErr => $args->{deltagerr}->[0]
+	});
+	#Adding id as alias
+	$self->addAlias({
+		attribute => "compounds",
+		aliasName => $args->{aliasType},
+		alias => $args->{id}->[0],
+		uuid => $cpd->uuid()
+	});
+	#Adding alternative names as aliases
+	foreach my $name (@{$args->{names}}) {
+		$self->addAlias({
+			attribute => "compounds",
+			aliasName => "name",
+			alias => $name,
+			uuid => $cpd->uuid()
+		});
+	}
+	return $cpd;
+}
+=head3 addReactionFromHash
+Definition:
+	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->addReactionFromHash({[]});
+Description:
+	This command adds a single reaction from an input hash
+=cut
+sub addReactionFromHash {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["equation","id"],{
+		aliasType => $self->defaultNameSpace(),
+		names => [$args->{id}->[0]],
+		abbreviation => [$args->{id}->[0]],
+		direction => ["="],
+		deltag => [10000],
+		deltagerr => [0],
+		enzymes => []
+	});
+	#Checking for id uniqueness
+	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
+	if (defined($rxn)) {
+		print STDERR "Reaction added with matching id ".$args->{id}->[0]."!\n";
+		return $rxn;
+	}
+	#Creating reaction from equation
+	my $rxn = ModelSEED::MS::Reaction->new({
+		name => $args->{names}->[0],
+		abbreviation => $args->{abbreviation}->[0],
+		direction => $args->{direction}->[0],
+		deltaG => $args->{deltag}->[0],
+		deltaGErr => $args->{deltagerr}->[0],
+		status => "OK",
+		thermoReversibility => "="
+	});
+	$rxn->parent($biochemistry);
+	$rxn->loadFromEquation({
+		equation => $args->{equation}->[0],
+		aliasType => $args->{aliasType},
+	});
+	my $code = $rxn->equationCode();
+	$searchRxn = $self->queryObject("reactions",{equationCode => $code});
+	if (defined($searchRxn)) {
+		print STDERR "Reaction added with matching equation ".$args->{id}->[0]."!\n";
+		return $searchRxn;
+	}
+	$biochemistry->add("reactions", $rxn);
+	$biochemistry->addAlias({
+		attribute => "reactions",
+		aliasName => $args->{aliasType},
+		alias => $args->{id}->[0],
+		uuid => $rxn->uuid()
+	});
+	for (my $i=0;$i < @{$args->{names}}; $i++) {
+		$biochemistry->addAlias({
+			attribute => "reactions",
+			aliasName => "name",
+			alias => $args->{names}->[$i],
+			uuid => $rxn->uuid()
+		});
+	}
+	for (my $i=0;$i < @{$args->{enzymes}}; $i++) {
+		$biochemistry->addAlias({
+			attribute => "reactions",
+			aliasName => "Enzyme Class",
+			alias => $args->{enzymes}->[$i],
+			uuid => $rxn->uuid()
+		});
+	}
+	return $rxn;
+}
 
 __PACKAGE__->meta->make_immutable;
 1;
