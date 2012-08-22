@@ -338,8 +338,9 @@ sub _build_schema {
     my $schema = { children => {} };
     foreach my $name (keys %$defs) {
         my $definition = $defs->{$name};
-        if ( defined($definition->{parents}) &&
-            'ModelSEED::Store' ~~ $definition->{parents}) {
+        my $parents = $definition->{parents} || [];
+        my %parents = map { $_ => 1 } @{$definition->{parents}};
+        if ( defined $parents && defined $parents{'ModelSEED::Store'} ) {
             my $refName = lc(substr($name, 0,1)).substr($name,1);
             $schema->{children}->{$refName} =
                 _build_schema_recursive($name, $defs);

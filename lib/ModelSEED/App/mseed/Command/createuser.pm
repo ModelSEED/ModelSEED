@@ -36,7 +36,8 @@ sub execute {
 	if (!defined($password) || length($password) == 0) {
     	$self->usage_error("Must provide nonempty password!");
     }
-    $password = crypt($password, 1);
+    my $salt = join '', ('.', '/', 0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
+    $password = crypt($password, $salt);
     # create a user object
     my $user = {
 		login => $username,

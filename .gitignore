@@ -32,3 +32,4 @@ src
 lib/perl5/
 man/*
 MANIFEST.bak
+lib/ModelSEED/PackageConfig.pm

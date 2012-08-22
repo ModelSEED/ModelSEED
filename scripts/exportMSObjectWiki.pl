@@ -49,6 +49,65 @@ my $markdown = <<HEAD;
 Object Definitions
 ==================
 
+General Concepts
+----------------
+Each section in this document describes an object and class within
+the ModelSEED.  All objects inherit from
+[ModelSEED::MS::BaseObject](ModelSEED-MS-BaseObject).  However, a
+few objects also inherit from
+[ModelSEED::MS::IndexedObject](ModelSEED-MS-IndexedObject) which
+defines a few additional functions for data-lookup. Consult these
+pages for details on what functions are offered.
+
+### Objects as JSON blobs
+
+Objects can be represented as plain JSON blobs. For example, the following
+is a valid <a href='#wiki-Compartment'>Compartment</a> blob:
+
+```json 
+   {
+      "uuid" : "A128E5E2-C209-11E1-9982-998743BA47CD",
+      "modDate" : "2012-06-29T16:45:50",
+      "name" : "Extracellular",
+      "id" : "e",
+      "hierarchy" : 0
+   }
+```
+If this were un-marshalled into a Perl hash-reference, we could construct
+an object by passing it into the `new` function:
+
+```perl
+    use ModelSEED::MS::Compartment;
+    my \$cmp = ModelSEED::MS::Compartment->new(\$hash);
+```
+
+Attributes can be accessed via the function specified in the "method name"
+section of the table. For basic types, this returns the value. For Arrays,
+Hashes, etc. this returns a reference to that object. These methods are
+also setters.
+
+```perl
+    print \$cmp->name;    # prints "Extracellular"
+    \$cmp->id("x");       # sets the comartment id to "x"
+```
+
+### Sub-Objects
+
+Objects 
+
+### Links between Objects
+
+
+
+### Provenance
+
+
+
+### Object Storage and Versioning
+
+Using the [ModelSEED::MS::Store](ModelSEED-MS-Store) interface, it is possible to
+fetch and save a provenence object with it's associated sub-objects.
+
 
 HEAD
 my $done_sections = {};
@@ -84,7 +143,10 @@ sub buildSection {
     my $graphPlaceholder = "";
     my $hFactor = "###";
     if(defined $graphConfig->{$type}) {
-        $graphPlaceholder = "[[$type.png|align=center]]"; 
+        $graphPlaceholder = <<PLACE;
+[[$type.png|align=center]]
+*Key: Nodes are objects and classes. Red arrows represent links; Blue arrows represent sub-object relationships.*
+PLACE
         $hFactor = "##";
     }
     my $tableAndDescription = _build_table_and_description($defs, $type);
@@ -107,44 +169,37 @@ sub _build_table_and_description {
     my $table = ModelSEED::Table->new(columns => ["method name", "type", "description"]);
     foreach my $attr (@{$type->{attributes}}) {
         my $row = [];
-        push(@$row, _name_format($attr->{name}, "attr"));
+        my $desc = $attr->{description};
+        $desc    = "" unless defined $desc;
+        $desc   .= " (Required)" if defined $attr->{required};
+        push(@$row, $attr->{name});
         push(@$row, get_type_link($attr->{type}, $attr));
-        push(@$row, ($attr->{required}) ? 'Required' : '');
+        push(@$row, $desc);
         $table->add_row($row);
     }
     foreach my $subobj (@{$type->{subobjects}}) {
         my $row = [];
-        push(@$row, _name_format($subobj->{name}, $subobj->{type}));
+        my $desc = $subobj->{description};
+        $desc    = "" unless defined $desc;
+        push(@$row, $subobj->{name});
         push(@$row, get_type_link("ModelSEED::MS::".$subobj->{class}, $subobj));
-        push(@$row, $subobj->{type});
+        push(@$row, $desc);
         $table->add_row($row);
     }
     foreach my $link (@{$type->{links}}) {
         my $row = [];
-        push(@$row, _name_format($link->{name}, "link"));
+        my $desc = $link->{description};
+        $desc    = "" unless defined $desc;
         my $type = _get_linked_object_type($defs, $link);
+        push(@$row, $link->{name});
         push(@$row, get_type_link("ModelSEED::MS::".$type, $link));
-        push(@$row, "");
+        push(@$row, $desc);
         $table->add_row($row);
     }
     $table = generate_html_table($table);
-    return $table;
-}
-
-sub _name_format {
-    my ($name, $type) = @_;
-    my $output;
-    if($type eq "encompassed") {
-        return $name;
-    } elsif ($type eq "attr") {
-        return $name;
-    } elsif ($type eq "child") {
-        return "[[subobject.png]] $name";
-    } elsif ($type eq "link") {
-        return "[[link.png]] $name";
-    } else {
-        return $name;
-    }
+    my $description = $defs->{$type_name}->{description};
+    $description = "" unless defined $description;
+    return $description . "\n" . $table;
 }
 
 sub generate_html_table {

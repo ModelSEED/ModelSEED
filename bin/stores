@@ -1,3 +1,13 @@
 #!/usr/bin/env perl
 use ModelSEED::App::stores;
-ModelSEED::App::stores->run;
+use Try::Tiny;
+try {
+    ModelSEED::App::stores->run; 
+} catch {
+    local $@ = $_;
+    if ( my $e = Exception::Class->caught('ModelSEED::Exception::CLI') ) {
+        warn $e->cli_error_text();
+    } else {
+        warn $@;
+    }
+};

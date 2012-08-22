@@ -63,6 +63,7 @@ use JSON qw(encode_json decode_json);
 use Try::Tiny;
 use File::Path qw(mkpath);
 use File::Basename qw(dirname);
+use autodie;
 
 has filename => (
     is       => 'rw',
@@ -111,7 +112,7 @@ sub _buildConfig {
     };
     if (-f $self->filename) {
         local $/;
-        open(my $fh, "<", $self->filename) || die "$!";
+        open(my $fh, "<", $self->filename);
         my $text = <$fh>;
         close($fh);
         my $json;
@@ -139,8 +140,7 @@ sub _buildFilename {
 
 sub save {
     my ($self) = @_;
-    open(my $fh, ">", $self->filename) ||
-        die "Error saving " . $self->filename . ", $@";
+    open(my $fh, ">", $self->filename);
     print $fh $self->JSON->encode($self->config);
     close($fh);
 }

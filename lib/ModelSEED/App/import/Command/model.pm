@@ -66,7 +66,7 @@ sub execute {
         $opts->{source} = $opts->{list};
     }
     # Set source to 'model-seed' if it isn't defined
-    $opts->{source} //= 'model-seed';
+    $opts->{source} = 'model-seed' unless defined $opts->{source};
     my ($factory);
     if($opts->{source} eq 'model-seed') {
         $factory = ModelSEED::MS::Factories::FBAMODELFactory->new(

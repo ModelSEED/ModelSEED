@@ -61,13 +61,16 @@ sub _buildmfatoolkitBinary {
 	if (defined($config->user_options()->{MFATK_BIN})) {
 		$bin = $config->user_options()->{MFATK_BIN};
 	} else {
+            if ($^O =~ m/^MSWin/) {
 		$bin = ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
-		if ($^O =~ m/^MSWin/) {
-			$bin .= ".exe";
-		}
+                $bin .= ".exe";
+            } else {
+                $bin = `which mfatoolkit 2>/dev/null`;
+                chomp $bin;
+            }
 	}
 	if (!-e $bin) {
-		ModelSEED::utilities::ERROR("Could not find MFAToolkit executable");
+                ModelSEED::utilities::ERROR("Could not find MFAToolkit executable. Make sure it is in your path, or use the MS Config parameter, 'MFATK_BIN'");
 	}
 	return $bin;
 }

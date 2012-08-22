@@ -1,3 +1,14 @@
 #!/usr/bin/env perl
 use ModelSEED::App::genome;
-ModelSEED::App::genome->run;
+use ModelSEED::Exceptions;
+use Try::Tiny;
+try {
+    ModelSEED::App::genome->run; 
+} catch {
+    local $@ = $_;
+    if ( my $e = Exception::Class->caught('ModelSEED::Exception::CLI') ) {
+        warn $e->cli_error_text();
+    } else {
+        warn $@;
+    }
+};
