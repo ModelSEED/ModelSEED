@@ -405,7 +405,7 @@ sub addCompoundFromHash {
 	#Checking for name uniqueness
 	foreach my $name (@{$args->{names}}) {
 		my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
-		$cpd = $self->queryObjects("compounds",{searchnames => $name});
+		$cpd = $self->queryObject("compounds",{searchnames => $name});
 		if (defined($cpd)) {
 			print STDERR "Compound added with matching name ".$name."!\n";
 			$self->addAlias({

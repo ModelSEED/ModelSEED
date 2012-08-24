@@ -9,7 +9,7 @@ sub abstract { return "Adds a single compound to the database from input argumen
 sub usage_desc { return "bio addcpd [< biochemistry | biochemistry] [id] [name]"; }
 sub opt_spec {
     return (
-        ["abbreviation|a:s", "Abbreviation"],
+        ["abbreviation|b:s", "Abbreviation"],
         ["formula|f:s", "Molecular formula"],
         ["mass|m:s", "Molecular weight"],
         ["charge|c:s", "Molecular charge"],
@@ -48,6 +48,9 @@ sub execute {
     }
     $cpdData->{aliasType} = $opts->{namespace};
     my $cpd = $biochemistry->addCompoundFromHash($cpdData);
+    if (defined($cpd)) {
+    	print "Compound added with UUID:".$cpd->uuid()."\n";
+    }
     if (defined($opts->{saveas})) {
     	$ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
     	print STDERR "Saving biochemistry with new compounds as ".$ref."...\n" if($opts->{verbose});
@@ -56,7 +59,6 @@ sub execute {
     	print STDERR "Saving over original biochemistry with new compounds...\n" if($opts->{verbose});
     	$store->save_object($ref,$biochemistry);
     }
-    ModelSEED::utilities::PRINTTABLE("STDOUT",$tbl);
 }
 
 1;

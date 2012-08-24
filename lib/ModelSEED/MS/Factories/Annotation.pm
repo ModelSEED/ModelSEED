@@ -103,7 +103,7 @@ sub availableGenomes {
     foreach my $server (@$servers) {
         my $hash;
         if($server eq 'sapsvr') {
-            $hash = $self->$server->all_genomes({-prokaryotic => 0})
+            $hash = $self->$server->all_genomes({-prokaryotic => 0});
         } elsif($server eq 'kbsvr') {
             $hash = $self->$server->all_entities_Genome(0, 10000000, [qw(scientific_name)]);
             $hash = { map { $_ => $hash->{$_}->{scientific_name} } keys %$hash };

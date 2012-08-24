@@ -10,8 +10,8 @@ sub usage_desc { return "bio addrxn [< biochemistry | biochemistry] [id] [equati
 sub opt_spec {
     return (
         ["names|n:s", "Abbreviation"],
-        ["abbreviation|a:s", "Molecular formula"],
-        ["enzymes|a:s", "Associated EC number"],
+        ["abbreviation|b:s", "Molecular formula"],
+        ["enzymes|z:s", "Associated EC number"],
         ["direction|d:s", "Default directionality for reaction"],
         ["deltag|g:s", "Gibbs free energy (kcal/mol)"],
         ["deltagerr|e:s", "Uncertainty in Gibbs energy"],
