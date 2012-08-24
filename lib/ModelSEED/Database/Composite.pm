@@ -94,13 +94,13 @@ package ModelSEED::Database::Composite;
 use Moose;
 use Moose::Util::TypeConstraints;
 use ModelSEED::Exceptions;
+use Try::Tiny;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
     ModelSEED::Database::MongoDBSimple
     JSON::Any
 );
-use Try::Tiny;
 with 'ModelSEED::Database';
 
 role_type 'DB', { role => 'ModelSEED::Database' };
@@ -125,6 +125,7 @@ around BUILDARGS => sub {
     }
     ModelSEED::Exception::NoDatabase->throw() unless @{$args->{databases}};
     foreach my $db (@{$args->{databases}}) {
+        next if (ref($db) ne 'HASH' && $db->does("ModelSEED::Database"));
         my %config = %$db;
         try {
             my $class = $db->{class};

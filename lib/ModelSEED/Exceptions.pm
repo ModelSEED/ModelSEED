@@ -9,14 +9,6 @@
 # Date of module creation: 2012-08-14
 ########################################################################
 package ModelSEED::Exceptions;
-my $NoDatabase = <<ND;
-Unable to construct a database connection.
-If you are using the command line functions,
-configure a database with the "stores" command.
-
-\$ stores help
-ND
-
 use Exception::Class (
     ModelSEED::Exception::CLI => {
         description => "Base class for exceptions that support cli_error_text",
