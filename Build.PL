@@ -31,6 +31,7 @@ my $builder = Module::Build->new(
         "JSON::Any" => 0,
         "JSON::RPC::Client" => 0,
         "LWP" => 0,
+        "Module::Load" => 0,
         "Moose" => 0,
         "Term::ReadKey" => 0,
         "Test::Deep" => 0,
