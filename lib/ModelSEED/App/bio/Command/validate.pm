@@ -8,11 +8,14 @@ use Class::Autouse qw(
 sub abstract { return "Validates the biochemistry data searching for inconsistencies" }
 sub usage_desc { return "bio validate [< biochemistry | biochemistry] [options]"; }
 sub opt_spec {
-    return ();
+    return (
+        ["help|h|?", "Print this usage information"],
+    );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();

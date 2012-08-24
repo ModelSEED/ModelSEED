@@ -3,9 +3,15 @@ use Class::Autouse qw(ModelSEED::Configuration);
 use base 'App::Cmd::Command';
 my $MS = ModelSEED::Configuration->new;
 sub abstract { "Set the storage priority" }
-sub usage_desc { "%c COMMAND [store] [store] ..." }
+sub usage_desc { "%c prioritize [store] [store] ..." }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
+
 sub validate_args {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $stores = $MS->config->{stores} || [];
     my %map = map { $_->{name} => $_ } @$stores; 
     foreach my $name (@$args) {

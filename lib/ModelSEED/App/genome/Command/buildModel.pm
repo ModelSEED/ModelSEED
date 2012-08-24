@@ -11,6 +11,7 @@ sub opt_spec {
     return (
         ["mapping|m", "Use a specific mapping to build the model"],
         ["verbose|v", "Print verbose about the model construction"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
@@ -26,6 +27,7 @@ END
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new();

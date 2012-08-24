@@ -12,12 +12,17 @@ use base 'App::Cmd::Command';
 sub abstract { "Login as a user" }
 sub usage { "%c COMMAND [username]" }
 sub validate_args {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
     $self->usage_error("Need to supply a username") unless @$args;
+}
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
 }
 
 sub execute {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $username = $args->[0];
 
     my $password;

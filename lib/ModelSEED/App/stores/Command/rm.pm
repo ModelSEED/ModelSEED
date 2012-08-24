@@ -12,6 +12,10 @@ HERDOC
 }
 sub usage_desc { "%c rm <name>" }
 sub command_names { qw(rm remove) }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 
 sub validate_args {
     my ($self, $opt, $args) = @_;
@@ -29,7 +33,8 @@ sub validate_args {
 }
 
 sub execute {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $name = $args->[0];
     my $stores = $MS->config->{stores};
     my $remove;

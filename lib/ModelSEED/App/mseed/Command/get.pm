@@ -24,10 +24,12 @@ sub opt_spec {
     return (
         ["file|f:s", "Print output to a file"],
         ["pretty|p", "Pretty-print JSON"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $refs = [];
@@ -71,6 +73,8 @@ sub execute {
     $delimiter = "\n" if($opts->{newline});
     if (defined $delimiter) {
         print $fh join($delimiter, map { $JSON->encode($_) } @$output);
+    } elsif(@$output == 1) {
+        print $fh $JSON->encode($output->[0]);
     } else {
         print $fh $JSON->encode($output);
     }

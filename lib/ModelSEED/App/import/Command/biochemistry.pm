@@ -37,12 +37,13 @@ sub opt_spec {
         ["store|s:s", "Identify which store to save the biochemistry to"],
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
-
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helpers = ModelSEED::App::Helpers->new;
     # Initialize the store object

@@ -12,11 +12,13 @@ sub opt_spec {
         ["names|n=s", "Filename or '|' delimited list of input names"],
         ["filein|f","Input is specified in a file"],
         ["id", "IDs of identified compounds should be printed"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();

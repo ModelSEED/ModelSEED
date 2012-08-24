@@ -2,8 +2,13 @@ package ModelSEED::App::mseed::Command::bio;
 use ModelSEED::App::bio;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to ms-bio command" }
+sub opt_spec { return (
+        ["help|h|?", "Print this usage information"],
+    );
+}
 sub execute {
-    my ($self, $opt, $args) = @_;
+    my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     {
         local @ARGV = @ARGV;
         my $arg0 = shift @ARGV;

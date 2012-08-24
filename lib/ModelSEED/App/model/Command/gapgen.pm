@@ -32,12 +32,14 @@ sub opt_spec {
         ["uptakelim:s","List of max uptakes for atoms to be used as constraints"],
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
-        ["defaultminuptake:s","Minimum uptake flux to use as default"]
+        ["defaultminuptake:s","Minimum uptake flux to use as default"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();

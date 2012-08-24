@@ -10,13 +10,14 @@ sub usage_desc { "ms config key=value" }
 sub opt_spec {
     return (
         ["list|l", "List the values for the given variables"],
-        ["remove|r", "Remove the given variables."]
+        ["remove|r", "Remove the given variables."],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
-
+    print($self->usage) && exit if $opts->{help};
     my $config = ModelSEED::Configuration->new();
     my $pos_user_opts = $config->_possible_user_options();
     my $user_opts = $config->user_options();

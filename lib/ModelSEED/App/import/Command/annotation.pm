@@ -47,11 +47,13 @@ sub opt_spec {
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
         ["mapping|m:s", "Select the preferred mapping object to use when importing the annotation"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helper = ModelSEED::App::Helpers->new;
     my $store;

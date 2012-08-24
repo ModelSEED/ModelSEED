@@ -37,11 +37,13 @@ sub opt_spec {
         ["nothermoerror","Do not include uncertainty in thermodynamic constraints"],
         ["minthermoerror","Minimize uncertainty in thermodynamic constraints"],
         ["html","Print FBA results in HTML"],
+        ["help|h|?", "Print this usage information"],
     );
 }
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    print($self->usage) && exit if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
