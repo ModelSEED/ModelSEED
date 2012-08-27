@@ -43,6 +43,7 @@ sub _uuid {
     my $type = "biochemistry";
     # Delete the database to get it clean and fresh
     $db->db->drop();
+    $db->initialize();
     my $ref1 = ModelSEED::Reference->new({
         ref => "biochemistry/alice/one"
     });
@@ -58,9 +59,10 @@ sub _uuid {
     my $obj2 = { uuid => _uuid(), compounds => [{ uuid => _uuid() }] };
     # Tests on non-existant objects
     ok !$db->has_data($ref1), "Database is empty";
-    is undef, $db->get_data($ref1, $auth), "Cannot get non-existant object";
+    is $db->get_data($ref1, $auth), undef, "Cannot get non-existant object";
+    is $db->has_data($ref1, $auth), 0, "Stat non-existant object returns false";
     ok !$db->delete_data($ref1, $auth), "Cannot delete non-existant object";
-    $test_count += 3;
+    $test_count += 4;
 
     # Tests on existing objects
     ok $db->save_data($ref1, $obj1, $auth), "Save object returns success";
@@ -273,6 +275,14 @@ sub _uuid {
     my $obj4 = { uuid => _uuid(), compounds => [{ uuid => _uuid() }] };
     my $ref1_old_uuid = $obj1->{uuid};
     my $ref2_old_uuid = $obj2->{uuid};
+    my $obj1_uuid_ref = ModelSEED::Reference->new(
+        type => "biochemistry",
+        uuid => $obj1->{uuid}
+    );
+    my $obj2_uuid_ref = ModelSEED::Reference->new(
+        type => "biochemistry",
+        uuid => $obj2->{uuid}
+    );
     my $obj1_anc_graph = { $ref1_old_uuid => [] };
     my $obj2_anc_graph = { $ref2_old_uuid => [] };
     my $obj3_anc_graph = { $obj3->{uuid} => [ $ref1_old_uuid ], $ref1_old_uuid => [] };
@@ -316,12 +326,21 @@ sub _uuid {
     # x---x <= two
     $db->save_data($ref1, $obj3, $alice);
     $db->save_data($ref2, $obj4, $alice);
+    
     is_deeply $db->ancestors($ref1, $alice), [ $ref1_old_uuid ];
     is_deeply $db->ancestor_graph($ref1, $alice), $obj3_anc_graph;
     is_deeply $db->ancestors($ref1, $bob), [ $ref1_old_uuid ];
     is_deeply $db->ancestor_graph($ref1, $bob), $obj3_anc_graph;
     is_deeply $db->ancestors($ref1, $pub), [$ref1_old_uuid];
     is_deeply $db->ancestor_graph($ref1, $pub), $obj3_anc_graph;
+    $test_count += 6;
+
+    is_deeply $db->descendants($ref1, $alice), [];
+    is_deeply $db->descendants($ref1, $bob), [];
+    is_deeply $db->descendants($ref1, $pub), [];
+    is_deeply $db->descendants($obj1_uuid_ref, $alice), [ $obj3->{uuid} ];
+    is_deeply $db->descendants($obj1_uuid_ref, $bob), [ $obj3->{uuid} ];
+    is_deeply $db->descendants($obj1_uuid_ref, $pub), [ $obj3->{uuid} ];
     $test_count += 6;
 
     is_deeply $db->ancestors($ref2, $pub), undef;
@@ -331,6 +350,12 @@ sub _uuid {
     is_deeply $db->ancestors($ref2, $bob), [ $ref2_old_uuid ];
     is_deeply $db->ancestor_graph($ref2, $bob), $obj4_anc_graph;
     $test_count += 6;
+
+    is_deeply $db->descendants($ref2, $alice), [];
+    is_deeply $db->descendants($ref2, $bob), [];
+    is_deeply $db->descendants($obj2_uuid_ref, $alice), [ $obj4->{uuid} ];
+    is_deeply $db->descendants($obj2_uuid_ref, $bob), [ $obj4->{uuid} ];
+    $test_count += 4;
 
     # test with a merged object
     #  x---x 

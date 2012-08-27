@@ -18,6 +18,8 @@ use FileHandle;
 use Data::UUID;
 use ModelSEED::Reference;
 
+use Data::Dumper; # DEBUG
+
 with 'ModelSEED::Database';
 
 has db_name  => (is => 'ro', isa => 'Str', required => 1);
@@ -122,6 +124,19 @@ sub save_data {
     # Now save object to collection
     my $fh = $self->_object_to_fh($object);
     $self->db->get_gridfs->insert($fh, { uuid => $object->{uuid} });
+    # Update the ancestor and descendant data if we have an old UUID
+    if(defined($oldUUID)) {
+        $self->_update_ancestors_and_descendants(
+            $ref->base_types->[0],        # type
+            $object->{ancestor_uuids},    # old_uuids
+            $object->{uuid},              # new_uuid
+            $auth                         # auth obj
+        );
+    # Otherwise, construct the basic ancestor object
+    } else {
+        $self->_construct_ancestor_object($ref, $auth);
+    }
+
     if($update_alias) {
         # update alias to new uuid
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
@@ -248,9 +263,28 @@ sub ancestor_graph {
     return undef;
 }
 
+sub descendants {
+    my ($self, $ref, $auth) = @_;
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+    my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
+    my $o = $self->db->$ancestor_collection->find_one({ uuid => $uuid }); 
+    return undef unless defined $o;
+    return $o->{descendants};
+}
+
+sub descendant_graph {
+    my ($self, $ref, $auth) = @_;
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+    my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
+    my $o = $self->db->$ancestor_collection->find_one({ uuid => $uuid }); 
+    return undef unless defined $o;
+    return $o->{descendant_graph} 
+}
+
 sub _get_ancestor_object {
     my ($self, $ref, $auth) = @_;
-    $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
     return undef unless defined $uuid;
     my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
@@ -266,11 +300,38 @@ sub _ancestor_graph {
     return $self->_construct_ancestor_object($ref, $auth, $config);
 }
 
+sub _update_ancestors_and_descendants {
+    my ($self, $type, $old_uuids, $new_uuid, $auth) = @_;
+    # Construct the ancestors for the current object
+    my $new_ref = ModelSEED::Reference->new(type => $type, uuid => $new_uuid);
+    $self->ancestors($new_ref, $auth);
+    # Get all of the ancestors for the new uuid object.
+    my $ancestors = { map { $_ => 1 } @$old_uuids };
+    foreach my $uuid (@$old_uuids) {
+        my $ref = ModelSEED::Reference->new( type => $type, uuid => $uuid );
+        map { $ancestors->{$_} = 1 } @{$self->ancestors($ref, $auth)};
+    }
+    # Update the descendant sets for each ancestor to include the current uuid
+    my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
+    $ancestors = [ keys %$ancestors ];
+    $self->db->$ancestor_collection->update(
+        { "uuid" => { '$in' => $ancestors } },
+        { '$addToSet' => { descendants => $new_uuid } },
+    );
+    # Update the descendant graph for each ancestor by adding the child
+    # uuid to the descendant_graph under the parent uuid
+    foreach my $uuid (@$old_uuids) {
+        $self->db->$ancestor_collection->update(
+            { "uuid" => { '$in' => $ancestors } },
+            { '$addToSet' => { "descendant_graph.$uuid" => $new_uuid } },
+        );
+    }
+}
+
 sub _construct_ancestor_object {
     my ($self, $ref, $auth, $config) = @_;
     my $newConfig = $config;
     $newConfig = { doNotSave => 1 } unless defined $newConfig;
-    $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
     # Error out if we can't get the ref object
     return undef unless defined $uuid;
@@ -306,8 +367,10 @@ sub _construct_ancestor_object {
         modDate => $current->{modDate},
         ancestors => $ancestors,
         ancestor_graph => $graph,
+        descendants => [],
+        descendant_graph => {},
     };
-    if (defined $config->{doNotSave} && !$config->{doNotSave}) {
+    if (!defined($config) || !$config->{doNotSave}) {
         push(@$objectsToSave, $o);
         my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
         $self->db->$ancestor_collection->batch_insert($objectsToSave);
