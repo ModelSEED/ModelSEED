@@ -116,7 +116,7 @@ sub getObjectByAlias {
 	if (defined($objs->[0])) {
         return $objs->[0];
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -146,7 +146,7 @@ sub getObject {
     if (scalar @$objs == 1) {
         return $objs->[0];
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -179,7 +179,7 @@ sub queryObject {
     if (defined($objs->[0])) {
         return $objs->[0];
     } else {
-        return undef;
+        return;
     }
 }
 

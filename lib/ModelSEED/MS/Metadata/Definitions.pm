@@ -714,7 +714,6 @@ $objectDefinitions->{Biochemistry} = {
             len        => 32,
             req        => 0,
             default    => "ModelSEED",
-            description => "The name of an [[AliasSet|#wiki-AliasSet]] to use in aliasSets for reaction and compound ids",
         },
         {
             name       => 'modDate',
@@ -776,7 +775,6 @@ $objectDefinitions->{Biochemistry} = {
             printOrder => 1,
             class      => "Cue",
             type       => "encompassed",
-            description => "Structural cues for parts of compund structures",
         },
     ],
     primarykeys        => [qw(uuid)],
@@ -837,7 +835,6 @@ $objectDefinitions->{Compartment} = {
             type       => 'Str',
             len        => 2,
             req        => 1,
-            description => "Single charachter identifer for the compartment, e.g. 'e' or 'c'.",
         },
         {
             name       => 'name',
@@ -854,7 +851,6 @@ $objectDefinitions->{Compartment} = {
             type       => 'Int',
             req        => 0,
             default    => "",
-            description => "Index indicating the position of a compartment relative to other compartments. Extracellular is 0. A compartment contained within another compartment has an index that is +1 over the outer comaprtment.",
         },
     ],
     subobjects         => [],
@@ -942,7 +938,6 @@ $objectDefinitions->{Compound} = {
             type        => 'ModelSEED::varchar',
             req         => 0,
             default     => "",
-            description => "A computed hash for the compound, not currently implemented",
         },
         {
             name       => 'unchargedFormula',
@@ -951,7 +946,6 @@ $objectDefinitions->{Compound} = {
             type       => 'ModelSEED::varchar',
             req        => 0,
             default    => "",
-            description => "Formula for compound if it does not have a ionic charge.",
         },
         {
             name       => 'formula',
@@ -960,7 +954,6 @@ $objectDefinitions->{Compound} = {
             type       => 'ModelSEED::varchar',
             req        => 0,
             default    => "",
-            description => "Formula for the compound at pH 7.",
         },
         {
             name       => 'mass',
@@ -968,7 +961,6 @@ $objectDefinitions->{Compound} = {
             perm       => 'rw',
             type       => 'Num',
             req        => 0,
-            description => "Atomic mass of the compound",
         },
         {
             name       => 'defaultCharge',
@@ -977,7 +969,6 @@ $objectDefinitions->{Compound} = {
             type       => 'Num',
             req        => 0,
             default    => 0,
-            description => "Computed charge for compound at pH 7.",
         },
         {
             name       => 'deltaG',
@@ -985,7 +976,6 @@ $objectDefinitions->{Compound} = {
             perm       => 'rw',
             type       => 'Num',
             req        => 0,
-            description => "Computed Gibbs free energy value for compound at pH 7.",
         },
         {
             name       => 'deltaGErr',
@@ -993,7 +983,6 @@ $objectDefinitions->{Compound} = {
             perm       => 'rw',
             type       => 'Num',
             req        => 0,
-            description => "Error bound on Gibbs free energy compoutation for compound.",
         },
     ],
     subobjects => [
