@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::logout;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use ModelSEED::Configuration;
 

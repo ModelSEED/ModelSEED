@@ -1,4 +1,6 @@
 package ModelSEED::App::model::Command::runfba;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -106,7 +108,7 @@ sub execute {
 sub _getModel {
     my ($self, $args, $store) = @_;
     my $helper = ModelSEED::App::Helpers->new();
-    $ref = $helper->get_base_ref("model", $args);
+    my $ref = $helper->get_base_ref("model", $args);
     if(defined($ref)) {
         return $store->get_object($ref);
     }

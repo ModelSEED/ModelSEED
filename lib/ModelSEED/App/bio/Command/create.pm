@@ -1,4 +1,6 @@
 package ModelSEED::App::bio::Command::create;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -27,7 +29,7 @@ sub execute {
 		defaultNameSpace => $opts->{namespace},
 		name => $args->[0]
 	});
-    $ref = $helper->process_ref_string($args->[0], "biochemistry", $auth->username);
+    my $ref = $helper->process_ref_string($args->[0], "biochemistry", $auth->username);
     print STDERR "Created biochemistry with name ".$ref."...\n" if($opts->{verbose});
 	$store->save_object($ref,$object);
 }

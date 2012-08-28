@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::mapping; 
+use strict;
+use common::sense;
 use ModelSEED::App::mapping;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to ms-mapping command" }

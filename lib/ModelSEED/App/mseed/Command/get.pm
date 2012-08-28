@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::get;
+use strict;
+use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON;
@@ -88,7 +90,7 @@ sub get_object_deep {
     try {
         $ref = ModelSEED::Reference->new(ref => $refstr);
     };
-    return undef unless(defined($ref));
+    return unless(defined($ref));
     if($ref->type eq 'object' && @{$ref->parent_objects} == 0) {
         $refstring = $ref->base . $ref->delimiter . $ref->id;
         if(defined($cache->{$refstring})) {

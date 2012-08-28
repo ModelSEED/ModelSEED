@@ -1,4 +1,6 @@
 package ModelSEED::App::stores::Command::rm;
+use strict;
+use common::sense;
 use Class::Autouse qw(ModelSEED::Configuration);
 use base 'App::Cmd::Command';
 

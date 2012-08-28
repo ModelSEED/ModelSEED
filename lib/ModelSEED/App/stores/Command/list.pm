@@ -1,4 +1,6 @@
 package ModelSEED::App::stores::Command::list;
+use strict;
+use common::sense;
 use Class::Autouse qw(ModelSEED::Configuration);
 use base 'App::Cmd::Command';
 sub abstract { "List current stores in order of priority" }

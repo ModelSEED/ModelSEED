@@ -1,4 +1,6 @@
 package ModelSEED::App::stores::Command::add;
+use strict;
+use common::sense;
 use Try::Tiny;
 use Module::Load;
 use Class::Autouse qw(
@@ -7,9 +9,9 @@ use Class::Autouse qw(
 );
 use base 'App::Cmd::Command';
 
-$typeToClass = $ModelSEED::App::stores::typeToClass;
-$typeToArgs = $ModelSEED::App::stores::typeToArgs;
-$defaultArgValues = $ModelSEED::App::stores::defaultArgValues;
+our $typeToClass = $ModelSEED::App::stores::typeToClass;
+our $typeToArgs = $ModelSEED::App::stores::typeToArgs;
+our $defaultArgValues = $ModelSEED::App::stores::defaultArgValues;
 
 sub abstract { "Add another store interface" }
 sub usage_desc { "stores add name --type type ..." }

@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::import; 
+use strict;
+use common::sense;
 use ModelSEED::App::stores;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(

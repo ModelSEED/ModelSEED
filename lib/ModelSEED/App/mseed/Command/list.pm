@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::list;
+use strict;
+use common::sense;
 use Try::Tiny;
 use List::Util qw(max);
 use Class::Autouse qw(
