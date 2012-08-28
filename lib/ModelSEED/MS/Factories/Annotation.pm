@@ -273,7 +273,8 @@ sub getGenomeFeatures {
             [qw(begin dir len ordinal)],
             [qw(id feature_type function source_id alias)]
         );
-        map {
+        # reformat features
+        for (@$features) {
             $_ = {
                 ID        => [ $_->[2]->{id} ],
                 TYPE      => [ $_->[2]->{feature_type} ],
@@ -285,7 +286,7 @@ sub getGenomeFeatures {
                 _SOURCE   => [ $_->[2]->{source_id} ],
                 _ALIAS    => [ $_->[2]->{alias} ],
             };
-        } @$features; # reformat features
+        } 
         # add functions to each feature
         foreach my $feature (@$features) {
             my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles($feature->{_FUNCTION}->[0]);
