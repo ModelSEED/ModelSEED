@@ -33,7 +33,11 @@ sub _builddirectory {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
+=head1 ModelSEED::MS::FBAProblem
+
 =head3 clearProblem
+
 Definition:
 	Output = ModelSEED::MS::Model->clearProblem();
 	Output = {
@@ -41,7 +45,9 @@ Definition:
 	};
 Description:
 	Builds the FBA problem
+
 =cut
+
 sub clearProblem {
 	my ($self) = @_;
 	$self->variables([]);
@@ -50,13 +56,16 @@ sub clearProblem {
 }
 
 =head3 printLPfile
+
 Definition:
 	void ModelSEED::MS::FBAProblem->printLPfile({
 		filename => string
 	});
 Description:
 	Prints FBA problem in LP formate
+
 =cut
+
 sub printLPfile {
 	my ($self,$args) = @_;
 	my $output = ["\\Problem name: LPProb",""];
@@ -180,6 +189,7 @@ sub printLPfile {
 }
 
 =head3 submitLPFile
+
 Definition:
 	Output = ModelSEED::MS::Model->submitLPFile({
 		solver => string
@@ -187,7 +197,9 @@ Definition:
 	});
 Description:
 	Prints FBA problem in LP formate
+
 =cut
+
 sub submitLPFile {
 	my ($self) = @_;
 	my $command;
@@ -208,24 +220,32 @@ sub submitLPFile {
 	}
 	return $solution;
 }
+
 =head3 addVariable
+
 Definition:
 	ModelSEED::MS::Variable = ModelSEED::MS::FBAProblem->addVariable({});
 Description:
 	Adds a variable to the problem
+
 =cut
+
 sub addVariable {
 	my ($self,$data) = @_;
 	my $varnum = @{$self->_variables()};
 	$data->{"index"} = ($varnum+1);
 	return $self->add("variables",$data);
 }
+
 =head3 addConstraint
+
 Definition:
 	ModelSEED::MS::Constraint = ModelSEED::MS::FBAProblem->addConstraint({});
 Description:
 	Adds a variable to the problem
+
 =cut
+
 sub addConstraint {
 	my ($self,$data) = @_;
 	my $constnum = @{$self->_constraints()};

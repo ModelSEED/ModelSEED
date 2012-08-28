@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-01
 ########################################################################
-=pod
 
 =head1 ModelSEED::Database::Composite
 
@@ -90,6 +89,7 @@ List of "write" functions:
 See L<ModelSEED::Database> for methods.
 
 =cut
+
 package ModelSEED::Database::Composite;
 use Moose;
 use Moose::Util::TypeConstraints;

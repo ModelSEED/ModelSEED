@@ -33,8 +33,11 @@ extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 buildSubsystemRoleSets
+
 =cut
+
 sub buildSubsystemRoleSets {
     my ($self) = @_;
     # get subsystems
@@ -43,11 +46,14 @@ sub buildSubsystemRoleSets {
 }
 
 =head3 buildSubsystemReactionSets
+
 Definition:
 	void ModelSEED::MS::Mapping->buildSubsystemReactionSets({});
 Description:
 	Uses the reaction->role mappings to place reactions into reactions sets based on subsystem
+
 =cut
+
 sub buildSubsystemReactionSets {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{});

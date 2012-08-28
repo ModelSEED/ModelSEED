@@ -70,7 +70,10 @@ sub featuresInRoleSet {
     return $results;
 }
 
+=head1 ModelSEED::MS::Annotation
+
 =head3 createStandardFBAModel
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Annotation->createStandardFBAModel({
 		prefix => "Seed",
@@ -78,7 +81,9 @@ Definition:
 	});
 Description:
 	Creates a new model based on the annotations, the mapping, and the biochemistry
+
 =cut
+
 sub createStandardFBAModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -112,11 +117,14 @@ sub createStandardFBAModel {
 }
 
 =head3 classifyGenomeFromAnnotation
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Annotation->classifyGenomeFromAnnotation({});
 Description:
 	Classifies genome as gram negative, gram positive, archeae etc based on annotations
+
 =cut
+
 sub classifyGenomeFromAnnotation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{});

@@ -80,6 +80,7 @@ sub _buildindex {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 createEquation
 Definition:
 	string = ModelSEED::MS::Reaction->createEquation({
@@ -88,7 +89,9 @@ Definition:
 	});
 Description:
 	Creates an equation for the core reaction with compounds specified according to the input format
+
 =cut
+
 sub createEquation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{

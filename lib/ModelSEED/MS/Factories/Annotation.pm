@@ -10,7 +10,6 @@
 # Date of module creation: 2012-06-03
 ########################################################################
 #TODO: refactor code, too much repeating yourself now.
-=pod
 
 =head1 ModelSEED::MS::Factories::Annotation
 
@@ -20,14 +19,14 @@ sources.
 =head2 ABSTRACT
 
     my $fact = ModelSEED::MS::Factories::Annotation->new;
-
+    
     # Get list of available genome IDs
     my $genomes = $fact->availableGenomes();
     my $kbase_genomes = $fact->availableGenomes(source => 'KBase');
     my $rast_genomes = $fact->availableGenomes(source => 'RAST');
     my $pubseed_genomes = $fact->availableGenomes(source => 'PubSEED');
     # These are all hash refs of genome IDs as keys and scientific names as values
-
+    
     # Create a MS::Annotation object from a genome
     my $anno = $fact->build({ genome_id => "kb|g.0", mapping => $mapping });
 
@@ -68,6 +67,7 @@ L<ModelSEED::MS::Mapping> object to use.
 =back
 
 =cut
+
 package ModelSEED::MS::Factories::Annotation;
 use common::sense;
 use Moose;

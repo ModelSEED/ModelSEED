@@ -27,7 +27,9 @@ use namespace::autoclean;
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 buildFBAFormulation
+
 Definition:
 	ModelSEED::MS::FBAFormulation = buildFBAFormulation({
 		array => [string],
@@ -37,7 +39,9 @@ Definition:
 	});
 Description:
 	Parses the FBA formulation exchange object
+
 =cut
+
 sub buildFBAFormulation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["model"],{
@@ -126,6 +130,7 @@ sub buildFBAFormulation {
 	$form->parseConstraints({constraints => $data->{fbaConstraints}});
 	return $form;
 }
+
 =head3 buildGapfillingFormulation
 Definition:
 	ModelSEED::MS::FBAFormulation = buildGapfillingFormulation({
@@ -136,7 +141,9 @@ Definition:
 	});
 Description:
 	Parses the FBA formulation exchange object
+
 =cut
+
 sub buildGapfillingFormulation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["model"],{
@@ -199,6 +206,7 @@ sub buildGapfillingFormulation {
 	$gapform->parseAllowableCompartments({string => $data->{allowableCompartments}});
 	return $gapform;
 }
+
 =head3 buildGapgenFormulation
 Definition:
 	ModelSEED::MS::GapgenFormulation = buildGapgenFormulation({
@@ -209,7 +217,9 @@ Definition:
 	});
 Description:
 	Parses the FBA formulation exchange object
+
 =cut
+
 sub buildGapgenFormulation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["model"],{
@@ -250,12 +260,15 @@ sub buildGapgenFormulation {
 	$model->add("fbaFormulations",$fbaform);
 	return $gapgenform;
 }
+
 =head3 stringToHash
 Definition:
 	{} = stringToHash(string);
 Description:
 	Parses the input string into a hash using the delimiters "|" and ":"
+
 =cut
+
 sub stringToHash {
 	my ($self,$string) = @_;
 	my $output = {};
@@ -280,7 +293,9 @@ Definition:
 	});
 Description:
 	Parses the exchange file array into a attribute and subobject hash
+
 =cut
+
 sub parseExchangeFileArray {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -327,6 +342,7 @@ sub parseExchangeFileArray {
 	}
 	return $data;
 }
+
 =head3 buildObjectFromExchangeFileArray
 Definition:
 	ModelSEED::MS::?? = ModelSEED::MS::Biochemistry->buildObjectFromExchangeFileArray({
@@ -334,7 +350,9 @@ Definition:
 	});
 Description:
 	Parses the exchange file array into a attribute and subobject hash
+
 =cut
+
 sub buildObjectFromExchangeFileArray {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["array"],{
@@ -426,6 +444,7 @@ sub buildObjectFromExchangeFileArray {
 	}
 	return $class->new($data);
 }
+
 =head3 reconcileReference
 Definition:
 	{
@@ -435,7 +454,9 @@ Definition:
 	} = ModelSEED::MS::Biochemistry->reconcileReference(string);
 Description:
 	Parses the input reference and translates to class, id, and type
+
 =cut
+
 sub reconcileReference {
 	my ($self,$ref) = @_;
 	my $output;

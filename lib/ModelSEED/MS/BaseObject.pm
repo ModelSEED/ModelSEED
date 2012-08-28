@@ -30,7 +30,6 @@ has printOrder => (
 package Moose::Meta::Attribute::Custom::Typed;
 sub register_implementation { 'ModelSEED::Meta::Attribute::Typed' }
 package ModelSEED::MS::BaseObject;
-=pod
 
 =head1 ModelSEED::MS::BaseObject
 
@@ -113,6 +112,7 @@ Returns an HTML document for the object.
 =head4 __upgrade__
 
 =cut
+
 use Moose;
 use namespace::autoclean;
 use ModelSEED::utilities;

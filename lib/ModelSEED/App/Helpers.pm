@@ -11,6 +11,7 @@ sub new {
 }
 
 =head3 handle_ref_lookup
+
 This function encapsulates logic for taking a JSON C<data> object
 and looking up a uuid C<attribute_name> in that object. C<type> is
 the type of object, e.g. 'biochemistry', 'model', etc.  C<opts> is
@@ -23,7 +24,9 @@ a hashref containing the following fields:
 
 One of these or neither may be true. Raw means raw JSON output;
 full means readable format. No options means just print the ref.
+
 =cut
+
 sub handle_ref_lookup {
     my ($self, $store, $data, $attribute_name, $type, $opts) = @_;
     if ($opts->{raw} || $opts->{full}) {

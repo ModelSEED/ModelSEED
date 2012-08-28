@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Reference
 
@@ -162,6 +161,7 @@ The "domain" portion of the url, e.g. "model-api.theseed.org"
 =back
 
 =cut
+
 package ModelSEED::Reference;
 use Moose;
 use URI::Split qw(uri_split uri_join);
