@@ -70,21 +70,21 @@ sub BUILD {
 	my $index = _initialize_index();
 
 	# use a semaphore to lock the files
-	open LOCK, ">$file.$LOCK_EXT" or die "$!";
-	flock LOCK, LOCK_EX or die "";
+	open my $LOCK, ">", "$file.$LOCK_EXT" or die "$!";
+	flock $LOCK, LOCK_EX or die "";
 
-	open INDEX, ">$file.$INDEX_EXT" or die "";
-	print INDEX _encode($index);
-	close INDEX;
+	open my $INDEX, ">", "$file.$INDEX_EXT" or die "";
+	print $INDEX _encode($index);
+	close $INDEX;
 
-	open META, ">$file.$META_EXT" or die "";
-	print META _encode({});
-	close META;
+	open my $META, ">", "$file.$META_EXT" or die "";
+	print $META _encode({});
+	close $META;
 
-	open DATA, ">$file.$DATA_EXT" or die;
-	close DATA;
+	open my $DATA, ">", "$file.$DATA_EXT" or die;
+	close $DATA;
 
-	close LOCK;
+	close $LOCK;
     } else {
 	die "Corrupted database: $file";
     }
@@ -117,16 +117,16 @@ sub _perform_transaction {
     my $file = $self->_get_file();
 
     # use a semaphore file for locking
-    open LOCK, ">$file.$LOCK_EXT" or die "Couldn't open file: $!";
+    open my $LOCK, ">", "$file.$LOCK_EXT" or die "Couldn't open file: $!";
 
     # if we're only reading, get a shared lock, otherwise get exclusive
     if ((!defined($index_mode) || $index_mode eq 'r') &&
 	(!defined($meta_mode)  || $meta_mode eq 'r') &&
 	(!defined($data_mode)  || $data_mode eq 'r')) {
 
-	flock LOCK, LOCK_SH or die "Couldn't lock file: $!";
+	flock $LOCK, LOCK_SH or die "Couldn't lock file: $!";
     } else {
-	flock LOCK, LOCK_EX or die "Couldn't lock file: $!";
+	flock $LOCK, LOCK_EX or die "Couldn't lock file: $!";
     }
 
     # check for errors if last transaction died
@@ -148,30 +148,30 @@ sub _perform_transaction {
     my $sub_data = {};
     my ($index, $meta, $data);
     if (defined($index_mode)) {
-	open INDEX, "<$file.$INDEX_EXT" or die "Couldn't open file: $!";
-	$index = _decode(<INDEX>);
+	open my $INDEX, "<", "$file.$INDEX_EXT" or die "Couldn't open file: $!";
+	$index = _decode(<$INDEX>);
 	$sub_data->{index} = $index;
-	close INDEX;
+	close $INDEX;
     }
 
     if (defined($meta_mode)) {
-	open META, "<$file.$META_EXT" or die "Couldn't open file: $!";
-	$meta = _decode(<META>);
+	open my $META, "<", "$file.$META_EXT" or die "Couldn't open file: $!";
+	$meta = _decode(<$META>);
 	$sub_data->{meta} = $meta;
-	close META;
+	close $META;
     }
 
     if (defined($data_mode)) {
 	if ($data_mode eq 'r') {
-	    open DATA, "<$file.$DATA_EXT" or die "Couldn't open file: $!";
-	    binmode DATA;
-	    $data = *DATA;
+	    open my $DATA, "<", "$file.$DATA_EXT" or die "Couldn't open file: $!";
+	    binmode $DATA;
+	    $data = $DATA;
 	    $sub_data->{data} = $data;
 	} elsif ($data_mode eq 'w') {
 	    # open r/w, '+>' clobbers the file
-	    open DATA, "+<$file.$DATA_EXT" or die "Couldn't open file: $!";
-	    binmode DATA;
-	    $data = *DATA;
+	    open my $DATA, "+<", "$file.$DATA_EXT" or die "Couldn't open file: $!";
+	    binmode $DATA;
+	    $data = $DATA;
 	    $sub_data->{data} = $data;
 	}
     }
@@ -189,9 +189,9 @@ sub _perform_transaction {
 		die "Cannot write to index file, wrong permissions";
 	    }
 
-	    open INDEX_TEMP, ">$file.$INDEX_EXT.tmp" or die "Couldn't open file: $!";
-	    print INDEX_TEMP _encode($index);
-	    close INDEX_TEMP;
+	    open my $INDEX_TEMP, ">", "$file.$INDEX_EXT.tmp" or die "Couldn't open file: $!";
+	    print $INDEX_TEMP _encode($index);
+	    close $INDEX_TEMP;
 	    rename "$file.$INDEX_EXT.tmp", "$file.$INDEX_EXT";
 	}
 
@@ -200,14 +200,14 @@ sub _perform_transaction {
 		die "Cannot write to meta file, wrong permissions";
 	    }
 
-	    open META_TEMP, ">$file.$META_EXT.tmp" or die "Couldn't open file: $!";
-	    print META_TEMP _encode($meta);
-	    close META_TEMP;
+	    open my $META_TEMP, ">", "$file.$META_EXT.tmp" or die "Couldn't open file: $!";
+	    print $META_TEMP _encode($meta);
+	    close $META_TEMP;
 	    rename "$file.$META_EXT.tmp", "$file.$META_EXT";
 	}
     }
 
-    close LOCK;
+    close $LOCK;
 
     return $ret;
 }

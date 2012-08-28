@@ -10,7 +10,6 @@
 # Date of module creation: 2012-06-03
 ########################################################################
 #TODO: refactor code, too much repeating yourself now.
-=pod
 
 =head1 ModelSEED::MS::Factories::Annotation
 
@@ -20,14 +19,14 @@ sources.
 =head2 ABSTRACT
 
     my $fact = ModelSEED::MS::Factories::Annotation->new;
-
+    
     # Get list of available genome IDs
     my $genomes = $fact->availableGenomes();
     my $kbase_genomes = $fact->availableGenomes(source => 'KBase');
     my $rast_genomes = $fact->availableGenomes(source => 'RAST');
     my $pubseed_genomes = $fact->availableGenomes(source => 'PubSEED');
     # These are all hash refs of genome IDs as keys and scientific names as values
-
+    
     # Create a MS::Annotation object from a genome
     my $anno = $fact->build({ genome_id => "kb|g.0", mapping => $mapping });
 
@@ -68,6 +67,7 @@ L<ModelSEED::MS::Mapping> object to use.
 =back
 
 =cut
+
 package ModelSEED::MS::Factories::Annotation;
 use common::sense;
 use Moose;
@@ -273,7 +273,8 @@ sub getGenomeFeatures {
             [qw(begin dir len ordinal)],
             [qw(id feature_type function source_id alias)]
         );
-        map {
+        # reformat features
+        for (@$features) {
             $_ = {
                 ID        => [ $_->[2]->{id} ],
                 TYPE      => [ $_->[2]->{feature_type} ],
@@ -285,7 +286,7 @@ sub getGenomeFeatures {
                 _SOURCE   => [ $_->[2]->{source_id} ],
                 _ALIAS    => [ $_->[2]->{alias} ],
             };
-        } @$features; # reformat features
+        } 
         # add functions to each feature
         foreach my $feature (@$features) {
             my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles($feature->{_FUNCTION}->[0]);

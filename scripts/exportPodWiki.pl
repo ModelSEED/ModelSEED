@@ -61,6 +61,7 @@ foreach my $name (keys %$name2path) {
     open(my $fh, "<", $tmpfile);
     my $rows = processPackageLinks($fh, $name2rename);
     $rows = highlightSyntax($rows);
+    $rows = cutHead1($rows);
     close($fh);
     my $finalPath = "$dest/".$name2rename->{$name}.".pod";
     unlink $finalPath;
@@ -105,20 +106,30 @@ sub highlightSyntax {
     my ($rows) = @_;
     my $out = [];
     my $l   = @$rows;
+    my $prev;
     for(my $i=0; $i<$l; $i++) {
-        my $start = $rows->[$i-1] if $i > 0;
-        next unless defined $start;
-        if($start =~ /^\s*$/ && $rows->[$i] =~ /^\s+\S+/) {
+        if($rows->[$i] =~ /^(\s+)\S+/) {
+            my $count = length $1;
             push(@$out, "```perl\n");
-            while($rows->[$i] =~ /^\s+\S+/ && $i < $l) {
+            while($rows->[$i] =~ /^\s{$count}/ && $i < $l) {
                 push(@$out, $rows->[$i]);
                 $i += 1;
             }
+            $i -= 1 unless $i == $l;
             push(@$out, "```\n");
             push(@$out, "\n");
         } else {
             push(@$out, $rows->[$i]);
         }
+    }
+    return $out;
+}
+
+sub cutHead1 {
+    my ($rows) = @_;
+    my $out = [];
+    foreach my $row (@$rows) {
+        push(@$out, $row) unless $row =~ m/^=head1/;
     }
     return $out;
 }

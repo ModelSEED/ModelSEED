@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::update;
+use strict;
+use common::sense;
 
 use Try::Tiny;
 use Module::Load;
@@ -91,7 +93,7 @@ sub nix_update_dev {
          INC="-I$local/include -L$local/lib" LD_RUN_PATH=$local/lib make 2>&1
      fi`;
 
-    $ec = $? >> 8;
+    my $ec = $? >> 8;
 
     if ($ec != 0) {
         print "Error, update failed: $ec\n";

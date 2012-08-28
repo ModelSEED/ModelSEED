@@ -1,4 +1,6 @@
 package ModelSEED::App::model::Command::genome;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Try::Tiny;
 use Class::Autouse qw(

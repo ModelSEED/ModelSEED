@@ -9,7 +9,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Auth::Basic
 
@@ -27,6 +26,7 @@ Do basic authentication ( username + password )
 C<Username> and C<Password> are required.
 
 =cut
+
 package ModelSEED::Auth::Basic;
 use Moose;
 use common::sense;

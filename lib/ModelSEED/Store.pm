@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-01
 ########################################################################
-=pod
 
 =head1 ModelSEED::Store 
 
@@ -132,6 +131,7 @@ For deatails on usage, see the I<Alias Functions> section of L<ModelSEED::Databa
     my $success = $Store->set_public( $ref, $bool );
 
 =cut
+
 package ModelSEED::Store;
 use Moose;
 use ModelSEED::Auth;

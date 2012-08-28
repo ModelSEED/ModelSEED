@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-07-25
 ########################################################################
-=pod
 
 =head1 ModelSEED::Table
 
@@ -20,7 +19,7 @@ A basic table object
     my $t = ModelSEED::Table->new
     my $t = ModelSEED::Table->new(rows => [], columns => [])
     my $t = ModelSEED::Table->new(filename => "foo")
-    
+        
     # Alter columns
     $tbl->columns("id", "name")          # sets column names
     $tbl->columns([ qw(id name) ])      
@@ -28,7 +27,7 @@ A basic table object
     $tbl->remove_column("phone number")  # removes a column
     $tbl->reorder_columns(\@)            # rearranges columns
     $tbl->reorder_columns(@)
-
+    
     # Alter rows
     $tbl->rows(\@)
     $tbl->rows(@)
@@ -36,7 +35,7 @@ A basic table object
     $tbl->add_row(%)
     $tbl->add_row(@)
     $tbl->add_row(\@)
-
+    
     # Getters
     $tbl->columns           # return array ref of columns
     $tbl->rows              # return array ref of rows
@@ -44,23 +43,23 @@ A basic table object
     $tbl->length            # return number of rows
     $tbl->width             # return number of columns
     $tbl->row(n)            # 
-
+    
     # Settings
     $tbl->filename
     $tbl->delimiter
     $tbl->subdelimiter
     $tbl->rows_return_as
-
+    
     # Queries
     $tbl->get_rows ( % )
     $tbl->get_row ( % )
-
+     
     # Save
     $tbl->save
     $tbl->print
 
-
 =cut
+
 package ModelSEED::Table;
 use Moose;
 use Moose::Util::TypeConstraints;
@@ -242,7 +241,7 @@ sub print {
 
 sub load {
     my ($self, $filename) = @_;
-    my $filename = $self->filename unless defined $filename;
+    $filename = $self->filename unless defined $filename;
     my ($del, $delr, $sdel, $sdelr) = $self->_delimiters();
     open( my $fh, "<", $filename) or die "Unable to open $filename: $!";
     my $doneColumns = 0;
@@ -322,7 +321,7 @@ sub _arrayref_from_args {
     } elsif (@_) {
         return \@_;
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -347,7 +346,7 @@ sub _get_row_from_args {
     } elsif(ref $r && $r->isa("ModelSEED::Table::Row")) {
         return dclone $r->_row;
     } else {
-        return undef;
+        return;
     }
 }
 

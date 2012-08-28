@@ -1,4 +1,6 @@
 package ModelSEED::App::mapping::Command::readable;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store

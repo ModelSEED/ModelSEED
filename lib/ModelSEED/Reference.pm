@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Reference
 
@@ -162,6 +161,7 @@ The "domain" portion of the url, e.g. "model-api.theseed.org"
 =back
 
 =cut
+
 package ModelSEED::Reference;
 use Moose;
 use URI::Split qw(uri_split uri_join);
@@ -278,7 +278,7 @@ sub parse {
             unshift(@parts, $part);
             # now within a collection, must have a type
             push(@$parent_collections, join($delimiter, @$base));
-            return undef unless(defined($schema->{type}));
+            return unless(defined($schema->{type}));
             # and a validator for ids within that collection
             my $result = _validate($schema, @parts);
             my $idParts = $result->{parts};
@@ -298,14 +298,14 @@ sub parse {
                 $owner = shift @parts;
                 $type = 'collection';
             } else {
-               return undef 
+               return;
             }
         }
     }
     # remove empty strings from id, base
     $base = [ grep { defined($_) && $_ ne '' } @$base ];
     $id = [ grep { defined($_) && $_ ne '' } @$id ];
-    return undef unless(defined $schema->{type});
+    return unless(defined $schema->{type});
     $rtv = {
         ref => $ref,
         delimiter => $delimiter,
@@ -384,7 +384,7 @@ sub _validate {
         uuid  => \&_uuid,
     };
     my ($final_type, $parts);
-    return undef unless(defined($schema->{id_types}));
+    return unless(defined($schema->{id_types}));
     foreach my $type (@{$schema->{id_types}}) {
         my $fn = $validatorMap->{$type};
         $parts = $fn->(@args);

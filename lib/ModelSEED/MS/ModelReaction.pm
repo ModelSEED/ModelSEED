@@ -150,6 +150,7 @@ sub _buildtranslatedDirection {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 addReagentToReaction
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->addReagentToReaction({
@@ -158,7 +159,9 @@ Definition:
 	});
 Description:
 	Add a new ModelCompound object to the ModelReaction if the ModelCompound is not already in the reaction
+
 =cut
+
 sub addReagentToReaction {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["coefficient","modelcompound_uuid"],{});
@@ -174,6 +177,7 @@ sub addReagentToReaction {
 	});
 	return $mdlrxnrgt;
 }
+
 =head3 addModelReactionProtein
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->addModelReactionProtein({
@@ -182,7 +186,9 @@ Definition:
 	});
 Description:
 	Adds a new protein to the reaction based on the input data tree
+
 =cut
+
 sub addModelReactionProtein {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["proteinDataTree","complex_uuid"],{});

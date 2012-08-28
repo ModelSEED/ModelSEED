@@ -9,7 +9,6 @@
 #
 # Date of module creation: 2012-06-03
 ########################################################################
-=pod
 
 =head1 ModelSEED::MS::Factories::FBAMDOELFactory
 
@@ -20,6 +19,7 @@ A Factory that uses an FBAMODEL server to pull construct a model.
 =head3 createModel
 
 =cut
+
 package ModelSEED::MS::Factories::FBAMODELFactory;
 use FBAMODELClient;
 use ModelSEED::utilities;
@@ -146,12 +146,12 @@ sub _build_auth_config {
 
 sub _get_uuid_from_alias {
     my ($self, $ref) = @_;
-    return undef unless(defined($ref));
+    return unless(defined($ref));
     my $alias_objects = $self->store->get_aliases($ref);
     if(defined($alias_objects->[0])) {
         return $alias_objects->[0]->{uuid}
     } else {
-        return undef;
+        return;
     }
 }
 

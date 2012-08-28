@@ -88,7 +88,7 @@ sub _attributes {
     if (defined($ind)) {
       return $attributes->[$ind];
     } else {
-      return undef;
+      return;
     }
   } else {
     return $attributes;
@@ -105,7 +105,7 @@ sub _subobjects {
     if (defined($ind)) {
       return $subobjects->[$ind];
     } else {
-      return undef;
+      return;
     }
   } else {
     return $subobjects;

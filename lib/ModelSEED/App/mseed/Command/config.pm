@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::config;
+use strict;
+use common::sense;
 
 use ModelSEED::Configuration;
 

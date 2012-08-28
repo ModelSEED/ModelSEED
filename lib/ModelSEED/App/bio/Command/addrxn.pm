@@ -1,4 +1,6 @@
 package ModelSEED::App::bio::Command::addrxn;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store

@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::model; 
+use strict;
+use common::sense;
 use ModelSEED::App::model;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to ms-model command" }

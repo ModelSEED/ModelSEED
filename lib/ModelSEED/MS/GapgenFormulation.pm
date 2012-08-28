@@ -29,12 +29,16 @@ extends 'ModelSEED::MS::DB::GapgenFormulation';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 prepareFBAFormulation
+
 Definition:
 	void prepareFBAFormulation();
 Description:
 	Ensures that an FBA formulation exists for the gapgen, and that it is properly configured for gapgen
+
 =cut
+
 sub prepareFBAFormulation {
 	my ($self,$args) = @_;
 	my $form;
@@ -83,13 +87,16 @@ sub prepareFBAFormulation {
 }
 
 =head3 runGapGeneration
+
 Definition:
 	ModelSEED::MS::GapgenSolution = ModelSEED::MS::GapgenFormulation->runGapGeneration({
 		model => ModelSEED::MS::Model(REQ)
 	});
 Description:
 	Identifies the solution that disables growth in the specified conditions
+
 =cut
+
 sub runGapGeneration {
 	my ($self,$args) = @_;
 	#Preparing fba formulation describing gapfilling problem
@@ -100,7 +107,7 @@ sub runGapGeneration {
 	#Parsing gapfilling results
 	if (!-e $directory."/ProblemReport.txt") {
 		print STDERR "Gapgeneration failed!";
-		return undef;
+		return;
 	}
 	my $tbl = ModelSEED::utilities::LOADTABLE($directory."/ProblemReport.txt",";");
 	my $column;

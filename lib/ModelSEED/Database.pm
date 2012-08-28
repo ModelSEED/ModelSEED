@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-04-01
 ########################################################################
-=pod
 
 =head1 ModelSEED::Database
 
@@ -129,6 +128,7 @@ an array ref of alias objects that have the following structure:
     $bool = $db->set_public(ref, boolean, auth)
 
 =cut
+
 package ModelSEED::Database;
 use Moose::Role;
 # Data access functions

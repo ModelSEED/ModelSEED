@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::pp;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use JSON;
 sub abstract { return "Pretty print JSON object" }

@@ -29,6 +29,8 @@ package myRAST::ClientThing;
     no warnings qw(once);
     use POSIX;
     use HTTP::Message;
+    use Module::Load;
+    use Try::Tiny;
 
     use constant AGENT_NAME => "myRAST version 36";
 
@@ -153,12 +155,13 @@ sub new {
         $ua->timeout(20 * 60);
     } else {
         # Get access to the server package.
-        require "$type.pm";
+        load $type;
         # Create a service object.
-        $ua = eval("$type->new(\$options{sapDB})");
-        if ($@) {
-            die "Error creating $type object: $@";
-        }
+        try {
+            $ua = $type->new(\$options{sapDB});
+        } catch {
+            die "Error creating $type object: $_";
+        };
     }
     my $accept_encoding = [];
     eval {
@@ -473,11 +476,11 @@ sub _call_method {
         $retVal = YAML::Load($content);
     } else {
         # Here we're calling a local method.
-        $retVal = eval("\$ua->$method(\$args)");
-        # Check for an error.
-        if ($@) {
-            die "Package error: $@";
-        }
+        try {
+            $retVal = $ua->$method(\$args);
+        } catch {
+            die "Package error: $_";
+        };
     }
     # Return the result.
     return $retVal;
@@ -518,7 +521,7 @@ sub _send_file {
     if (ref $ih eq 'GLOB') {
         $ih_real = $ih;
     } else {
-        open $ih_real, "<$ih" || die "File error: $!";
+        open $ih_real, "<", $ih || die "File error: $!";
     }
     # Are we in localhost mode?
     if (ref $ua eq 'LWP::UserAgent') {
@@ -590,7 +593,7 @@ sub _receive_file {
     if (ref $oh eq 'GLOB') {
         $oh_real = $oh;
     } else {
-        open $oh_real, ">$oh" || die "File error: $!";
+        open $oh_real, ">", $oh || die "File error: $!";
     }
     # Are we in localhost mode?
     if (ref $ua eq 'LWP::UserAgent') {
@@ -608,7 +611,7 @@ sub _receive_file {
     } else {
         # Open the named file for input.
         require FIG_Config;
-        open my $ih, "<$FIG_Config::temp/$name";
+        open my $ih, "<", "$FIG_Config::temp/$name";
         # Copy it to the output.
         while (! eof $ih) {
             my $line = <$ih>;

@@ -158,12 +158,16 @@ sub _buildknockouts {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 runFBA
+
 Definition:
 	ModelSEED::MS::FBAResults = ModelSEED::MS::FBAFormulation->runFBA();
 Description:
 	Runs the FBA study described by the fomulation and returns a typed object with the results
+
 =cut
+
 sub runFBA {
 	my ($self) = @_;
 	if (!-e $self->jobDirectory()."/runMFAToolkit.sh") {
@@ -175,12 +179,16 @@ sub runFBA {
 	$fbaresults->loadMFAToolkitResults();
 	return $fbaresults;
 }
+
 =head3 createJobDirectory
+
 Definition:
 	void ModelSEED::MS::Model->createJobDirectory();
 Description:
 	Creates the MFAtoolkit job directory
+
 =cut
+
 sub createJobDirectory {
 	my ($self) = @_;
 	my $directory = $self->jobDirectory()."/";
@@ -472,12 +480,16 @@ sub createJobDirectory {
 	chmod 0775,$directory."runMFAToolkit.sh";
 	$self->command($self->mfatoolkitBinary().' parameterfile "'.$directory.'SpecializedParameters.txt" LoadCentralSystem "'.$directory.'Model.tbl" > "'.$directory.'log.txt"');
 }
+
 =head3 setupFBAExperiments
+
 Definition:
 	string:FBA experiment filename = setupFBAExperiments());
 Description:
 	Converts phenotype simulation specs into an FBA experiment file for the MFAToolkit
+
 =cut
+
 sub setupFBAExperiments {
 	my ($self) = @_;
 	my $fbaExpFile = "none";
@@ -531,7 +543,9 @@ sub setupFBAExperiments {
 	}
 	return $fbaExpFile;
 }
+
 =head3 createTemporaryMedia
+
 Definition:
 	ModelSEED::MS::Media = createTemporaryMedia({
 		name => "Temp".$tempMediaIndex,
@@ -540,7 +554,9 @@ Definition:
 	});
 Description:
 	Creates a temporary media conditions with the specified base media plus the specified additional compounds
+
 =cut
+
 sub createTemporaryMedia {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["name","media","additionalCpd"],{});
@@ -575,14 +591,18 @@ sub createTemporaryMedia {
 	}
 	return $newMedia;
 }
+
 =head3 parsePhenotypeSimulations
+
 Definition:
 	void parsePhenotypeSimulations(
 		[{}]
 	);
 Description:
 	Parses array of hashes with phenotype specifications
+
 =cut
+
 sub parsePhenotypeSimulations {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["fbaPhenotypeSimulations"],{});
@@ -637,14 +657,18 @@ sub parsePhenotypeSimulations {
 		}
 	}
 }
+
 =head3 parseObjectiveTerms
+
 Definition:
 	void parseObjectiveTerms(
 		[string]
 	);
 Description:
 	Parses array of strings specifying objective into objective term sub objects
+
 =cut
+
 sub parseObjectiveTerms {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["objTerms"],{});
@@ -661,14 +685,18 @@ sub parseObjectiveTerms {
 		}
 	}
 }
+
 =head3 parseConstraints
+
 Definition:
 	void parseConstraints({
 		constraints => [string]
 	});
 Description:
 	Parses array of strings specifying special constraints into constraint objects
+
 =cut
+
 sub parseConstraints {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["constraints"],{});
@@ -703,27 +731,34 @@ sub parseConstraints {
 }
 
 =head3 parseReactionKOList
+
 Definition:
 	void parseReactionKOList(
 		string => string(none),delimiter => string(|),array => [string]([])
 	);
 Description:
 	Parses a string or array of strings specifying a list of reaction KOs in the form of references
+
 =cut
+
 sub parseReactionKOList {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
 	$args->{type} = "Reaction";
 	$self->reactionKO_uuids($self->parseReferenceList($args));
 }
+
 =head3 parseGeneKOList
+
 Definition:
 	void parseGeneKOList(
 		string => string(none),delimiter => string(|),array => [string]([])
 	);
 Description:
 	Parses a string or array of strings specifying a list of gene KOs in the form of references
+
 =cut
+
 sub parseGeneKOList {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";

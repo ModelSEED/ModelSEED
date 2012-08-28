@@ -231,9 +231,6 @@ my $abbr = [qw(
 
 }
 
-# Test get row with multiple types
-#
-
 # Test small table
 {
     my $s_rows = [ [ "Alabama", "AL" ], [ "Alaska", "AK" ], ];

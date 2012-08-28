@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::genome; 
+use strict;
+use common::sense;
 use ModelSEED::App::genome;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to ms-genome command" }

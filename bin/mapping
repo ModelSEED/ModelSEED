@@ -1,4 +1,6 @@
 #!/usr/bin/env perl
+use strict;
+use common::sense;
 use ModelSEED::App::mapping;
 use ModelSEED::Exceptions;
 use Try::Tiny;

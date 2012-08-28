@@ -1,4 +1,6 @@
 package ModelSEED::App::stores::Command::prioritize;
+use strict;
+use common::sense;
 use Class::Autouse qw(ModelSEED::Configuration);
 use base 'App::Cmd::Command';
 my $MS = ModelSEED::Configuration->new;

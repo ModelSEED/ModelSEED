@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::bio; 
+use strict;
+use common::sense;
 use ModelSEED::App::bio;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to ms-bio command" }

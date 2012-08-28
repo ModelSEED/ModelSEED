@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-03-18
 ########################################################################
-=pod
 
 =head1 ModelSEED::Configuration 
 

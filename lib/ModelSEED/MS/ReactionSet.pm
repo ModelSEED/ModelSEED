@@ -27,6 +27,7 @@ extends 'ModelSEED::MS::DB::ReactionSet';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 modelCoverage
 Definition:
 	fraction = ModelSEED::MS::ReactionSet->modelCoverage({
@@ -34,13 +35,16 @@ Definition:
 	});
 Description:
 	Calculates the fraction of the reaction set covered by the model
+
 =cut
+
 sub modelCoverage {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["model"],{});
 	#TODO
 	return 1;
 }
+
 =head3 containsReaction
 Definition:
 	fraction = ModelSEED::MS::ReactionSet->containsReaction({
@@ -48,7 +52,9 @@ Definition:
 	});
 Description:
 	Returns "1" if the reaction set contains the specified reaction
+
 =cut
+
 sub containsReaction {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["reaction"],{});
