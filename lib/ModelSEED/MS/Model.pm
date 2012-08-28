@@ -1086,7 +1086,7 @@ sub gapfillModel {
 		#}
 		return $solution;	
 	}
-	return undef;
+	return;
 }
 
 =head3 gapgenModel
@@ -1112,7 +1112,7 @@ sub gapgenModel {
 	if (defined($solution)) {
 		return $solution;	
 	}
-	return undef;
+	return;
 }
 
 sub printExchangeFormat {

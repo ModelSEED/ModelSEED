@@ -306,7 +306,7 @@ sub runGapFilling {
 	#Parsing gapfilling results
 	if (!-e $directory."GapfillingComplete.txt") {
 		print STDERR "Gapfilling failed!";
-		return undef;
+		return;
 	}
 	my $filedata = ModelSEED::utilities::LOADFILE($directory."CompleteGapfillingOutput.txt");
 	my $gfsolution = $self->add("gapfillingSolutions",{});

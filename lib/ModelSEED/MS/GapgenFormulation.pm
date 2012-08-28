@@ -107,7 +107,7 @@ sub runGapGeneration {
 	#Parsing gapfilling results
 	if (!-e $directory."/ProblemReport.txt") {
 		print STDERR "Gapgeneration failed!";
-		return undef;
+		return;
 	}
 	my $tbl = ModelSEED::utilities::LOADTABLE($directory."/ProblemReport.txt",";");
 	my $column;
