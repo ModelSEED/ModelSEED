@@ -241,7 +241,7 @@ sub print {
 
 sub load {
     my ($self, $filename) = @_;
-    my $filename = $self->filename unless defined $filename;
+    $filename = $self->filename unless defined $filename;
     my ($del, $delr, $sdel, $sdelr) = $self->_delimiters();
     open( my $fh, "<", $filename) or die "Unable to open $filename: $!";
     my $doneColumns = 0;
@@ -321,7 +321,7 @@ sub _arrayref_from_args {
     } elsif (@_) {
         return \@_;
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -346,7 +346,7 @@ sub _get_row_from_args {
     } elsif(ref $r && $r->isa("ModelSEED::Table::Row")) {
         return dclone $r->_row;
     } else {
-        return undef;
+        return;
     }
 }
 

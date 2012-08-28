@@ -187,13 +187,13 @@ Description:
 sub LOADFILE {
     my ($filename) = @_;
     my $DataArrayRef = [];
-    open (INPUT, "<", $filename) || ModelSEED::utilities::ERROR("Couldn't open $filename: $!");
-    while (my $Line = <INPUT>) {
+    open (my $fh, "<", $filename) || ModelSEED::utilities::ERROR("Couldn't open $filename: $!");
+    while (my $Line = <$fh>) {
         chomp($Line);
         $Line =~ s/\r//;
         push(@{$DataArrayRef},$Line);
     }
-    close(INPUT);
+    close($fh);
     return $DataArrayRef;
 }
 

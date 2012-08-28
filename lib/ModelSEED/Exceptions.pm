@@ -9,19 +9,21 @@
 # Date of module creation: 2012-08-14
 ########################################################################
 package ModelSEED::Exceptions;
+use strict;
+use warnings;
 use Exception::Class (
-    ModelSEED::Exception::CLI => {
+    'ModelSEED::Exception::CLI' => {
         description => "Base class for exceptions that support cli_error_text",
     },
-    ModelSEED::Exception::Database => {
+    'ModelSEED::Exception::Database' => {
         isa => "ModelSEED::Exception::CLI",
         description => "Exception with ModelSEED::Database"
     },
-    ModelSEED::Exception::NoDatabase => {
+    'ModelSEED::Exception::NoDatabase' => {
         isa => "ModelSEED::Exception::Database",
         description => "When there is no database configuration",
     },
-    ModelSEED::Exception::DatabaseConfigError => {
+    'ModelSEED::Exception::DatabaseConfigError' => {
         isa => "ModelSEED::Exception::Database",
         description => "For invalid database configuration",
         fields => [qw( configText dbName )],
@@ -30,11 +32,15 @@ use Exception::Class (
 1; 
 
 package ModelSEED::Exception::CLI;
+use strict;
+use warnings;
 sub cli_error_text {
     return "An unknown error occured.";
 }
 1;
 package ModelSEED::Exception::NoDatabase;
+use strict;
+use warnings;
 sub cli_error_text { return <<ND;
 Unable to construct a database connection.
 Configure a database with the "stores" command

@@ -1,4 +1,5 @@
 package ModelSEED::Client::MSAccountManagement;
+use strict;
 
 use base qw(myRAST::ClientThing);
 

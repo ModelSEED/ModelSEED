@@ -74,9 +74,9 @@ sub get_data {
     my ($self, $ref, $auth) = @_;
     $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
-    return undef unless(defined($uuid));
+    return unless(defined($uuid));
     my $fh = $self->db->get_gridfs->find_one({ uuid => $uuid });
-    return undef unless(defined($fh));
+    return unless(defined($fh));
     my $ob = $self->_gfs_fh_to_object($fh);
     return $ob;
 }
@@ -89,7 +89,7 @@ sub save_data {
     if ($ref->id_type eq 'alias') {
         $oldUUID = $self->_get_uuid($ref, $auth);    
         # cannot write to alias not owned by callee
-        return undef unless($auth->username eq $ref->alias_username);
+        return unless($auth->username eq $ref->alias_username);
     } elsif($ref->id_type eq 'uuid') {
         # cannot save to existing uuid
         if($self->has_data($ref, $auth)) {
@@ -120,11 +120,11 @@ sub save_data {
     if($update_alias) {
         # update alias to new uuid
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
-        return undef unless($rtv);
+        return unless($rtv);
     } elsif(!defined($oldUUID) && $ref->id_type eq 'alias') {
         # alias is new, so create it
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
-        return undef unless($rtv);
+        return unless($rtv);
     }
     return $object->{uuid};
 }
@@ -133,7 +133,7 @@ sub delete_data {
     my ($self, $ref, $auth) = @_;
     $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
-    return undef unless(defined($uuid));
+    return unless(defined($uuid));
     # TODO - do we actually want to delete objects?
     return 1;
 }
@@ -309,7 +309,7 @@ sub _alias_query {
     my ($self, $ref, $attribute, $auth) = @_;
     $ref = $self->_cast_ref($ref);
     # can only update ref that is an alias
-    return undef unless($ref->id_type eq 'alias');
+    return unless($ref->id_type eq 'alias');
     my $aliasCollection = $ModelSEED::Database::MongoDBSimple::aliasCollection;
     my $o = $self->db->$aliasCollection->find_one(
         {   alias => $ref->alias_string,
@@ -317,10 +317,10 @@ sub _alias_query {
             owner => $ref->alias_username,
         }
     );
-    # return undefined unless we are allowed to see alias
+    # return unless we are allowed to see alias
     #     either because it is (1) public, (2) owned by us
     #     or (3) we are in the list of viewers
-    return undef unless(defined($o));
+    return unless(defined($o));
     unless($o->{public}
         || $o->{owner} eq $auth->username)
     {
@@ -331,7 +331,7 @@ sub _alias_query {
                 last;
             }
         }
-        return undef unless($authorized);
+        return unless($authorized);
     }
     return $o->{$attribute};
 }
