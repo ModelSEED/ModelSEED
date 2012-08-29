@@ -36,4 +36,3 @@ foreach my $module (@modules) {
     next if $next;
     pod_coverage_ok($module, { coverage_class => 'Pod::Coverage::CountParents' } );
 }
-#all_pod_coverage_ok();

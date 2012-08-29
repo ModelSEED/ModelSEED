@@ -11,6 +11,30 @@
 package ModelSEED::Exceptions;
 use strict;
 use warnings;
+
+=head1 ModelSEED::Exceptions
+
+Structured exceptions used in the ModelSEED
+
+=head2 ModelSEED::Exception::CLI
+Base Class for exceptions that implement a CLI reporting function
+
+=head3 cli_error_text
+
+Returns a string describing the error, formatted to be displayed
+to the user.
+
+=head2 ModelSEED::Exception::NoDatabase
+
+Error when there is no database configured for the ModelSEED
+
+=head2 ModelSEED::Exception::DatabaseConfigError
+
+Error when the configuration file contains data that cannot be
+converted into a L<ModelSEED::Database> instance.
+
+=cut
+
 use Exception::Class (
     'ModelSEED::Exception::CLI' => {
         description => "Base class for exceptions that support cli_error_text",
@@ -38,6 +62,7 @@ sub cli_error_text {
     return "An unknown error occured.";
 }
 1;
+
 package ModelSEED::Exception::NoDatabase;
 use strict;
 use warnings;
@@ -50,6 +75,7 @@ to add a database. For usage, run:
 ND
 }
 1;
+
 package ModelSEED::Exception::DatabaseConfigError;
 sub cli_error_text {
     my ($self) = @_;

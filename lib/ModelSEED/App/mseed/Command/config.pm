@@ -21,7 +21,7 @@ sub execute {
     my ($self, $opts, $args) = @_;
     print($self->usage) && exit if $opts->{help};
     my $config = ModelSEED::Configuration->new();
-    my $pos_user_opts = $config->_possible_user_options();
+    my $pos_user_opts = $config->possible_user_options();
     my $user_opts = $config->user_options();
 
     if ($opts->{list} && $opts->{remove}) {

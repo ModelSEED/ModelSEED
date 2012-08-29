@@ -245,12 +245,12 @@ around BUILDARGS => sub {
             $ref = uri_join($args->{scheme}, $args->{authority}, $ref);
         }
     }
-    my $hash = parse($ref, $delimiter, $schema);
+    my $hash = _parse($ref, $delimiter, $schema);
     die "Invalid Reference" unless(defined($hash));
     return $class->$orig($hash);
 };
 
-sub parse {
+sub _parse {
     my ($ref, $delimiter, $schema) = @_;
     my ($scheme, $auth, $query, $frag) = uri_split($ref);
     my $rtv = {};

@@ -130,6 +130,34 @@ For deatails on usage, see the I<Alias Functions> section of L<ModelSEED::Databa
     my $success = $Store->revmove_viewer( $ref, $username );
     my $success = $Store->set_public( $ref, $bool );
 
+=head4 get_aliases
+
+    my \@aliases = $Store->get_aliases($query);
+
+=head4 alias_viewers
+
+    my \@usernames = $Store->alias_viewers($ref);
+
+=head4 alias_owner
+
+    my $username = $Store->alias_owner($ref);
+
+=head4 alias_public
+
+    my $bool = $Store->alias_public($ref);
+
+=head4 add_viewer
+
+    my $success = $Store->add_viewer( $ref, $username );
+
+=head4 remove_viewer
+
+    my $success = $Store->revmove_viewer( $ref, $username );
+
+=head4 set_public
+
+    my $success = $Store->set_public( $ref, $bool );
+
 =cut
 
 package ModelSEED::Store;
