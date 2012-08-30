@@ -7,18 +7,115 @@
 ########################################################################
 package ModelSEED::MS::IndexedObject;
 
+=head1 ModelSEED::MS::IndexedObject
+
+=head2 METHODS
+
+=head3 add
+
+    $obj->add($attribute, $subobject);
+
+Adds a sub-object C<$subobject> to the Indexed Object, updating
+existing indexes to match the new object data.  C<$attribute> is a
+string attribute name within the object.  C<$subobject> can be
+either a plain perl hash or a C<ModelSEED::MS> object.
+
+=head3 addAlias
+
+    $obj->addAlias(\%config);
+
+Add an alias to a AliasSet. Config is a hash reference that requires
+the following parameters:
+
+=over 4
+
+=item attribute
+
+The attribute that the aliases should be listed for, e.g.
+"compounds", "reactions"
+
+=item aliasName
+
+The name of the alias class. For example, the Kyoto Encyclopedia
+of Genes and Genomes (KEGG) reaction aliases are listed under "KEGG"
+
+=item alias
+
+A string. 
+
+=item uuid
+
+The uuid of the object to create an alias for.
+
+=item source
+
+This is optional, a string that is the source name for the object.
+This defaults to "aliasName" if not supplied.
+
+=back
+
+=head3 getObjectByAlias 
+
+	$aliased = $obj->getObjectByAlias($attribute,$alias,$aliasName);
+
+Return the first object that is matched by the provided alias.
+C<$attribute> is the attribute name for which the alias would apply,
+e.g. "compounds", "roles", or "reactions".
+C<$aliasName> is the class of alias to look for, e.g. "KEGG".
+C<$alias> is the string to look for.
+
+=head3 getObjectsByAlias
+
+	\@aliased = $obj->getObjectByAlias($attribute,$alias,$aliasName);
+
+Same as getObjectsByAlias, but will return an array-ref of all
+aliases found.
+
+=head3 getObject
+
+    $found = $obj->getObject($attribute, $uuid)
+
+Find an object that matches the provided C<$uuid>.  C<$attribute>
+is the attribute name for which the object would be under. For
+L<ModelSEED::MS::Biochemistry> this might be: "reactions", "compounds",
+"media", etc.
+
+If no object is found, return undef.
+
+=head3 getObjects
+
+    \@found = $obj->getObjects($attribute, $uuids)
+
+Same as getObject, but C<$uuids> is an array ref of UUIDs and this
+function returns an array ref of objects. If no objects are found,
+return an empty list.
+
+=head3 queryObject
+
+    $found = $obj->queryObject($attribute, \%query);
+
+Query for the first object that matches a specific set of attributes.
+C<$attribute> follows the same format as above, the query is a hash
+reference of attributes to values in the object that we are looking
+for.
+
+=head3 queryObjects
+
+    \@found = $obj->queryObjects($attribute, \%query);
+
+Same as queryObject except it returns all objects that match the
+query parameters, not just the first one. This is returned as an
+array reference.
+
+=cut
+
 use Moose;
 use namespace::autoclean;
 use ModelSEED::MS::BaseObject;
 
-use Data::Dumper;
-
 extends 'ModelSEED::MS::BaseObject';
-
 has indices => ( is => 'rw', isa => 'HashRef', default => sub { return {} } );
-######################################################################
-#Object addition functions
-######################################################################
+
 sub add {
     my ($self, $attribute, $data_or_object) = @_;
     my $attr_info = $self->_subobjects($attribute);
