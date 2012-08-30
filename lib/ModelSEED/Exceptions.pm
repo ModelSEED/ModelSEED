@@ -51,7 +51,12 @@ use Exception::Class (
         isa => "ModelSEED::Exception::Database",
         description => "For invalid database configuration",
         fields => [qw( configText dbName )],
-    }
+    },
+    'ModelSEED::Exception::BadReference' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "When a bad reference string is passed into a function",
+        fields => [qw( refstr )],
+    },
 );
 1; 
 
@@ -89,3 +94,25 @@ Use the "stores" command to reconfigure this database.
 ND
 }
 1;
+
+package ModelSEED::Exception::BadReference;
+sub cli_error_text {
+    my ($self) = shift;
+    my $refstr = $self->refstr;
+    return <<ND;
+Bad reference: $refstr
+
+References take the form of:
+
+    biochemistry/username/string or
+    biochemistry/E29318E0-C209-11E1-9982-998743BA47CD
+
+Where "biochemistry" is the type, "username" is probably
+your username; run: "ms whoami" to find out. "string" can
+be whatever you want but cannot contain slashes.
+
+In the second case, pass in a specific object UUID.
+ND
+} 
+1;
+

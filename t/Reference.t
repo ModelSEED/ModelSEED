@@ -1,8 +1,9 @@
-use ModelSEED::Reference;
 use strict;
 use warnings;
 use Test::More;
+use Test::Exception;
 use Data::Dumper;
+use ModelSEED::Reference;
 my $test_count = 0;
 
 my $refs = {
@@ -163,6 +164,16 @@ foreach my $ref (keys %$refs) {
         is_deeply $reference->$key, $expected->{$key}, "Ref: $ref should have correct $key";
         $test_count += 1;
     }
+}
+
+# test dies
+my $bad_refs = [ qw(
+biochemistry/Current_MS_Biochem
+)];
+foreach my $bad (@$bad_refs) {
+    warn Dumper( ModelSEED::Reference->new( ref => $bad ));
+    throws_ok sub { ModelSEED::Reference->new( ref => $bad ) }, 'ModelSEED::Exception::BadReference';
+    $test_count += 1;
 }
 
 done_testing($test_count);
