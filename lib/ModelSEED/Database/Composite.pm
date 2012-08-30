@@ -48,7 +48,39 @@ like in C<databases>.
 
 =back
 
-=head2 Concepts
+See L<ModelSEED::Database> for details on the following methods:
+
+=head3 has_data
+
+=head3 get_data
+
+=head3 save_data
+
+=head3 delete_data
+
+=head3 find_data
+
+=head3 get_alias
+
+=head3 get_aliases
+
+=head3 alias_owner
+
+=head3 alias_public
+
+=head3 alias_viewers
+
+=head3 update_alias 
+
+=head3 add_viewer
+
+=head3 remove_viewer
+
+=head3 remove_alias
+
+=head3 set_public
+
+=head3 Concepts
 
 Since this acts as a composite over a number of database instances,
 it behaves a little differently from a standard L<ModelSEED::Database>
