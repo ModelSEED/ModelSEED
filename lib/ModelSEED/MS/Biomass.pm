@@ -13,7 +13,7 @@ package ModelSEED::MS::Biomass;
 
 =head2 METHODS
 
-=head2 buildFromEquation
+=head2 loadFromEquation
 
     $biomass->buildFromEquation(\%config);
 
