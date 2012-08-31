@@ -66,6 +66,13 @@ L<ModelSEED::MS::Mapping> object to use.
 
 =back
 
+=head3 genomeSource
+
+   $source = $factory->genomeSource($id); 
+
+Returns C<$source> a string indicating the source for the genome ID.
+The souce may currently be one of "SEED", "RAST", "KBASE".
+
 =cut
 
 package ModelSEED::MS::Factories::Annotation;
@@ -123,14 +130,14 @@ sub build {
     my $args = $self->_getArgs(@_);
     $args->{verobse} = 0 unless defined $args->{verbose};
 	unless(defined($args->{source})) {
-		$args->{source} = $self->getGenomeSource($args->{genome_id});	
+		$args->{source} = $self->genomeSource($args->{genome_id});	
         print "Genome source is " . $args->{source} . ".\n" if($args->{verbose});
 	}
 	if (!defined($args->{mapping})) {
-		$args->{mapping} = $self->getMappingObject({mapping_uuid => $args->{mapping_uuid}});
+		$args->{mapping} = $self->_getMappingObject({mapping_uuid => $args->{mapping_uuid}});
 	}
     print "Getting genome attributes...\n" if($args->{verbose});
-	my $genomeData = $self->getGenomeAttributes($args->{genome_id});
+	my $genomeData = $self->_getGenomeAttributes($args->{genome_id});
     my $annoationObj = ModelSEED::MS::Annotation->new({
         name => $genomeData->{name}
     });
@@ -145,7 +152,7 @@ sub build {
 	$annoationObj->mapping_uuid($args->{mapping}->uuid());
 	$annoationObj->mapping($args->{mapping});
 	if (!defined($genomeData->{features})) {
-		$genomeData->{features} = $self->getGenomeFeatures($args->{genome_id}, $args->{source});
+		$genomeData->{features} = $self->_getGenomeFeatures($args->{genome_id}, $args->{source});
 	}
     my $featureCount = scalar(@{$genomeData->{features}});
     print "Mapping $featureCount genome feature to metabolic roles...\n" if($args->{verbose});
@@ -161,7 +168,7 @@ sub build {
 			});
 			if (defined($row->{ROLES}->[0])) {
 				for (my $j=0; $j < @{$row->{ROLES}}; $j++) {
-					my $roleObj = $self->getRoleObject({mapping => $args->{mapping},roleString => $row->{ROLES}->[$j]});
+					my $roleObj = $self->_getRoleObject({mapping => $args->{mapping},roleString => $row->{ROLES}->[$j]});
 					my $ftrRoleObj =$featureObj->add("featureroles",{
 						feature_uuid => $featureObj->uuid(),
 						role_uuid => $roleObj->uuid(),
@@ -176,7 +183,7 @@ sub build {
 	return $annoationObj;
 }
 
-sub getRoleObject {
+sub _getRoleObject {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["roleString","mapping"],{});					
 	my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($args->{roleString});
@@ -189,7 +196,7 @@ sub getRoleObject {
 	return $roleObj;
 }
 
-sub getMappingObject {
+sub _getMappingObject {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
 		mapping_uuid => undef
@@ -206,7 +213,7 @@ sub getMappingObject {
 	return $mappingObj;
 }
 
-sub getGenomeSource {
+sub genomeSource {
 	my ($self,$id) = @_;
     my $result;
 	$result = $self->sapsvr->exists({-type => 'Genome', -ids => [$id]});
@@ -221,9 +228,9 @@ sub getGenomeSource {
 	return $result->{$id};
 }
 
-sub getGenomeFeatures {
+sub _getGenomeFeatures {
 	my ($self, $id, $source) = @_;
-    $source = $self->getGenomeSource($id) unless defined $source;
+    $source = $self->genomeSource($id) unless defined $source;
 	my $features;
 	if ($source eq "PUBSEED") {
 		my $featureHash = $self->sapsvr->all_features({-ids => $id});
@@ -345,10 +352,10 @@ sub getGenomeFeatures {
 	return $features;
 }
 
-sub getGenomeAttributes {
+sub _getGenomeAttributes {
 	my ($self,$id, $source) = @_;
     my ($data, $attributes);
-    $source = $self->getGenomeSource($id) unless defined $source;
+    $source = $self->genomeSource($id) unless defined $source;
     if( $source eq 'PUBSEED') {
         $data = $self->sapsvr()->genome_data({
             -ids => [$id],
