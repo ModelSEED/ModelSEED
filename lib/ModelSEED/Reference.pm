@@ -247,8 +247,7 @@ around BUILDARGS => sub {
         }
     }
     my $hash = _parse($ref, $delimiter, $schema);
-    #ModelSEED::Exception::BadReference->throw(refstr => $ref) unless defined $hash;
-    die "bad reference" unless defined $hash;
+    ModelSEED::Exception::BadReference->throw(refstr => $ref) unless defined $hash;
     return $class->$orig($hash);
 };
 

@@ -168,10 +168,9 @@ foreach my $ref (keys %$refs) {
 
 # test dies
 my $bad_refs = [ qw(
-biochemistry/Current_MS_Biochem
+foo/bar
 )];
 foreach my $bad (@$bad_refs) {
-    warn Dumper( ModelSEED::Reference->new( ref => $bad ));
     throws_ok sub { ModelSEED::Reference->new( ref => $bad ) }, 'ModelSEED::Exception::BadReference';
     $test_count += 1;
 }
