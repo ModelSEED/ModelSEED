@@ -7,5 +7,6 @@ This package contains the release version number for the project.
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '0.10';
+
 1;
