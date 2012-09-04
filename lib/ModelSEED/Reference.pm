@@ -166,6 +166,7 @@ package ModelSEED::Reference;
 use Moose;
 use URI::Split qw(uri_split uri_join);
 use ModelSEED::MS::Metadata::Definitions;
+use ModelSEED::Exceptions;
 use common::sense;
 
 
@@ -246,7 +247,7 @@ around BUILDARGS => sub {
         }
     }
     my $hash = _parse($ref, $delimiter, $schema);
-    die "Invalid Reference" unless(defined($hash));
+    ModelSEED::Exception::BadReference->throw(refstr => $ref) unless defined $hash;
     return $class->$orig($hash);
 };
 
