@@ -11,6 +11,9 @@ use ModelSEED::MS::DB::Model;
 package ModelSEED::MS::Model;
 use Moose;
 use namespace::autoclean;
+use Class::Autouse qw(
+    Graph::Directed
+);
 extends 'ModelSEED::MS::DB::Model';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -1103,5 +1106,166 @@ sub printExchangeFormat {
    	push(@{$textArray},"}");
     return join("\n",@{$textArray});
 }
+=head3 buildGraph
+Definition:
+	Graph = ModelSEED::MS::Model->buildGraph();
+Description:
+	This command builds a graph object from the model
+=cut
+sub buildGraph {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,[],{reactions => 0});
+	my $graph = Graph::Directed->new;
+	if ($args->{reactions} == 0) {
+		my $cpds = $self->modelcompounds();
+		for (my $i=0;$i < @{$cpds}; $i++) {
+			my $v = $cpds->[$i]->id();
+			$graph->add_vertex($v);
+		}
+	}
+	my $rxns = $self->modelreactions();
+	my $rxnStartHash;
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		if ($args->{reactions} == 1) {
+			$graph->add_vertex($rxns->[$i]->id());	
+		}
+		my $rgts = $rxns->[$i]->modelReactionReagents();
+		for (my $j=0; $j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			if (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne "<") {
+				if ($args->{reactions} == 1) {
+					$rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
+				} else {
+					for (my $k=0; $k < @{$rgts}; $k++) {
+						my $prod = $rgts->[$k];
+						if (!$prod->isCofactor() && $prod->coefficient() > 0) {
+							$graph->add_edge($rgt->modelcompound()->id(),$prod->modelcompound()->id());
+						}
+					}
+				}
+			} elsif (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne ">") {
+				if ($args->{reactions} == 1) {
+					$rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
+				} else {
+					for (my $k=0; $k < @{$rgts}; $k++) {
+						my $prod = $rgts->[$k];
+						if (!$prod->isCofactor() && $prod->coefficient() < 0) {
+							$graph->add_edge($rgt->modelcompound()->id(),$prod->modelcompound()->id());
+						}
+					}
+				}
+			}
+		}
+	}
+	if ($args->{reactions} == 1) {
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rgts = $rxns->[$i]->modelReactionReagents();
+			for (my $j=0; $j < @{$rgts}; $j++) {
+				my $rgt = $rgts->[$j];
+				if (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne "<") {
+					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
+						$graph->add_edge($rxns->[$i]->id(),$rxnid);
+					}
+				} elsif (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne ">") {
+					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
+						$graph->add_edge($rxns->[$i]->id(),$rxnid);
+					}
+				}
+			}
+		}
+	}
+	return $graph;
+}
+=head3 computeNetworkDistances
+Definition:
+	Table = ModelSEED::MS::Model->computeNetworkDistances();
+Description:
+	This command computes distances between all metabolites, reactions, and functional roles
+=cut
+sub computeNetworkDistances {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,[],{
+		reactions => 0,
+		roles => 0
+	});
+	my $input = {};
+	my $tbl = {headings => ["Compounds"],data => []};
+	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+		$input->{reactions} = 1;
+		$tbl = {headings => ["Reactions"],data => []};
+		if ($args->{roles} == 1) {
+			$tbl = {headings => ["Roles"],data => []};
+		}
+	}
+	print STDERR "Building graph!\n";
+	my $graph = $self->buildGraph($input);
+	print STDERR "Computing distances!\n";
+	my $apsp = $graph->all_pairs_shortest_paths();
+	print STDERR "Shortest paths computed!\n";
+	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+		my $roleHash;
+		my $rxns = $self->modelreactions();
+		if ($args->{roles} == 1) {
+			for (my $i=0; $i < @{$rxns}; $i++) {
+				for (my $j=0;$j < @{$rxns->[$i]->reaction()->roles()}; $j++) {
+					$roleHash->{$rxns->[$i]->reaction()->roles()->[$j]->name()} = 1;
+				}
+			}
+			my $count = 0;
+			foreach my $role (sort(keys(%{$roleHash}))) {
+				$roleHash->{$role} = $count;
+				$count++;
+			}
+		}
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			if ($args->{reactions} == 1) {
+				$tbl->{headings}->[$i+1] = $rxns->[$i]->id();
+				$tbl->{data}->[0]->[$i+1] = $rxns->[$i]->id();
+			} else {
+				my $count = 0;
+				foreach my $role (sort(keys(%{$roleHash}))) {
+					$tbl->{headings}->[$count+1] = $role;
+					$tbl->{data}->[0]->[$count+1] = $role;
+				}
+			}
+			for (my $j=0;$j < @{$rxns}; $j++) {
+				if ($i == $j) {
+					$tbl->{data}->[$i+1]->[$j+1] = 1;
+				} elsif ($args->{reactions} == 1) {
+					$tbl->{data}->[$i+1]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+				} else {
+					for (my $k=0;$k < @{$rxns->[$i]->reaction()->roles()}; $k++) {
+						my $indexOne = $roleHash->{$rxns->[$i]->reaction()->roles()->[$k]->name()}+1;
+						for (my $m=0;$m < @{$rxns->[$j]->reaction()->roles()}; $m++) {
+							my $indexTwo = $roleHash->{$rxns->[$j]->reaction()->roles()->[$m]->name()}+1;
+							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+								if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
+									$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+								}
+							} else {
+								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							}
+						}
+					}
+				}
+			}
+		}
+	} else {
+		my $cpds = $self->modelcompounds();
+		for (my $i=0;$i < @{$cpds}; $i++) {
+			$tbl->{headings}->[$i+1] = $cpds->[$i]->id();
+			$tbl->{data}->[0]->[$i+1] = $cpds->[$i]->id();
+			for (my $j=0;$j < @{$cpds}; $j++) {
+				if ($i == $j) {
+					$tbl->{data}->[$i+1]->[$j+1] = 1;
+				} else {
+					$tbl->{data}->[$i+1]->[$j+1] =  $apsp->path_length($cpds->[$i]->id(), $cpds->[$j]->id());
+				}
+			}
+		}
+	}
+	return $tbl;
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

@@ -13,6 +13,7 @@ my $builder = Module::Build->new(
         'Test::More' => 0,
     },
     requires => {
+        "Graph" => 0,
         "App::Cmd" => 0,
         "autodie" => 0,
         "Class::Autouse" => 0,

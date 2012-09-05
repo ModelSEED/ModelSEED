@@ -19,12 +19,29 @@ extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-
+has roleReactionHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleReactionHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-
+sub _buildroleReactionHash {
+	my ($self) = @_;
+	my $roleReactionHash;
+	my $complexes = $self->complexes();
+	for (my $i=0; $i < @{$complexes}; $i++) {
+		my $complex = $complexes->[$i];
+		my $cpxroles = $complex->complexroles();
+		my $cpxrxns = $complex->complexreactions();
+		for (my $j=0; $j < @{$cpxroles}; $j++) {
+			my $role = $cpxroles->[$j]->role();
+			for (my $k=0; $k < @{$cpxrxns}; $k++) {
+				my $rxn = $cpxrxns->[$k]->reaction();
+				$roleReactionHash->{$role->uuid()}->{$rxn->uuid()} = $rxn;
+			}
+		}
+	}
+	return $roleReactionHash;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:

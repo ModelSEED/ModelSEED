@@ -75,6 +75,7 @@ my $attributes = [
             'name' => 'defaultNameSpace',
             'default' => 'ModelSEED',
             'type' => 'Str',
+            'description' => 'The name of an [[AliasSet|#wiki-AliasSet]] to use in aliasSets for reaction and compound ids',
             'perm' => 'rw'
           },
           {
@@ -172,7 +173,8 @@ my $subobjects = [
             'printOrder' => 1,
             'name' => 'cues',
             'type' => 'encompassed',
-            'class' => 'Cue'
+            'class' => 'Cue',
+            'description' => 'Structural cues for parts of compund structures'
           }
         ];
 

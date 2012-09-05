@@ -15,6 +15,7 @@ extends 'ModelSEED::MS::DB::Role';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has searchname => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsearchname' );
+has reactions => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactions' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -22,6 +23,20 @@ has searchname => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata
 sub _buildsearchname {
 	my ($self) = @_;
 	return ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($self->name());
+}
+sub _buildreactions {
+	my ($self) = @_;
+	my $hash = $self->parent()->roleReactionHash();
+	my $rxnlist = "";
+	if (defined($hash->{$self->uuid()})) {
+		foreach my $rxn (keys(%{$hash->{$self->uuid()}})) {
+			if (length($rxnlist) > 0) {
+				$rxnlist .= ";";
+			}
+			$rxnlist .= $hash->{$self->uuid()}->{$rxn}->id();
+		}
+	}
+	return $rxnlist;
 }
 
 #***********************************************************************************************************

@@ -69,6 +69,7 @@ my $attributes = [
             'printOrder' => 1,
             'name' => 'id',
             'type' => 'Str',
+            'description' => 'Single charachter identifer for the compartment, e.g. \'e\' or \'c\'.',
             'perm' => 'rw'
           },
           {
@@ -85,6 +86,7 @@ my $attributes = [
             'name' => 'hierarchy',
             'default' => '',
             'type' => 'Int',
+            'description' => 'Index indicating the position of a compartment relative to other compartments. Extracellular is 0. A compartment contained within another compartment has an index that is +1 over the outer comaprtment.',
             'perm' => 'rw'
           }
         ];

@@ -20,7 +20,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -30,6 +29,7 @@ has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', t
 has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has defaultProtons => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has status => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has abstractReaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -42,12 +42,17 @@ has reagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return
 
 
 # LINKS:
+has abstractReaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', weak_ref => 1);
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_abstractReaction {
+  my ($self) = @_;
+  return $self->getLinkedObject('Biochemistry','reactions',$self->abstractReaction_uuid());
+}
 
 
 # CONSTANTS:
@@ -60,6 +65,7 @@ my $attributes = [
             'printOrder' => 0,
             'name' => 'uuid',
             'type' => 'ModelSEED::uuid',
+            'description' => 'Universal ID for reaction',
             'perm' => 'rw'
           },
           {
@@ -67,14 +73,6 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'modDate',
             'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -145,10 +143,18 @@ my $attributes = [
             'name' => 'status',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'abstractReaction_uuid',
+            'type' => 'ModelSEED::uuid',
+            'description' => 'Reference to abstract reaction of which this reaction is an example.',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, name => 3, abbreviation => 4, cksum => 5, deltaG => 6, deltaGErr => 7, direction => 8, thermoReversibility => 9, defaultProtons => 10, status => 11};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, deltaG => 5, deltaGErr => 6, direction => 7, thermoReversibility => 8, defaultProtons => 9, status => 10, abstractReaction_uuid => 11};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

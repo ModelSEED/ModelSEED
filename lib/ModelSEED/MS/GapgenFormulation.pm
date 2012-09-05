@@ -73,6 +73,25 @@ sub prepareFBAFormulation {
 		push(@{$form->secondaryMedia_uuids()},$self->referenceMedia()->uuid());
 		push(@{$form->secondaryMedia()},$self->referenceMedia());
 	}
+	if ($self->biomassHypothesis() == 1) {
+		$form->parameters()->{"Biomass modification hypothesis"} = "1";
+	} else {
+		$form->parameters()->{"Biomass modification hypothesis"} = "0";
+	}
+	if ($self->reactionRemovalHypothesis() == 1) {
+		$form->parameters()->{"Reaction removal hypothesis"} = "1";
+	} else {
+		$form->parameters()->{"Reaction removal hypothesis"} = "0";
+	}
+	if ($self->mediaHypothesis() == 1) {
+		$form->decomposeReversibleDrainFlux(1);
+		$form->drainfluxUseVariables(1);
+		$form->parameters()->{"Media hypothesis"} = "1";
+	} else {
+		$form->decomposeReversibleDrainFlux(0);
+		$form->drainfluxUseVariables(0);
+		$form->parameters()->{"Media hypothesis"} = "0";
+	}
 	$form->parameters()->{"Minimum flux for use variable positive constraint"} = 10;
 	$form->parameters()->{"Objective coefficient file"} = "NONE";
 	$form->parameters()->{"just print LP file"} = "0";

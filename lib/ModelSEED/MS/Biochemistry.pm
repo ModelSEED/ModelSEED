@@ -16,7 +16,7 @@ extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
 has definition => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
-
+has reactionRoleHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionRoleHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -33,7 +33,24 @@ sub _builddataDirectory {
 	}
 	return ModelSEED::utilities::MODELSEEDCORE()."/data/";
 }
-
+sub _buildreactionRoleHash {
+	my ($self) = @_;
+	my $hash;
+	my $complexes = $self->mapping()->complexes();
+	for (my $i=0; $i < @{$complexes}; $i++) {
+		my $complex = $complexes->[$i];
+		my $cpxroles = $complex->complexroles();
+		my $cpxrxns = $complex->complexreactions();
+		for (my $j=0; $j < @{$cpxroles}; $j++) {
+			my $role = $cpxroles->[$j]->role();
+			for (my $k=0; $k < @{$cpxrxns}; $k++) {
+				my $rxn = $cpxrxns->[$k]->reaction();
+				$hash->{$rxn->uuid()}->{$role->uuid()} = $role;
+			}
+		}
+	}
+	return $hash;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -101,9 +118,7 @@ sub printDBFiles {
 Definition:
 	ModelSEED::MS::ModelReaction = ModelSEED::MS::Biochemistry->makeDBModel({
 		balancedOnly => 1,
-		forbiddenCompartments => [],
-		guaranteedReactions => [],
-		forbiddenReactions => [],
+		gapfillingFormulation => undef
 		annotation_uuid => "00000000-0000-0000-0000-000000000000",
 		mapping_uuid => "00000000-0000-0000-0000-000000000000",
 	});
@@ -114,9 +129,7 @@ sub makeDBModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
 		balancedOnly => 1,
-		allowableCompartments => [],
-		guaranteedReactions => [],
-		forbiddenReactions => [],
+		gapfillingFormulation => undef,
 		annotation_uuid => "00000000-0000-0000-0000-000000000000",
 		mapping_uuid => "00000000-0000-0000-0000-000000000000",
 	});
@@ -133,65 +146,19 @@ sub makeDBModel {
 		biochemistry => $self,
 		annotation_uuid => $args->{annotation_uuid}
 	});
-	my $hashes;
-	for (my $i=0; $i < @{$args->{guaranteedReactions}}; $i++) {
-		if ($args->{guaranteedReactions}->[$i] =~ /[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
-			$hashes->{guaranteed}->{$args->{guaranteedReactions}->[$i]} = 1;
-		} elsif ($args->{guaranteedReactions}->[$i] =~ /^Reaction\//) {
-			my $array = [split(/\//,$args->{guaranteedReactions}->[$i])];
-			if (defined($array->[2])) {
-				my $rxn;
-				if ($array->[1] eq "name") {
-					$rxn = $self->queryObject("reactions",{$array->[1] => $array->[2]});
-				} else {
-					$rxn = $self->getObjectByAlias("reactions",$array->[2],$array->[1]);
-				}
-				if (defined($rxn)) {
-					$hashes->{guaranteed}->{$rxn->uuid()} = 1;
-				} else {
-					print "Could not find guaranteed reaction ".$args->{guaranteedReactions}->[$i]."\n";	
-				}
-			}
+	my $hashes = {blacklist => {},guaranteed => {}};
+	if (defined($args->{gapfillingFormulation})) {
+		my $blacklist = $args->{gapfillingFormulation}->blacklistedReactions();
+		for (my $i=0; $i < @{$blacklist}; $i++) {
+			$hashes->{forbidden}->{$blacklist->[$i]->uuid()} = 1;
 		}
-	}
-	for (my $i=0; $i < @{$args->{forbiddenReactions}}; $i++) {
-		if ($args->{forbiddenReactions}->[$i] =~ /[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
-			$hashes->{forbidden}->{$args->{forbiddenReactions}->[$i]} = 1;
-		} elsif ($args->{forbiddenReactions}->[$i] =~ /^Reaction\//) {
-			my $array = [split(/\//,$args->{forbiddenReactions}->[$i])];
-			if (defined($array->[2])) {
-				my $rxn;
-				if ($array->[1] eq "name") {
-					$rxn = $self->queryObject("reactions",{$array->[1] => $array->[2]});
-				} else {
-					$rxn = $self->getObjectByAlias("reactions",$array->[2],$array->[1]);
-				}
-				if (defined($rxn)) {
-					$hashes->{forbidden}->{$rxn->uuid()} = 1;
-				} else {
-					print "Could not find forbidden reaction ".$args->{forbiddenReactions}->[$i]."\n";	
-				}
-			}
+		my $guaranteed = $args->{gapfillingFormulation}->guaranteedReactions();
+		for (my $i=0; $i < @{$guaranteed}; $i++) {
+			$hashes->{guaranteed}->{$guaranteed->[$i]->uuid()} = 1;
 		}
-	}
-	for (my $i=0; $i < @{$args->{allowableCompartments}}; $i++) {
-		if ($args->{allowableCompartments}->[$i] =~ /[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
-			$hashes->{allowcomp}->{$args->{allowableCompartments}->[$i]} = 1;
-		} elsif ($args->{allowableCompartments}->[$i] =~ /^Compartment\//) {
-			my $array = [split(/\//,$args->{allowableCompartments}->[$i])];
-			if (defined($array->[2])) {
-				my $cmp;
-				if ($array->[1] eq "id" || $array->[1] eq "name") {
-					$cmp = $self->queryObject("compartments",{$array->[1] => $array->[2]});
-				} else {
-					$cmp = $self->getObjectByAlias("compartments",$array->[2],$array->[1]);
-				}
-				if (defined($cmp)) {
-					$hashes->{allowcomp}->{$cmp->uuid()} = 1;
-				} else {
-					print "Could not find allowable compartment ".$args->{allowableCompartments}->[$i]."\n";	
-				}
-			}
+		my $allowedcompartments = $args->{gapfillingFormulation}->allowableCompartments();
+		for (my $i=0; $i < @{$allowedcompartments}; $i++) {
+			$hashes->{allowcomp}->{$allowedcompartments->[$i]->uuid()} = 1;
 		}
 	}
 	my $reactions = $self->reactions();

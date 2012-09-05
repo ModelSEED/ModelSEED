@@ -232,6 +232,24 @@ sub getAliases {
     return (defined($aliases)) ? $aliases : [];
 }
 
+sub allAliases {
+	my ($self) = @_;
+    my $aliasRootClass = lc($self->_aliasowner());
+    my $rootClass = $self->$aliasRootClass();
+    my $aliasSets = $rootClass->queryObjects("aliasSets",{
+    	class => $self->_type()
+    });
+    my $aliases = [];
+    for (my $i=0; $i < @{$aliasSets}; $i++) {
+    	my $set = $aliasSets->[$i];
+    	my $setAliases = $set->aliasesByuuid->{$self->uuid()};
+    	if (defined($setAliases)) {
+    		push(@{$aliases},@{$setAliases});
+    	}
+    }
+    return $aliases;
+}
+
 sub defaultNameSpace {
     return $_[0]->parent->defaultNameSpace();
 }

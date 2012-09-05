@@ -21,6 +21,7 @@ has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => '
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'ModelSEED::MS::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
+has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroles' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -59,6 +60,14 @@ sub _buildcompartment {
 		ModelSEED::utilities::ERROR("Could not find cytosol compartment in biochemistry!");	
 	}
 	return $comp;
+}
+sub _buildroles {
+	my ($self) = @_;
+	my $hash = $self->parent()->reactionRoleHash();
+	if (defined($hash->{$self->uuid()})) {
+		return [keys(%{$hash->{$self->uuid()}})];
+	}
+	return [];
 }
 
 #***********************************************************************************************************

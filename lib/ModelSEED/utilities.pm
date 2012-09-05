@@ -206,25 +206,58 @@ sub LOADTABLE {
 }
 =head3 PRINTTABLE
 Definition:
-	void ModelSEED::utilities::PRINTTABLE(string:filename,{}:table);
-Description:
+	void ModelSEED::utilities::PRINTTABLE(string:filename,table:table,string:delimiter);
+Description:	
 =cut
 sub PRINTTABLE {
-    my ($filename,$table) = @_;
-	my $fh;
-	if ($filename eq "STDOUT") {
-		$fh = \*STDOUT;
-	} else {
-		open($fh, ">", $filename) or die "Cannot open ".$filename.": $!";
-	}
-	my $delimiter = "\t";
-	print $fh join($delimiter,@{$table->{headings}})."\n";
+    my ($filename,$table,$delimiter) = @_;
+    if (!defined($delimiter)) {
+    	$delimiter = "\t";
+    } 
+    my $out_fh;
+    if ($filename eq "STDOUT") {
+    	$out_fh = \*STDOUT;
+    } else {
+    	open ( $out_fh, ">", $filename) || ModelSEED::utilities::USEERROR("Failure to open file: $filename, $!");
+    }
+	print $out_fh join($delimiter,@{$table->{headings}})."\n";
 	foreach my $row (@{$table->{data}}) {
-		print $fh join($delimiter,@{$row})."\n";
+		print $out_fh join($delimiter,@{$row})."\n";
 	}
-	if ($filename ne "STDOUT") {
-		close($fh);
-	}
+    if ($filename ne "STDOUT") {
+    	close ($out_fh);
+    }
+}
+=head3 PRINTTABLESPARSE
+Definition:
+	void ModelSEED::utilities::PRINTTABLESPARSE(string:filename,table:table,string:delimiter,double:min,double:max);
+Description:	
+=cut
+sub PRINTTABLESPARSE {
+    my ($filename,$table,$delimiter,$min,$max) = @_;
+    if (!defined($delimiter)) {
+    	$delimiter = "\t";
+    } 
+    my $out_fh;
+    if ($filename eq "STDOUT") {
+    	$out_fh = \*STDOUT;
+    } else {
+    	open ( $out_fh, ">", $filename) || ModelSEED::utilities::USEERROR("Failure to open file: $filename, $!");
+    }
+    for (my $i=1; $i < @{$table->{data}};$i++) {
+    	for (my $j=1; $j < @{$table->{headings}};$j++) {
+    		if (defined($table->{data}->[$i]->[$j])) {
+    			if (!defined($min) || $table->{data}->[$i]->[$j] >= $min) {
+    				if (!defined($max) || $table->{data}->[$i]->[$j] <= $max) {
+    					print $out_fh $table->{data}->[$i]->[0].$delimiter.$table->{headings}->[$j].$delimiter.$table->{data}->[$i]->[$j]."\n";
+    				}
+    			}
+    		}	
+    	}
+    }
+    if ($filename ne "STDOUT") {
+    	close ($out_fh);
+    }
 }
 =head3 MAKEXLS
 Definition:

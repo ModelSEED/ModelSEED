@@ -20,8 +20,8 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has isCofactor => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -31,6 +31,8 @@ has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', m
 has defaultCharge => (is => 'rw', isa => 'Num', printOrder => '5', default => '0', type => 'attribute', metaclass => 'Typed');
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
+has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -44,12 +46,22 @@ has pks => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; 
 
 
 # LINKS:
+has abstractCompound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', weak_ref => 1);
+has comprisedOfCompounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_abstractCompound {
+  my ($self) = @_;
+  return $self->getLinkedObject('Biochemistry','compounds',$self->abstractCompound_uuid());
+}
+sub _build_comprisedOfCompounds {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_uuids());
+}
 
 
 # CONSTANTS:
@@ -66,17 +78,18 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
-            'name' => 'modDate',
-            'type' => 'Str',
+            'printOrder' => 3,
+            'name' => 'isCofactor',
+            'default' => '0',
+            'type' => 'Bool',
+            'description' => 'A boolean indicating if this compound is a universal cofactor (e.g. water/H+).',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
+            'name' => 'modDate',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -101,6 +114,7 @@ my $attributes = [
             'name' => 'cksum',
             'default' => '',
             'type' => 'ModelSEED::varchar',
+            'description' => 'A computed hash for the compound, not currently implemented',
             'perm' => 'rw'
           },
           {
@@ -109,6 +123,7 @@ my $attributes = [
             'name' => 'unchargedFormula',
             'default' => '',
             'type' => 'ModelSEED::varchar',
+            'description' => 'Formula for compound if it does not have a ionic charge.',
             'perm' => 'rw'
           },
           {
@@ -117,6 +132,7 @@ my $attributes = [
             'name' => 'formula',
             'default' => '',
             'type' => 'ModelSEED::varchar',
+            'description' => 'Formula for the compound at pH 7.',
             'perm' => 'rw'
           },
           {
@@ -124,6 +140,7 @@ my $attributes = [
             'printOrder' => 4,
             'name' => 'mass',
             'type' => 'Num',
+            'description' => 'Atomic mass of the compound',
             'perm' => 'rw'
           },
           {
@@ -132,6 +149,7 @@ my $attributes = [
             'name' => 'defaultCharge',
             'default' => 0,
             'type' => 'Num',
+            'description' => 'Computed charge for compound at pH 7.',
             'perm' => 'rw'
           },
           {
@@ -139,6 +157,7 @@ my $attributes = [
             'printOrder' => 6,
             'name' => 'deltaG',
             'type' => 'Num',
+            'description' => 'Computed Gibbs free energy value for compound at pH 7.',
             'perm' => 'rw'
           },
           {
@@ -146,11 +165,28 @@ my $attributes = [
             'printOrder' => 7,
             'name' => 'deltaGErr',
             'type' => 'Num',
+            'description' => 'Error bound on Gibbs free energy compoutation for compound.',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'abstractCompound_uuid',
+            'type' => 'ModelSEED::uuid',
+            'description' => 'Reference to abstract compound of which this compound is a specific class.',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'comprisedOfCompound_uuids',
+            'type' => 'ArrayRef',
+            'description' => 'Array of references to subcompounds that this compound is comprised of.',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11};
+my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
