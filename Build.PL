@@ -3,9 +3,69 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $builder = Module::Build->new(
-    module_name         => 'ModelSeedCore',
-    dist_abstract       => "Core libraries for the Model SEED",
+my $subclass = Module::Build->subclass(
+    class => 'Module::Build::ModelSEED',
+    code => <<'END_OF_CODE',
+
+sub ACTION_test {
+    my ($self) = @_;
+
+    if ( $ENV{ RELEASE_TESTING } or $ENV{ AUTOMATED_TESTING } ) {
+        $self->test_files( 't', 'xt/release' )
+            unless $self->{ properties }->{ test_files };
+    }
+    $self->recursive_test_files( 1 );
+    return $self->SUPER::ACTION_test();
+
+}
+
+sub ACTION_testauthor {
+    my ($self) = @_;
+
+    $self->depends_on('build');
+    local $ENV{ RELEASE_TESTING } = 1;
+    $self->test_files( qw( xt/author ) );
+    $self->recursive_test_files( 1 );
+    $self->depends_on('test');
+
+}
+
+sub ACTION_testslow {
+    my ($self) = @_;
+
+    $self->depends_on('build');
+    local $ENV{ RELEASE_TESTING } = 1;
+    $self->test_files( qw( xt/slow ) );
+    $self->recursive_test_files( 1 );
+    $self->depends_on('test');
+
+}
+
+sub ACTION_testall {
+    my ($self) = @_;
+
+    $self->depends_on('build');
+    local $ENV{ RELEASE_TESTING } = 1;
+    $self->test_files( qw( t xt ) );
+    $self->recursive_test_files( 1 );
+    $self->depends_on('test');
+
+}
+
+sub ACTION_distdir {
+    my ($self) = @_;
+
+    $self->depends_on('testrelease');
+
+    return $self->SUPER::ACTION_distdir();
+
+}
+
+END_OF_CODE
+);
+my $builder = $subclass->new(
+    module_name         => 'ModelSEED',
+    dist_abstract       => "Core libraries for the ModelSEED",
     license             => 'perl',
     dist_author         => q{Chris Henry <cshenry@mcs.anl.gov>},
     dist_version_from   => 'lib/ModelSEED/Version.pm',
@@ -26,6 +86,7 @@ my $builder = Module::Build->new(
         "File::Copy::Recursive" => 0,
         "File::Path" => "2.08",
         "HTTP::Message" => 0,
+        "IO::Interactive::Tiny" => 0,
         "IO::Compress::Gzip" => 0,
         "IO::Uncompress::Gunzip" => 0,
         "JSON::XS" => 0,
@@ -40,6 +101,7 @@ my $builder = Module::Build->new(
         "Tie::IxHash" => 0,
         "Try::Tiny" => 0,
         "URI" => 0,
+        "URI::Split" => 0,
         "XML::LibXML" => 0,
         "XML::SAX::Base" => 0,
         "YAML" => 0,
@@ -48,7 +110,7 @@ my $builder = Module::Build->new(
     },
     recommends => {},
     recursive_test_files => 1,
-    add_to_cleanup      => [ 'ModelSeedCore-*' ],
+    add_to_cleanup      => [ 'ModelSEED-*' ],
     create_makefile_pl => 'traditional',
     script_files => [qw( bin/ms bin/mapping bin/genome bin/stores bin/model bin/bio )],
 );

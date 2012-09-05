@@ -13,7 +13,9 @@ Definition:
 	ARGS->({}:arguments,[string]:mandatory arguments,{}:optional arguments);
 Description:
 	Processes arguments to authenticate users and perform other needed tasks
+
 =cut
+
 sub ARGS {
 	my ($args,$mandatoryArguments,$optionalArguments) = @_;
 	if (!defined($args)) {
@@ -45,7 +47,9 @@ Definition:
 	string = ModelSEED::utilities::USAGE([]:madatory arguments,{}:optional arguments);
 Description:
 	Prints the usage for the current function call.
+
 =cut
+
 sub USAGE {
 	my ($mandatoryArguments,$optionalArguments,$args) = @_;
 	my $current = 1;
@@ -96,37 +100,48 @@ sub USAGE {
 Definition:
 	void ModelSEED::utilities::ERROR();
 Description:	
+
 =cut
+
 sub ERROR {	
 	my ($message) = @_;
     $message = "\"\"$message\"\"";
 	Carp::confess($message);
 }
+
 =head3 USEERROR
 Definition:
 	void ModelSEED::utilities::USEERROR();
 Description:	
+
 =cut
+
 sub USEERROR {	
 	my ($message) = @_;
 	print STDERR "\n".$message."\n";
 	print STDERR "Critical error. Discontinuing current operation!\n";
 	exit();
 }
+
 =head3 USEWARNING
 Definition:
 	void ModelSEED::utilities::USEWARNING();
 Description:	
+
 =cut
+
 sub USEWARNING {	
 	my ($message) = @_;
 	print STDERR "\n".$message."\n\n";
 }
+
 =head3 WARNING
 Definition:
 	void ModelSEED::utilities::WARNING();
 Description:	
+
 =cut
+
 sub WARNING {	
 	my ($message) = @_;
 	Carp::cluck($message);
@@ -136,7 +151,9 @@ sub WARNING {
 Definition:
 	TIMESTAMP = ModelSEED::utilities::TIMESTAMP();
 Description:	
+
 =cut
+
 sub TIMESTAMP {
 	my ($sec,$min,$hour,$day,$month,$year) = gmtime(time());
 	$year += 1900;
@@ -148,7 +165,9 @@ sub TIMESTAMP {
 Definition:
 	void ModelSEED::utilities::PRINTFILE();
 Description:	
+
 =cut
+
 sub PRINTFILE {
     my ($filename,$arrayRef) = @_;
     open ( my $fh, ">", $filename) || ModelSEED::utilities::ERROR("Failure to open file: $filename, $!");
@@ -162,24 +181,29 @@ sub PRINTFILE {
 Definition:
 	void ModelSEED::utilities::LOADFILE();
 Description:	
+
 =cut
+
 sub LOADFILE {
     my ($filename) = @_;
     my $DataArrayRef = [];
-    open (INPUT, "<", $filename) || ModelSEED::utilities::ERROR("Couldn't open $filename: $!");
-    while (my $Line = <INPUT>) {
+    open (my $fh, "<", $filename) || ModelSEED::utilities::ERROR("Couldn't open $filename: $!");
+    while (my $Line = <$fh>) {
         chomp($Line);
         $Line =~ s/\r//;
         push(@{$DataArrayRef},$Line);
     }
-    close(INPUT);
+    close($fh);
     return $DataArrayRef;
 }
+
 =head3 LOADTABLE
 Definition:
 	void ModelSEED::utilities::LOADTABLE(string:filename,string:delimiter);
 Description:	
+
 =cut
+
 sub LOADTABLE {
     my ($filename,$delim,$headingLine) = @_;
     if (!defined($headingLine)) {
@@ -204,11 +228,14 @@ sub LOADTABLE {
     }
     return $output;
 }
+
 =head3 PRINTTABLE
 Definition:
-	void ModelSEED::utilities::PRINTTABLE(string:filename,table:table,string:delimiter);
-Description:	
+	void ModelSEED::utilities::PRINTTABLE(string:filename,{}:table);
+Description:
+
 =cut
+
 sub PRINTTABLE {
     my ($filename,$table,$delimiter) = @_;
     if (!defined($delimiter)) {
@@ -232,7 +259,9 @@ sub PRINTTABLE {
 Definition:
 	void ModelSEED::utilities::PRINTTABLESPARSE(string:filename,table:table,string:delimiter,double:min,double:max);
 Description:	
+
 =cut
+
 sub PRINTTABLESPARSE {
     my ($filename,$table,$delimiter,$min,$max) = @_;
     if (!defined($delimiter)) {
@@ -259,6 +288,7 @@ sub PRINTTABLESPARSE {
     	close ($out_fh);
     }
 }
+
 =head3 MAKEXLS
 Definition:
 	{} = ModelSEED::utilities::MAKEXLS({
@@ -267,7 +297,9 @@ Definition:
 		sheetdata => [FIGMODELTable]
 	});
 Description:
+
 =cut
+
 sub MAKEXLS {
     my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["filename","sheetnames","sheetdata"],{});
@@ -288,7 +320,9 @@ Definition:
 Description:
 	This function converts the job specifications into a ModelDriver command
 Example:
+
 =cut
+
 sub BUILDCOMMANDLINE {
 	my ($args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["function"],{
@@ -315,7 +349,9 @@ Definition:
 Description:
 	This function converts the job specifications into a ModelDriver command and runs it
 Example:
+
 =cut
+
 sub RUNMODELDRIVER {
 	my ($args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["function"],{
@@ -333,7 +369,9 @@ Definition:
 Description:
 	This function converts the job specifications into a ModelDriver command and runs it
 Example:
+
 =cut
+
 sub MODELSEEDCOREDIR {
 	return $ENV{MODEL_SEED_CORE};
 }
@@ -344,7 +382,9 @@ Definition:
 Description:
 	This function converts the job specifications into a ModelDriver command and runs it
 Example:
+
 =cut
+
 sub MODELSEEDCORE {
 	return $ENV{MODEL_SEED_CORE};
 }
@@ -355,7 +395,9 @@ Definition:
 Description:
 	Returns location of glpk executable
 Example:
+
 =cut
+
 sub GLPK {
 	return $ENV{GLPK};
 }
@@ -366,17 +408,22 @@ Definition:
 Description:
 	Returns location of cplex executable
 Example:
+
 =cut
+
 sub CPLEX {
 	return $ENV{CPLEX};
 }
+
 =head3 Explore
 Definition:
 	string = ModelSEED::utilities::Explore($tree);
 Description:
 	Scans the input data tree for anomalies
 Example:
+
 =cut
+
 sub Explore {
 	my ($data,$count) = @_;
 	foreach my $key (keys(%{$data})) {
@@ -400,6 +447,7 @@ sub Explore {
 		}
 	}
 }
+
 =head3 parseArrayString
 Definition:
 	string = ModelSEED::utilities::parseArrayString({
@@ -410,7 +458,9 @@ Definition:
 Description:
 	Parses string into array
 Example:
+
 =cut
+
 sub parseArrayString {
 	my ($args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{

@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Auth
 
@@ -42,6 +41,7 @@ false (0). The request object is modified by this call.
 Return a username.
 
 =cut
+
 use HTTP::Request;
 package ModelSEED::Auth;
 use Moose::Role;
@@ -49,7 +49,6 @@ use common::sense;
 use namespace::autoclean;
 
 requires 'wrap_http_request';
-
 requires 'username';
 
 1;

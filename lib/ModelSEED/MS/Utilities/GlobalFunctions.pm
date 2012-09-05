@@ -6,7 +6,9 @@ Definition:
 	string:searchrole = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole->(string rolename);
 Description:
 	Converts the input role name into a search name by removing spaces, capitalization, EC numbers, and some punctuation.
+
 =cut
+
 sub convertRoleToSearchRole {
 	my ($rolename) = @_;
 	$rolename = lc($rolename);
@@ -15,6 +17,7 @@ sub convertRoleToSearchRole {
 	$rolename =~ s/#.*//;
 	return $rolename;
 }
+
 =head3 functionToRoles
 Definition:
 	Output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles->(string function);
@@ -26,7 +29,9 @@ Definition:
 	};
 Description:
 	Converts a functional annotation from the seed into a set of roles, a delimiter, a comment, and a compartment.
+
 =cut
+
 sub functionToRoles {
 	my ($function) = @_;
 	my $output = {

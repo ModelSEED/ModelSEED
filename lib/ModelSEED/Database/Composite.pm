@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-01
 ########################################################################
-=pod
 
 =head1 ModelSEED::Database::Composite
 
@@ -49,7 +48,39 @@ like in C<databases>.
 
 =back
 
-=head2 Concepts
+See L<ModelSEED::Database> for details on the following methods:
+
+=head3 has_data
+
+=head3 get_data
+
+=head3 save_data
+
+=head3 delete_data
+
+=head3 find_data
+
+=head3 get_alias
+
+=head3 get_aliases
+
+=head3 alias_owner
+
+=head3 alias_public
+
+=head3 alias_viewers
+
+=head3 update_alias 
+
+=head3 add_viewer
+
+=head3 remove_viewer
+
+=head3 remove_alias
+
+=head3 set_public
+
+=head3 Concepts
 
 Since this acts as a composite over a number of database instances,
 it behaves a little differently from a standard L<ModelSEED::Database>
@@ -90,17 +121,18 @@ List of "write" functions:
 See L<ModelSEED::Database> for methods.
 
 =cut
+
 package ModelSEED::Database::Composite;
 use Moose;
 use Moose::Util::TypeConstraints;
 use ModelSEED::Exceptions;
+use Try::Tiny;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
     ModelSEED::Database::MongoDBSimple
     JSON::Any
 );
-use Try::Tiny;
 with 'ModelSEED::Database';
 
 role_type 'DB', { role => 'ModelSEED::Database' };
@@ -125,6 +157,7 @@ around BUILDARGS => sub {
     }
     ModelSEED::Exception::NoDatabase->throw() unless @{$args->{databases}};
     foreach my $db (@{$args->{databases}}) {
+        next if (ref($db) ne 'HASH' && $db->does("ModelSEED::Database"));
         my %config = %$db;
         try {
             my $class = $db->{class};

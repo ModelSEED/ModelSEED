@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::createuser;
+use strict;
+use common::sense;
 
 use Module::Load;
 use Try::Tiny;

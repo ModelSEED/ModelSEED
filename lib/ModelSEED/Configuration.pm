@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-03-18
 ########################################################################
-=pod
 
 =head1 ModelSEED::Configuration 
 
@@ -46,6 +45,14 @@ of ModelSEED::Configuration, this hashref is unstructured, and may
 contain keys pointing to strings, arrays or other hashrefs.
 
     my $item = $Config->config->{key};
+
+=head2 user_options
+
+Returns a hashref of options.
+
+=head2 possible_user_options
+
+Returns the default values for the C<user_options> field.
 
 =head2 save
 
@@ -88,9 +95,7 @@ has JSON => (
     init_arg => undef
 );
 
-# possible user configuration variables with their default options
-# set to undef to make it optional
-sub _possible_user_options {
+sub possible_user_options {
     return {
         ERROR_DIR => $ENV{HOME} . '/.modelseed_error',
         MFATK_CACHE => '/tmp', #Actually, this appears to work fine in windows.
@@ -108,7 +113,7 @@ sub user_options {
 sub _buildConfig {
     my ($self) = @_;
     my $default = {
-        user_options => $self->_possible_user_options
+        user_options => $self->possible_user_options
     };
     if (-f $self->filename) {
         local $/;

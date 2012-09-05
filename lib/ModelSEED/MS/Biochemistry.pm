@@ -59,14 +59,18 @@ sub _buildreactionRoleHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 printDBFiles
+
 Definition:
 	void ModelSEED::MS::Biochemistry->printDBFiles({
 		forceprint => 0
 	});
 Description:
 	Creates files with biochemistry data for use by the MFAToolkit
+
 =cut
+
 sub printDBFiles {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -114,6 +118,7 @@ sub printDBFiles {
 	}
 	ModelSEED::utilities::PRINTFILE($path.$self->uuid()."-reactions.tbl",$output);
 }
+
 =head3 makeDBModel
 Definition:
 	ModelSEED::MS::ModelReaction = ModelSEED::MS::Biochemistry->makeDBModel({
@@ -124,7 +129,9 @@ Definition:
 	});
 Description:
 	Creates a model that has every reaction instance in the database that pass through the specified filters
+
 =cut
+
 sub makeDBModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -192,6 +199,7 @@ sub makeDBModel {
 	}
 	return $mdl;
 }
+
 =head3 findCreateEquivalentCompartment
 Definition:
 	void ModelSEED::MS::Biochemistry->findCreateEquivalentCompartment({
@@ -200,7 +208,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent comparment for the input biochemistry compartment
+
 =cut
+
 sub findCreateEquivalentCompartment {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["compartment"],{create => 1});
@@ -219,6 +229,7 @@ sub findCreateEquivalentCompartment {
 	$outcomp->mapped_uuid($incomp->uuid());
 	return $outcomp;
 }
+
 =head3 findCreateEquivalentCompound
 Definition:
 	void ModelSEED::MS::Biochemistry->findCreateEquivalentCompound({
@@ -227,7 +238,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent compound for the input biochemistry compound
+
 =cut
+
 sub findCreateEquivalentCompound {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["compound"],{create => 1});
@@ -259,6 +272,7 @@ sub findCreateEquivalentCompound {
 	$outcpd->mapped_uuid($incpd->uuid());
 	return $outcpd;
 }
+
 =head3 findCreateEquivalentReaction
 Definition:
 	void ModelSEED::MS::Biochemistry->findCreateEquivalentReaction({
@@ -267,7 +281,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent reaction for the input biochemistry reaction
+
 =cut
+
 sub findCreateEquivalentReaction {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["reaction"],{create => 1});
@@ -324,7 +340,9 @@ Definition:
 	void ModelSEED::MS::Biochemistry->validate();
 Description:
 	This command runs a series of tests on the biochemistry data to ensure that it is valid
+
 =cut
+
 sub validate {
 	my ($self) = @_;
 	my $errors = [];
@@ -346,12 +364,15 @@ sub validate {
 	}
 	return $errors;
 }
+
 =head3 addCompoundFromHash
 Definition:
 	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->addCompoundFromHash({[]});
 Description:
 	This command adds a single compound from an input hash
+
 =cut
+
 sub addCompoundFromHash {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["names","id"],{
@@ -412,12 +433,15 @@ sub addCompoundFromHash {
 	}
 	return $cpd;
 }
+
 =head3 addReactionFromHash
 Definition:
 	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->addReactionFromHash({[]});
 Description:
 	This command adds a single reaction from an input hash
+
 =cut
+
 sub addReactionFromHash {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["equation","id"],{

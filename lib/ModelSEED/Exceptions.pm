@@ -9,40 +9,68 @@
 # Date of module creation: 2012-08-14
 ########################################################################
 package ModelSEED::Exceptions;
-my $NoDatabase = <<ND;
-Unable to construct a database connection.
-If you are using the command line functions,
-configure a database with the "stores" command.
+use strict;
+use warnings;
 
-\$ stores help
-ND
+=head1 ModelSEED::Exceptions
+
+Structured exceptions used in the ModelSEED
+
+=head2 ModelSEED::Exception::CLI
+Base Class for exceptions that implement a CLI reporting function
+
+=head3 cli_error_text
+
+Returns a string describing the error, formatted to be displayed
+to the user.
+
+=head2 ModelSEED::Exception::NoDatabase
+
+Error when there is no database configured for the ModelSEED
+
+=head2 ModelSEED::Exception::DatabaseConfigError
+
+Error when the configuration file contains data that cannot be
+converted into a L<ModelSEED::Database> instance.
+
+=cut
 
 use Exception::Class (
-    ModelSEED::Exception::CLI => {
+    'ModelSEED::Exception::CLI' => {
         description => "Base class for exceptions that support cli_error_text",
     },
-    ModelSEED::Exception::Database => {
+    'ModelSEED::Exception::Database' => {
         isa => "ModelSEED::Exception::CLI",
         description => "Exception with ModelSEED::Database"
     },
-    ModelSEED::Exception::NoDatabase => {
+    'ModelSEED::Exception::NoDatabase' => {
         isa => "ModelSEED::Exception::Database",
         description => "When there is no database configuration",
     },
-    ModelSEED::Exception::DatabaseConfigError => {
+    'ModelSEED::Exception::DatabaseConfigError' => {
         isa => "ModelSEED::Exception::Database",
         description => "For invalid database configuration",
         fields => [qw( configText dbName )],
-    }
+    },
+    'ModelSEED::Exception::BadReference' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "When a bad reference string is passed into a function",
+        fields => [qw( refstr )],
+    },
 );
 1; 
 
 package ModelSEED::Exception::CLI;
+use strict;
+use warnings;
 sub cli_error_text {
     return "An unknown error occured.";
 }
 1;
+
 package ModelSEED::Exception::NoDatabase;
+use strict;
+use warnings;
 sub cli_error_text { return <<ND;
 Unable to construct a database connection.
 Configure a database with the "stores" command
@@ -52,6 +80,7 @@ to add a database. For usage, run:
 ND
 }
 1;
+
 package ModelSEED::Exception::DatabaseConfigError;
 sub cli_error_text {
     my ($self) = @_;
@@ -65,3 +94,25 @@ Use the "stores" command to reconfigure this database.
 ND
 }
 1;
+
+package ModelSEED::Exception::BadReference;
+sub cli_error_text {
+    my ($self) = shift;
+    my $refstr = $self->refstr;
+    return <<ND;
+Bad reference: $refstr
+
+References take the form of:
+
+    biochemistry/username/string or
+    biochemistry/E29318E0-C209-11E1-9982-998743BA47CD
+
+Where "biochemistry" is the type, "username" is probably
+your username; run: "ms whoami" to find out. "string" can
+be whatever you want but cannot contain slashes.
+
+In the second case, pass in a specific object UUID.
+ND
+} 
+1;
+

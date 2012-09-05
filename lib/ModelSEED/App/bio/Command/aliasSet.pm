@@ -1,6 +1,9 @@
 package ModelSEED::App::bio::Command::aliasSet;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Try::Tiny;
+use IO::Interactive::Tiny;
 use Class::Autouse qw(
     ModelSEED::Store
     ModelSEED::Auth::Factory
@@ -86,7 +89,7 @@ sub _getBiochemistry {
     } else {
         unshift @$args, $arg;
     }
-    if(!defined($ref) && ! -t STDIN) {
+    if(!defined($ref) && !IO::Interactive::Tiny::is_interactive() ) {
         my $str = <STDIN>;
         chomp $str;
         $ref = ModelSEED::Reference->new(ref => $arg);

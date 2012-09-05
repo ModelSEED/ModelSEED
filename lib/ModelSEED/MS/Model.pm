@@ -36,7 +36,9 @@ sub _builddefinition {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 findCreateEquivalentCompartment
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentCompartment({
 		modelcompartment => ModelSEED::MS::ModelCompartment(REQ),
@@ -44,7 +46,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent comparment for the input model compartment
+
 =cut
+
 sub findCreateEquivalentCompartment {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["modelcompartment"],{create => 1});
@@ -68,6 +72,7 @@ sub findCreateEquivalentCompartment {
 	$cmp->mapped_uuid($mdlcmp->uuid());
 	return $cmp;
 }
+
 =head3 findCreateEquivalentCompound
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentCompound({
@@ -77,7 +82,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent compound for the input model compound
+
 =cut
+
 sub findCreateEquivalentCompound {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["modelcompound"],{create => 1});
@@ -106,6 +113,7 @@ sub findCreateEquivalentCompound {
 	$outcpd->mapped_uuid($inmdlcpd->uuid());
 	return $outcpd;
 }
+
 =head3 findCreateEquivalentReaction
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentReaction({
@@ -114,7 +122,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent reaction for the input model reaction
+
 =cut
+
 sub findCreateEquivalentReaction {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["modelreaction"],{create => 1});
@@ -157,6 +167,7 @@ sub findCreateEquivalentReaction {
 	$outrxn->mapped_uuid($inmdlrxn->uuid());
 	return $outrxn;
 }
+
 =head3 findCreateEquivalentBiomass
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentBiomass({
@@ -165,7 +176,9 @@ Definition:
 	});
 Description:
 	Search for an equivalent biomass for the input model biomass
+
 =cut
+
 sub findCreateEquivalentBiomass {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["biomass"],{create => 1});
@@ -200,6 +213,7 @@ sub findCreateEquivalentBiomass {
 	$outbio->mapped_uuid($inmdlbio->uuid());
 	return $outbio;
 }
+
 =head3 mergeModel
 Definition:
 	void ModelSEED::MS::Model->mergeModel({
@@ -207,7 +221,9 @@ Definition:
 	});
 Description:
 	Merges in the input model with the current model, combining namespace and eliminating redundant compounds and reactions
+
 =cut
+
 sub mergeModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["model"],{});
@@ -233,6 +249,7 @@ sub mergeModel {
 		my $bio = $self->findCreateEquivalentBiomass({biomass => $mdlbio,create => 1});
 	}
 }
+
 =head3 buildModelFromAnnotation
 Definition:
 	ModelSEED::MS::ModelReaction = ModelSEED::MS::Model->buildModelFromAnnotation({
@@ -241,7 +258,9 @@ Definition:
 	});
 Description:
 	Clears existing compounds, reactions, compartments, and biomass and rebuilds model from annotation
+
 =cut
+
 sub buildModelFromAnnotation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -346,6 +365,7 @@ Definition:
 Description:
 	
 =cut
+
 sub buildModelByLayers {
 	my ($self,$args) = @_;
 	
@@ -358,7 +378,9 @@ Definition:
 	});
 Description:
 	Creates a new biomass based on the annotation
+
 =cut
+
 sub createStandardFBABiomass {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -488,7 +510,9 @@ Definition:
 	});
 Description:
 	Tests if the organism satisfies the conditions for inclusion of the compound in the model biomass reaction
+
 =cut
+
 sub testBiomassCondition {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["condition"],{
@@ -635,7 +659,9 @@ Definition:
 	});
 Description:
 	Converts the input reaction instance into a model reaction and adds the reaction and associated compounds to the model.
+
 =cut
+
 sub addReactionToModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["reaction"],{
@@ -706,7 +732,9 @@ Definition:
 	});
 Description:
 	Adds a compartment to the model after checking that the compartment isn't already there
+
 =cut
+
 sub addCompartmentToModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["compartment"],{
@@ -736,7 +764,9 @@ Definition:
 	});
 Description:
 	Adds a compound to the model after checking that the compound isn't already there
+
 =cut
+
 sub addCompoundToModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["compound","modelCompartment"],{
@@ -760,12 +790,15 @@ sub addCompoundToModel {
 	}
 	return $mdlcpd;
 }
+
 =head3 labelBiomassCompounds
 Definition:
 	void ModelSEED::MS::Model->labelBiomassCompounds();
 Description:
 	Labels all model compounds indicating whether or not they are biomass components
+
 =cut
+
 sub labelBiomassCompounds {
 	my ($self,$args) = @_;
 	#$args = ModelSEED::utilities::ARGS($args,[],{});#Commented out until we need it
@@ -781,6 +814,7 @@ sub labelBiomassCompounds {
 		}
 	}
 }
+
 =head3 parseSBML
 
 # TODO parseSBML() parse error with SIds and UUIDs
@@ -795,17 +829,22 @@ Definition:
 	void ModelSEED::MS::Model->parseSBML();
 Description:
 	Parse an input SBML file to generate the model
+
 =cut
+
 sub parseSBML {
 	my ($self,$args) = @_;
 	
 }
+
 =head3 printSBML
 Definition:
 	void ModelSEED::MS::Model->printSBML();
 Description:
 	Prints the model in SBML format
+
 =cut
+
 sub printSBML {
 	my ($self,$args) = @_;
 	# convert ids to SIds
@@ -1022,6 +1061,7 @@ sub printSBML {
 #***********************************************************************************************************
 # ANALYSIS FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 gapfillModel
 Definition:
 	ModelSEED::MS::GapfillingSolution ModelSEED::MS::Model->gapfillModel({
@@ -1030,7 +1070,9 @@ Definition:
 	});
 Description:
 	Runs gapfilling on the model and integrates the output gapfilling solution
+
 =cut
+
 sub gapfillModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["gapfillingFormulation"],{
@@ -1047,8 +1089,9 @@ sub gapfillModel {
 		#}
 		return $solution;	
 	}
-	return undef;
+	return;
 }
+
 =head3 gapgenModel
 Definition:
 	ModelSEED::MS::GapgenSolution = ModelSEED::MS::Model->gapgenModel({
@@ -1057,7 +1100,9 @@ Definition:
 	});
 Description:
 	Runs gapgeneration on the model and integrates the output gapgeneration solution
+
 =cut
+
 sub gapgenModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["gapgenFormulation"],{
@@ -1070,7 +1115,7 @@ sub gapgenModel {
 	if (defined($solution)) {
 		return $solution;	
 	}
-	return undef;
+	return;
 }
 
 sub printExchangeFormat {

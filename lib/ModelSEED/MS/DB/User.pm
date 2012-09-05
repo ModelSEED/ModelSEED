@@ -5,13 +5,13 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package ModelSEED::MS::DB::User;
-our $VERSION = 1;
 use ModelSEED::MS::BaseObject;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
 
 
+our $VERSION = 1;
 # PARENT:
 has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
@@ -96,7 +96,7 @@ sub _attributes {
     if (defined($ind)) {
       return $attributes->[$ind];
     } else {
-      return undef;
+      return;
     }
   } else {
     return $attributes;
@@ -113,7 +113,7 @@ sub _subobjects {
     if (defined($ind)) {
       return $subobjects->[$ind];
     } else {
-      return undef;
+      return;
     }
   } else {
     return $subobjects;

@@ -34,7 +34,7 @@ sub get_data {
     my ($self, $ref, $auth) = @_;
     $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
-    return undef unless(defined($uuid));
+    return unless(defined($uuid));
     return $self->kvstore->get_object($uuid);
 }
 
@@ -46,7 +46,7 @@ sub save_data {
     if ($ref->id_type eq 'alias') {
         $oldUUID = $self->_get_uuid($ref, $auth);
         # cannot write to alias not owned by callee
-        return undef unless($auth->username eq $ref->alias_username);
+        return unless($auth->username eq $ref->alias_username);
     } elsif($ref->id_type eq 'uuid') {
         # cannot save to existing uuid
         if($self->has_data($ref, $auth)) {
@@ -78,7 +78,7 @@ sub save_data {
     if($update_alias) {
         # update alias to new uuid
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
-        return undef unless($rtv);
+        return unless($rtv);
     } elsif(!defined($oldUUID) && $ref->id_type eq 'alias') {
         # alias is new, so create it
         my $alias = $self->_build_alias_meta($ref);
@@ -92,7 +92,7 @@ sub save_data {
         };
 
         my $rtv = $self->kvstore->set_metadata('aliases', $alias, $info);
-        return undef unless($rtv);
+        return unless($rtv);
     }
 
     return $object->{uuid};
@@ -160,15 +160,15 @@ sub alias_uuid {
     my ($self, $ref, $auth) = @_;
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
 
     if ($self->_check_permissions($auth->username, $info)) {
         return $info->{uuid};
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -176,15 +176,15 @@ sub alias_owner {
     my ($self, $ref, $auth) = @_;
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
 
     if ($self->_check_permissions($auth->username, $info)) {
         return $info->{owner};
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -192,10 +192,10 @@ sub alias_viewers {
     my ($self, $ref, $auth) = @_;
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
 
     if ($self->_check_permissions($auth->username, $info)) {
         my @viewers;
@@ -203,7 +203,7 @@ sub alias_viewers {
 
         return \@viewers;
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -211,15 +211,15 @@ sub alias_public {
     my ($self, $ref, $auth) = @_;
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
 
     if ($self->_check_permissions($auth->username, $info)) {
         return $info->{public};
     } else {
-        return undef;
+        return;
     }
 }
 
@@ -231,10 +231,10 @@ sub update_alias {
 
     # change alias to point to new uuid
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
     $info->{uuid} = $uuid;
 
     return $self->kvstore->set_metadata('aliases', $alias, $info);
@@ -247,10 +247,10 @@ sub add_viewer {
     return 0 unless($ref->alias_username eq $auth->username);
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
     $info->{viewers}->{$viewerName} = 1;
 
     return $self->kvstore->set_metadata('aliases', $alias, $info);
@@ -263,10 +263,10 @@ sub remove_viewer {
     return 0 unless($ref->alias_username eq $auth->username);
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
     delete $info->{viewers}->{$viewerName};
 
     return $self->kvstore->set_metadata('aliases', $alias, $info);
@@ -279,10 +279,10 @@ sub set_public {
     return 0 unless($ref->alias_username eq $auth->username);
 
     my $alias = $self->_build_alias_meta($ref);
-    return undef unless $alias;
+    return unless $alias;
 
     my $info = $self->kvstore->get_metadata('aliases', $alias);
-    return undef unless defined($info);
+    return unless defined($info);
     $info->{public} = $bool;
 
     return $self->kvstore->set_metadata('aliases', $alias, $info);

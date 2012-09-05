@@ -32,7 +32,9 @@ sub _buildbiomassName {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 clearProblem
+
 Definition:
 	Output = ModelSEED::MS::Model->clearProblem();
 	Output = {
@@ -40,6 +42,7 @@ Definition:
 	};
 Description:
 	Builds the FBA problem
+
 =cut
 
 

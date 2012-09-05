@@ -8,27 +8,74 @@
 use strict;
 use ModelSEED::MS::DB::Annotation;
 package ModelSEED::MS::Annotation;
+
+=head1 ModelSEED::MS::Annotation
+
+This object is a provenance object that encapsulates the
+genome annotations used to construct a metabolic model.
+
+=head2 METHODS
+
+=head3 roles
+
+    \@ = $anno->roles;
+
+Return an arrayref of L<ModelSEED::MS::Role> objects
+that are part of the annotation object. Each genome in
+an annotation object has features that may be annotated with
+one or more functional roles. This list is the non-redundant 
+set of those roles.
+
+=head3 subsystems
+
+Return an arrayref of L<ModelSEED::MS::RoleSet> objects
+that are the set of subsystems contained within the annotation
+object.
+
+=head3 featuresInRoleSet
+
+    \@ = $anno->featuresInRoleSet($roleSet);
+
+Return an arrayref of L<ModelSEED::MS::Feature> objects that are
+the set of features that are annotated with roles in the
+L<ModelSEED::MS::RoleSet> provided as an argument.  Note that since
+"Subsystems" are implemented as RoleSets, this will return the
+features in a subsystem for this annotation object.
+
+=head3 createStandardFBAModel
+
+	$model = $anno->createStandardFBAModel(\%config);
+
+Construct a standard FBA Model from the annotation object. Config
+is a hash-ref that currently supports the following parameters:
+
+=over 4
+
+=item prefix
+
+A prefix to append to the annotation's ID for the model name
+
+=item mapping
+
+A L<ModelSEED::MS::Mapping> object to use in place of the default one
+contained within the annotation object.
+
+=back
+
+=head3 classifyGenomeFromAnnotation
+
+    $string = $anno->classifyGenomeFromAnnotation
+
+Return a string that defines what "kind" of annotation this is.
+TODO: This is not implemented yet and only returns "Gram negative"
+
+=cut
+
 use ModelSEED::MS::Model;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
 
-
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
 sub roles {
     my ($self) = @_;
     my $roles = {};
@@ -70,15 +117,6 @@ sub featuresInRoleSet {
     return $results;
 }
 
-=head3 createStandardFBAModel
-Definition:
-	ModelSEED::MS::Model = ModelSEED::MS::Annotation->createStandardFBAModel({
-		prefix => "Seed",
-		mapping => $self->mapping()
-	});
-Description:
-	Creates a new model based on the annotations, the mapping, and the biochemistry
-=cut
 sub createStandardFBAModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -111,12 +149,6 @@ sub createStandardFBAModel {
 	return $mdl;
 }
 
-=head3 classifyGenomeFromAnnotation
-Definition:
-	ModelSEED::MS::Model = ModelSEED::MS::Annotation->classifyGenomeFromAnnotation({});
-Description:
-	Classifies genome as gram negative, gram positive, archeae etc based on annotations
-=cut
 sub classifyGenomeFromAnnotation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{});

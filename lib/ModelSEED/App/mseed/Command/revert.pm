@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::revert;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Try::Tiny;
 use Data::UUID;

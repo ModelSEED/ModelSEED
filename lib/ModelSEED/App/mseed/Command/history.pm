@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::history;
+use strict;
+use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON;

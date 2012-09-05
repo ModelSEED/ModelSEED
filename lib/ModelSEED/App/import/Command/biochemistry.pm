@@ -1,4 +1,6 @@
 package ModelSEED::App::import::Command::biochemistry;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
@@ -46,6 +48,7 @@ sub execute {
     print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helpers = ModelSEED::App::Helpers->new;
+    my $store;
     # Initialize the store object
     if($opts->{store}) {
         my $store_name = $opts->{store};
@@ -114,7 +117,7 @@ sub execute {
             my $string;
             {
                 local $/;
-                open(my $fh, $uncompressed_filename) || die "$!: $@";
+                open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
                 $string = <$fh>;
             }
             $data = JSON->new->utf8->decode($string);

@@ -8,39 +8,23 @@
 use strict;
 use ModelSEED::MS::DB::Compound;
 package ModelSEED::MS::Compound;
+
+=head1 ModelSEED::MS::Compound
+
+=head2 METHODS
+
+=head3 calculateAtomsFromFormula
+
+=head3 nameToSearchname
+
+=cut
+    
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Compound';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
-has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
-has searchnames  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsearchnames' );
+has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_mapped_uuid' );
+has searchnames  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_searchnames' );
 
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-sub _buildmapped_uuid {
-	my ($self) = @_;
-	return "00000000-0000-0000-0000-000000000000";
-}
-sub _buildsearchnames {
-	my ($self) = @_;
-	my $hash = {$self->nameToSearchname($self->name()) => 1};
-	my $names = $self->getAliases("name");
-	foreach my $name (@{$names}) {
-		$hash->{$self->nameToSearchname($name)} = 1;
-	}
-	return [keys(%{$hash})];
-}
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
 sub calculateAtomsFromFormula {
 	my ($self) = @_;
 	my $atoms = {};
@@ -66,9 +50,6 @@ sub calculateAtomsFromFormula {
 	return $atoms;
 }
 
-#***********************************************************************************************************
-# UTILITY FUNCTIONS (DONOT NEED TO CALL WITH BASE OBJECT):
-#***********************************************************************************************************
 sub nameToSearchname {
 	my ($self,$InName) = @_;
 	if (!defined($InName) && !ref($self) && $self ne "ModelSEED::MS::Compound") {
@@ -100,6 +81,21 @@ sub nameToSearchname {
 		$InName =~ s/^an?(.*)$/$1/;
 	}
 	return $InName;
+}
+
+sub _build_mapped_uuid {
+	my ($self) = @_;
+	return "00000000-0000-0000-0000-000000000000";
+}
+
+sub _build_searchnames {
+	my ($self) = @_;
+	my $hash = {$self->nameToSearchname($self->name()) => 1};
+	my $names = $self->getAliases("name");
+	foreach my $name (@{$names}) {
+		$hash->{$self->nameToSearchname($name)} = 1;
+	}
+	return [keys(%{$hash})];
 }
 
 __PACKAGE__->meta->make_immutable;

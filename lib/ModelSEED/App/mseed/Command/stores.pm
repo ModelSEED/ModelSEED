@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::stores; 
+use strict;
+use common::sense;
 use ModelSEED::App::stores;
 use base 'App::Cmd::Command';
 sub abstract { "Alias to mseed-stores command" }

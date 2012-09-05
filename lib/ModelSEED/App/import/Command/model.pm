@@ -1,4 +1,6 @@
 package ModelSEED::App::import::Command::model;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -18,18 +20,18 @@ Models may be imported from the local database or from an existing
 model on the ModelSeed website. To see a list of available models
 for the given source use the --list flag:
 
-    $ ms import model --list model-seed
-    $ ms import model --list local
+    \$ ms import model --list model-seed
+    \$ ms import model --list local
 
 To import a model, supply the model's ID, the alias that you
 would like to save it to and an annotation object to use:
 
-    $ ms import model 83333.1 sdevoid/ecoli -a sdevoid/ecoli
+    \$ ms import model 83333.1 sdevoid/ecoli -a sdevoid/ecoli
 
 If you would like to import a model from the local source, set
 [ --source local ].
 
-    $ ms import model 83333.1 sdevoid/ecoli --source local -a sdevoid/ecoli
+    \$ ms import model 83333.1 sdevoid/ecoli --source local -a sdevoid/ecoli
 
 END
 }

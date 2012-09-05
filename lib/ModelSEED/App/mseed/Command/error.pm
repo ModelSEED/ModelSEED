@@ -1,4 +1,6 @@
 package ModelSEED::App::mseed::Command::error;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use ModelSEED::Configuration;
 use File::stat;

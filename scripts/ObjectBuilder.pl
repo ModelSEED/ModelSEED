@@ -24,7 +24,6 @@ foreach my $name (keys(%{$objects})) {
 
     #Creating package statement
     push(@$output, "package ModelSEED::MS::DB::" . $name . ";");
-    push(@$output, "our \$VERSION = " . $object->{version} . ";") if defined $object->{version};
     #Creating perl use statements
     my $baseObject = "BaseObject";
     if ($object->{class} eq "indexed") {
@@ -45,7 +44,8 @@ foreach my $name (keys(%{$objects})) {
 
     #Determining and setting base class
     push(@$output, "extends 'ModelSEED::MS::" . $baseObject . "';", "", "");
-
+    #Print version statement if we need that
+    push(@$output, "our \$VERSION = " . $object->{version} . ";") if defined $object->{version};
     #Printing parent
     my $type = ", type => 'parent', metaclass => 'Typed'";
     if (defined($object->{parents}->[0])) {
@@ -241,7 +241,7 @@ foreach my $name (keys(%{$objects})) {
          "$tab $tab if (defined(\$ind)) {",
          "$tab $tab $tab return \$attributes->[\$ind];",
          "$tab $tab } else {",
-         "$tab $tab $tab return undef;",
+         "$tab $tab $tab return;",
          "$tab $tab }",
          "$tab } else {",
          "$tab $tab return \$attributes;",
@@ -267,7 +267,7 @@ foreach my $name (keys(%{$objects})) {
          "$tab $tab if (defined(\$ind)) {",
          "$tab $tab $tab return \$subobjects->[\$ind];",
          "$tab $tab } else {",
-         "$tab $tab $tab return undef;",
+         "$tab $tab $tab return;",
          "$tab $tab }",
          "$tab } else {",
          "$tab $tab return \$subobjects;",

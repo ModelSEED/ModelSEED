@@ -1,4 +1,6 @@
 package ModelSEED::App::import::Command::annotation;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -18,8 +20,8 @@ service.  To see a list of available models use the --list flag.
 For a tab-delimited list of genome ids and names add
 the --verbose flag:
 
-    $ ms import annotation --list 
-    $ ms import annotation --list --verbose
+    \$ ms import annotation --list 
+    \$ ms import annotation --list --verbose
 
 You may restrict your search to a specific source with the --source flag.
 This also works when importing by a given ID. The current available sources are:
@@ -31,11 +33,11 @@ This also works when importing by a given ID. The current available sources are:
 To import an annotated genome, supply the genome's ID, the alias that
 you would like to save it to and a mapping object to use:
     
-    $ ms import annotation 83333.1 ecoli -m main
+    \$ ms import annotation 83333.1 ecoli -m main
 
 If no mapping is supplied, the default mapping will be used:
 
-    $ ms defaults mapping
+    \$ ms defaults mapping
 END
 }
 
@@ -116,10 +118,8 @@ sub printList {
     foreach my $source (@$sources) {
         my $genomeHash = $factory->availableGenomes({source => $source});
         if($opts->{verbose}) {
-            print join( "\n",
-                map { $_ = "$_\t" . $genomeHash->{$_} }
-                  keys %$genomeHash )
-              . "\n";
+            my @strings = map { "$_\t" . $genomeHash->{$_} } keys %$genomeHash;
+            print join( "\n", @strings) . "\n";
         } else {
             print join("\n", keys %$genomeHash) . "\n";
         }

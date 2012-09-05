@@ -2962,7 +2962,6 @@ $objectDefinitions->{Compound} = {
 		},
 		{ name => "pks", class => "CompoundPk", type => "encompassed" },
 	],
-	primarykeys => [qw(uuid)],
 	links       => [
 		{
 			name      => "abstractCompound",
@@ -2978,7 +2977,8 @@ $objectDefinitions->{Compound} = {
 			array     => 1
 		}
 	],
-	reference_id_types => [qw(uuid)],
+	primarykeys => [qw(uuid)],
+	reference_id_types => [qw(uuid)]
 };
 
 $objectDefinitions->{CompoundCue} = {

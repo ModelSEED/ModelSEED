@@ -9,7 +9,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Auth::Public
 
@@ -24,6 +23,7 @@ No athorization version.
 No arguments are required.
 
 =cut
+
 package ModelSEED::Auth::Public;
 use Moose;
 use common::sense;

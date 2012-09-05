@@ -27,14 +27,18 @@ extends 'ModelSEED::MS::DB::GapfillingFormulation';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 calculateReactionCosts
+
 Definition:
 	ModelSEED::MS::GapfillingSolution = ModelSEED::MS::GapfillingFormulation->calculateReactionCosts({
 		modelreaction => ModelSEED::MS::ModelReaction
 	});
 Description:
 	Calculates the cost of adding or adjusting the reaction directionality in the model
+
 =cut
+
 sub calculateReactionCosts {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["modelreaction"],{});
@@ -103,12 +107,16 @@ sub calculateReactionCosts {
 	}
 	return {forwardDirection => $fcosts,reverseDirection => $rcosts};
 }
+
 =head3 prepareFBAFormulation
+
 Definition:
 	void prepareFBAFormulation();
 Description:
 	Ensures that an FBA formulation exists for the gapfilling, and that it is properly configured for gapfilling
+
 =cut
+
 sub prepareFBAFormulation {
 	my ($self,$args) = @_;
 	my $form;
@@ -227,12 +235,16 @@ sub prepareFBAFormulation {
 	}
 	return $form;	
 }
+
 =head3 printBiomassComponentReactions
+
 Definition:
 	void ModelSEED::MS::GapfillingFormulation->printBiomassComponentReactions();
 Description:
 	Print biomass component reactions designed to simulate removal of biomass components from the model
+
 =cut
+
 sub printBiomassComponentReactions {
 	my ($self,$args) = @_;
 	my $form = $self->fbaFormulation();
@@ -259,14 +271,18 @@ sub printBiomassComponentReactions {
 	}
 	ModelSEED::utilities::PRINTFILE($filename,$output);	
 }
+
 =head3 runGapFilling
+
 Definition:
 	ModelSEED::MS::GapfillingSolution = ModelSEED::MS::GapfillingFormulation->runGapFilling({
 		model => ModelSEED::MS::Model(REQ)
 	});
 Description:
 	Identifies the solution that gapfills the input model
+
 =cut
+
 sub runGapFilling {
 	my ($self,$args) = @_;
 	#Preparing fba formulation describing gapfilling problem
@@ -290,7 +306,7 @@ sub runGapFilling {
 	#Parsing gapfilling results
 	if (!-e $directory."GapfillingComplete.txt") {
 		print STDERR "Gapfilling failed!";
-		return undef;
+		return;
 	}
 	my $filedata = ModelSEED::utilities::LOADFILE($directory."CompleteGapfillingOutput.txt");
 	my $gfsolution = $self->add("gapfillingSolutions",{});

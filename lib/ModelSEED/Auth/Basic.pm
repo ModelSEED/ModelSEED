@@ -9,7 +9,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Auth::Basic
 
@@ -26,7 +25,30 @@ Do basic authentication ( username + password )
 
 C<Username> and C<Password> are required.
 
+=head2 wrap_http_request 
+
+    $bool = $auth->wrap_http_request($request)
+
+Given a HTTP::Request object, wrap that object in authentication
+info and return success (1). If there are problems, this returns
+false (0). The request object is modified by this call.
+
+=head2 username
+
+    $string = $auth->username();
+
+Returns the username, a string.
+
+=head2 check_password
+
+    $bool = $auth->check_password($store);
+
+Check the username + password pair against user data
+located in a L<ModelSEED::Store>. Returns true if the
+password was correct. Otherwise it returns false.
+
 =cut
+
 package ModelSEED::Auth::Basic;
 use Moose;
 use common::sense;
@@ -69,10 +91,29 @@ sub wrap_http_request {
 }
 
 # TODO - do these functions:
-# download_from_seed and check_password
+# _download_from_seed and check_password
 # really belong here?
 # What is the relationship between Auth and MS::User objects?
-sub download_from_seed {
+
+sub check_password {
+    my ($self, $Store) = @_;
+    my $username = $self->username;
+    my $user = $Store->get_object("user/$username");
+    $user = $self->_download_from_seed() if(!defined($user));
+    my $authorized = 0;
+    if(defined($user)) {
+        # Check if plaintext password passed
+        if($user->check_password($self->password)) {
+            $authorized = 1;
+        # Check if crypt + salted password passed
+        } elsif($user->password eq $self->password) {
+            $authorized = 1;
+        }
+    }
+    return 1 if($authorized);
+}
+
+sub _download_from_seed {
     my ($self, $Store) = @_;
     my $svr = ModelSEED::Client::MSSeedSupport->new();
     my $info = $svr->get_user_info({
@@ -91,24 +132,6 @@ sub download_from_seed {
         return $user;
     }
     return 0;
-}
-
-sub check_password {
-    my ($self, $Store) = @_;
-    my $username = $self->username;
-    my $user = $Store->get_object("user/$username");
-    $user = $self->download_from_seed() if(!defined($user));
-    my $authorized = 0;
-    if(defined($user)) {
-        # Check if plaintext password passed
-        if($user->check_password($self->password)) {
-            $authorized = 1;
-        # Check if crypt + salted password passed
-        } elsif($user->password eq $self->password) {
-            $authorized = 1;
-        }
-    }
-    return 1 if($authorized);
 }
 
 with 'ModelSEED::Auth';

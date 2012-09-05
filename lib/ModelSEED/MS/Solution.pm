@@ -29,6 +29,7 @@ extends 'ModelSEED::MS::DB::Solution';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 buildFromCPLEXFile
 Definition:
 	void ModelSEED::MS::Solution->buildFromCPLEXFile({
@@ -36,7 +37,9 @@ Definition:
 	});
 Description:
 	Parses the input CPLEX solution file and fills in the solution datastructure with the data
+
 =cut
+
 sub buildFromCPLEXFile {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["filename"],{});
@@ -84,7 +87,9 @@ Definition:
 	});
 Description:
 	Parses the input GLPK solution file and fills in the solution datastructure with the data
+
 =cut
+
 sub buildFromGLPKFile {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["filename"],{});

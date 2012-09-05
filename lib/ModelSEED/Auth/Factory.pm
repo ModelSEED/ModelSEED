@@ -8,7 +8,6 @@
 #
 # Date of module creation: 2012-05-16
 ########################################################################
-=pod
 
 =head1 ModelSEED::Auth::Factory
 
@@ -57,6 +56,7 @@ L<HTTP::Request> has:
     Authorization: Basic: <base64 encoded username:password >
 
 =cut
+
 package ModelSEED::Auth::Factory;
 use Moose;
 use ModelSEED::Auth;

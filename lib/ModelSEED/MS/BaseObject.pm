@@ -10,27 +10,8 @@ use DateTime;
 use Data::UUID;
 use JSON;
 use Module::Load;
-package ModelSEED::Meta::Attribute::Typed;
-use Moose;
-use namespace::autoclean;
-extends 'Moose::Meta::Attribute';
-
-has type => (
-      is        => 'rw',
-      isa       => 'Str',
-      predicate => 'has_type',
-);
-
-has printOrder => (
-      is        => 'rw',
-      isa       => 'Int',
-      predicate => 'has_printOrder',
-      default => '-1',
-);
-package Moose::Meta::Attribute::Custom::Typed;
-sub register_implementation { 'ModelSEED::Meta::Attribute::Typed' }
+use ModelSEED::MS::Metadata::Attribute::Typed;
 package ModelSEED::MS::BaseObject;
-=pod
 
 =head1 ModelSEED::MS::BaseObject
 
@@ -113,6 +94,7 @@ Returns an HTML document for the object.
 =head4 __upgrade__
 
 =cut
+
 use Moose;
 use namespace::autoclean;
 use ModelSEED::utilities;
@@ -512,13 +494,13 @@ sub _getReadableAttributes {
 	my $attributesRS = [];
 	my $class = 'ModelSEED::MS::'.$self->_type();
 	foreach my $attr ( $class->meta->get_all_attributes ) {
-		if ($attr->isa('ModelSEED::Meta::Attribute::Typed') && $attr->printOrder() != -1 && ($attr->type() eq "attribute" || $attr->type() eq "msdata")) {
+		if ($attr->isa('ModelSEED::MS::Metadata::Attribute::Typed') && $attr->printOrder() != -1 && ($attr->type() eq "attribute" || $attr->type() eq "msdata")) {
 			push(@{$attributes},$attr->name());
 			$priority->{$attr->name()} = $attr->printOrder();
-		} elsif ($attr->isa('ModelSEED::Meta::Attribute::Typed') && $attr->printOrder() != -1 && $attr->type() =~ m/^result/) {
+		} elsif ($attr->isa('ModelSEED::MS::Metadata::Attribute::Typed') && $attr->printOrder() != -1 && $attr->type() =~ m/^result/) {
 			push(@{$attributesRS},$attr->name());
 			$priorityRS->{$attr->name()} = $attr->printOrder();
-		} elsif ($attr->isa('ModelSEED::Meta::Attribute::Typed') && $attr->printOrder() != -1) {
+		} elsif ($attr->isa('ModelSEED::MS::Metadata::Attribute::Typed') && $attr->printOrder() != -1) {
 			push(@{$attributesSO},$attr->name());
 			$prioritySO->{$attr->name()} = $attr->printOrder();
 		}

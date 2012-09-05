@@ -77,6 +77,7 @@ sub _buildroles {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 createEquation
 Definition:
 	string = ModelSEED::MS::Reaction->createEquation({
@@ -85,7 +86,9 @@ Definition:
 	});
 Description:
 	Creates an equation for the core reaction with compounds specified according to the input format
+
 =cut
+
 sub createEquation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{
@@ -157,6 +160,7 @@ sub createEquation {
 	}
 	return $reactcode.$sign.$productcode;
 }
+
 =head3 loadFromEquation
 Definition:
 	ModelSEED::MS::ReactionInstance = ModelSEED::MS::Reaction->loadFromEquation({
@@ -165,7 +169,9 @@ Definition:
 	});
 Description:
 	Parses the input equation, generates the reaction stoichiometry based on the equation, and returns the reaction instance for the equation
+
 =cut
+
 sub loadFromEquation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["equation","aliasType"],{});
@@ -291,7 +297,9 @@ Definition:
 	});
 Description:
 	Checks if the reaction is mass and charge balanced, and rebalances protons if called for, but only if protons are the only broken element in the equation
+
 =cut
+
 sub checkReactionMassChargeBalance {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{rebalanceProtons => 0});

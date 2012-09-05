@@ -1,4 +1,6 @@
 package ModelSEED::App::model::Command::tohtml;
+use strict;
+use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store

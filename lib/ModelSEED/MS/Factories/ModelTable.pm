@@ -47,7 +47,7 @@ sub fromTableFilehandle {
     my $rows = []; 
     while(<$fh>) {
         my $row = [split(/\t/, $_)];
-        map { chomp $_ } @$row;
+        for (@$row) { chomp $_; }
         push(@$rows, $row);
     }
     return $self->fromTable($rows, $model);
@@ -72,7 +72,7 @@ sub _make_GPR_string {
                 map { $_->feature->id }
                 @$subunitGenes
             ];
-            map { $_ =~  s/([$meta])/\\$1/g } @$features;
+            for (@$features) { $_ =~  s/([$meta])/\\$1/g; }
             push(@$units, "(" .join(",",@$features) . ")");
         }
         push(@$data, "{". join("", @$units) . "}");

@@ -9,7 +9,6 @@
 #
 # Date of module creation: 2012-06-03
 ########################################################################
-=pod
 
 =head1 ModelSEED::MS::Factories::FBAMDOELFactory
 
@@ -17,11 +16,35 @@ A Factory that uses an FBAMODEL server to pull construct a model.
 
 =head2 Methods
 
+=head3 listAvailableModels
+
+    \@ids = $fact->listAvailableModels;
+
+Return an arrayref of model IDs.
+
 =head3 createModel
 
+    $model = $fact->createModel(\%config);
+
+Construct a L<ModelSEED::MS::Model> object. Config is
+a hash ref that accepts the following:
+
+=over 4
+
+=item id
+
+The string ID of a model to import. Required.
+
+=item annotation
+
+A L<ModelSEED::MS::Annotation> object. Required.
+
+=back
+
 =cut
+
 package ModelSEED::MS::Factories::FBAMODELFactory;
-use FBAMODELClient;
+use ModelSEED::Client::FBAMODEL;
 use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::Auth::Factory
@@ -35,7 +58,7 @@ use namespace::autoclean;
 
 has auth => ( is => 'ro', isa => "ModelSEED::Auth", required => 1);
 has store => ( is => 'ro', isa => "ModelSEED::Store", required => 1);
-has client => ( is => 'ro', isa => "FBAMODELClient", lazy => 1, builder => '_build_client');
+has client => ( is => 'ro', isa => "ModelSEED::Client::FBAMODEL", lazy => 1, builder => '_build_client');
 has auth_config => ( is => 'ro', isa => 'HashRef', lazy => 1, builder => '_build_auth_config');
 
 sub listAvailableModels {
@@ -131,7 +154,7 @@ sub createModel {
 }
 
 sub _build_client {
-    return FBAMODELClient->new();
+    return ModelSEED::Client::FBAMODEL->new();
 }
 sub _build_auth_config {
     my ($self) = @_;
@@ -146,12 +169,12 @@ sub _build_auth_config {
 
 sub _get_uuid_from_alias {
     my ($self, $ref) = @_;
-    return undef unless(defined($ref));
+    return unless(defined($ref));
     my $alias_objects = $self->store->get_aliases($ref);
     if(defined($alias_objects->[0])) {
         return $alias_objects->[0]->{uuid}
     } else {
-        return undef;
+        return;
     }
 }
 
