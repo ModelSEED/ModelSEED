@@ -4,7 +4,7 @@ package ModelSEED::MS::Metadata::Definitions;
 my $objectDefinitions = {};
 
 $objectDefinitions->{FBAFormulation} = {
-	parents => ['Model'],
+	parents => ['ModelSEED::Store'],
 	class => 'indexed',
 	attributes => [
 		{name => 'uuid',printOrder => -1,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
@@ -37,6 +37,7 @@ $objectDefinitions->{FBAFormulation} = {
 		{name => 'thermodynamicConstraints',printOrder => 16,perm => 'rw',type => 'Bool',req => 0,default => 1},
 		{name => 'noErrorThermodynamicConstraints',printOrder => 17,perm => 'rw',type => 'Bool',req => 0,default => 1},
 		{name => 'minimizeErrorThermodynamicConstraints',printOrder => 18,perm => 'rw',type => 'Bool',req => 0,default => 1},
+        {name => 'model_uuid', printOrder => 19, perm => 'rw', type => 'ModelSEED::uuid', req => 1},
 	],
 	subobjects => [
 		{name => "fbaObjectiveTerms",printOrder => -1,class => "FBAObjectiveTerm",type => "encompassed"},
@@ -52,8 +53,10 @@ $objectDefinitions->{FBAFormulation} = {
 		{name => "geneKOs",attribute => "geneKO_uuids",parent => "Annotation",method=>"features",array => 1},
 		{name => "reactionKOs",attribute => "reactionKO_uuids",parent => "Biochemistry",method=>"reactions",array => 1},
 		{name => "secondaryMedia",attribute => "secondaryMedia_uuids",parent => "Biochemistry",method=>"media",array => 1},
+        {name => "model", attribute => "model_uuid", parent => "ModelSEED::Store", method => "Model", weak => 0},
 	],
     reference_id_types => [ qw(uuid) ],
+    version => 1.0,
 };
 	
 $objectDefinitions->{FBAConstraint} = {
@@ -308,7 +311,7 @@ $objectDefinitions->{GapgenFormulation} = {
 	class => 'child',
 	attributes => [
 		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'fbaFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'FBAFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
 		{name => 'mediaHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
 		{name => 'biomassHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
 		{name => 'gprHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
@@ -321,7 +324,7 @@ $objectDefinitions->{GapgenFormulation} = {
 	],
 	primarykeys => [ qw(uuid) ],
 	links => [
-		{name => "fbaFormulation",attribute => "fbaFormulation_uuid",parent => "Model",method=>"fbaFormulations"},
+		{name => "FBAFormulation",attribute => "FBAFormulation_uuid",parent => "ModelSEED::Store",method=>"FBAFormulation", weak => 0},
 		{name => "referenceMedia",attribute => "referenceMedia_uuid",parent => "Biochemistry",method=>"media"},
 	],
     reference_id_types => [ qw(uuid) ],
@@ -366,11 +369,12 @@ $objectDefinitions->{GapgenSolutionReaction} = {
 };
 
 $objectDefinitions->{GapfillingFormulation} = {
-	parents => ['Model'],
-	class => 'child',
+	parents => ['ModelSEED::Store'],
+	class => 'indexed',
 	attributes => [
 		{name => 'uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
-		{name => 'fbaFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 0},
+		{name => 'FBAFormulation_uuid',printOrder => 0,perm => 'rw',type => 'ModelSEED::uuid',req => 1},
+        {name => 'model_uuid', printOrder => 0, perm => 'rw', type => 'ModelSEED::uuid', req => 1},
 		{name => 'mediaHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
 		{name => 'biomassHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
 		{name => 'gprHypothesis',printOrder => 0,perm => 'rw',type => 'Bool',req => 0,default => "0"},
@@ -397,12 +401,14 @@ $objectDefinitions->{GapfillingFormulation} = {
 	],
 	primarykeys => [ qw(uuid) ],
 	links => [
-		{name => "fbaFormulation",attribute => "fbaFormulation_uuid",parent => "Model",method=>"fbaFormulations"},
+		{name => "FBAFormulation",attribute => "FBAFormulation_uuid",parent => "ModelSEED::Store",method=>"FBAFormulation", weak => 0},
 		{name => "guaranteedReactions",attribute => "guaranteedReaction_uuids",parent => "Biochemistry",method=>"reactions",array => 1},
 		{name => "blacklistedReactions",attribute => "blacklistedReaction_uuids",parent => "Biochemistry",method=>"reactions",array => 1},
-		{name => "allowableCompartments",attribute => "allowableCompartment_uuids",parent => "Biochemistry",method=>"compartments",array => 1}
+		{name => "allowableCompartments",attribute => "allowableCompartment_uuids",parent => "Biochemistry",method=>"compartments",array => 1},
+        {name => "model", attribute => "model_uuid", parent => "ModelSEED::Store", method => "Model", weak => 0},
 	],
     reference_id_types => [ qw(uuid) ],
+    version => 1.0,
 };
 
 $objectDefinitions->{GapfillingGeneCandidate} = {
@@ -1286,18 +1292,15 @@ $objectDefinitions->{Model} = {
 		{name => "modelcompartments",printOrder => 1,class => "ModelCompartment",type => "child"},
 		{name => "modelcompounds",printOrder => 2,class => "ModelCompound",type => "child"},
 		{name => "modelreactions",printOrder => 3,class => "ModelReaction",type => "child"},
-        {name => "fbaFormulations",printOrder => -1,class => "FBAFormulation", type => "child"},
-        {name => "Gapfillingformulations", printOrder => -1, class => "GapfillingFormulation", type => "child"},
 	],
 	primarykeys => [ qw(uuid) ],
 	links => [
 		{name => "biochemistry",attribute => "biochemistry_uuid",parent => "ModelSEED::Store",method=>"Biochemistry", weak => 0},
 		{name => "mapping",attribute => "mapping_uuid",parent => "ModelSEED::Store",method=>"Mapping", weak => 0},
 		{name => "annotation",attribute => "annotation_uuid",parent => "ModelSEED::Store",method=>"Annotation", weak => 0},
-		{name => "modelanalysis",attribute => "modelanalysis_uuid",parent => "ModelSEED::Store",method=>"ModelAnalysis", weak => 0},
 	],
     reference_id_types => [ qw(uuid alias) ],
-    version => 1.0,
+    version => 1.1,
 };
 
 $objectDefinitions->{Biomass} = {

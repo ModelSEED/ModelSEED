@@ -5,22 +5,24 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package ModelSEED::MS::DB::GapfillingFormulation;
-use ModelSEED::MS::BaseObject;
+use ModelSEED::MS::IndexedObject;
 use ModelSEED::MS::GapfillingGeneCandidate;
 use ModelSEED::MS::ReactionSetMultiplier;
 use ModelSEED::MS::GapfillingSolution;
 use Moose;
 use namespace::autoclean;
-extends 'ModelSEED::MS::BaseObject';
+extends 'ModelSEED::MS::IndexedObject';
 
 
+our $VERSION = 1;
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has FBAFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -52,18 +54,19 @@ has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => s
 
 
 # LINKS:
-has fbaFormulation => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', type => 'link(Model,fbaFormulations,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', weak_ref => 1);
+has FBAFormulation => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', type => 'link(ModelSEED::Store,FBAFormulation,FBAFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_FBAFormulation');
 has guaranteedReactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions');
 has blacklistedReactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions');
 has allowableCompartments => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compartment]', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments');
+has model => (is => 'rw', isa => 'ModelSEED::MS::Model', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
-sub _build_fbaFormulation {
+sub _build_FBAFormulation {
   my ($self) = @_;
-  return $self->getLinkedObject('Model','fbaFormulations',$self->fbaFormulation_uuid());
+  return $self->getLinkedObject('ModelSEED::Store','FBAFormulation',$self->FBAFormulation_uuid());
 }
 sub _build_guaranteedReactions {
   my ($self) = @_;
@@ -77,9 +80,14 @@ sub _build_allowableCompartments {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compartments',$self->allowableCompartment_uuids());
 }
+sub _build_model {
+  my ($self) = @_;
+  return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
+}
 
 
 # CONSTANTS:
+sub __version__ { return $VERSION; }
 sub _type { return 'GapfillingFormulation'; }
 
 my $attributes = [
@@ -93,7 +101,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'fbaFormulation_uuid',
+            'name' => 'FBAFormulation_uuid',
+            'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'model_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
           },
@@ -242,7 +257,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, mediaHypothesis => 2, biomassHypothesis => 3, gprHypothesis => 4, reactionAdditionHypothesis => 5, balancedReactionsOnly => 6, guaranteedReaction_uuids => 7, blacklistedReaction_uuids => 8, allowableCompartment_uuids => 9, reactionActivationBonus => 10, drainFluxMultiplier => 11, directionalityMultiplier => 12, deltaGMultiplier => 13, noStructureMultiplier => 14, noDeltaGMultiplier => 15, biomassTransporterMultiplier => 16, singleTransporterMultiplier => 17, transporterMultiplier => 18, modDate => 19};
+my $attribute_map = {uuid => 0, FBAFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, blacklistedReaction_uuids => 9, allowableCompartment_uuids => 10, reactionActivationBonus => 11, drainFluxMultiplier => 12, directionalityMultiplier => 13, deltaGMultiplier => 14, noStructureMultiplier => 15, noDeltaGMultiplier => 16, biomassTransporterMultiplier => 17, singleTransporterMultiplier => 18, transporterMultiplier => 19, modDate => 20};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

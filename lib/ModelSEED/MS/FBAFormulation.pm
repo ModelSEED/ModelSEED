@@ -8,6 +8,25 @@
 use strict;
 use ModelSEED::MS::DB::FBAFormulation;
 package ModelSEED::MS::FBAFormulation;
+
+=head1 ModelSEED::MS::GapfillingFormulation
+
+=head2 METHODS
+
+=head3 biochemistry
+
+Link to the model biochemistry object.
+
+=head3 mapping
+
+Link to the model mapping object.
+
+=head3 annotation
+
+Link to the model annotation object.
+
+=cut
+
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';
@@ -25,6 +44,10 @@ has cplexLicense => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msda
 has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
+
+sub biochemistry { return $_[0]->model->biochemistry; }
+sub mapping { return $_[0]->model->mapping; }
+sub annotation { return $_[0]->model->annotation; }
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -58,7 +81,7 @@ sub _buildmfatoolkitBinary {
 	my ($self) = @_;
 	my $config = ModelSEED::Configuration->new();
 	my $bin;
-	if (defined($config->user_options()->{MFATK_BIN})) {
+	if (defined($config->user_options()) && defined($config->user_options->{MFATK_BIN})) {
 		$bin = $config->user_options()->{MFATK_BIN};
 	} else {
             if ($^O =~ m/^MSWin/) {
@@ -87,7 +110,7 @@ sub _buildmfatoolkitDirectory {
 sub _builddataDirectory {
 	my ($self) = @_;
 	my $config = ModelSEED::Configuration->new();
-	if (defined($config->user_options()->{MFATK_CACHE})) {
+	if (defined($config->user_options()) && defined($config->user_options->{MFATK_CACHE})) {
 		return $config->user_options()->{MFATK_CACHE}."/";
 	}
 	return ModelSEED::utilities::MODELSEEDCORE()."/data/";
@@ -96,7 +119,7 @@ sub _builddataDirectory {
 sub _buildcplexLicense {
 	my ($self) = @_;
 	my $config = ModelSEED::Configuration->new();
-	if (defined($config->user_options()->{CPLEX_LICENCE})) {
+	if (defined($config->user_options()) && defined($config->user_options->{CPLEX_LICENCE})) {
 		return $config->user_options()->{CPLEX_LICENCE};
 	}
 	return "";
@@ -198,7 +221,7 @@ sub createJobDirectory {
 		biomassflux => "FLUX"
 	};
 	#Print model to Model.tbl
-	my $model = $self->parent();
+	my $model = $self->model;
 	my $mdlData = ["REACTIONS","LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG"];
 	my $mdlrxn = $model->modelreactions();
 	for (my $i=0; $i < @{$mdlrxn}; $i++) {

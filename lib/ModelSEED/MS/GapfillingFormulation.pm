@@ -8,25 +8,32 @@
 use strict;
 use ModelSEED::MS::DB::GapfillingFormulation;
 package ModelSEED::MS::GapfillingFormulation;
+
+=head1 ModelSEED::MS::GapfillingFormulation
+
+=head2 METHODS
+
+=head3 biochemistry
+
+Link to the model biochemistry object.
+
+=head3 mapping
+
+Link to the model mapping object.
+
+=head3 annotation
+
+Link to the model annotation object.
+
+=cut
+
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::GapfillingFormulation';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
 
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
+sub biochemistry { return $_[0]->model->biochemistry; }
+sub mapping { return $_[0]->model->mapping; }
+sub annotation { return $_[0]->model->annotation; }
 
 =head3 calculateReactionCosts
 
@@ -120,9 +127,9 @@ Description:
 sub prepareFBAFormulation {
 	my ($self,$args) = @_;
 	my $form;
-	if (!defined($self->fbaFormulation_uuid())) {
+	if (!defined($self->FBAFormulation_uuid())) {
 		my $exFact = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-		$form = $exFact->buildFBAFormulation({model => $self->parent(),overrides => {
+		$form = $exFact->buildFBAFormulation({model => $self->model,overrides => {
 			media => "Media/name/Complete",
 			notes => "Default gapfilling FBA formulation",
 			allReversible => 1,
@@ -136,7 +143,7 @@ sub prepareFBAFormulation {
 			}]
 		}});
 	} else {
-		$form = $self->fbaFormulation();
+		$form = $self->FBAFormulation;
 	}
 	if ($form->media()->name() eq "Complete") {
 		if ($form->defaultMaxDrainFlux() < 10000) {
@@ -247,7 +254,7 @@ Description:
 
 sub printBiomassComponentReactions {
 	my ($self,$args) = @_;
-	my $form = $self->fbaFormulation();
+	my $form = $self->FBAFormulation();
 	my $filename = $form->jobDirectory()."/BiomassHypothesisEquations.txt";
 	my $output = ["id\tequation\tname"];
 	my $bio = $self->model()->biomasses()->[0];
@@ -311,7 +318,7 @@ sub runGapFilling {
 	my $filedata = ModelSEED::utilities::LOADFILE($directory."CompleteGapfillingOutput.txt");
 	my $gfsolution = $self->add("gapfillingSolutions",{});
 	my $count = 0;
-	my $model = $self->parent();
+	my $model = $self->model;
 	for (my $i=0; $i < @{$filedata}; $i++) {
 		if ($filedata->[$i] =~ m/^bio00001/) {
 			my $array = [split(/\t/,$filedata->[$i])];

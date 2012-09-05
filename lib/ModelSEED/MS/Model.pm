@@ -9,30 +9,33 @@ use strict;
 use XML::LibXML;
 use ModelSEED::MS::DB::Model;
 package ModelSEED::MS::Model;
+
+=head1 ModelSEED::MS::Model
+
+=head2 METHODS
+
+=head3 definition
+
+=cut
+
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Model';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
-has definition => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
+has definition => (
+    is         => 'rw',
+    isa        => 'Str',
+    printOrder => '-1',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_build_definition'
+);
 
 
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-sub _builddefinition {
-	my ($self) = @_;
-	return $self->createEquation({format=>"name",hashed=>0});
+sub _build_definition {
+    my ($self) = @_;
+    return $self->createEquation( { format => "name", hashed => 0 } );
 }
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
 
 =head3 findCreateEquivalentCompartment
 
@@ -1075,6 +1078,13 @@ sub gapfillModel {
 	$args = ModelSEED::utilities::ARGS($args,["gapfillingFormulation"],{
 		fbaFormulation => undef,integrateSolution => 1
 	});
+    # Get the FBAformulation from the gapfillingFormulation if
+    # the gapfillingFormulation has it and we didn't get a different one
+    if (  !defined $args->{fbaFormulation}
+        && defined $args->{gapfillingFormulation}->FBAFormulation_uuid ) {
+        $args->{fbaFormulation} =
+          $args->{gapfillingFormulatioN}->FBAFormulation;
+    }
 	my $solution = $args->{gapfillingFormulation}->runGapFilling({
 		model => $self,
 		fbaFormulation => $args->{fbaFormulation}
@@ -1148,5 +1158,29 @@ sub printExchangeFormat {
    	push(@{$textArray},"}");
     return join("\n",@{$textArray});
 }
+
+# __upgrade__ : function accepts a version number, returns a
+# function \% -> \% that converts old version to current.
+#
+# CHANGELOG :
+#
+# 1.1 - remove fbaFormulations, gapfillingFormulations
+#       sub-objects. These are just dropped since we don't
+#       have access to a ModelSEED::Store object to save them
+#       to. Tough shit.
+#
+sub __upgrade__ {
+    my ($self, $version) = @_;
+    my $routines = {
+        1.0 => sub { 
+            delete $_[0]->{fbaFormulations};       
+            delete $_[0]->{Gapfillingformulations};
+            return $_[0];
+        },
+    };
+    my ($v) = grep { $version == $_ } keys %$routines;
+    return $routines->{$v} if defined $v;
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

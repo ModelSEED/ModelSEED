@@ -10,6 +10,7 @@ use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+use Data::Dumper;
 sub abstract { return "Fill gaps in the reaction network for a model"; }
 sub usage_desc { return "model gapfill [ model || - ] [options]"; }
 sub opt_spec {
@@ -47,6 +48,7 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+        ["norun", "Do not run gapfilling, print gapfilling config data instead"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -87,11 +89,11 @@ sub execute {
 	};
 	foreach my $argument (keys(%{$overrideList})) {
 		if ($overrideList->{$argument} =~ m/^\!(.+)$/) {
-			$argument = $1;
+            my $real_argument = $1;
 			if (defined($opts->{$argument})) {
-				$input->{overrides}->{$overrideList->{$argument}} = 0;
+				$input->{overrides}->{$real_argument} = 0;
 			} else {
-				$input->{overrides}->{$overrideList->{$argument}} = 1;
+				$input->{overrides}->{$real_argument} = 1;
 			}
 		} elsif (defined($opts->{$argument})) {
 			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
@@ -104,10 +106,16 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapfillingFormulation = $exchange_factory->buildGapfillingFormulation($input);
+    # Exit with config if thats what is requested
+    if ($opts->{norun}) {
+        print $gapfillingFormulation->toJSON;
+        exit();
+    }
     #Running gapfilling
     print STDERR "Running Gapfilling...\n" if($opts->{verbose});
-    my $result = $model->gapfillModel({
-        gapfillingFormulation => $gapfillingFormulation,
+    my $result = $gapfillingFormulation->runGapFilling({
+            model => $model,
+            fbaFormulation => $gapfillingFormulation->FBAFormulation,
     });
     if (!defined($result)) {
     	print STDERR " Reactions passing user criteria were insufficient to enable objective!\n";

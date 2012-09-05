@@ -28,7 +28,7 @@ sub _builddefinition {
 sub _builddataDirectory {
 	my ($self) = @_;
 	my $config = ModelSEED::Configuration->new();
-	if (defined($config->user_options()->{MFATK_CACHE})) {
+	if (defined($config->user_options) && defined($config->user_options()->{MFATK_CACHE})) {
 		return $config->user_options()->{MFATK_CACHE}."/";
 	}
 	return ModelSEED::utilities::MODELSEEDCORE()."/data/";

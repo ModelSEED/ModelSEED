@@ -39,6 +39,7 @@ sub opt_spec {
         ["nothermoerror","Do not include uncertainty in thermodynamic constraints"],
         ["minthermoerror","Minimize uncertainty in thermodynamic constraints"],
         ["html","Print FBA results in HTML"],
+        ["norun", "Do not run the configured FBA; print the config data instead"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -79,6 +80,11 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $fbaform = $exchange_factory->buildFBAFormulation($input);
+    # Print config and exit if norun is supplied
+    if ($opts->{norun}) {
+        print $out_fh $fbaform->toJSON;
+        exit();
+    }
     #Running FBA
     print STDERR "Running FBA..." if($opts->{verbose});
     my $fbaResult = $fbaform->runFBA();
@@ -89,12 +95,10 @@ sub execute {
 	    #Standard commands that save results of the analysis to the database
 	    if ($opts->{overwrite}) {
 	    	print STDERR "Saving model with FBA solution over original model...\n" if($opts->{verbose});
-	    	$model->add("fbaFormulations",$fbaform);
 	    	$store->save_object($ref,$model);
 	    } elsif ($opts->{save}) {
 			$ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
 			print STDERR "Saving model with FBA solution as new model ".$ref."...\n" if($opts->{verbose});
-			$model->add("fbaFormulations",$fbaform);
 			$store->save_object($ref,$model);
 	    }
 	    if ($opts->{html}) {

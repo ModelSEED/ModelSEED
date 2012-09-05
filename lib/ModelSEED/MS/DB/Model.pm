@@ -10,14 +10,12 @@ use ModelSEED::MS::Biomass;
 use ModelSEED::MS::ModelCompartment;
 use ModelSEED::MS::ModelCompound;
 use ModelSEED::MS::ModelReaction;
-use ModelSEED::MS::FBAFormulation;
-use ModelSEED::MS::GapfillingFormulation;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
 
 
-our $VERSION = 1;
+our $VERSION = 1.1;
 # PARENT:
 has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
@@ -49,15 +47,12 @@ has biomasses => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 has modelcompartments => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompartment)', metaclass => 'Typed', reader => '_modelcompartments', printOrder => '1');
 has modelcompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelCompound)', metaclass => 'Typed', reader => '_modelcompounds', printOrder => '2');
 has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ModelReaction)', metaclass => 'Typed', reader => '_modelreactions', printOrder => '3');
-has fbaFormulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(FBAFormulation)', metaclass => 'Typed', reader => '_fbaFormulations', printOrder => '-1');
-has Gapfillingformulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(GapfillingFormulation)', metaclass => 'Typed', reader => '_Gapfillingformulations', printOrder => '-1');
 
 
 # LINKS:
 has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry');
 has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping');
 has annotation => (is => 'rw', isa => 'ModelSEED::MS::Annotation', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation');
-has modelanalysis => (is => 'rw', isa => 'ModelSEED::MS::ModelAnalysis', type => 'link(ModelSEED::Store,ModelAnalysis,modelanalysis_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelanalysis');
 
 
 # BUILDERS:
@@ -74,10 +69,6 @@ sub _build_mapping {
 sub _build_annotation {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Annotation',$self->annotation_uuid());
-}
-sub _build_modelanalysis {
-  my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','ModelAnalysis',$self->modelanalysis_uuid());
 }
 
 
@@ -243,22 +234,10 @@ my $subobjects = [
             'name' => 'modelreactions',
             'type' => 'child',
             'class' => 'ModelReaction'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'fbaFormulations',
-            'type' => 'child',
-            'class' => 'FBAFormulation'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'Gapfillingformulations',
-            'type' => 'child',
-            'class' => 'GapfillingFormulation'
           }
         ];
 
-my $subobject_map = {biomasses => 0, modelcompartments => 1, modelcompounds => 2, modelreactions => 3, fbaFormulations => 4, Gapfillingformulations => 5};
+my $subobject_map = {biomasses => 0, modelcompartments => 1, modelcompounds => 2, modelreactions => 3};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -290,14 +269,6 @@ around 'modelcompounds' => sub {
 around 'modelreactions' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('modelreactions');
-};
-around 'fbaFormulations' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('fbaFormulations');
-};
-around 'Gapfillingformulations' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('Gapfillingformulations');
 };
 
 
