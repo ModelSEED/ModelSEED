@@ -36,6 +36,7 @@ my $LOCK_EXT  = 'lock';
 # External attributes (configurable)
 has directory => (is => 'rw', isa => 'Str', required => 1);
 has filename  => (is => 'rw', isa => 'Str', default => 'database');
+has is_new    => (is => 'rw', isa => 'Bool');
 
 # Index Structure
 #    {
@@ -60,6 +61,8 @@ sub BUILD {
     my $dat = -f "$file.$DATA_EXT";
 
     if ($ind && $met && $dat) {
+        $self->is_new(0);
+
 	# all exist, check versioning
         $self->_perform_transaction({
             index => 'w',
@@ -67,6 +70,7 @@ sub BUILD {
             meta  => 'w' }, \&_check_version);
     } elsif (!$ind && !$met && !$dat) {
 	# new database
+        $self->is_new(1);
 	my $index = _initialize_index();
 
 	# use a semaphore to lock the files

@@ -106,7 +106,6 @@ sub _initializeDatabase {
             directory => $config->{directory},
             filename  => $name
         });
-        $db->kvstore->save_object("aliases", {});
     }
 }
 
