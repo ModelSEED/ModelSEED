@@ -17,6 +17,8 @@ use Tie::IxHash;
 use FileHandle;
 use Data::UUID;
 use ModelSEED::Reference;
+use IO::Compress::Gzip qw(gzip);
+use IO::Uncompress::Gunzip qw(gunzip);
 
 with 'ModelSEED::Database';
 
@@ -365,7 +367,9 @@ sub _update_error {
 sub _object_to_fh {
     my ($self, $obj) = @_;
     my $j = $self->JSON->encode($obj);
-    open(my $basic_fh, "<", \$j);
+    my $buff;
+    gzip \$j => \$buff;
+    open(my $basic_fh, "<", \$buff);
     my $fh = FileHandle->new;
     $fh->fdopen($basic_fh, 'r');
     return $fh;
@@ -374,7 +378,9 @@ sub _object_to_fh {
 sub _gfs_fh_to_object {
     my ($self, $gfs_fh) = @_;
     my $string = $gfs_fh->slurp();
-    return $self->JSON->decode($string);
+    my $buff;
+    gunzip \$string => \$buff;
+    return $self->MP->decode($string);
 }
 
 sub _cast_ref {
