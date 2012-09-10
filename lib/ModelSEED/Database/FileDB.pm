@@ -7,6 +7,8 @@ use ModelSEED::Database::FileDB::KeyValueStore;
 
 with 'ModelSEED::Database';
 
+my $SYSTEM_META = "__system__";
+
 has kvstore => (
     is  => 'rw',
     isa => 'ModelSEED::Database::FileDB::KeyValueStore',
@@ -21,6 +23,31 @@ around BUILDARGS => sub {
 
     return { kvstore => $kvstore };
 };
+
+sub BUILD {
+    my ($self) = @_;
+
+    my $kvstore = $self->kvstore();
+    if ($kvstore->is_new()) {
+        $kvstore->save_object("aliases", {});
+        $kvstore->save_object($SYSTEM_META, {});
+        $kvstore->set_metadata($SYSTEM_META, 'parents_children', 1);
+    }
+
+    # check for system metadata
+    if (!$kvstore->has_object($SYSTEM_META)) {
+        $kvstore->save_object($SYSTEM_META, {});
+    }
+
+    # now check if we have constructed the ancestor/descendant data
+    my $sys_meta = $kvstore->get_metadata($SYSTEM_META);
+    if (!defined($sys_meta->{parents_children})) {
+        print "Rebuilding FileDB metadata, please wait (this will only happen once)\n";
+        $self->_build_parents_and_children();
+        $kvstore->set_metadata($SYSTEM_META, 'parents_children', 1);
+        print "Finished rebuilding FileDB metadata.\n";
+    }
+}
 
 sub has_data {
     my ($self, $ref, $auth) = @_;
@@ -39,7 +66,7 @@ sub get_data {
 }
 
 sub save_data {
-    my ($self, $ref, $object, $config, $auth) = @_;
+    my ($self, $ref, $object, $auth, $config) = @_;
     $auth = $config unless(defined($auth));
     $ref = $self->_cast_ref($ref);
     my ($oldUUID, $update_alias);
@@ -74,6 +101,26 @@ sub save_data {
 
     # now do the saving
     $self->kvstore->save_object($object->{uuid}, $object);
+
+    # now save 'parents' and 'children' metadata
+    my $meta = $self->kvstore->get_metadata($object->{uuid});
+    $meta->{parents} = [];
+    $meta->{children} = [];
+    if (defined($oldUUID)) {
+        foreach my $parent_uuid (@{$object->{ancestor_uuids}}) {
+            my $parent_meta = $self->kvstore->get_metadata($parent_uuid);
+
+            # set new object as child of parent
+            push(@{$parent_meta->{children}}, $object->{uuid});
+
+            # set old object as parent of child
+            push(@{$meta->{parents}}, $parent_uuid);
+
+            $self->kvstore->set_metadata($parent_uuid, "", $parent_meta);
+        }
+    }
+
+    $self->kvstore->set_metadata($object->{uuid}, "", $meta);
 
     if($update_alias) {
         # update alias to new uuid
@@ -288,6 +335,50 @@ sub set_public {
     return $self->kvstore->set_metadata('aliases', $alias, $info);
 }
 
+sub ancestors {
+    my ($self, $ref, $auth) = @_;
+
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+
+    my $graph = $self->_build_graph('parents', $uuid, {});
+    delete $graph->{$uuid};
+
+    my @ancestors = keys %$graph;
+    return \@ancestors;
+}
+
+sub ancestor_graph {
+    my ($self, $ref, $auth) = @_;
+
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+
+    return $self->_build_graph('parents', $uuid, {});
+}
+
+sub descendants {
+    my ($self, $ref, $auth) = @_;
+
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+
+    my $graph = $self->_build_graph('children', $uuid, {});
+    delete $graph->{$uuid};
+
+    my @descendants = keys %$graph;
+    return \@descendants;
+}
+
+sub descendant_graph {
+    my ($self, $ref, $auth) = @_;
+
+    my $uuid = $self->_get_uuid($ref, $auth);
+    return undef unless defined $uuid;
+
+    return $self->_build_graph('children', $uuid, {});
+}
+
 # required, but not defined yet
 sub find_data {
     # not yet
@@ -336,6 +427,52 @@ sub _build_alias_meta {
     }
 
     return "$t/$u/$a";
+}
+
+sub _build_parents_and_children {
+    my ($self) = @_;
+
+    # assume no merges, deletions, or anything fancy,
+    # start at alias and work way backwards
+    my $alias_meta = $self->kvstore->get_metadata('aliases');
+    foreach my $alias (keys %$alias_meta) {
+        my $uuid = $alias_meta->{$alias}->{uuid};
+        my $object = $self->kvstore->get_object($uuid);
+        my $meta = $self->kvstore->get_metadata($uuid);
+
+        $meta->{children} = [];
+
+        while (defined($object->{ancestor_uuids}) &&
+               scalar @{$object->{ancestor_uuids}} > 0) {
+            my $parent_uuid = $object->{ancestor_uuids}->[0];
+            my $parent = $self->kvstore->get_object($parent_uuid);
+            my $parent_meta = $self->kvstore->get_metadata($parent_uuid);
+
+            $meta->{parents} = [ $parent_uuid ];
+            $parent_meta->{children} = [ $uuid ];
+
+            $self->kvstore->set_metadata($uuid, "", $meta);
+
+            $uuid = $parent_uuid;
+            $object = $parent;
+            $meta = $parent_meta;
+        }
+
+        $meta->{parents} = [];
+        $self->kvstore->set_metadata($uuid, "", $meta);
+    }
+}
+
+sub _build_graph {
+    my ($self, $type, $uuid, $graph) = @_;
+
+    my $meta = $self->kvstore->get_metadata($uuid);
+    $graph->{$uuid} = $meta->{$type};
+    foreach my $other_uuid (@{$meta->{$type}}) {
+        $self->_build_graph($type, $other_uuid, $graph);
+    }
+
+    return $graph;
 }
 
 1;
