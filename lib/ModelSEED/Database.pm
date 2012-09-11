@@ -33,7 +33,7 @@ An abstract role / interface for database drivers.
 
 =head3 save_data
 
-    $ref = $db->save_data(ref, data, config, auth);
+    $ref = $db->save_data(ref, data, auth, config);
 
 Where config is a hash that currently accepts one parameter:
 
@@ -126,6 +126,51 @@ an array ref of alias objects that have the following structure:
 =head3 set_public
 
     $bool = $db->set_public(ref, boolean, auth)
+
+=head2 Ancestor and Decendant Functions
+
+These functions provide access to the ancestor and decnendant
+information on provenance objects. Each object stores a reference
+to its direct parents through the C<{ ancestor_uuids }> array.
+However, to access ancestors further back, one must walk through
+the database at least once. These functions do so in a reasonably
+efficient manner.
+
+=head3 ancestors
+
+    \@ = $db->ancestors(ref, auth)
+
+Return an array-ref of ancestor uuids that are the complete list
+of ancestors (parents, grandparents, etc.) for a reference.
+
+=head3 ancestor_graph 
+
+    \% = $db->ancestor_graph(ref, auth)
+
+Return a hash-ref of uuid to array-ref of parent uuids for each
+object that is an ancestor of the current object. This hash includes
+the current object uuid as a key. So for an object with no parents,
+and therefore no further ancestors, the graph would be:
+
+    { $uuid => [] }
+
+And for an object with a parent C<$uuid2>:
+
+    { $uuid => [ $uuid2 ], $uuid2 => [] }
+
+=head3 descendants
+
+    \@ = $db->descendants(ref, auth)
+
+Return an array-ref of descendant object uuids.
+
+=head3 descendant_graph
+
+    \% = $db->descendant_graph(ref, auth)
+
+Return a hash-ref of uuid to array-ref of parent uuids for each
+object that is a descendant of the current object. This hash includes
+the current object uuid as a key.
 
 =cut
 
