@@ -123,63 +123,13 @@ sub runGapGeneration {
 	my $directory = $form->jobDirectory()."/";
 	#Running the gapfilling
 	my $fbaResults = $form->runFBA();
-	#Parsing gapfilling results
-	if (!-e $directory."/ProblemReport.txt") {
-		print STDERR "Gapgeneration failed!";
-		return;
+	#Retrieving solutions
+	my $solutions = $fbaResults->gapgenSolutions();
+	if (!defined($solutions->[0])) {
+		print STDERR "Gapgen solution not found. Gapgen failed!";
+		return undef; 
 	}
-	my $tbl = ModelSEED::utilities::LOADTABLE($directory."/ProblemReport.txt",";");
-	my $column;
-	for (my $i=0; $i < @{$tbl->{headings}}; $i++) {
-		if ($tbl->{headings}->[$i] eq "Notes") {
-			$column = $i;
-			last;
-		}
-	}
-	if (defined($column)) {
-		for (my $j=0; $j < @{$tbl->{data}}; $j++) {
-			my $row = $tbl->{data}->[$j];
-			if ($row->[$column] =~ m/^Recursive\sMILP\s([^)]+)/) {
-				my @SolutionList = split(/\|/,$1);
-				for (my $k=0; $k < @SolutionList; $k++) {
-					if ($SolutionList[$k] =~ m/(\d+):(.+)/) {
-						my $ggsolution = $self->add("gapgenSolutions",{
-							solutionCost => $1,
-						});
-						my $rxns = [split(/,/,$2)];
-						for (my $m=0; $m < @{$rxns}; $m++) {
-							if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
-								my $rxnid = $2;
-								my $sign = $1;
-								my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
-								if (!defined($rxn)) {
-									ModelSEED::utilities::ERROR("Could not find gapgen reaction ".$rxnid."!");
-								}
-								my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
-								my $direction = ">";
-								if ($sign eq "-") {
-									$direction = "<";
-								}
-								$ggsolution->add("gapgenSolutionReactions",{
-									modelreaction_uuid => $mdlrxn->uuid(),
-									modelreaction => $mdlrxn,
-									direction => $direction
-								});
-								if ($mdlrxn->direction() eq $direction) {
-									$model->remove("modelreactions",$mdlrxn);
-								} elsif ($direction eq ">") {
-									$mdlrxn->direction("<");
-								} elsif ($direction eq "<") {
-									$mdlrxn->direction(">");
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return $ggsolution;
+	return $solutions->[0];
 }
 
 __PACKAGE__->meta->make_immutable;

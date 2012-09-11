@@ -26,8 +26,12 @@ has modelTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '
 has bofTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildbofTbl' );
 has compoundTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcompoundTbl' );
 has reactionTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildreactionTbl' );
-mediaTbl
-mediacpdTbl
+has cpdalsTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcpdalsTbl' );
+has rxnalsTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxnalsTbl' );
+has mediaTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildmediaTbl' );
+has mediacpdTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildmediacpdTbl' );
+roleTbl
+
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -47,6 +51,22 @@ sub _buildcompoundTbl {
 sub _buildreactionTbl {
 	my ($self) = @_;
 	return ModelSEED::Table->new(filename => $self->filepath()."reactions.tbl");
+}
+sub _buildcpdalsTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."cpdals.tbl");
+}
+sub _buildrxnalsTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."rxnals.tbl");
+}
+sub _buildmediaTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."media.tbl");
+}
+sub _buildmediacpdTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."mediacpd.tbl");
 }
 
 
@@ -432,35 +452,35 @@ sub createBiochemistry {
 
 sub addAliases {
 	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{
-		database => $self->figmodel()->database(),
-	});
+	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{});
 	my $biochemistry = $args->{biochemistry};
 	#Adding compound aliases
 	print "Handling compound aliases!\n" if($args->{verbose});
-	my $cpdals = $args->{database}->get_objects("cpdals");
-	for (my $i=0; $i < @{$cpdals}; $i++) {
-		my $cpd = $biochemistry->getObjectByAlias("compounds",$cpdals->[$i]->COMPOUND(),"ModelSEED");
+	my $cpdals = $self->cpdalsTbl();
+	for (my $i=0; $i < $cpdals->size(); $i++) {
+		my $row = $cpdals->row($i);
+		my $cpd = $biochemistry->getObjectByAlias("compounds",$row->COMPOUND(),"ModelSEED");
 		if (defined($cpd)) {
 			$biochemistry->addAlias({
 				attribute => "compounds",
-				aliasName => $cpdals->[$i]->type(),
-				alias => $cpdals->[$i]->alias(),
+				aliasName => $row->type(),
+				alias => $row->alias(),
 				uuid => $cpd->uuid()
 			});
 		} else {
-			print $cpdals->[$i]->COMPOUND()." not found!\n" if($args->{verobose});
+			print $row->COMPOUND()." not found!\n" if($args->{verobose});
 		}
 	}
 	#Adding reaction aliases
-	my $rxnals = $args->{database}->get_objects("rxnals");
-	for (my $i=0; $i < @{$rxnals}; $i++) {
-		my $rxn = $biochemistry->getObjectByAlias("reactions",$rxnals->[$i]->REACTION(),"ModelSEED");
+	my $rxnals = $self->rxnalsTbl();
+	for (my $i=0; $i < $rxnals->size(); $i++) {
+		my $row = $rxnals->row($i);
+		my $rxn = $biochemistry->getObjectByAlias("reactions",$row->REACTION(),"ModelSEED");
 		if (defined($rxn)) {
 			$biochemistry->addAlias({
 				attribute => "reactions",
-				aliasName => $rxnals->[$i]->type(),
-				alias => $rxnals->[$i]->alias(),
+				aliasName => $row->type(),
+				alias => $row->alias(),
 				uuid => $rxn->uuid()
 			});
 		}
@@ -471,7 +491,6 @@ sub createMapping {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{
 		name => $self->namespace()."/primary.mapping",
-		database => $self->figmodel()->database(),
         verbose => 0,
 	});
 	my $mapping = ModelSEED::MS::Mapping->new({
@@ -480,7 +499,9 @@ sub createMapping {
 		biochemistry => $args->{biochemistry}
 	});
     my $biochemistry = $mapping->biochemistry;
-	my $spontaneousRxn = $self->figmodel()->config("spontaneous reactions");
+	my $spontaneousRxn = [ qw(
+		rxn00062 rxn01208 rxn04132 rxn04133 rxn05319 rxn05467 rxn05468 rxn02374 rxn05116 rxn03012 rxn05064 rxn02666 rxn04457 rxn04456 rxn01664 rxn02916 rxn05667
+	) ];
 	for (my $i=0; $i < @{$spontaneousRxn}; $i++) {
 		my $rxn = $biochemistry->getObjectByAlias("reactions",$spontaneousRxn->[$i],"ModelSEED");
 		if (defined($rxn)) {
@@ -490,7 +511,9 @@ sub createMapping {
 			});
 		}
 	}
-	my $universalRxn = $self->figmodel()->config("universal reactions");
+	my $universalRxn = [ qw(
+		rxn05651 rxn10473 rxn10571 rxn05195 rxn05555
+	)];
 	for (my $i=0; $i < @{$universalRxn}; $i++) {
 		my $rxn = $biochemistry->getObjectByAlias("reactions",$universalRxn->[$i],"ModelSEED");
 		if (defined($rxn)) {
@@ -772,23 +795,24 @@ sub createMapping {
 			});
 		}
 	};
-	my $roles = $args->{database}->get_objects("role");
-    print "Processing ".scalar(@$roles)." roles\n" if($args->{verbose});
-	for (my $i=0; $i < @{$roles}; $i++) {
+	my $roles = $self->roleTbl();
+    print "Processing ".$roles->size()." roles\n" if($args->{verbose});
+	for (my $i=0; $i < $roles->size(); $i++) {
+		my $row = $roles->row($i);
 		my $role = $mapping->add("roles",{
 			locked => "0",
-			name => $roles->[$i]->name(),
-			seedfeature => $roles->[$i]->exemplarmd5()
+			name => $row->name(),
+			seedfeature => $row->exemplarmd5()
 		});
 		$mapping->addAlias({
 			attribute => "roles",
 			aliasName => "ModelSEED",
-			alias => $roles->[$i]->id(),
+			alias => $row->id(),
 			uuid => $role->uuid()
 		});
 	}
-	my $subsystems = $args->{database}->get_objects("subsystem");
-    print "Processing ".scalar(@$subsystems)." subsystems\n" if($args->{verbose});
+	my $subsystems = $self->subsystemTbl();
+    print "Processing ".$subsystems->size()." subsystems\n" if($args->{verbose});
 	for (my $i=0; $i < @{$subsystems}; $i++) {
 		my $ss = $mapping->add("rolesets",{
 			public => "1",

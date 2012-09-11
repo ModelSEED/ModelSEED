@@ -11,6 +11,11 @@ use Data::Dumper;
 package ModelSEED::MS::Factories::ExchangeFormatFactory;
 use Moose;
 use namespace::autoclean;
+use Class::Autouse qw(
+	ModelSEED::MS::FBAFormulation
+    ModelSEED::MS::GapfillingFormulation
+    ModelSEED::MS::GapgenFormulation
+);
 #***********************************************************************************************************
 # ATTRIBUTES:
 #***********************************************************************************************************

@@ -235,6 +235,7 @@ sub loadMFAToolkitResults {
 	$self->parseMinimalMediaResults();
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
+	$self->parseGapfillingResults();
 }
 
 =head3 parseFluxFiles
@@ -795,6 +796,48 @@ sub parseFVAResults {
 		}
 	}
 }
+=head3 parseGapfillingResults
+Definition:
+	void ModelSEED::MS::Model->parseGapfillingResults();
+Description:
+	Parses Gapfilling results
+
+=cut
+sub parseGapfillingResults {
+	my ($self) = @_;
+	my $directory = $self->parent()->jobDirectory();
+	if (-e $directory."/GapfillingComplete.txt") {
+		my $gfsolution = $self->add("gapfillingSolutions",{});
+		$gfsolution->loadFromFile({filename => $directory."/GapfillingComplete.txt"});
+	}
+}
+=head3 parseGapgenResults
+Definition:
+	void ModelSEED::MS::Model->parseGapgenResults();
+Description:
+	Parses Gapgen results
+
+=cut
+sub parseGapgenResults {
+	my ($self) = @_;
+	my $directory = $self->parent()->jobDirectory();
+	if (-e $directory."/GapGenerationReport.txt") {
+		my $filedata = ModelSEED::utilities::LOADFILE($directory."/GapGenerationReport.txt");
+		for (my $i=1; $i < @{$filedata}; $i++) {
+			my $array = [split(/\t/,$filedata->[$i])];
+			if (defined($array->[1])) {
+				my $subarray = [split(/,/,$array->[1])];
+				my $ggsolution = $self->add("gapgenSolutions",{});
+				$ggsolution->loadFromFile({
+					objective => $array->[0],
+					reactions => $subarray,
+					model => $self->model()
+				});
+			}
+		}
+	}
+}
+
 
 __PACKAGE__->meta->make_immutable;
 1;
