@@ -11,17 +11,17 @@
 package ModelSEED::Database::MongoDB;
 use Moose;
 use common::sense;
-
 use MongoDB;
-use MongoDB::Connection;
-use MongoDB::Database;
-use JSON::Path;
+use Data::UUID;
+use Try::Tiny;
+use JSON::XS;
+
 use ModelSEED::Reference;
 use ModelSEED::MS::Metadata::Definitions;
-use Data::Dumper;
-use Data::UUID;
 
-with 'ModelSEED::Database';
+use Data::Dumper; # DEBUG
+
+#with 'ModelSEED::Database';
  
 has db_name  => (is => 'ro', isa => 'Str', required => 1);
 has host     => (is => 'ro', isa => 'Str');
@@ -32,14 +32,14 @@ has password => (is => 'ro', isa => 'Str');
 has conn => (
     is        => 'ro',
     isa       => 'MongoDB::Connection',
-    builder   => '_buildConn',
+    builder   => '_build_conn',
     lazy      => 1,
     init_arg  => undef
 );
 has db => (
     is        => 'ro',
     isa       => 'MongoDB::Database',
-    builder   => '_buildDb',
+    builder   => '_build_db',
     lazy      => 1,
     init_arg  => undef
 );
@@ -47,7 +47,7 @@ has db => (
 has _collectionMap => (
     is      => 'ro',
     isa     => 'HashRef',
-    builder => '_buildCollectionMap',
+    builder => '_build_collectionMap',
     lazy    => 1,
 );
 
@@ -64,6 +64,13 @@ $ModelSEED::Database::MongoDB::aliasCollection = "aliases";
 sub initialize {
     my ($self) = @_;
     my $split_rules   = $self->split_rules;
+    my $alias_collection = $ModelSEED::Database::MongoDB::aliasCollection;
+    $self->db->$alias_collection->ensure_index({ uuid => 1 });
+    $self->db->$alias_collection->ensure_index({ owner => 1 });
+    $self->db->$alias_collection->ensure_index({ viewers => 1 });
+    $self->db->$alias_collection->ensure_index({ alias => 1 });
+    my $t = Tie::IxHash->new(type => 1, owner => 1, alias => 1);
+    $self->db->$alias_collection->ensure_index($t);
     # right now we're only indexing the uuid and parent_tag fields
     foreach my $base_collection_name (keys %$split_rules) {
         $self->db->$base_collection_name->ensure_index({ uuid => 1 }, {unique => 1, safe => 1});
@@ -71,10 +78,13 @@ sub initialize {
         foreach my $rule (values %$sub_rules) {
             my $collection = $rule->{collection};
             my $parent_tag = $rule->{parent_tag};
-            $self->db->$collection->ensure_index({uuid => 1}, {unique => 1, safe => 1});
-            $self->db->$collection->ensure_index({$parent_tag => 1}, { safe => 1});
+            $self->db->$collection->ensure_index( { uuid => 1 },
+                { unique => 1, safe => 1 } );
+            $self->db->$collection->ensure_index( { $parent_tag => 1 },
+                { safe => 1 } );
         }
     }
+    return $self;
 }
 
 sub has_data {
@@ -95,30 +105,16 @@ sub get_data {
     my $o = $self->db->$collection->find_one({ uuid => $uuid });
     return undef unless(defined($o));
     delete $o->{_id};
-    return $self->_join_subobjects($ref, $o, $auth);
-}
-
-sub get_data_collection {
-    my ($self, $ref, $auth) = @_;
-    return [] unless($ref->type eq 'collection');
-    my $coll_name = $self->_get_collection($ref);
-    my $objects = $self->db->$coll_name->find()->all;
-    return [] unless(@$objects);
-    return [map { $self->_join_subobjects($ref, $_, $auth) } @$objects];
-}
-
-sub get_data_collection_iterator {
-    my ($self, $ref, $auth) = @_;
-    return [] unless($ref->type eq 'collection');
-    my $coll_name = $self->_get_collection($ref);
-    my $cursor = $self->db->$coll_name->find();
-    return ModelSEED::Database::Iterator::WrappedMogoDBIterator->new(
-        base_iterator => $cursor, auth => $auth, ref => $ref
-    );
+    my $o = $self->_join_subobjects($ref, $o, $auth);
+    return $self->_unescape_object($o);
 }
 
 sub save_data {
-    my ($self, $ref, $object, $auth) = @_;
+    my ($self, $ref, $object, $config, $auth) = @_;
+    $auth = $config unless(defined $auth);
+    $ref = $self->_cast_ref($ref);
+    # convert "." and "$" to utf8 equivalents
+    $object = $self->_escape_object($object);
     my ($oldUUID, $update_alias);
     if ($ref->id_type eq 'alias') {
         $oldUUID = $self->_get_uuid($ref, $auth);    
@@ -126,7 +122,9 @@ sub save_data {
         return undef unless($auth->username eq $ref->alias_username);
     } elsif($ref->id_type eq 'uuid') {
         # cannot save to existing uuid
-        return undef if(defined($self->get_data($ref, $auth)));
+        if($self->has_data($ref, $auth)) {
+            $oldUUID = $ref->id;
+        }
     }
     if(defined($oldUUID)) {
         # We have an existing alias, so must:
@@ -134,32 +132,27 @@ sub save_data {
         if(!defined($object->{ancestor_uuids})) {
             $object->{ancestor_uuids} = [];
         }
-        my $found = 0;
-        foreach my $uuid (@{$object->{ancestor_uuids}}) {
-            if($uuid eq $oldUUID) {
-                $found = 1;
-                last;
-            }
-        }
-        if(!$found) {
-            push(@{$object->{ancestor_uuids}}, $oldUUID);
+        unless( $config->{is_merge} ) {
+            $object->{ancestor_uuids} = [ $oldUUID ];
         }
         # - set to new UUID if that hasn't been done
         if($object->{uuid} eq $oldUUID) {
-            $object->{uuid} = Data::UUID->new()->create_str();
+            $object->{uuid} = Data::UUID->new->create_str;
         }
         # - update alias, but wait until after object write
-        $update_alias = 1;
+        if($ref->id_type eq 'alias') {
+            $update_alias = 1;
+        }
     }
     # Now save object to collection
-    $self->_split_object_for_save($ref, $object);
+    $self->_split_and_save($ref, $object);
     if($update_alias) {
         # update alias to new uuid
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
         return undef unless($rtv);
     } elsif(!defined($oldUUID) && $ref->id_type eq 'alias') {
         # alias is new, so create it
-        my $rtv = $self->create_alias($ref, $object->{uuid}, $auth);
+        my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);
         return undef unless($rtv);
     }
     return $object->{uuid};
@@ -215,24 +208,20 @@ sub _subobject_bulk_save {
         }
     }
     # create new objects if they don't already exist
-=cut
-    $collection->batch_insert($newObjects);
-=cut
-    foreach my $subobject (@$newObjects) {
-        my $query = {uuid => $subobject->{uuid}};
-        $collection->update($query, $subobject, {upsert => 1});
-        return 0 if($self->_update_error(1));
-    }
+    $self->_batch_insert($collection, $newObjects);
     # now add the reference to all objects
     my $query = {uuid => {'$in' => $all_uuids_array}};
-    $collection->update($query,
-        {'$addToSet' => {$parent_tag => $parent_uuid}},
-        { multiple => 1 }
-    );
-    if($self->_update_error(scalar(@$all_uuids_array))) {
-        return 0;
-    }
-    return 1;
+    my $success = 1;
+    try {
+        $collection->update(
+            $query,
+            { '$addToSet' => { $parent_tag => $parent_uuid } },
+            { multiple => 1, safe => 1 }
+        );
+    } catch {
+        $success = 0;
+    };
+    return $success;
 }
 
 sub _subobject_get {
@@ -242,6 +231,7 @@ sub _subobject_get {
     my $query =  { $parent_tag => $parent_uuid};
     my @objs = $self->db->$collection->find($query)->all;
     map { delete $_->{_id}; delete $_->{$parent_tag}; } @objs;
+    return undef if scalar @objs == 0;
     return [@objs];
 }
 
@@ -270,12 +260,13 @@ sub _join_subobjects {
     my $parent_uuid = $base_object->{uuid};
     foreach my $attr (keys %$rules) {
         my $rule = $rules->{$attr};
-        $base_object->{$attr} = $self->_subobject_get($rule, $parent_uuid);
+        my $tmp  = $self->_subobject_get($rule, $parent_uuid);
+        $base_object->{$attr} = $tmp if defined $tmp;
     }
     return $base_object;
 }
 
-sub _split_object_for_save {
+sub _split_and_save {
     my ($self, $ref, $object, $auth) = @_;
     # determine ref type
     my $type = $ref->base_types->[scalar(@{$ref->base_types}) - 1];
@@ -290,7 +281,7 @@ sub _split_object_for_save {
         my $rule = $rules->{$attr};
         if ( $rule->{type} eq 'array' ) {
             my $subobjects = $object->{$attr};
-            $subobjects ||= [];
+            $subobjects = [] unless defined $subobjects;
             my $success = $self->_subobject_bulk_save($subobjects, $rule, $parent_uuid);
         }
         delete $attrs->{$attr};
@@ -305,52 +296,6 @@ sub _get_uuid {
     } else {
         return $ref->id;
     }
-}
-
-sub _buildConn {
-    my ($self) = @_;
-    my $config = {
-        db_name        => $self->db_name,
-        auto_connect   => 1,
-        auto_reconnect => 1
-    };
-    $config->{host} = $self->host if $self->host;
-    $config->{username} = $self->username if $self->username;
-    $config->{password} = $self->password if $self->password;
-    my $conn = MongoDB::Connection->new(%$config);
-    die "Unable to connect: $@" unless $conn;
-    return $conn;
-}
-
-sub _buildDb {
-    my ($self) = @_;
-    my $db_name = $self->db_name;
-    return $self->conn->$db_name;
-}
-
-sub _followPath {
-    my ($object, $path, $root) = @_; 
-    my @sections = split(/\./, $path);
-    unshift @sections, $root;
-    my $last = pop @sections;
-    while ( my $target = shift @sections ) { 
-        if($target eq '' || !defined($target)) {
-            last;
-        } elsif(ref($object) eq 'HASH') {
-            # FIXME - Kludge, what to do if this.is.a.path is undef?
-            if(!defined($object->{$target})) {
-                $object->{$target} = {};
-            }
-            $object = $object->{$target};
-        } elsif(ref($object) eq 'ARRAY') {
-            for(my $i=0; $i<@$object; $i++) {
-                $object = $object->[$i] if ($object->[$i] eq $target);
-            }   
-        } else {
-            return undef;
-        }   
-    }   
-    return ($object, $last);
 }
 
 sub _get_collection {
@@ -370,99 +315,35 @@ sub _get_collection {
     return $currentCollection;
 }
 
-sub _buildCollectionMap {
-    my ($self) = @_;
-    return {
-        'biochemistry' => {
-            'reactions'    => 1,
-            'compounds'    => 1,
-            'media'        => 1,
-            'compartments' => 1,
-         },
-    };
-}
-
 ## Alias functions
 
-sub _alias_update {
-    my ($self, $ref, $update, $auth) = @_;
-    # can only update ref that is an alias
-    return 0 unless($ref->id_type eq 'alias');
-    # can only update ref that is owned by caller
-    return 0 unless($ref->alias_username eq $auth->username);
-    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
-    my $o = $self->db->$aliasCollection->update(
-        {   alias => $ref->alias_string,
-            type  => $ref->alias_type,
-            owner => $auth->username,
-        },
-        # push viewer on viewers
-        $update,
-        {safe => 0}
-    );
-    return 0 if $self->_error;
-    return 1;
-}
-
-sub _alias_query {
-    my ($self, $ref, $attribute, $auth) = @_;
-    # can only update ref that is an alias
-    return undef unless($ref->id_type eq 'alias');
-    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
-    my $o = $self->db->$aliasCollection->find_one(
-        {   alias => $ref->alias_string,
-            type  => $ref->alias_type,
-            owner => $ref->alias_username,
-        }
-    );
-    # return undefined unless we are allowed to see alias
-    #     either because it is (1) public, (2) owned by us
-    #     or (3) we are in the list of viewers
-    return undef unless(defined($o));
-    unless($o->{public}
-        || $o->{owner} eq $auth->username)
-    {
-        my $authorized = 0;
-        foreach my $viewer (@{$o->{viewers}}) {
-            if($viewer eq $auth->username) {
-                $authorized = 1;
-                last;
+sub get_aliases {
+    my ($self, $ref, $auth) = @_;
+    my $query = {};
+    if(defined($ref) && ref($ref) eq 'HASH') {
+        $query = $ref;
+    } elsif(defined($ref)) {
+        $ref = $self->_cast_ref($ref);
+        #$self->_die_if_bad_ref($ref);
+        if($ref->type eq 'collection') {
+            if(defined $ref->base_types->[0]) {
+                $query->{type} = $ref->base_types->[0];
+            }
+            if($ref->has_owner) {
+                $query->{owner} = $ref->owner;
+            }
+        } else {
+            $query->{type} = $ref->base_types->[0];
+            if ($ref->id_type eq 'uuid') {
+                $query->{uuid} = $ref->id;
+            }
+            if ($ref->id_type eq 'alias') {
+                $query->{alias} = $ref->alias_string;
+                $query->{owner} = $ref->alias_username;
             }
         }
-        return undef unless($authorized);
-    }
-    return $o->{$attribute};
-}
-
-sub create_alias {
-    my ($self, $ref, $uuid, $auth) = @_;
-    my $type = $ref->parent_collections->[0];
-    my $validAliasTypes = {
-        biochemistry => 1,
-        model => 1,
-        mapping => 1,
-    };
-    return 0 unless(defined($validAliasTypes->{$type}));
-    return 0 unless($ref->id_type eq 'alias');
-    return 0 unless($ref->alias_username eq $auth->username);
-    my $obj = {
-        type => $type,
-        alias => $ref->alias_string,
-        owner => $auth->username,
-        public => 0,
-        uuid => $uuid,
-        viewers => [],
-    };
-    my $query = {
-        type => $type,
-        alias => $ref->alias_string,
-        owner => $auth->username,
-    };
-    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
-    $self->db->$aliasCollection->update($query, $obj, {upsert => 1});
-    # this is 'upsert', which inserts one document if nothing matches
-    return 0 if $self->_update_error(1);
-    return 1;
+    } 
+    return $self->_aliases_query($query, $auth);
 }
 
 sub alias_uuid {
@@ -488,7 +369,11 @@ sub alias_owner {
 sub update_alias {
     my ($self, $ref, $uuid, $auth) = @_;
     my $update = { '$set' => { 'uuid' => $uuid }};
-    return $self->_alias_update($ref, $update, $auth);
+    my $val = $self->_alias_update($ref, $update, $auth);
+    if($val == -1) {
+        return $self->_alias_create($ref, $uuid, $auth);
+    }
+    return $val;
 }
 
 sub remove_viewer {
@@ -509,7 +394,159 @@ sub add_viewer {
     return $self->_alias_update($ref, $update, $auth);
 }
 
-## MongoDB error checking functions
+## Helpers
+##     - Alias Helper Functions
+
+sub _alias_create {
+    my ($self, $ref, $uuid, $auth) = @_;
+    $ref = $self->_cast_ref($ref);
+    my $type = $ref->parent_collections->[0];
+    my $validAliasTypes = {
+        biochemistry => 1,
+        model => 1,
+        mapping => 1,
+        annotation => 1,
+    };
+    return 0 unless(defined($validAliasTypes->{$type}));
+    return 0 unless($ref->id_type eq 'alias');
+    return 0 unless($ref->alias_username eq $auth->username);
+    my $obj = {
+        type => $type,
+        alias => $ref->alias_string,
+        owner => $auth->username,
+        public => 0,
+        uuid => $uuid,
+        viewers => [],
+    };
+    my $query = {
+        type => $type,
+        alias => $ref->alias_string,
+        owner => $auth->username,
+    };
+    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
+    $self->db->$aliasCollection->update($query, $obj, {upsert => 1});
+    # this is 'upsert', which inserts one document if nothing matches
+    return 0 if $self->_update_error(1);
+    return 1;
+}
+
+sub _alias_update {
+    my ($self, $ref, $update, $auth) = @_;
+    $ref = $self->_cast_ref($ref);
+    # can only update ref that is an alias
+    return 0 unless($ref->id_type eq 'alias');
+    # can only update ref that is owned by caller
+    return 0 unless($ref->alias_username eq $auth->username);
+    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
+    my $o = $self->db->$aliasCollection->update(
+        {   alias => $ref->alias_string,
+            type  => $ref->alias_type,
+            owner => $auth->username,
+        },
+        # push viewer on viewers
+        $update,
+        {safe => 0}
+    );
+    return -1 if $self->_update_error(1);
+    return 1;
+}
+
+sub _aliases_query {
+    my ($self, $query, $auth) = @_;
+    my $permission_query = {
+        '$and' => [
+            $query,
+            { '$or' => [
+                {'owner'   => $auth->username},
+                {'viewers' => $auth->username},
+                {'public'  => 1}
+                ]
+            }
+        ]
+    };
+    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
+    my @objs = $self->db->$aliasCollection->find($permission_query)->all;
+    return [
+        map {
+            { type  => $_->{type},
+              owner => $_->{owner},
+              alias => $_->{alias},
+              uuid  => $_->{uuid},
+            }
+            } @objs
+    ];
+}
+
+sub _alias_query {
+    my ($self, $ref, $attribute, $auth) = @_;
+    $ref = $self->_cast_ref($ref);
+    # can only update ref that is an alias
+    return unless($ref->id_type eq 'alias');
+    my $aliasCollection = $ModelSEED::Database::MongoDB::aliasCollection;
+    my $o = $self->db->$aliasCollection->find_one(
+        {   alias => $ref->alias_string,
+            type  => $ref->alias_type,
+            owner => $ref->alias_username,
+        }
+    );
+    # return unless we are allowed to see alias
+    #     either because it is (1) public, (2) owned by us
+    #     or (3) we are in the list of viewers
+    return unless(defined($o));
+    unless($o->{public}
+        || $o->{owner} eq $auth->username)
+    {
+        my $authorized = 0;
+        foreach my $viewer (@{$o->{viewers}}) {
+            if($viewer eq $auth->username) {
+                $authorized = 1;
+                last;
+            }
+        }
+        return unless($authorized);
+    }
+    return $o->{$attribute};
+}
+
+sub _batch_insert {
+    my ($self, $collection, $objects, $split_count) = @_;
+    return if @$objects == 0;
+    my $not_done = 1;
+    my $object_sets = [ $objects ];
+    while ($not_done) {
+        my $err;
+        for(my $i=0; $i<@$object_sets; $i++) {
+            my $set = $object_sets->[$i];
+            next if @$set == 0;
+            try {
+                $collection->batch_insert($set);
+            } catch {
+                $err = 1;
+            };
+            if($err || $self->_error) {
+                $err = 1;
+                last;
+            } else {
+                $object_sets->[$i] = undef;
+            }
+        }
+        if ($err) {
+            my $new_sets = [];
+            foreach my $set (@$object_sets) {
+                next unless defined $set;
+                my @L = @$set;
+                my @R = splice(@L, scalar(@$set)/2);
+                push(@$new_sets, \@L, \@R);
+            }
+            $object_sets = $new_sets;
+        } else {
+            $not_done = 0;
+        }
+    }
+}
+
+##     - Error Checking
+
 sub _error {
     my ($self, $count) = @_;
     my $errObj = $self->db->last_error();
@@ -525,6 +562,87 @@ sub _update_error {
     return 1 if $e->{n} != $count;
     return 0;
 }
+
+sub _cast_ref {
+    my ($self, $ref) = @_;
+    if(ref($ref) && $ref->isa("ModelSEED::Reference")) {
+        return $ref;
+    } else {
+        return ModelSEED::Reference->new(ref => $ref);
+    }
+}
+
+##     - Object syntax escape
+
+sub _walk_object {
+    my ($self, $obj, $sub) = @_;
+    my $n_obj;
+    if(ref $obj eq 'HASH') {
+        foreach my $key (keys %$obj) {
+            my $n_key = $self->$sub($key);
+            $n_obj->{$n_key} = $self->_walk_object($obj->{$key}, $sub);
+        }
+    } elsif(ref $obj eq 'ARRAY') {
+        foreach my $sub_obj (@$obj) {
+            push(@$n_obj, $self->_walk_object($sub_obj, $sub));
+        }
+    } else {
+        $n_obj = $obj;
+    }
+    return $n_obj;
+}
+
+sub _escape_key {
+    my ($self, $k) = @_;
+    my $nk = $k;
+    $nk =~ s/\./\N{U+FF0E}/g;
+    $nk =~ s/^\$/\N{U+FF04}/;
+    utf8::encode($nk);
+    return $nk;
+}
+
+sub _unescape_key {
+    my ($self, $k) = @_;
+    my $nk = $k;
+    utf8::decode($nk);
+    $nk =~ s/\N{U+FF0E}/\./g;
+    $nk =~ s/^\N{U+FF04}/\$/;
+    return $nk;
+}
+
+sub _escape_object { 
+    my ($self, $obj) = @_;
+    return $self->_walk_object($obj, '_escape_key');
+}
+
+sub _unescape_object {
+    my ($self, $obj) = @_;
+    return $self->_walk_object($obj, '_unescape_key');
+}
+
+## Builders
+
+sub _build_conn {
+    my ($self) = @_;
+    my $config = {
+        db_name        => $self->db_name,
+        auto_connect   => 1,
+        auto_reconnect => 1
+    };
+    $config->{host} = $self->host if $self->host;
+    $config->{username} = $self->username if $self->username;
+    $config->{password} = $self->password if $self->password;
+    my $conn = MongoDB::Connection->new(%$config);
+    die "Unable to connect: $@" unless $conn;
+    return $conn;
+}
+
+sub _build_db {
+    my ($self) = @_;
+    my $db_name = $self->db_name;
+    return $self->conn->$db_name;
+}
+
 sub _build_split_rules {
     my ($self) = @_;
     my $defs = ModelSEED::MS::Metadata::Definitions::objectDefinitions();
@@ -548,6 +666,18 @@ sub _build_split_rules {
         }
     }
     return $rules;
+}
+
+sub _build_collectionMap {
+    my ($self) = @_;
+    return {
+        'biochemistry' => {
+            'reactions'    => 1,
+            'compounds'    => 1,
+            'media'        => 1,
+            'compartments' => 1,
+         },
+    };
 }
 
 1;
