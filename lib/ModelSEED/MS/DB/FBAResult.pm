@@ -13,6 +13,8 @@ use ModelSEED::MS::FBAPhenotypeSimultationResult;
 use ModelSEED::MS::FBADeletionResult;
 use ModelSEED::MS::FBAMinimalMediaResult;
 use ModelSEED::MS::FBAMetaboliteProductionResult;
+use ModelSEED::MS::GapfillingSolution;
+use ModelSEED::MS::GapgenSolution;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
@@ -41,6 +43,8 @@ has fbaPhenotypeSimultationResults => (is => 'rw', isa => 'ArrayRef[HashRef]', d
 has fbaDeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBADeletionResult)', metaclass => 'Typed', reader => '_fbaDeletionResults', printOrder => '4');
 has minimalMediaResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAMinimalMediaResult)', metaclass => 'Typed', reader => '_minimalMediaResults', printOrder => '5');
 has fbaMetaboliteProductionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAMetaboliteProductionResult)', metaclass => 'Typed', reader => '_fbaMetaboliteProductionResults', printOrder => '0');
+has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingSolution)', metaclass => 'Typed', reader => '_gapfillingSolutions', printOrder => '0');
+has gapgenSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapgenSolution)', metaclass => 'Typed', reader => '_gapgenSolutions', printOrder => '0');
 
 
 # LINKS:
@@ -143,10 +147,22 @@ my $subobjects = [
             'name' => 'fbaMetaboliteProductionResults',
             'type' => 'encompassed',
             'class' => 'FBAMetaboliteProductionResult'
+          },
+          {
+            'printOrder' => 0,
+            'name' => 'gapfillingSolutions',
+            'type' => 'encompassed',
+            'class' => 'GapfillingSolution'
+          },
+          {
+            'printOrder' => 0,
+            'name' => 'gapgenSolutions',
+            'type' => 'encompassed',
+            'class' => 'GapgenSolution'
           }
         ];
 
-my $subobject_map = {fbaCompoundVariables => 0, fbaReactionVariables => 1, fbaBiomassVariables => 2, fbaPhenotypeSimultationResults => 3, fbaDeletionResults => 4, minimalMediaResults => 5, fbaMetaboliteProductionResults => 6};
+my $subobject_map = {fbaCompoundVariables => 0, fbaReactionVariables => 1, fbaBiomassVariables => 2, fbaPhenotypeSimultationResults => 3, fbaDeletionResults => 4, minimalMediaResults => 5, fbaMetaboliteProductionResults => 6, gapfillingSolutions => 7, gapgenSolutions => 8};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -190,6 +206,14 @@ around 'minimalMediaResults' => sub {
 around 'fbaMetaboliteProductionResults' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('fbaMetaboliteProductionResults');
+};
+around 'gapfillingSolutions' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('gapfillingSolutions');
+};
+around 'gapgenSolutions' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('gapgenSolutions');
 };
 
 

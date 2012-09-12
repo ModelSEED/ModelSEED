@@ -8,7 +8,6 @@ package ModelSEED::MS::DB::GapfillingFormulation;
 use ModelSEED::MS::BaseObject;
 use ModelSEED::MS::GapfillingGeneCandidate;
 use ModelSEED::MS::ReactionSetMultiplier;
-use ModelSEED::MS::GapfillingSolution;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -48,7 +47,6 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 # SUBOBJECTS:
 has gapfillingGeneCandidates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingGeneCandidate)', metaclass => 'Typed', reader => '_gapfillingGeneCandidates', printOrder => '-1');
 has reactionSetMultipliers => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(ReactionSetMultiplier)', metaclass => 'Typed', reader => '_reactionSetMultipliers', printOrder => '-1');
-has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingSolution)', metaclass => 'Typed', reader => '_gapfillingSolutions', printOrder => '-1');
 
 
 # LINKS:
@@ -269,16 +267,10 @@ my $subobjects = [
             'name' => 'reactionSetMultipliers',
             'type' => 'encompassed',
             'class' => 'ReactionSetMultiplier'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'gapfillingSolutions',
-            'type' => 'encompassed',
-            'class' => 'GapfillingSolution'
           }
         ];
 
-my $subobject_map = {gapfillingGeneCandidates => 0, reactionSetMultipliers => 1, gapfillingSolutions => 2};
+my $subobject_map = {gapfillingGeneCandidates => 0, reactionSetMultipliers => 1};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -302,10 +294,6 @@ around 'gapfillingGeneCandidates' => sub {
 around 'reactionSetMultipliers' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('reactionSetMultipliers');
-};
-around 'gapfillingSolutions' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('gapfillingSolutions');
 };
 
 

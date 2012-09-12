@@ -303,76 +303,13 @@ sub runGapFilling {
 	ModelSEED::utilities::PRINTFILE($directory."InactiveModelReactions.txt",$inactiveList);
 	#Running the gapfilling
 	my $fbaResults = $form->runFBA();
-	#Parsing gapfilling results
-	if (!-e $directory."GapfillingComplete.txt") {
-		print STDERR "Gapfilling failed!";
-		return;
+	#Retrieving solutions
+	my $solutions = $fbaResults->gapfillingSolutions();
+	if (!defined($solutions->[0])) {
+		print STDERR "Gapfilling solution not found. Gapfilling failed!";
+		return undef; 
 	}
-	my $filedata = ModelSEED::utilities::LOADFILE($directory."CompleteGapfillingOutput.txt");
-	my $gfsolution = $self->add("gapfillingSolutions",{});
-	my $count = 0;
-	my $model = $self->parent();
-	for (my $i=0; $i < @{$filedata}; $i++) {
-		if ($filedata->[$i] =~ m/^bio00001/) {
-			my $array = [split(/\t/,$filedata->[$i])];
-			if (defined($array->[1])) {
-				my $subarray = [split(/;/,$array->[1])];
-				for (my $j=0; $j < @{$subarray}; $j++) {
-					if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
-						my $rxnid = $2;
-						my $sign = $1;
-						my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-						}
-						my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
-						my $direction = ">";
-						if ($sign eq "-") {
-							$direction = "<";
-						}
-						if ($rxn->direction() ne $direction) {
-							$direction = "=";
-						}
-						if (defined($mdlrxn)) { 
-							$mdlrxn->direction("=");
-						} else {
-							$mdlrxn = $model->addReactionToModel({
-								reaction => $rxn,
-								direction => $direction
-							});
-						}
-						$count++;
-						$gfsolution->add("gapfillingSolutionReactions",{
-							modelreaction_uuid => $mdlrxn->uuid(),
-							modelreaction => $mdlrxn,
-							direction => $direction
-						});	
-					} elsif ($subarray->[$j] =~ m/([\+])(cpd\d\d\d\d\d)DrnRxn/) {
-						my $cpdid = $2;
-						my $sign = $1;
-						my $bio = $model->biomasses()->[0];
-						my $biocpds = $bio->biomasscompounds();
-						my $found = 0;
-						for (my $i=0; $i < @{$biocpds}; $i++) {
-							my $biocpd = $biocpds->[$i];
-							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
-								$bio->remove("biomasscompounds",$biocpd);
-								$found = 1;
-								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
-								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
-							}
-						}
-						if ($found == 0) {
-							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
-						}
-					}
-				}
-			}
-			
-		}
-	}
-	$gfsolution->solutionCost($count);
-	return $gfsolution;
+	return $solutions->[0];
 }
 
 sub parseGeneCandidates {

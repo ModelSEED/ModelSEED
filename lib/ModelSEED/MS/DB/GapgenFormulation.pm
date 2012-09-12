@@ -6,7 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::GapgenFormulation;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::GapgenSolution;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -29,10 +28,6 @@ has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
-
-
-# SUBOBJECTS:
-has gapgenSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapgenSolution)', metaclass => 'Typed', reader => '_gapgenSolutions', printOrder => '-1');
 
 
 # LINKS:
@@ -134,16 +129,9 @@ sub _attributes {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'gapgenSolutions',
-            'type' => 'encompassed',
-            'class' => 'GapgenSolution'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {gapgenSolutions => 0};
+my $subobject_map = {};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -157,13 +145,6 @@ sub _subobjects {
     return $subobjects;
   }
 }
-
-
-# SUBOBJECT READERS:
-around 'gapgenSolutions' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('gapgenSolutions');
-};
 
 
 __PACKAGE__->meta->make_immutable;
