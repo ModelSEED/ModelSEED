@@ -53,8 +53,7 @@ sub handle_ref_lookup {
 
 sub process_ref_string {
     my ($self, $refString, $type, $username) = @_;
-    my @array = split(/\//, $refString);
-    my $count = @array;
+    my $count = scalar @{[ split(/\//, $refString) ]};
     if($refString eq '' || !defined($refString)) {
         return;        
     } elsif ($refString =~ /^$type\//) {
