@@ -57,6 +57,14 @@ use Exception::Class (
         description => "When a bad reference string is passed into a function",
         fields => [qw( refstr )],
     },
+    'ModelSEED::Exception::BadObjectLink' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "For when object-links are not resolveable",
+        fields => [qw(
+            searchSource searchBaseObject searchBaseType
+            searchAttribute searchUUID errorText
+        )],
+    },
 );
 1; 
 
@@ -64,7 +72,7 @@ package ModelSEED::Exception::CLI;
 use strict;
 use warnings;
 sub cli_error_text {
-    return "An unknown error occured.";
+    return "An unknown error occured.\n";
 }
 1;
 
@@ -116,3 +124,26 @@ ND
 } 
 1;
 
+package ModelSEED::Exception::BadObjectLink;
+sub cli_error_text {
+    my ($self) = shift;
+    my $sourceObject = $self->searchSource;
+    my $baseObject   = $self->searchBaseObject;
+    my $baseType     = $self->searchBaseType;
+    my $attr         = $self->searchAttribute;
+    my $uuid         = $self->searchUUID;
+    my $errorText    = $self->errorText;
+    my $baseObjectClassName = "< an unknown class >";
+    $baseObjectClassName = $baseObject->meta->name if defined $baseObject;
+    my $sourceObjectClassName = $sourceObject->meta->name;
+    return <<ND;
+Bad Object Link in instance of $sourceObjectClassName.
+Attempting to link to an object accessible via:
+$baseObjectClassName, ($baseType)
+under the attribute "$attr" with the UUID:
+    $uuid
+
+$errorText
+ND
+}
+1;
