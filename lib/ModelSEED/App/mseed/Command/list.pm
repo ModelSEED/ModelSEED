@@ -3,6 +3,7 @@ use strict;
 use common::sense;
 use Try::Tiny;
 use List::Util qw(max);
+use ModelSEED::Exceptions;
 use Class::Autouse qw(
     ModelSEED::Reference
     ModelSEED::Auth::Factory
@@ -121,8 +122,7 @@ sub printForData {
     my $columns = $self->determineColumns($ref->ref, $opts);
     print join("\t", @$columns) . "\n" if (@$columns > 1);
     foreach my $o (@$data) {
-        my $refstr = $ref->base . $ref->delimiter . $o->uuid;
-        print $self->formatOutput($refstr, $o, $columns);
+        print $self->formatOutput($ref, $o, $columns);
     }
 }
 
@@ -147,13 +147,23 @@ sub determineColumns {
 }
 
 sub formatOutput {
-    my ($self, $refstr, $object, $columns) = @_;
+    my ($self, $ref, $object, $columns) = @_;
     my $with = [ @$columns ];
     shift @$with; # Remove "Reference" column
-    my $parts = [ $refstr ];
+    my $parts = [ $ref->ref ];
     foreach my $attr (@$with) {
-        my $value = (ref $object ne 'HASH') ? $object->$attr : $object->{$attr};
-        $value =~ s/\t/\\t/;
+        my $value;
+        if (ref $object ne 'HASH' && $object->meta->find_attribute_by_name($attr)) {
+            $value = $object->$attr; 
+        } elsif(ref $object eq 'HASH') {
+            $value = $object->{$attr};
+            $value = '' unless defined $value;
+        } else {
+            ModelSEED::Exception::InvalidAttribute->throw(
+                object => $object,
+                invalid_attribute => $attr,
+            );
+        }
         push(@$parts, $value);
     }
     return join("\t", @$parts) . "\n";

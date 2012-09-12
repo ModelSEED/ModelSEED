@@ -57,6 +57,11 @@ use Exception::Class (
         description => "When a bad reference string is passed into a function",
         fields => [qw( refstr )],
     },
+    'ModelSEED::Exception::InvalidAttribute' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "Error trying to acess an attribute that an object does not have",
+        fields => [qw( object invalid_attribute )],
+    },
 );
 1; 
 
@@ -114,5 +119,21 @@ be whatever you want but cannot contain slashes.
 In the second case, pass in a specific object UUID.
 ND
 } 
+1;
+
+package ModelSEED::Exception::InvalidAttribute;
+sub cli_error_text {
+    my ($self) = shift;
+    my $object = $self->object;
+    my $tried  = $self->invalid_attribute;
+    my $type   = $object->meta->name;
+    my @attrs  = $object->meta->get_all_attributes;
+    my $attr_string = join("\n", map { $_ = "\t".$_->name } @attrs);
+    return <<ND;
+Invalid attribute '$tried' for $type, available attributes:
+$attr_string
+
+ND
+}
 1;
 
