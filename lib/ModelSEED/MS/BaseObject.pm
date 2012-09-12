@@ -11,6 +11,7 @@ use Data::UUID;
 use JSON;
 use Module::Load;
 use ModelSEED::MS::Metadata::Attribute::Typed;
+use ModelSEED::Exceptions;
 package ModelSEED::MS::BaseObject;
 
 =head1 ModelSEED::MS::BaseObject
@@ -579,10 +580,26 @@ sub getLinkedObject {
     } else {
         my $source = lc($sourceType);
         my $sourceObj = $self->$source();
-        if (!defined($sourceObj)) {
-            ModelSEED::utilities::ERROR("Cannot obtain source object ".$sourceType." for ".$attribute." link!");
+        my $object;
+        unless(defined $sourceObj) {
+            ModelSEED::Exception::BadObjectLink->throw(
+                searchSource    => $self,
+                searchBaseType  => $sourceType,
+                searchAttribute => $attribute,
+                searchUUID      => $uuid,
+                errorText => "No base object with $sourceType found",
+            );
         }
-        return $sourceObj->getObject($attribute,$uuid);
+        $object = $sourceObj->getObject($attribute,$uuid);
+        return $object if defined $object;
+        ModelSEED::Exception::BadObjectLink->throw(
+            searchSource     => $self,
+            searchBaseObject => $sourceObj,
+            searchBaseType   => $sourceType,
+            searchAttribute  => $attribute,
+            searchUUID       => $uuid,
+            errorText        => 'No object found with that UUID',
+        );
     }
 }
 
