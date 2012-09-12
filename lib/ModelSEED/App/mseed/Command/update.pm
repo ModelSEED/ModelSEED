@@ -4,8 +4,14 @@ use common::sense;
 
 use Try::Tiny;
 use Module::Load;
+use LWP::Simple;
+use JSON::XS;
+
+use ModelSEED::Version;
 
 use base 'App::Cmd::Command';
+
+my $base_url = "http://blog.theseed.org/downloads/ModelSEED";
 
 sub abstract { "Update the ModelSEED" }
 sub usage_desc { "ms update" }
@@ -110,7 +116,16 @@ sub nix_update_user {
 
     # check if new tarball is available, if yes, download and unzip
     # then system commands to compile
+    my $url = $base_url . "/ModelSEED.json";
+    my $json = get $url;
+    unless (defined($json)) {
+        die "Couldn't find json version file"
+    }
 
+    my $versions = encode_json($json);
+    if ($ModelSEED::Version::VERSION eq $versions->{current}) {
+        print "Already up-to-date.\n";
+    }
 }
 
 1;
