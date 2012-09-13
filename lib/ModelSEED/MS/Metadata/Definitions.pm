@@ -1423,8 +1423,8 @@ $objectDefinitions->{GapgenSolutionReaction} = {
 };
 
 $objectDefinitions->{GapgenFormulation} = {
-	parents    => ['Model'],
-	class      => 'child',
+	parents    => ['ModelSEED::Store'],
+	class      => 'parent',
 	attributes => [
 		{
 			name       => 'uuid',
@@ -1485,7 +1485,7 @@ $objectDefinitions->{GapgenFormulation} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
+		}
 	],
 	subobjects => [],
 	primarykeys => [qw(uuid)],
@@ -1501,14 +1501,14 @@ $objectDefinitions->{GapgenFormulation} = {
 			attribute => "referenceMedia_uuid",
 			parent    => "Biochemistry",
 			method    => "media"
-		},
+		}
 	],
 	reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{GapfillingFormulation} = {
-	parents    => ['Model'],
-	class      => 'child',
+	parents    => ['ModelSEED::Store'],
+	class      => 'parent',
 	attributes => [
 		{
 			name       => 'uuid',
@@ -1666,7 +1666,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
+		}
 	],
 	subobjects => [
 		{
@@ -1710,7 +1710,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 			array     => 1
 		}
 	],
-	reference_id_types => [qw(uuid)],
+	reference_id_types => [qw(uuid)]
 };
 
 $objectDefinitions->{GapfillingGeneCandidate} = {
@@ -1843,595 +1843,9 @@ $objectDefinitions->{ReactionSetMultiplier} = {
 	reference_id_types => [qw(uuid)],
 };
 
-$objectDefinitions->{FBAProblem} = {
-	parents    => ['ModelSEED::Store'],
-	class      => 'indexed',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'maximize',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => 1
-		},
-		{
-			name       => 'milp',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => 0
-		},
-	],
-	subobjects => [
-		{ name => "objectiveTerms", class => "ObjectiveTerm", type => "child" },
-		{ name => "constraints",    class => "Constraint",    type => "child" },
-		{ name => "variables",      class => "Variable",      type => "child" },
-		{ name => "solutions",      class => "Solution",      type => "child" },
-	],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-	version            => 1.0,
-};
-
-$objectDefinitions->{ObjectiveTerm} = {
-	parents    => ['FBAProblem'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'coefficient',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-		{
-			name       => 'variable_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "variable",
-			attribute => "variable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		}
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{Constraint} = {
-	parents    => ['FBAProblem'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'name',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'type',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'rightHandSide',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'equalityType',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			len        => 1,
-			req        => 0,
-			default    => "="
-		},
-		{
-			name       => 'index',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Int',
-			len        => 1,
-			req        => 0,
-			default    => -1
-		},
-		{
-			name       => 'primal',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			len        => 1,
-			req        => 0,
-			default    => 1
-		},
-		{
-			name       => 'entity_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'dualConstraint_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'dualVariable_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-	],
-	subobjects => [
-		{
-			name  => "constraintVariables",
-			class => "ConstraintVariable",
-			type  => "child"
-		},
-	],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "dualConstraint",
-			attribute => "dualConstraint_uuid",
-			parent    => "FBAProblem",
-			method    => "constraints"
-		},
-		{
-			name      => "dualVariable",
-			attribute => "dualVariable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		},
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{ConstraintVariable} = {
-	parents    => ['Constraint'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'coefficient',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-		{
-			name       => 'variable_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "variable",
-			attribute => "variable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		}
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{Variable} = {
-	parents    => ['FBAProblem'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'name',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'type',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'binary',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'start',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'upperBound',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'lowerBound',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'entity_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'index',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => -1
-		},
-		{
-			name       => 'primal',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			len        => 1,
-			req        => 0,
-			default    => 1
-		},
-		{
-			name       => 'dualConstraint_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'upperBoundDualVariable_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'lowerBoundDualVariable_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		}
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "dualConstraint",
-			attribute => "dualConstraint_uuid",
-			parent    => "FBAProblem",
-			method    => "constraints"
-		},
-		{
-			name      => "upperBoundDualVariable",
-			attribute => "upperBoundDualVariable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		},
-		{
-			name      => "lowerBoundDualVariable",
-			attribute => "lowerBoundDualVariable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		},
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{Solution} = {
-	parents    => ['FBAProblem'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'status',
-			printOrder => 1,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0
-		},
-		{
-			name       => 'method',
-			printOrder => 2,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0
-		},
-		{
-			name       => 'feasible',
-			printOrder => 3,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0
-		},
-		{
-			name       => 'objective',
-			printOrder => 4,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-	],
-	subobjects => [
-		{
-			name       => "solutionconstraints",
-			printOrder => 0,
-			class      => "SolutionConstraint",
-			type       => "child"
-		},
-		{
-			name       => "solutionvariables",
-			printOrder => 1,
-			class      => "SolutionVariable",
-			type       => "child"
-		},
-	],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{SolutionConstraint} = {
-	parents    => ['Solution'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'constraint_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'slack',
-			printOrder => 1,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "constraint",
-			attribute => "constraint_uuid",
-			parent    => "FBAProblem",
-			method    => "constraints"
-		}
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{SolutionVariable} = {
-	parents    => ['Solution'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'variable_uuid',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'value',
-			printOrder => 2,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-		{
-			name       => 'min',
-			printOrder => 3,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-		{
-			name       => 'max',
-			printOrder => 4,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => 0
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "variable",
-			attribute => "variable_uuid",
-			parent    => "FBAProblem",
-			method    => "variables"
-		}
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{Genome} = {
-	parents    => ['Annotation'],
-	class      => 'indexed',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'modDate',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0
-		},
-		{
-			name       => 'id',
-			printOrder => 1,
-			perm       => 'rw',
-			type       => 'Str',
-			len        => 32,
-			req        => 1
-		},
-		{
-			name       => 'name',
-			printOrder => 2,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'source',
-			printOrder => 8,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 1
-		},
-		{
-			name       => 'class',
-			printOrder => 3,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 0,
-			default    => ""
-		},    #gramPositive,gramNegative,archaea,eurkaryote
-		{
-			name       => 'taxonomy',
-			printOrder => 4,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'cksum',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'size',
-			printOrder => 5,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0
-		},
-		{
-			name       => 'gc',
-			printOrder => 6,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0
-		},
-		{
-			name       => 'etcType',
-			printOrder => 7,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			len        => 1,
-			req        => 0
-		},    #aerobe,facultativeAnaerobe,obligateAnaerobe
-	],
-	subobjects         => [],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-};
-
 $objectDefinitions->{User} = {
 	parents    => ["ModelSEED::Store"],
-	class      => 'child',
+	class      => 'parent',
 	attributes => [
 		{
 			name       => 'uuid',
@@ -2486,6 +1900,141 @@ $objectDefinitions->{User} = {
 	version            => 1.0,
 };
 
+$objectDefinitions->{BiochemistryStructures} = {
+	parents    => ["ModelSEED::Store"],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0,
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+		}
+	],
+	subobjects => [
+		{
+			name       => "structures",
+			printOrder => 0,
+			class      => "Structure",
+			type       => "child"
+		}
+	],
+	primarykeys        => [qw(uuid)],
+	links              => [],
+	reference_id_types => [qw(uuid alias)],
+	version            => 1.0,
+};
+
+$objectDefinitions->{Structure} = {
+	parents    => ['BiochemistryStructures'],
+	class      => 'child',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0,
+		},
+		{
+			name       => 'data',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'cksum',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'type',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 1
+		}
+	],
+	subobjects  => [],
+	primarykeys => [qw(type cksum compound_uuid)],
+	links       => [],
+	reference_id_types => [qw(uuid)],
+};
+
+$objectDefinitions->{AliasSet} = {
+	parents    => ['Ref'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'name',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},    #KEGG, GenBank, SEED, ModelSEED
+		{
+			name       => 'source',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},    #url or pubmed ID indicating where the alias set came from
+		{
+			name       => 'class',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},    #
+		{
+			name       => 'attribute',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},    #
+		{
+			name       => 'aliases',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}     #url or pubmed ID indicating where the alias set came from
+	],
+	subobjects         => [],
+	primarykeys        => [qw(uuid)],
+	links              => [],
+	reference_id_types => [qw(uuid)],
+};
+
 $objectDefinitions->{Biochemistry} = {
 	parents    => ["ModelSEED::Store"],
 	class      => 'indexed',
@@ -2516,23 +2065,15 @@ $objectDefinitions->{Biochemistry} = {
 			req        => 0,
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "1"
-		},
-		{
-			name       => 'public',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "0"
-		},
-		{
 			name       => 'name',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'biochemistryStructures_uuid',
 			printOrder => 1,
 			perm       => 'rw',
 			type       => 'ModelSEED::varchar',
@@ -2572,9 +2113,17 @@ $objectDefinitions->{Biochemistry} = {
 		},
 	],
 	primarykeys        => [qw(uuid)],
-	links              => [],
+	links              => [
+		{
+			name      => "biochemistrystructures",
+			attribute => "biochemistryStructures_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "BiochemistryStructures",
+			weak      => 0
+		}
+	],
 	reference_id_types => [qw(uuid alias)],
-	version            => 1.0,
+	version            => 2.0,
 };
 
 $objectDefinitions->{AliasSet} = {
@@ -2658,14 +2207,6 @@ $objectDefinitions->{Compartment} = {
 			req        => 0,
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0",
-		},
-		{
 			name       => 'id',
 			printOrder => 1,
 			perm       => 'rw',
@@ -2718,14 +2259,6 @@ $objectDefinitions->{Cue} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'name',
@@ -2809,17 +2342,24 @@ $objectDefinitions->{Cue} = {
 			type       => 'Int',
 			req        => 0
 		},
-	],
-	subobjects => [
 		{
-			name  => "structures",
-			class => "CompoundStructure",
-			type  => "encompassed"
-		},
-		{ name => "pks", class => "CompoundPk", type => "encompassed" },
+			name       => 'structure_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		}
 	],
+	subobjects => [],
 	primarykeys        => [qw(uuid)],
-	links              => [],
+	links              => [
+		{
+			name      => "structure",
+			attribute => "structure_uuid",
+			parent    => "BiochemistryStructures",
+			method    => "structures",
+		}
+	],
 	reference_id_types => [qw(uuid)],
 };
 
@@ -2948,21 +2488,45 @@ $objectDefinitions->{Compound} = {
 			type       => 'ArrayRef',
 			req        => 0,
 			description => "Array of references to subcompounds that this compound is comprised of.",
+		},
+		{
+			name       => 'structure_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			description => "Array of associated molecular structures",
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'cues',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			description => "Hash of cue uuids with cue coefficients as values",
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'pkas',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			description => "Hash of pKa values with atom numbers as values",
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'pkbs',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			description => "Hash of pKb values with atom numbers as values",
+			default    => "sub{return {};}"
 		}
 	],
-	subobjects => [
-		{
-			name  => "compoundCues",
-			class => "CompoundCue",
-			type  => "encompassed"
-		},
-		{
-			name  => "structures",
-			class => "CompoundStructure",
-			type  => "encompassed"
-		},
-		{ name => "pks", class => "CompoundPk", type => "encompassed" },
-	],
+	subobjects => [],
 	links       => [
 		{
 			name      => "abstractCompound",
@@ -2976,115 +2540,17 @@ $objectDefinitions->{Compound} = {
 			parent    => "Biochemistry",
 			method    => "compounds",
 			array     => 1
+		},
+		{
+			name      => "structures",
+			attribute => "structure_uuids",
+			parent    => "BiochemistryStructures",
+			method    => "structures",
+			array     => 1
 		}
 	],
 	primarykeys => [qw(uuid)],
 	reference_id_types => [qw(uuid)]
-};
-
-$objectDefinitions->{CompoundCue} = {
-	parents    => ['Compound'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'cue_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'count',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => ""
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(type cksum compound_uuid)],
-	links       => [
-		{
-			name      => "cue",
-			attribute => "cue_uuid",
-			parent    => "Biochemistry",
-			method    => "cues"
-		}
-	]
-};
-
-$objectDefinitions->{CompoundStructure} = {
-	parents    => ['Compound'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'structure',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'cksum',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'type',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			len        => 32,
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(type cksum compound_uuid)],
-	links       => []
-};
-
-$objectDefinitions->{CompoundPk} = {
-	parents    => ['Compound'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'modDate',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Str',
-			len        => 45,
-			req        => 0
-		},
-		{
-			name       => 'atom',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0
-		},
-		{
-			name       => 'pk',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 1
-		},
-		{
-			name       => 'type',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			len        => 1,
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(compound_uuid atom type)],
-	links       => []
 };
 
 $objectDefinitions->{Reaction} = {
@@ -3109,7 +2575,7 @@ $objectDefinitions->{Reaction} = {
 			req        => 0
 		},
 		{
-			name       => 'name',
+			name      => 'name',
 			printOrder => 1,
 			perm       => 'rw',
 			type       => 'ModelSEED::varchar',
@@ -3178,6 +2644,14 @@ $objectDefinitions->{Reaction} = {
 			req        => 0
 		},
 		{
+			name       => 'cues',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
 			name       => 'abstractReaction_uuid',
 			printOrder => -1,
 			perm       => 'rw',
@@ -3187,11 +2661,6 @@ $objectDefinitions->{Reaction} = {
 		},
 	],
 	subobjects => [
-		{
-			name  => "reactionCues",
-			class => "ReactionCue",
-			type  => "encompassed"
-		},
 		{ name => "reagents", class => "Reagent", type => "encompassed" },
 	],
 	primarykeys        => [qw(uuid)],
@@ -3204,38 +2673,6 @@ $objectDefinitions->{Reaction} = {
 		}
 	],
 	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{ReactionCue} = {
-	parents    => ['Reaction'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'cue_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'count',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => ""
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw()],
-	links       => [
-		{
-			name      => "cue",
-			attribute => "cue_uuid",
-			parent    => "Biochemistry",
-			method    => "cues"
-		}
-	]
 };
 
 $objectDefinitions->{Reagent} = {
@@ -3251,7 +2688,7 @@ $objectDefinitions->{Reagent} = {
 			req        => 1
 		},
 		{
-			name       => 'destinationCompartment_uuid',
+			name       => 'compartment_uuid',
 			printOrder => 0,
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
@@ -3266,13 +2703,6 @@ $objectDefinitions->{Reagent} = {
 			req        => 1
 		},
 		{
-			name       => 'isTransport',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			default    => "0"
-		},
-		{
 			name       => 'isCofactor',
 			printOrder => 0,
 			perm       => 'rw',
@@ -3282,7 +2712,7 @@ $objectDefinitions->{Reagent} = {
 		},
 	],
 	subobjects  => [],
-	primarykeys => [qw(reaction_uuid compound_uuid compartment_uuid)],
+	primarykeys => [qw(compound_uuid compartment_uuid)],
 	links       => [
 		{
 			name      => "compound",
@@ -3291,8 +2721,8 @@ $objectDefinitions->{Reagent} = {
 			method    => "compounds"
 		},
 		{
-			name      => "destinationCompartment",
-			attribute => "destinationCompartment_uuid",
+			name      => "compartment",
+			attribute => "compartment_uuid",
 			parent    => "Biochemistry",
 			method    => "compartments"
 		},
@@ -3316,14 +2746,6 @@ $objectDefinitions->{Media} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'isDefined',
@@ -3446,14 +2868,6 @@ $objectDefinitions->{CompoundSet} = {
 			req        => 0
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
 			name       => 'id',
 			printOrder => 0,
 			perm       => 'rw',
@@ -3485,41 +2899,27 @@ $objectDefinitions->{CompoundSet} = {
 			len        => 32,
 			req        => 1
 		},
-	],
-	subobjects => [
 		{
-			name  => "compounds",
-			class => "CompoundSetCompound",
-			type  => "encompassed"
-		}
-	],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{CompoundSetCompound} = {
-	parents    => ['CompoundSet'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'compound_uuid',
-			printOrder => 0,
+			name       => 'compound_uuids',
+			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
 		},
 	],
-	subobjects  => [],
-	primarykeys => [qw(complex_uuid role_uuid)],
-	links       => [
+	subobjects => [],
+	primarykeys        => [qw(uuid)],
+	links              => [
 		{
-			name      => "compound",
-			attribute => "compound_uuid",
+			name      => "compounds",
+			attribute => "compound_uuids",
 			parent    => "Biochemistry",
-			method    => "compounds"
+			method    => "compounds",
+			array     => 1
 		}
-	]
+	],
+	reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{ReactionSet} = {
@@ -3541,14 +2941,6 @@ $objectDefinitions->{ReactionSet} = {
 			req        => 0
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
 			name       => 'id',
 			printOrder => 0,
 			perm       => 'rw',
@@ -3580,41 +2972,27 @@ $objectDefinitions->{ReactionSet} = {
 			len        => 32,
 			req        => 1
 		},
-	],
-	subobjects => [
 		{
-			name  => "reactions",
-			class => "ReactionSetReaction",
-			type  => "encompassed"
-		},
-	],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{ReactionSetReaction} = {
-	parents    => ['ReactionSet'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'reaction_uuid',
-			printOrder => 0,
+			name       => 'reaction_uuids',
+			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
 		},
 	],
-	subobjects  => [],
-	primarykeys => [qw(complex_uuid role_uuid)],
-	links       => [
+	subobjects => [],
+	primarykeys        => [qw(uuid)],
+	links              => [
 		{
-			name      => "reaction",
-			attribute => "reaction_uuid",
+			name      => "reactions",
+			attribute => "reaction_uuids",
 			parent    => "Biochemistry",
-			method    => "reactions"
+			method    => "reactions",
+			array     => 1
 		}
-	]
+	],
+	reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{Model} = {
@@ -3643,22 +3021,6 @@ $objectDefinitions->{Model} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'public',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'id',
@@ -3798,14 +3160,7 @@ $objectDefinitions->{Model} = {
 			parent    => "ModelSEED::Store",
 			method    => "Annotation",
 			weak      => 0
-		},
-		{
-			name      => "modelanalysis",
-			attribute => "modelanalysis_uuid",
-			parent    => "ModelSEED::Store",
-			method    => "ModelAnalysis",
-			weak      => 0
-		},
+		}
 	],
 	reference_id_types => [qw(uuid alias)],
 	version            => 1.0,
@@ -3829,14 +3184,6 @@ $objectDefinitions->{Biomass} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'name',
@@ -3963,14 +3310,6 @@ $objectDefinitions->{ModelCompartment} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'compartment_uuid',
@@ -4347,14 +3686,6 @@ $objectDefinitions->{Annotation} = {
 			req        => 0
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
 			name       => 'name',
 			printOrder => 1,
 			perm       => 'rw',
@@ -4403,6 +3734,100 @@ $objectDefinitions->{Annotation} = {
 	version            => 1.0,
 };
 
+$objectDefinitions->{Genome} = {
+	parents    => ['Annotation'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'id',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'source',
+			printOrder => 8,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1
+		},
+		{
+			name       => 'class',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},    #gramPositive,gramNegative,archaea,eurkaryote
+		{
+			name       => 'taxonomy',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'cksum',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'size',
+			printOrder => 5,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0
+		},
+		{
+			name       => 'gc',
+			printOrder => 6,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0
+		},
+		{
+			name       => 'etcType',
+			printOrder => 7,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			len        => 1,
+			req        => 0
+		},    #aerobe,facultativeAnaerobe,obligateAnaerobe
+	],
+	subobjects         => [],
+	primarykeys        => [qw(uuid)],
+	links              => [],
+	reference_id_types => [qw(uuid)],
+};
+
 $objectDefinitions->{Feature} = {
 	parents    => ['Annotation'],
 	class      => 'child',
@@ -4420,14 +3845,6 @@ $objectDefinitions->{Feature} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'id',
@@ -4609,22 +4026,6 @@ $objectDefinitions->{Mapping} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'public',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'name',
@@ -4909,14 +4310,6 @@ $objectDefinitions->{Role} = {
 			req        => 0
 		},
 		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
 			name       => 'name',
 			printOrder => 1,
 			perm       => 'rw',
@@ -4957,22 +4350,6 @@ $objectDefinitions->{RoleSet} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'public',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'name',
@@ -5061,14 +4438,6 @@ $objectDefinitions->{Complex} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'locked',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Int',
-			req        => 0,
-			default    => "0"
 		},
 		{
 			name       => 'name',

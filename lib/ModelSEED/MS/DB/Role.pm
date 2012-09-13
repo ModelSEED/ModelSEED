@@ -18,7 +18,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Mapping', weak_ref => 1, type 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has seedfeature => (is => 'rw', isa => 'Str', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 
@@ -56,14 +55,6 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
             'printOrder' => 1,
             'name' => 'name',
             'default' => '',
@@ -80,7 +71,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, name => 3, seedfeature => 4};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, seedfeature => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

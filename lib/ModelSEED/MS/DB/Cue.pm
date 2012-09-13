@@ -6,8 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::Cue;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::CompoundStructure;
-use ModelSEED::MS::CompoundPk;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -20,7 +18,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -32,23 +29,24 @@ has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute',
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has smallMolecule => (is => 'rw', isa => 'Bool', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has priority => (is => 'rw', isa => 'Int', printOrder => '9', type => 'attribute', metaclass => 'Typed');
+has structure_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
-# SUBOBJECTS:
-has structures => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(CompoundStructure)', metaclass => 'Typed', reader => '_structures', printOrder => '-1');
-has pks => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(CompoundPk)', metaclass => 'Typed', reader => '_pks', printOrder => '-1');
-
-
 # LINKS:
+has structure => (is => 'rw', isa => 'ModelSEED::MS::Structure', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_structure {
+  my ($self) = @_;
+  return $self->getLinkedObject('BiochemistryStructures','structures',$self->structure_uuid());
+}
 
 
 # CONSTANTS:
@@ -68,14 +66,6 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'modDate',
             'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -159,10 +149,17 @@ my $attributes = [
             'name' => 'priority',
             'type' => 'Int',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'structure_uuid',
+            'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, smallMolecule => 12, priority => 13};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, unchargedFormula => 5, formula => 6, mass => 7, defaultCharge => 8, deltaG => 9, deltaGErr => 10, smallMolecule => 11, priority => 12, structure_uuid => 13};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -177,22 +174,9 @@ sub _attributes {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'structures',
-            'type' => 'encompassed',
-            'class' => 'CompoundStructure'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'pks',
-            'type' => 'encompassed',
-            'class' => 'CompoundPk'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {structures => 0, pks => 1};
+my $subobject_map = {};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -206,17 +190,6 @@ sub _subobjects {
     return $subobjects;
   }
 }
-
-
-# SUBOBJECT READERS:
-around 'structures' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('structures');
-};
-around 'pks' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('pks');
-};
 
 
 __PACKAGE__->meta->make_immutable;

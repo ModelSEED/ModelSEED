@@ -113,6 +113,9 @@ around BUILDARGS => sub {
     }
     my $objVersion = $hash->{__VERSION__};
     my $classVersion = $class->__version__;
+    if (!defined($objVersion) && $class eq "ModelSEED::MS::Biochemistry") {
+    	$objVersion = 1;
+    }
     if (defined $objVersion && $objVersion != $classVersion) {
         if (defined(my $fn = $class->__upgrade__($objVersion))) {
             $hash = $fn->($hash);
@@ -648,6 +651,17 @@ sub mapping {
         return $parent->mapping();
     }
     ModelSEED::utilities::ERROR("Cannot find mapping object in tree!");
+}
+
+sub biochemistrystructures {
+    my ($self) = @_;
+    my $parent = $self->parent();
+    if (defined($parent) && ref($parent) eq "ModelSEED::MS::BiochemistryStructures") {
+        return $parent;
+    } elsif (defined($parent)) {
+        return $parent->biochemistrystructures();
+    }
+    ModelSEED::utilities::ERROR("Cannot find BiochemistryStructures object in tree!");
 }
 
 sub fbaproblem {

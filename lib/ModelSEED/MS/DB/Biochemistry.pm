@@ -19,7 +19,7 @@ use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
 
 
-our $VERSION = 1;
+our $VERSION = 2;
 # PARENT:
 has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
@@ -28,9 +28,8 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '1', type => 'attribute', metaclass => 'Typed');
-has public => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
+has biochemistryStructures_uuid => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -49,11 +48,16 @@ has cues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return [];
 
 
 # LINKS:
+has biochemistrystructures => (is => 'rw', isa => 'ModelSEED::MS::BiochemistryStructures', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_biochemistrystructures {
+  my ($self) = @_;
+  return $self->getLinkedObject('ModelSEED::Store','BiochemistryStructures',$self->biochemistryStructures_uuid());
+}
 
 
 # CONSTANTS:
@@ -87,31 +91,23 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '1',
-            'type' => 'Bool',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'public',
-            'default' => '0',
-            'type' => 'Bool',
+            'printOrder' => 1,
+            'name' => 'name',
+            'default' => '',
+            'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => 1,
-            'name' => 'name',
+            'name' => 'biochemistryStructures_uuid',
             'default' => '',
             'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, locked => 3, public => 4, name => 5};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, name => 3, biochemistryStructures_uuid => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

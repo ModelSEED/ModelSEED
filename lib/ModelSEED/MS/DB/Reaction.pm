@@ -6,7 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::Reaction;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::ReactionCue;
 use ModelSEED::MS::Reagent;
 use Moose;
 use namespace::autoclean;
@@ -29,6 +28,7 @@ has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', t
 has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has defaultProtons => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has status => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has abstractReaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
@@ -37,7 +37,6 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # SUBOBJECTS:
-has reactionCues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(ReactionCue)', metaclass => 'Typed', reader => '_reactionCues', printOrder => '-1');
 has reagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(Reagent)', metaclass => 'Typed', reader => '_reagents', printOrder => '-1');
 
 
@@ -147,6 +146,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'cues',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'abstractReaction_uuid',
             'type' => 'ModelSEED::uuid',
             'description' => 'Reference to abstract reaction of which this reaction is an example.',
@@ -154,7 +161,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, deltaG => 5, deltaGErr => 6, direction => 7, thermoReversibility => 8, defaultProtons => 9, status => 10, abstractReaction_uuid => 11};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, deltaG => 5, deltaGErr => 6, direction => 7, thermoReversibility => 8, defaultProtons => 9, status => 10, cues => 11, abstractReaction_uuid => 12};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -172,19 +179,13 @@ sub _attributes {
 my $subobjects = [
           {
             'printOrder' => -1,
-            'name' => 'reactionCues',
-            'type' => 'encompassed',
-            'class' => 'ReactionCue'
-          },
-          {
-            'printOrder' => -1,
             'name' => 'reagents',
             'type' => 'encompassed',
             'class' => 'Reagent'
           }
         ];
 
-my $subobject_map = {reactionCues => 0, reagents => 1};
+my $subobject_map = {reagents => 0};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -202,10 +203,6 @@ sub _aliasowner { return 'Biochemistry'; }
 
 
 # SUBOBJECT READERS:
-around 'reactionCues' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('reactionCues');
-};
 around 'reagents' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('reagents');

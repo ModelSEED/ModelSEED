@@ -26,8 +26,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has public => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has version => (is => 'rw', isa => 'Int', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -57,7 +55,6 @@ has Gapfillingformulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default =
 has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry');
 has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping');
 has annotation => (is => 'rw', isa => 'ModelSEED::MS::Annotation', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation');
-has modelanalysis => (is => 'rw', isa => 'ModelSEED::MS::ModelAnalysis', type => 'link(ModelSEED::Store,ModelAnalysis,modelanalysis_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelanalysis');
 
 
 # BUILDERS:
@@ -74,10 +71,6 @@ sub _build_mapping {
 sub _build_annotation {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Annotation',$self->annotation_uuid());
-}
-sub _build_modelanalysis {
-  my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','ModelAnalysis',$self->modelanalysis_uuid());
 }
 
 
@@ -107,22 +100,6 @@ my $attributes = [
             'printOrder' => -1,
             'name' => 'modDate',
             'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'public',
-            'default' => '0',
-            'type' => 'Int',
             'perm' => 'rw'
           },
           {
@@ -204,7 +181,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, locked => 3, public => 4, id => 5, name => 6, version => 7, type => 8, status => 9, growth => 10, current => 11, mapping_uuid => 12, biochemistry_uuid => 13, annotation_uuid => 14};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
