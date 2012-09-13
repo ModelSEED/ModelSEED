@@ -42,10 +42,10 @@ sub BUILD {
     # now check if we have constructed the ancestor/descendant data
     my $sys_meta = $kvstore->get_metadata($SYSTEM_META);
     if (!defined($sys_meta->{parents_children})) {
-        print "Rebuilding FileDB metadata, please wait (this will only happen once)\n";
+        print STDERR "Rebuilding FileDB metadata, please wait (this will only happen once)\n";
         $self->_build_parents_and_children();
         $kvstore->set_metadata($SYSTEM_META, 'parents_children', 1);
-        print "Finished rebuilding FileDB metadata.\n";
+        print STDERR "Finished rebuilding FileDB metadata.\n";
     }
 }
 
