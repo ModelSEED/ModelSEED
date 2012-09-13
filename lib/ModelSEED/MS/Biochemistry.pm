@@ -303,32 +303,23 @@ sub findCreateEquivalentReaction {
 			deltaG => $inrxn->deltaG(),
 			deltaGErr => $inrxn->deltaGErr(),
 		});
-		for (my $i=0; $i < @{$inrxn->reagents()}; $i++) {
-			my $rgt = $inrxn->reagents()->[$i];
+		my $rgts = $inrxn->reagents(); 
+		for (my $i=0; $i < @{$rgts}; $i++) {
+			my $rgt = $rgts->[$i];
 			my $cpd = $self->biochemistry()->findCreateEquivalentCompound({
 				compound => $rgt->compound(),
 				create => 1
 			});
-			if ($rgt->isTransport()) {
-				my $transcmp = $self->findCreateEquivalentCompartment({
-					compartment => $rgt->destinationCompartment(),
-					create => 1
-				});
-				$outrxn->add("reagents",{
-					compound_uuid => $cpd->uuid(),
-					destinationCompartment_uuid => $transcmp->uuid(),
-					coefficient => $rgt->coefficient(),
-					isCofactor => $rgt->isCofactor(),
-					isTransport => $rgt->isTransport(),
-				});
-			} else {
-				$outrxn->add("reagents",{
-					compound_uuid => $cpd->uuid(),
-					coefficient => $rgt->coefficient(),
-					isCofactor => $rgt->isCofactor(),
-					isTransport => $rgt->isTransport(),
-				});
-			}
+			my $cmp = $self->findCreateEquivalentCompartment({
+				compartment => $rgt->compartment(),
+				create => 1
+			});
+			$outrxn->add("reagents",{
+				compound_uuid => $cpd->uuid(),
+				compartment_uuid => $cmp->uuid(),
+				coefficient => $rgt->coefficient(),
+				isCofactor => $rgt->isCofactor(),
+			});
 		}
 	}	
 	$inrxn->mapped_uuid($outrxn->uuid());

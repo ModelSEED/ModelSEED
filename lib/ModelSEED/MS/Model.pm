@@ -686,37 +686,19 @@ sub addReactionToModel {
 		});
 		my $speciesHash;
 		my $cpdHash;
-		for (my $i=0; $i < @{$rxn->reagents()}; $i++) {
-			my $rgt = $rxn->reagents()->[$i];
+		my $rgts = $rxn->reagents();
+		for (my $i=0; $i < @{$rgts}; $i++) {
+			my $rgt = $rgts->[$i];
+			my $rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 			my $coefficient = $rgt->coefficient();
-			if ($rgt->isTransport() == 1) {
-				my $transCmp = $self->addCompartmentToModel({compartment => $rgt->destinationCompartment(),pH => 7,potential => 0,compartmentIndex => 0});
-				my $transcpd = $self->addCompoundToModel({
-					compound => $rgt->compound(),
-					modelCompartment => $transCmp,
-				});
-				if (!defined($speciesHash->{$transcpd->uuid()})) {
-					$speciesHash->{$transcpd->uuid()} = 0;
-				}
-				$speciesHash->{$transcpd->uuid()} += $coefficient;
-				$coefficient = $coefficient*-1;
-			}	
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),
 				modelCompartment => $mdlcmp,
 			});
-			if (!defined($speciesHash->{$mdlcpd->uuid()})) {
-				$speciesHash->{$mdlcpd->uuid()} = 0;
-			}
-			$speciesHash->{$mdlcpd->uuid()} += $coefficient;
-		}
-		foreach my $mdluuid (keys(%{$speciesHash})) {
-			if ($speciesHash->{$mdluuid} != 0) {
-				$mdlrxn->addReagentToReaction({
-					coefficient => $speciesHash->{$mdluuid},
-					modelcompound_uuid => $mdluuid
-				});
-			}
+			$mdlrxn->addReagentToReaction({
+				coefficient => $coefficient,
+				modelcompound_uuid => $mdlcpd->uuid()
+			});
 		}
 	}
 	return $mdlrxn;

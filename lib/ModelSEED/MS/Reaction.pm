@@ -49,12 +49,6 @@ sub _buildmapped_uuid {
 }
 sub _buildcompartment {
 	my ($self) = @_;
-	my $rgt = $self->reagents();
-	for (my $i=0; $i < @{$rgt}; $i++) {
-		if (!$rgt->[$i]->isTransport()) {
-			return $rgt->[$i]->destinationCompartment();
-		}
-	}
 	my $comp = $self->biochemistry()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
 		ModelSEED::utilities::ERROR("Could not find cytosol compartment in biochemistry!");	
@@ -106,18 +100,10 @@ sub createEquation {
 		} elsif ($args->{format} ne "uuid") {
 			$id = $rgt->[$i]->compound()->getAlias($args->{format});
 		}
-		if (!defined($rgtHash->{$id}->{$rgt->[$i]->destinationCompartment()->id()})) {
-			$rgtHash->{$id}->{$rgt->[$i]->destinationCompartment()->id()} = 0;
+		if (!defined($rgtHash->{$id}->{$rgt->[$i]->compartment()->id()})) {
+			$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} = 0;
 		}
-		if ($rgt->[$i]->isTransport()) {
-			if (!defined($rgtHash->{$id}->{$rxnCompID})) {
-				$rgtHash->{$id}->{$rxnCompID} = 0;
-			}
-			$rgtHash->{$id}->{$rgt->[$i]->destinationCompartment()->id()} += $rgt->[$i]->coefficient();
-			$rgtHash->{$id}->{$rxnCompID} += (-1*$rgt->[$i]->coefficient());
-		} else {
-			$rgtHash->{$id}->{$rxnCompID} += $rgt->[$i]->coefficient();
-		}
+		$rgtHash->{$id}->{$rxnCompID} += $rgt->[$i]->coefficient();
 	}
 	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0) {
 		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
@@ -182,8 +168,7 @@ sub loadFromEquation {
 	my $rxnComp;
 	my $currCompScore;
 	my $parts = [];
-	my $coreCpdHash;
-	my $transCpdHash;
+	my $cpdCmpHash;
 	my $compHash;
 	my $cpdHash;
 	for (my $i = 0; $i < @TempArray; $i++) {
@@ -230,11 +215,10 @@ sub loadFromEquation {
 			}
 			$cpdHash->{$cpd->uuid()} = $cpd;
 			$NewRow->{compound} = $cpd;
-			if (!defined($coreCpdHash->{$cpd->uuid()})) {
-				$coreCpdHash->{$cpd->uuid()} = 0;
+			if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
+				$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
 			}
-			$coreCpdHash->{$cpd->uuid()} += $Coefficient;
-			$transCpdHash->{$comp->id()}->{$cpd->uuid()} += $Coefficient;
+			$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
 			$cpdHash->{$cpd->uuid()} = $cpd;
 			if ($comp->id() eq "c") {
 				$currCompScore = 100;
@@ -252,34 +236,20 @@ sub loadFromEquation {
 	if (!defined($rxnComp)) {
 		$rxnComp = $bio->queryObject("compartments",{id => "c"});
 	}
-	foreach my $cpduuid (keys(%{$coreCpdHash})) {
-        # Do not include reagents with zero coefficients
-        next if $coreCpdHash->{$cpduuid} == 0;
-        # Do not include Hydrogen in reagents
-        next if $cpdHash->{$cpduuid}->formula eq 'H';
-        $self->add("reagents", {
-            compound_uuid               => $cpduuid,
-            destinationCompartment_uuid => $rxnComp->uuid,
-            coefficient                 => $coreCpdHash->{$cpduuid},
-            isTransport                 => 0,
-            isCofactor                  => 0,
-        });
-	}	
-    foreach my $cmp_id (keys %$transCpdHash) {
-        my $cpds_by_cmp = $transCpdHash->{$cmp_id};
-        foreach my $cpd_uuid (keys %$cpds_by_cmp) {
-            my $coff = $cpds_by_cmp->{$cpd_uuid};
-            next if($coff == 0);
-            my $cmp = $compHash->{$cmp_id};
-            $self->add("reagents", {
-                compound_uuid               => $cpd_uuid,
-                destinationCompartment_uuid => $cmp->uuid,
-                coefficient                 => $coff,
-                isCofactor                  => 0,
-                isTransport                 => 1,
-            });
-        }
-    }
+	foreach my $cpduuid (keys(%{$cpdCmpHash})) {
+       foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
+	        # Do not include reagents with zero coefficients
+	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
+	        # Do not include Hydrogen in reagents
+	        next if $cpdHash->{$cpduuid}->formula eq 'H';
+	        $self->add("reagents", {
+	            compound_uuid               => $cpduuid,
+	            compartment_uuid            => $cmpuuid,
+	            coefficient                 => $cpdCmpHash->{$cpduuid}->{$cmpuuid},
+	            isCofactor                  => 0,
+	        });
+       }
+	}
 }
 
 =head3 checkReactionMassChargeBalance

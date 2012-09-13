@@ -114,10 +114,10 @@ around BUILDARGS => sub {
     }
     my $objVersion = $hash->{__VERSION__};
     my $classVersion = $class->__version__;
-    if (!defined($objVersion) && $class eq "ModelSEED::MS::Biochemistry") {
+    if (!defined($objVersion) && defined($hash->{parent})) {
     	$objVersion = 1;
     }
-    if (defined $objVersion && $objVersion != $classVersion) {
+    if (defined $objVersion && defined($classVersion) && $objVersion != $classVersion) {
         if (defined(my $fn = $class->__upgrade__($objVersion))) {
             $hash = $fn->($hash);
         } else {
