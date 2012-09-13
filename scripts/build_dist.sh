@@ -20,7 +20,7 @@ while true; do
 done
 
 # create a temp dir (you'd think there would be a POSIX compliant way to do this)
-RAND=`( echo $$ ; time ps ; w ; date ) 2>&1 | cksum | cut -f1 -d " "`
+RAND=$( printf '%x' $( ( echo $$ ; time ps ; w ; date ) 2>&1 | cksum | cut -f1 -d " " ) )
 
 TMPDIR=/tmp/$RAND
 ORIGDIR="$( pwd )"

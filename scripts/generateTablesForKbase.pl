@@ -26,8 +26,153 @@ generateTablesForKbase --dir <directory> [ arguments ]
     --model                    Reference to model object to export (accepts multiple)
     --store -s                 Which storage interface to use
     --help -? -h               Print this help message
+    --kbid_db filename         Use an existing KBase ID database file
 
 =cut
+package KBIdRegister;
+use Moose;
+use JSON::Any;
+use Bio::KBase::IDServer::Client;
+
+has idServer => ( is => 'ro', isa => 'Bio::KBase::IDServer::Client', builder => '_build_idServer', lazy => 1);
+has _kbid_to_uuid => ( is => 'rw', isa => 'HashRef', default => sub { return {}; } );
+has _kbid_to_msid => ( is => 'rw', isa => 'HashRef', default => sub { return {}; } );
+has _msid_to_kbid => ( is => 'rw', isa => 'HashRef', default => sub { return {}; } );
+has _uuid_to_kbid => ( is => 'rw', isa => 'HashRef', default => sub { return {}; } );
+has _polled_prefixes => ( is => 'rw', isa => 'HashRef', default => sub { return {}; } );
+has filename => ( is => 'ro', isa => 'Str' );
+
+sub BUILD {
+    my ($self) = @_;
+    if ( defined $self->filename  && -f $self->filename ) {
+        $self->_load_from_file();
+    }
+}
+
+sub uuid_from_kbid { return $_[0]->_kbid_to_uuid->{$_[1]}; }
+sub msid_from_kbid { return $_[0]->_kbid_to_msid->{$_[1]}; }
+sub kbid_from_uuid { return $_[0]->_uuid_to_kbid->{$_[1]}; }
+sub kbid_from_msid { return $_[0]->_msid_to_kbid->{$_[1]}; }
+
+sub _set_mappings_mku {
+    my ($self, $msid, $kbid, $uuid) = @_;
+    $self->_kbid_to_msid->{$kbid} = $msid if(defined $msid && defined $kbid);
+    $self->_kbid_to_uuid->{$kbid} = $uuid if(defined $uuid && defined $kbid);
+    $self->_uuid_to_kbid->{$uuid} = $kbid if(defined $kbid && defined $uuid);
+    $self->_msid_to_kbid->{$msid} = $kbid if(defined $kbid && defined $msid);
+}
+
+sub _poll_prefix {
+    my ($self, $prefix) = @_;
+    unless(defined $self->_polled_prefixes->{$prefix}) {
+        my ($kbid_hash) = $self->idServer->kbase_ids_with_prefix($prefix);
+        foreach my $kbid (keys %$kbid_hash) {
+            my $msid = $kbid_hash->{$kbid}->{ModelSEED};
+            next unless defined $msid;
+            $self->_set_mappings_mku($msid, $kbid); 
+        }
+        $self->_polled_prefixes->{$prefix} = 1;
+    }
+}
+
+sub _check_server {
+    my ($self, $prefix, $msid, $uuid) = @_;
+    #$self->_poll_prefix($prefix);
+    my $kbid;
+    if ( defined $msid ) {
+        $kbid = $self->kbid_from_msid($msid);
+    }
+    if( defined $kbid && defined $uuid ) {
+        $self->_kbid_to_uuid->{$kbid} = $uuid;
+        $self->_uuid_to_kbid->{$uuid} = $kbid;
+    }
+    return $kbid if ( defined $kbid );
+    return undef;
+}
+
+sub _check_cache {
+    my ($self, $prefix, $msid, $uuid) = @_;
+    if ( defined $msid ) {
+        my $kbid = $self->kbid_from_msid($msid);
+        return $kbid if defined $kbid;
+    }
+    if ( defined $msid ) {
+        my $kbid = $self->kbid_from_uuid($uuid);
+        return $kbid if defined $kbid;
+    }
+    return undef;
+}
+
+sub _check {
+    my ($self, $prefix, $msid, $uuid) = @_;
+    my $kbid = $self->_check_cache($prefix, $msid, $uuid);
+    return $kbid if defined $kbid;
+    return $self->_check_server($prefix, $msid, $uuid);
+}
+
+sub registerId {
+    my ($self, $prefix, $msid, $uuid) = @_;
+    my $kbid = $self->_check($prefix, $msid, $uuid);
+    return $kbid if defined $kbid;
+    my ($msid_to_kbid) = $self->idServer->register_ids($prefix, "ModelSEED", [$msid]);
+    $kbid = $msid_to_kbid->{$msid};
+    $self->_set_mappings_mku($msid, $kbid, $uuid);
+    return $kbid; 
+}
+
+sub registerUUID {
+    my ($self, $prefix, $uuid) = @_;
+    my $kbid = $self->_check_cache($prefix, undef, $uuid);
+    return $kbid if defined $kbid;
+    my $kbids = $self->allocateIds($prefix, 1); 
+    $kbid = $kbids->[0];
+    $self->_set_mappings_mku(undef, $kbid, $uuid);
+    return $kbid;
+}
+
+sub allocateIds {
+    my ($self, $prefix, $count) = @_;
+    my ($start) = $self->idServer->allocate_id_range($prefix, $count);
+    $start = 0 unless defined $start; # TEMP fix
+    return [ map { $prefix.".$_" } $start..($start+$count-1) ];
+}
+
+sub saveToFile {
+    my ($self, $filename) = @_;
+    open my $fh, ">", $filename || die "Could not open $filename: $!";
+    my $j = JSON::Any->new;
+    print $fh $j->objToJson({
+        kbase_to_uuid => $self->_kbid_to_uuid,
+        kbase_to_msid => $self->_kbid_to_msid,
+    });
+    close($fh);
+}
+
+sub _load_from_file {
+    my ($self) = @_;
+    my $j = JSON::Any->new;
+    my $str;
+    {
+        local $\;
+        open(my $fh, "<", $self->filename) || die "Could not open ".$self->filename.": $!";
+        $str = <$fh>;
+        close($fh);
+    }
+    my $d = $j->jsonToObj($str);
+    $self->_kbid_to_uuid($d->{kbase_to_uuid});
+    foreach my $kbid (keys %{$self->_kbid_to_uuid}) {
+        my $uuid = $self->_kbid_to_uuid->{$kbid};
+        $self->_uuid_to_kbid->{$uuid} = $kbid;
+    }
+    $self->_kbid_to_msid($d->{kbase_to_msid});
+    foreach my $kbid (keys %{$self->_kbid_to_msid}) {
+        my $msid = $self->_kbid_to_msid->{$kbid};
+        $self->_msid_to_kbid->{$msid} = $kbid;
+    }
+}
+sub _build_idServer { return Bio::KBase::IDServer::Client->new("http://localhost:5000"); }
+1;
+
 use strict;
 use warnings;
 use Getopt::Long;
@@ -40,12 +185,13 @@ use ModelSEED::Database::Composite;
 use Tie::Hash::Sorted;
 use Carp qw(confess);
 
-my ($mapping, $biochem, $directory, $store, $help, @models);
+my ($mapping, $biochem, $directory, $kbid_filename, $store, $help, @models);
 GetOptions(
     "directory|dir|d=s"    => \$directory,
     "biochemistry|b|bio=s" => \$biochem,
     "model:s"              => \@models,
     "mapping|m|map:s"      => \$mapping,
+    "kbid_db:s"            => \$kbid_filename,
     "store|s:s"            => \$store,
     "help|h|?"             => \$help
 ) || pod2usage(1);
@@ -78,23 +224,28 @@ if(defined $store) {
 } else {
     $store = ModelSEED::Store->new(auth => $auth);
 }
+my $kbRegisterConfig = {};
+$kbRegisterConfig->{filename} = $kbid_filename if defined $kbid_filename;
+my $kbIdRegister = KBIdRegister->new($kbRegisterConfig);
 
 if(defined($mapping) && defined($biochem)) {
     my $biochemObj = $store->get_object($biochem);
     my $mappingObj = $store->get_object($mapping);
     die "Could not find biochemistry $biochem!\n" unless($biochemObj);
     die "Could not find mapping $mapping!\n" unless($mappingObj);
-    doBiochemistryAndMapping($biochemObj, $mappingObj);
+    doBiochemistryAndMapping($biochemObj, $mappingObj, $kbIdRegister);
 }
 
 if(@models > 0) {
     my $model_names = \@models;
-    doModels($model_names, $store);
+    doModels($model_names, $store, $kbIdRegister);
 }
+$kbIdRegister->saveToFile("$directory/KBaseIdRegistry.json");
 
 # Now start generating the files
 sub buildTable {
     my ($filename, $columns, $dataObjects, $append) = @_;
+    warn $filename . "\n";
     # filename    : file to print to
     # columns     : hash where keys are column names and the values are either
     #               strings (in which case they are either attributes or hash values of the dataObject)
@@ -143,7 +294,9 @@ sub buildTable {
 }
 
 sub doBiochemistryAndMapping {
-    my ($biochemObj, $mappingObj) = @_;
+    my ($biochemObj, $mappingObj, $kbIdRegister) = @_;
+    # TODO : store the biochemistry UUID in metadata
+    # TODO : store the mapping UUID in metadata
 #    LOCATION ( a.k.a. COMPARTMENT )
 #    Location: A location is a place where a reaction's compounds can originate or
 #              end up (e.g. cell wall, extracellular, cytoplasm).
@@ -159,11 +312,11 @@ sub doBiochemistryAndMapping {
 #
     {
         my $a = {
-            id => 'uuid',
-            msid => 'id',
-            'mod-date' => 'modDate',
-            name => 'name',
-            abbr => 'id',
+            id => sub { $kbIdRegister->registerId("kb|loc", $_[0]->id, $_[0]->uuid); },
+            'source-id' => 'id',
+            'mod-date'  => 'modDate',
+            name        => 'name',
+            abbr        => 'id',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/location.dtx", \%columns, $biochemObj->compartments);
@@ -177,10 +330,12 @@ sub doBiochemistryAndMapping {
     #            mod-date (date): date and time of the last change to this complex's
     #                             definition
     {
+        my $hashes = [];
+        # TEST : Complex: kb|cpx.1
         my $a = {
-            id => 'uuid',
-            msid => 'name',
-            'mod-date' => 'modDate',
+            id          => sub { $kbIdRegister->registerId("kb|cpx", $_[0]->name, $_[0]->uuid); },
+            'source-id' => 'name',
+            'mod-date'  => 'modDate',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/complex.dtx", \%columns, $mappingObj->complexes);
@@ -192,8 +347,7 @@ sub doBiochemistryAndMapping {
     #    
     {
         my $a = {
-            id => 'uuid',
-            msid => 'name',
+            id => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid); },
             name => 'name',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
@@ -222,9 +376,10 @@ sub doBiochemistryAndMapping {
     #            uncharged-formula (string): a electrically neutral formula for the compound
     #    
     {
+        # Compound: kb|cpd.1
         my $a = {
-            id => 'uuid',
-            msid => 'id',
+            id => sub { return $kbIdRegister->registerId("kb|cpd", $_[0]->id, $_[0]->uuid); },
+            'source-id' => 'id',
             mass => 'mass',
             'mod-date' => 'modDate',
             abbr => 'abbreviation',
@@ -251,8 +406,9 @@ sub doBiochemistryAndMapping {
 #            name (string): descriptive name of the media
 #            type (string): type of the medium (aerobic or anaerobic)
     {
+        # Media: kb|med.1
         my $a = {
-            id => 'uuid', 
+            id => sub { return $kbIdRegister->registerId("kb|med", $_[0]->id, $_[0]->uuid); }, 
             msid => 'id',
             'is-minimal' => 'isMinimal',
             'mod-date' => 'modDate',
@@ -284,18 +440,19 @@ sub doBiochemistryAndMapping {
 #                             reaction, generally indicating whether the reaction
 #                             is balanced and/or accurate
     {
+        # Reaction: kb|rxn.1
         my $a = {
-            id => 'uuid',
-            'default-protons' => 'defaultProtons',
-            deltaG => 'deltaG',
-            'deltaG-error' => 'deltaGErr',
-            direction => 'direction',
-            'mod-date' => 'modDate',
+            id => sub { $kbIdRegister->registerId( "kb|rxn", $_[0]->id, $_[0]->uuid ); },
+            'default-protons'             => 'defaultProtons',
+            deltaG                        => 'deltaG',
+            'deltaG-error'                => 'deltaGErr',
+            direction                     => 'direction',
+            'mod-date'                    => 'modDate',
             'thermodynamic-reversibility' => 'thermoReversibility',
-            abbr => 'abbreviation',
-            msid => 'id',
-            name => 'name',
-            status => 'status',
+            abbr                          => 'abbreviation',
+            'source-id'                   => 'id',
+            name                          => 'name',
+            status                        => 'status',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/reaction.dtx", \%columns, $biochemObj->reactions);
@@ -313,7 +470,7 @@ sub doBiochemistryAndMapping {
     {
         my $a = { 
             'from-link' => 'type',
-            'to-link' => 'compound_uuid',
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{compound_uuid}); },
             alias => 'alias',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
@@ -348,8 +505,8 @@ sub doBiochemistryAndMapping {
     #    
     {
         my $a = { 
-            'from-link' => 'media_uuid',
-            'to-link' => 'compound_uuid',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{media_uuid}); },
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{compound_uuid}); },
             concentration => 'concentration',
             'maximum-flux' => 'maxFlux',
             'minimum-flux' => 'minFlux',
@@ -383,7 +540,7 @@ sub doBiochemistryAndMapping {
     {
         my $a = { 
             'from-link' => 'type',
-            'to-link' => 'reaction_uuid',
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{reaction_uuid}); },
             alias => 'alias',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
@@ -414,8 +571,8 @@ sub doBiochemistryAndMapping {
     #    
     {
         my $a = { 
-            'from-link' => 'complex_uuid',
-            'to-link' => 'reaction_uuid',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{complex_uuid}); },
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{reaction_uuid}); },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         my $rxnrules = [];
@@ -447,18 +604,21 @@ sub doBiochemistryAndMapping {
         foreach my $reaction (@$reactions) {
             my $reagents = $reaction->reagents;
             foreach my $reagent (@$reagents) {
-                my $cmp_id = $reagent->destinationCompartment_uuid;
-                my $localized_compound = $reagent->compound_uuid() . $cmp_id;
+                my $cmp_uuid = $reagent->destinationCompartment_uuid;
+                my $localized_compound = $reagent->compound_uuid . $cmp_uuid;
                 next if defined $seen->{$localized_compound};
+                my $cmp_kbid = $kbIdRegister->kbid_from_uuid($cmp_uuid);
+                my $kbid = $kbIdRegister->registerUUID("$cmp_kbid.c", $localized_compound);
                 my $hash = {
-                    localized_compound => $localized_compound,
+                    localized_compound => $kbid,
                 };
                 push(@$localized, $hash);
                 $seen->{$localized_compound} = 1;
             } 
         }
-        buildTable("$directory/Reagent.dtx", \%columns, $localized);
-
+        buildTable("$directory/LocalizedCompound.dtx", \%columns, $localized);
+        # TEST : LocalizedCompound: kb|loc.e.c.1
+        # kb => compound.uuid . compartment.uuid
     }
 #    INVOLVES ( a.k.a. REAGENT )
 #    Involves: This relationship connects a reaction to the specific localized compounds
@@ -482,11 +642,10 @@ sub doBiochemistryAndMapping {
 #                                    if it stays in the same compartment
     {
         my $a = { 
-            'from-link' => 'reaction_uuid',
-            'to-link' => 'localized_compound',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{reaction_uuid}); },
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{localized_compound}); },
             coefficient => 'coefficient',
             cofactor => 'isCofactor',
-            'is-transport' => 'isTransport',
          };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         my $reagents = [];
@@ -499,12 +658,11 @@ sub doBiochemistryAndMapping {
                     localized_compound => $reagent->compound_uuid . $cmp_id,
                     coefficient => $reagent->coefficient,
                     isCofactor => $reagent->isCofactor,
-                    isTransport => $reagent->isTransport,
                 };
                 push(@$reagents, $hash);
             } 
         }
-        buildTable("$directory/Reagent.dtx", \%columns, $reagents);
+        buildTable("$directory/Involves.dtx", \%columns, $reagents);
     }
     #    
     #    
@@ -521,31 +679,23 @@ sub doBiochemistryAndMapping {
     #            the complex in the model, else FALSE.
     #    
     {
-        my $a = { 
-            'from-link' => 'complex_uuid',
-            'to-link' => 'role_name',
-            msid => 'msid', 
-            optional => 'optional',
-            type => 'type',
-            triggering => 'triggering',
+        my $a = {
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid( $_[0]->parent->uuid ); },
+            'to-link'   => sub { return $_[0]->role->name; },
+            optional    => 'optional',
+            type        => 'type',
+            triggering  => 'triggering',
         };
         my $cpxroles = [];
         foreach my $complex (@{$mappingObj->complexes}) {
             foreach my $cpxrole (@{$complex->complexroles}) {
-                my $hash = {
-                    complex_uuid => $complex->uuid,
-                    role_name => $cpxrole->role->name,
-                    msid => $cpxrole->role->uuid,
-                    optional => $cpxrole->optional,
-                    type => $cpxrole->type,
-                    triggering => $cpxrole->triggering,
-                };
-                push(@$cpxroles, $hash);
+                push(@$cpxroles, $cpxrole);
             }
         }
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/isTriggeredBy.dtx", \%columns, $cpxroles);
     }
+
     #   IsParticipatingAt: This relationship connects a localized compound to the location
     #                      in which it occurs during one or more reactions.
     #
@@ -563,12 +713,12 @@ sub doBiochemistryAndMapping {
     #    
     {
         my $at = {
-            'from-link' => 'compartment_uuid',
-            'to-link' => 'localized_compound',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{compartment_uuid}); },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{localized_compound}); },
         };
         my $as = { 
-            'from-link' => 'compound_uuid',
-            'to-link' => 'localized_compound',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{compound_uuid}); },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->{localized_compound}); },
         };
         my $IsParticipatingAt = [];
         my $ParticipatesAs = [];
@@ -610,6 +760,7 @@ sub doModels {
 
 sub doModel {
     my ($model, $append) = @_;
+    my $model_kbid;
     $append //= {};
     ## Summary
     ## - Main Model Tables
@@ -627,7 +778,7 @@ sub doModel {
     ## Model
     {
         my $a = {
-            id         => 'uuid',
+            id         => sub { return $kbIdRegister->registerId("kb|fm", $model->id, $model->uuid) },
             'mod-date' => 'modDate',
             name       => 'name',
             'reaction-count' => sub {
@@ -648,46 +799,106 @@ sub doModel {
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/Model.dtx", \%columns, [$model], $append);
+        $model_kbid = $kbIdRegister->kbid_from_uuid($model->uuid);
     }
     ## LocationInstance ( ModelCompartment )
     {
         my $a = {
-            id                  => 'uuid',
+            id                  => 'id',
             'compartment-index' => 'compartmentIndex',
             pH                  => 'pH',
             potential           => 'potential',
             label               => 'label',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/LocationInstance.dtx", \%columns, $model->modelcompartments, $append);
+        # TEST : LocationInstance: kb|fm.1.li.e.0 
+        my $hashes = [];
+        foreach my $mdl_cmp (@{$model->modelcompartments}) {
+            my $label = $mdl_cmp->label;
+            my $kbid = $kbIdRegister->registerUUID("$model_kbid.li", $mdl_cmp->uuid);
+            my $hash = {
+                id               => $kbid,
+                compartmentIndex => $mdl_cmp->compartmentIndex,
+                pH               => $mdl_cmp->pH,
+                potential        => $mdl_cmp->potential,
+                label            => $mdl_cmp->label,
+            };
+            push(@$hashes, $hash);
+        }
+        buildTable("$directory/LocationInstance.dtx", \%columns, $hashes, $append);
+
     }
     ## CompoundInstance ( ModelCompound )
     {
         my $mdl_cpds = $model->modelcompounds;
+        my $hashes = [];
+        # TEST : CompoundInstance: kb|fm.1.ci.1
+        foreach my $mdl_cpd (@$mdl_cpds) {
+            my $kbid = $kbIdRegister->registerUUID("$model_kbid.ci", $mdl_cpd->uuid);
+            my $hash = {
+                id      => $kbid,
+                charge  => $mdl_cpd->charge,
+                formula => $mdl_cpd->formula,
+            };
+            push(@$hashes, $hash);
+        }
         my $a = {
-            id      => 'uuid',
+            id      => 'id',
             charge  => 'charge',
             formula => 'formula',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/CompoundInstance.dtx", \%columns, $mdl_cpds, $append);
+        buildTable("$directory/CompoundInstance.dtx", \%columns, $hashes, $append);
     }
     ## ReactionInstance ( ModelReaction )
     {
+        my $hashes = [];
+        # TEST : ReactionInstance: kb|fm.1.ri.1
+        foreach my $mdl_rxn (@{$model->modelreactions}) {
+            my $kbid = $kbIdRegister->registerUUID("$model_kbid.ri", $mdl_rxn->uuid);
+            my $hash = {
+                id => $kbid,
+                direction => $mdl_rxn->direction,
+                proton => $mdl_rxn->protons,
+            };
+            push(@$hashes, $hash);
+        }
         my $a = {
-            id        => 'uuid',
+            id        => 'id',
             direction => 'direction',
             proton    => 'protons',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/ReactionInstance.dtx", \%columns, $model->modelreactions, $append);
-
+        buildTable("$directory/ReactionInstance.dtx", \%columns, $hashes, $append);
     }
     ## Biomass
     {
         my $mdls_bios = $model->biomasses;
+        my $a_hashes = [];
+        my $b_hashes = [];
+        # TEST : Biomass: kb|fm.1.bio.1
+        foreach my $mdl_bio (@$mdls_bios) {
+            my $kbid = $kbIdRegister->registerId("$model_kbid.bio", $mdl_bio->name, $mdl_bio->uuid);
+            my $a_hash = {
+            id          => $kbid,
+            cellwall    => $mdl_bio->cellwall,
+            cofactor    => $mdl_bio->cofactor,
+            dna         => $mdl_bio->dna,
+            energy      => $mdl_bio->energy,
+            lipid       => $mdl_bio->lipid,
+            protein     => $mdl_bio->protein,
+            modDate  => $mdl_bio->modDate
+            };
+            my $b_hash = {
+                id => $kbid,
+                name => $mdl_bio->name,
+            };
+            push(@$a_hashes, $a_hash);
+            push(@$b_hashes, $b_hash);
+        }
+
         my $a = {
-            id          => 'uuid',
+            id          => 'id',
             'cell-wall' => 'cellwall',
             cofactor    => 'cofactor',
             dna         => 'dna',
@@ -697,31 +908,23 @@ sub doModel {
             'mod-date'  => 'modDate',
         };
         my $b = {
-            id   => 'uuid',
+            id   => 'id',
             name => 'name',
         };
         tie my %columnsa, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/Biomass.dtx", \%columnsa, $mdls_bios, $append);
+        buildTable("$directory/Biomass.dtx", \%columnsa, $a_hashes, $append);
         tie my %columnsb, 'Tie::Hash::Sorted', 'Hash' => $b; 
-        buildTable("$directory/BiomassName.dtx", \%columnsb, $mdls_bios, $append);
+        buildTable("$directory/BiomassName.dtx", \%columnsb, $b_hashes, $append);
     }
     ## IsComprisedOf ( Biomass <> CompoundInstance )
     {
-        my $mdls_bios = $model->biomasses;
         my $bios_cpds = [];
-        foreach my $bio (@$mdls_bios) {
-            foreach my $biocpd (@{$bio->biomasscompounds}) {
-                my $hash = {
-                    biomass_uuid       => $bio->uuid,
-                    modelcompound_uuid => $biocpd->modelcompound_uuid,
-                    coefficient        => $biocpd->coefficient,
-                };
-                push(@$bios_cpds, $hash);
-            }
+        foreach my $bio (@{$model->biomasses}) {
+            push(@$bios_cpds, @{$bio->biomasscompounds});
         }
         my $a = {
-            'from-link' => 'biomass_uuid',
-            'to-link'   => 'modelcompound_uuid',
+            'from-link' => sub { $kbIdRegister->kbid_from_uuid($_[0]->parent->uuid) },
+            'to-link'   => sub { $kbIdRegister->kbid_from_uuid($_[0]->modelcompound_uuid) },
             coefficient => 'coefficient',
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
@@ -736,8 +939,8 @@ sub doModel {
     {
         my $mdl_cpds = $model->modelcompounds;
         my $a = {
-            'from-link' => 'modelcompartment_uuid',
-            'to-link' => 'uuid',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->modelcompartment_uuid) },
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid) },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/IsRealLocationOf.dtx", \%columns, $mdl_cpds, $append);
@@ -749,8 +952,8 @@ sub doModel {
         foreach my $rxn (@$rxns) {
             foreach my $reagent (@{$rxn->modelReactionReagents}) {
                 my $hash = {
-                    modelcompound_uuid => $reagent->modelcompound_uuid,
-                    modelreaction_uuid => $rxn->uuid,
+                    modelcompound_uuid => $kbIdRegister->kbid_from_uuid($reagent->modelcompound_uuid),
+                    modelreaction_uuid => $kbIdRegister->kbid_from_uuid($rxn->uuid),
                     coefficient        => $reagent->coefficient,
                 };
                 push(@$reagents, $hash);
@@ -775,8 +978,8 @@ sub doModel {
     {
         my $mdls_cmps = $model->modelcompartments;
         my $a = {
-            'from-link' => 'compartment_uuid',
-            'to-link'   => 'uuid',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->compartment_uuid); },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid); },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/IsInstantiatedBy.dtx", \%columns, $mdls_cmps, $append);
@@ -785,10 +988,8 @@ sub doModel {
     {
         my $mdl_cpds = $model->modelcompounds;
         my $a = {
-            'from-link' => sub {
-                return $_[0]->compound_uuid . $_[0]->modelcompartment->compartment_uuid;
-            },
-            'to-link' => 'uuid'
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->compound_uuid.$_[0]->modelcompartment->compartment_uuid); },
+            'to-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid); },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/HasUsage.dtx", \%columns, $mdl_cpds, $append);
@@ -797,8 +998,8 @@ sub doModel {
     {
         my $mdls_rxns = $model->modelreactions;
         my $a = {
-            'from-link' => 'reaction_uuid',
-            'to-link'   => 'uuid',
+            'from-link' => sub { return $kbIdRegister->kbid_from_uuid($_[0]->reaction_uuid) },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid) },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/IsExecutedAs.dtx", \%columns, $mdls_rxns, $append);
@@ -812,49 +1013,30 @@ sub doModel {
 
     ## IsDividedInto ( Model <> ModelCompartment )
     {
-        my $mdl_cmps = [];
-        foreach my $cmp (@{$model->modelcompartments}) {
-            my $hash = {
-                model_uuid => $model->uuid,
-                modelcompartment_uuid => $cmp->uuid,
-            };
-            push(@$mdl_cmps, $hash);
-        }
         my $a = {
-            'from-link' => 'model_uuid',
-            'to-link'   => 'modelcompartment_uuid',
+            'from-link' => sub { return $model_kbid },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid) },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/IsDividedInto.dtx", \%columns, $mdl_cmps, $append);
+        buildTable("$directory/IsDividedInto.dtx", \%columns, $model->modelcompartments, $append);
     }
     # HasRequirementOf ( model <-> model_reaction )
     {
-        my $mdls_rxns = [];
-        foreach my $rxn (@{$model->modelreactions}) {
-            my $hash = {
-                model_uuid         => $model->uuid,
-                modelreaction_uuid => $rxn->uuid,
-            };
-            push(@$mdls_rxns, $hash);
-        }
         my $a = {
-            'from-link' => 'model_uuid',
-            'to-link'   => 'modelreaction_uuid',
+            'from-link' => sub { return $model_kbid; },
+            'to-link'   => sub { return $kbIdRegister->kbid_from_uuid($_[0]->uuid); },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/HasRequirementOf.dtx", \%columns, $mdls_rxns, $append);
+        buildTable("$directory/HasRequirementOf.dtx", \%columns, $model->modelreactions, $append);
     }
     # Manages ( model <-> biomass ) 
     {
-        my $mdls_bios = [];
-        foreach my $bio (@{$model->biomasses}) {
-            push(@$mdls_bios, {model => $model->uuid, bio => $bio->uuid});
-        }
         my $a = {
-            'from-link' => 'model',
-            'to-link'   => 'bio',
+            'from-link' => sub { $kbIdRegister->kbid_from_uuid($_[0]->parent->uuid) },
+            'to-link'   => sub { $kbIdRegister->kbid_from_uuid($_[0]->uuid) },
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
-        buildTable("$directory/Manages.dtx", \%columns, $mdls_bios, $append);
+        buildTable("$directory/Manages.dtx", \%columns, $model->biomasses, $append);
     }
 }
+

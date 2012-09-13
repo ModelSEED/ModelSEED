@@ -57,14 +57,27 @@ use Exception::Class (
         description => "When a bad reference string is passed into a function",
         fields => [qw( refstr )],
     },
+    'ModelSEED::Exception::InvalidAttribute' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "Error trying to acess an attribute that an object does not have",
+        fields => [qw( object invalid_attribute )],
+    },
+    'ModelSEED::Exception::BadObjectLink' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "For when object-links are not resolveable",
+        fields => [qw(
+            searchSource searchBaseObject searchBaseType
+            searchAttribute searchUUID errorText
+        )],
+    },
 );
-1; 
+1;
 
 package ModelSEED::Exception::CLI;
 use strict;
 use warnings;
 sub cli_error_text {
-    return "An unknown error occured.";
+    return "An unknown error occured.\n";
 }
 1;
 
@@ -113,6 +126,45 @@ be whatever you want but cannot contain slashes.
 
 In the second case, pass in a specific object UUID.
 ND
-} 
+}
 1;
 
+package ModelSEED::Exception::InvalidAttribute;
+sub cli_error_text {
+    my ($self) = shift;
+    my $object = $self->object;
+    my $tried  = $self->invalid_attribute;
+    my $type   = $object->meta->name;
+    my @attrs  = $object->meta->get_all_attributes;
+    my $attr_string = join("\n", map { $_ = "\t".$_->name } @attrs);
+    return <<ND;
+Invalid attribute '$tried' for $type, available attributes:
+$attr_string
+
+ND
+}
+1;
+
+package ModelSEED::Exception::BadObjectLink;
+sub cli_error_text {
+    my ($self) = shift;
+    my $sourceObject = $self->searchSource;
+    my $baseObject   = $self->searchBaseObject;
+    my $baseType     = $self->searchBaseType;
+    my $attr         = $self->searchAttribute;
+    my $uuid         = $self->searchUUID;
+    my $errorText    = $self->errorText;
+    my $baseObjectClassName = "< an unknown class >";
+    $baseObjectClassName = $baseObject->meta->name if defined $baseObject;
+    my $sourceObjectClassName = $sourceObject->meta->name;
+    return <<ND;
+Bad Object Link in instance of $sourceObjectClassName.
+Attempting to link to an object accessible via:
+$baseObjectClassName, ($baseType)
+under the attribute "$attr" with the UUID:
+    $uuid
+
+$errorText
+ND
+}
+1;

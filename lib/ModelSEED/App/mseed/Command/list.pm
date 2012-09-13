@@ -3,6 +3,7 @@ use strict;
 use common::sense;
 use Try::Tiny;
 use List::Util qw(max);
+use ModelSEED::Exceptions;
 use Class::Autouse qw(
     ModelSEED::Reference
     ModelSEED::Auth::Factory
@@ -46,6 +47,7 @@ sub execute {
             # Construct references from alias data
             # TODO: Why isn't this part of Store / Database ?
             my $refs = [
+                  map { ModelSEED::Reference->new( ref => $_ ) }
                   map { $_->{type} . "/" . $_->{owner} . "/" . $_->{alias} }
                   @$aliases
             ];
@@ -103,33 +105,31 @@ sub execute {
 }
 
 sub printForReferences {
-    my ($self, $refstrs, $opts, $store) = @_;
+    my ($self, $refs, $opts, $store) = @_;
     my $need_object = (defined($opts->{with}) || defined($opts->{verbose}));
-    my $columns = $self->determineColumns($refstrs->[0], $opts);
+    my $columns = $self->determineColumns($refs->[0], $opts);
     print join("\t", @$columns) . "\n" if (@$columns > 1);
-    foreach my $refstr (@$refstrs) {
+    foreach my $ref (@$refs) {
         my $o;
         if ($need_object) {
-            $o = $store->get_object($refstr);
+            $o = $store->get_object($ref);
         }
-        print $self->formatOutput($refstr, $o, $columns); 
+        print $self->formatOutput($ref, $o, $columns); 
     }
 }
 
 sub printForData {
     my ($self, $ref, $data, $opts) = @_;
-    my $columns = $self->determineColumns($ref->ref, $opts);
+    my $columns = $self->determineColumns($ref, $opts);
     print join("\t", @$columns) . "\n" if (@$columns > 1);
     foreach my $o (@$data) {
-        my $refstr = $ref->base . $ref->delimiter . $o->uuid;
-        print $self->formatOutput($refstr, $o, $columns);
+        print $self->formatOutput($ref, $o, $columns);
     }
 }
 
 
 sub determineColumns {
-    my ($self, $refstr, $opts) = @_;
-    my $ref = ModelSEED::Reference->new(ref => $refstr);
+    my ($self, $ref, $opts) = @_;
     my $types = $ref->base_types;
     my $type  = $types->[@$types - 1];
     my $with = [ "Reference" ];
@@ -147,13 +147,23 @@ sub determineColumns {
 }
 
 sub formatOutput {
-    my ($self, $refstr, $object, $columns) = @_;
+    my ($self, $ref, $object, $columns) = @_;
     my $with = [ @$columns ];
     shift @$with; # Remove "Reference" column
-    my $parts = [ $refstr ];
+    my $parts = [ $ref->ref ];
     foreach my $attr (@$with) {
-        my $value = (ref $object ne 'HASH') ? $object->$attr : $object->{$attr};
-        $value =~ s/\t/\\t/;
+        my $value;
+        if (ref $object ne 'HASH' && $object->meta->find_attribute_by_name($attr)) {
+            $value = $object->$attr; 
+        } elsif(ref $object eq 'HASH') {
+            $value = $object->{$attr};
+            $value = '' unless defined $value;
+        } else {
+            ModelSEED::Exception::InvalidAttribute->throw(
+                object => $object,
+                invalid_attribute => $attr,
+            );
+        }
         push(@$parts, $value);
     }
     return join("\t", @$parts) . "\n";
