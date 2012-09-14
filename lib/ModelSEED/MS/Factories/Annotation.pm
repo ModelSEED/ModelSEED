@@ -79,19 +79,36 @@ package ModelSEED::MS::Factories::Annotation;
 use common::sense;
 use Moose;
 use Class::Autouse qw(
+    Bio::KBase::CDMI::Client
+    ModelSEED::Auth::Factory
 	ModelSEED::MS::Mapping
 	ModelSEED::MS::Annotation
 	ModelSEED::utilities
 	ModelSEED::MS::Utilities::GlobalFunctions
-    Bio::KBase::CDMI::Client
     ModelSEED::Client::SAP
     ModelSEED::Client::MSSeedSupport
 );
-has auth => (is => 'rw', isa => 'ModelSEED::Auth');
-has sapsvr => ( is => 'rw', isa => 'ModelSEED::Client::SAP', lazy => 1, builder => '_build_sapsvr' );
-has kbsvr => ( is => 'rw', isa => 'Bio::KBase::CDMI::Client', lazy => 1, builder => '_build_kbsvr');
-has msseedsvr => ( is => 'rw', isa => 'ModelSEED::Client::MSSeedSupport', lazy => 1, builder => '_build_msseedsvr' );
-has om => ( is => 'rw', isa => 'ModelSEED::Store');
+has auth => ( is => 'rw', isa => 'ModelSEED::Auth', builder => '_build_auth' );
+has sapsvr => (
+    is      => 'rw',
+    isa     => 'ModelSEED::Client::SAP',
+    lazy    => 1,
+    builder => '_build_sapsvr'
+);
+has kbsvr => (
+    is      => 'rw',
+    isa     => 'Bio::KBase::CDMI::Client',
+    lazy    => 1,
+    builder => '_build_kbsvr'
+);
+has msseedsvr => (
+    is      => 'rw',
+    isa     => 'ModelSEED::Client::MSSeedSupport',
+    lazy    => 1,
+    builder => '_build_msseedsvr'
+);
+has om => ( is => 'rw', isa => 'ModelSEED::Store' );
+
 sub availableGenomes {
     my $self = shift @_;
     my $args = $self->_getArgs(@_);
@@ -225,7 +242,7 @@ sub genomeSource {
         return "KBase";
     }
 	$result = $self->msseedsvr->genomeType({ids => [$id]});
-	return $result->{$id};
+	return $result->{$id}->{source};
 }
 
 sub _getGenomeFeatures {
@@ -306,7 +323,15 @@ sub _getGenomeFeatures {
                 delete $feature->{$key};
             }
         }
-    } elsif(defined($self->auth) && $self->auth->isa("ModelSEED::Auth::Basic")) {
+    } elsif( $source eq "RAST" ) {
+        unless ( defined $self->auth && $self->auth->isa("ModelSEED::Auth::Basic") ) {
+            die <<ERR;
+You must be logged in to import a RAST genome.
+Use the 'ms login' command with your RAST username,
+and supply the password when promped. To confirm that
+you are logged in, run 'ms whoami'
+ERR
+        }
         my $output = $self->msseedsvr()->genomeData(
             {
                 ids      => [ $id ],
@@ -411,6 +436,7 @@ sub _getArgs {
 sub _build_sapsvr { return ModelSEED::Client::SAP->new(); }
 sub _build_kbsvr { return Bio::KBase::CDMI::Client->new("http://bio-data-1.mcs.anl.gov/services/cdmi_api") };
 sub _build_msseedsvr { return ModelSEED::Client::MSSeedSupport->new(); }
+sub _build_auth { return ModelSEED::Auth::Factory->new->from_config; }
 
 __PACKAGE__->meta->make_immutable;
 1;
