@@ -339,42 +339,61 @@ ERR
                 password => $self->auth->password,
             }
         );
-		if (!defined($output->{features})) {
-			die "Could not load data for rast genome: $id";
-		}
-		for (my $i=0; $i < $output->{features}; $i++) {
-			my $ftr = $output->{features}->[$i];
-			my $row = {ID => [$ftr->{ID}->[0]],TYPE => "peg"};
-			if ($ftr->{ID}->[0] =~ m/\d+\.\d+\.([^\.]+)\.\d+$/) {
-				$row->{TYPE}->[0] = $1;
-			}
-			if (defined($ftr->{LOCATION}->[0]) && $ftr->{LOCATION}->[0] =~ m/^(.+)_(\d+)([\+\-])(\d+)$/) {
-				my $array = [split(/:/,$1)];
-				$row->{CONTIG}->[0] = $array->[1];
-				if ($3 eq "-") {
-					$row->{START}->[0] = ($2-$4);
-					$row->{STOP}->[0] = ($2);
-					$row->{DIRECTION}->[0] = "rev";
-				} else {
-					$row->{START}->[0] = ($2);
-					$row->{STOP}->[0] = ($2+$4);
-					$row->{DIRECTION}->[0] = "for";
-				}
-			}
-			if (defined($ftr->{FUNCTION}->[0])) {
-				my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles($ftr->{FUNCTION}->[0]);
-				$row->{COMPARTMENT}->[0] = $output->{compartments};
-				$row->{COMMENT}->[0] = $output->{comment};
-				$row->{DELIMITER}->[0] = $output->{delimiter};
-				$row->{ROLES} = $output->{roles};
-			}
-			if (defined($ftr->{SEQUENCE}->[0])) {
-				$row->{SEQUENCE}->[0] = $ftr->{SEQUENCE}->[0];
-			}
-			push(@{$features},$row);
-		}
+        $output->{$id} = $self->_parseRASTFeatures($output->{$id});
+        $features = $output->{$id}->{features};
 	}
 	return $features;
+}
+
+sub _parseRASTFeatures {
+	my ($self, $data) = @_;
+	if (!defined($data->{features})) {
+		die "Could not load data for rast genome!";
+	}
+	for (my $i=0; $i < @{$data->{features}}; $i++) {
+		my $ftr = $data->{features}->[$i];
+		my $row = {ID => [$ftr->{ID}],TYPE => ["peg"]};
+		if ($row->{ID}->[0] =~ m/\d+\.\d+\.([^\.]+)\.\d+$/) {
+			$row->{TYPE}->[0] = $1;
+		}
+		if (defined($ftr->{LOCATION}) && $ftr->{LOCATION} =~ m/^(.+)_(\d+)([\+\-_])(\d+)$/) {
+			my $contigData = $1;
+			if ($3 eq "-") {
+				$row->{START}->[0] = ($2-$4);
+				$row->{STOP}->[0] = ($2);
+				$row->{DIRECTION}->[0] = "rev";
+			} elsif ($3 eq "+") {
+				$row->{START}->[0] = ($2);
+				$row->{STOP}->[0] = ($2+$4);
+				$row->{DIRECTION}->[0] = "for";
+			} elsif ($2 > $4) {
+				$row->{START}->[0] = $2;
+				$row->{STOP}->[0] = $4;
+				$row->{DIRECTION}->[0] = "rev";
+			} else {
+				$row->{START}->[0] = $2;
+				$row->{STOP}->[0] = $4;
+				$row->{DIRECTION}->[0] = "for";
+			}
+			if ($contigData =~ m/(.+):(.+)/) {
+				$row->{CONTIG}->[0] = $2;
+			} elsif ($contigData =~ m/(.+)\|(.+)\|(.+)\|(.+)/) {
+				$row->{CONTIG}->[0] = $3."|".$4;
+			}
+		}
+		if (defined($ftr->{FUNCTION})) {
+			my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles($ftr->{FUNCTION});
+			$row->{COMPARTMENT}->[0] = $output->{compartments};
+			$row->{COMMENT}->[0] = $output->{comment};
+			$row->{DELIMITER}->[0] = $output->{delimiter};
+			$row->{ROLES} = $output->{roles};
+		}
+		if (defined($ftr->{SEQUENCE})) {
+			$row->{SEQUENCE}->[0] = $ftr->{SEQUENCE};
+		}
+		$data->{features}->[$i] = $row;
+	}
+	return $data;
 }
 
 sub _getGenomeAttributes {
@@ -412,7 +431,8 @@ sub _getGenomeAttributes {
             username => $self->auth->username,
             password => $self->auth->password,
         });
-        $attributes = $data;
+        $data->{$id} = $self->_parseRASTFeatures($data->{$id});
+        $attributes = $data->{$id};
     }
     return $attributes;
 }
