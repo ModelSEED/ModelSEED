@@ -156,8 +156,7 @@ sub BUILD {
 sub serializeToDB {
     my ($self) = @_;
     my $data = {};
-    my $v = $self->VERSION;
-    $data = { __VERSION__ => $v } if defined $v;
+    $data = { __VERSION__ => $self->__version__() } if defined $self->__version__();
     my $attributes = $self->_attributes();
     foreach my $item (@{$attributes}) {
     	my $name = $item->{name};	

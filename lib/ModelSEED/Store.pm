@@ -255,6 +255,17 @@ sub save_data {
     return $self->database->save_data($ref, $data, $self->auth, $config);
 }
 sub delete_data { return $_[0]->database->delete_data(_addAuthToArgs(@_)); }
+sub ancestors {
+	my ($self, $ref) = @_;
+    $ref = $self->_coerce_ref($ref);
+	return $self->database->ancestors($ref,$self->auth);
+}
+
+sub descendants {
+	my ($self, $ref) = @_;
+    $ref = $self->_coerce_ref($ref);
+	return $self->database->descendants($ref,$self->auth);
+}
 
 # Alias Functions
 sub get_aliases { return $_[0]->database->get_aliases(_addAuthToArgs(@_)); }

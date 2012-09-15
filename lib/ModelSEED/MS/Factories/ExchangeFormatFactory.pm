@@ -130,7 +130,6 @@ sub buildFBAFormulation {
 		parameters => $self->stringToHash($data->{parameters}),
 		numberOfSolutions => $data->{numberOfSolutions},
 	});
-	push(@{$model->fbaFormulation_uuids()},$form);
 	$form->parsePhenotypeSimulations({fbaPhenotypeSimulations => $data->{fbaPhenotypeSimulations}});
 	$form->parseObjectiveTerms({objTerms => $data->{fbaObjectiveTerms}});
 	$form->parseGeneKOList({string => $data->{geneKO}});
@@ -208,7 +207,6 @@ sub buildGapfillingFormulation {
 		gprHypothesis => $data->{gprHypothesis},
 		reactionAdditionHypothesis => $data->{reactionAdditionHypothesis},
 	});
-	push(@{$model->gapfillingFormulation_uuids()},$gapform);
 	$gapform->parseGeneCandidates({geneCandidates => $data->{gapfillingGeneCandidates}});
 	$gapform->parseSetMultipliers({sets => $data->{reactionSetMultipliers}});
 	$gapform->parseGuaranteedReactions({string => $data->{guaranteedReactions}});
@@ -269,7 +267,6 @@ sub buildGapgenFormulation {
 		gprHypothesis => $data->{gprHypothesis},
 		reactionRemovalHypothesis => $data->{reactionRemovalHypothesis},
 	});
-	push(@{$model->gapgenFormulation_uuids()},$gapgenform);
 	return $gapgenform;
 }
 

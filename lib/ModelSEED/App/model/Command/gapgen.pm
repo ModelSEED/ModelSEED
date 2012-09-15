@@ -100,10 +100,14 @@ sub execute {
 	    #Standard commands that save results of the analysis to the database
 	    if ($opts->{overwrite}) {
 	    	print STDERR "Saving gapgen model over original model...\n" if($opts->{verbose});
+	    	$store->save_object("fBAFormulation/".$gapgenFormulation->fbaFormulation()->uuid(),$gapgenFormulation->fbaFormulation());
+	    	$store->save_object("gapgenFormulation/".$gapgenFormulation->uuid(),$gapgenFormulation);
 	    	$store->save_object($ref,$model);
 	    } elsif ($opts->{save}) {
 			$ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
 			print STDERR "Saving gapgen model as new model ".$ref."...\n" if($opts->{verbose});
+			$store->save_object("fBAFormulation/".$gapgenFormulation->fbaFormulation()->uuid(),$gapgenFormulation->fbaFormulation());
+	    	$store->save_object("gapgenFormulation/".$gapgenFormulation->uuid(),$gapgenFormulation);
 			$store->save_object($ref,$model);
 	    }
     }

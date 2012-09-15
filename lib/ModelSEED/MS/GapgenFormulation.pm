@@ -96,6 +96,8 @@ sub prepareFBAFormulation {
 				coefficient => 1
 			}]
 		}});
+		$self->fbaFormulation($form);
+		$self->fbaFormulation_uuid($form->uuid());
 	} else {
 		$form = $self->fbaFormulation();
 	}

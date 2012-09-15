@@ -40,7 +40,6 @@ sub execute {
     }
     my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
     my $obj = $factory->createFromAPI("Media",$biochemistry,$data);
-    return;
     $biochemistry->add("media",$obj);
     if (defined($opts->{saveas})) {
     	$ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
@@ -48,7 +47,7 @@ sub execute {
 		$store->save_object($ref,$biochemistry);
     } else {
     	print STDERR "Saving over original biochemistry with new media...\n" if($opts->{verbose});
-    	$store->save_object($ref,$biochemistry);
+    	$store->save_object("biochemistry/".$biochemistry->uuid(),$biochemistry,{schema_update => 1});
     }
 }
 

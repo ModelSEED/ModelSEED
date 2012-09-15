@@ -1065,6 +1065,8 @@ sub gapfillModel {
 		fbaFormulation => $args->{fbaFormulation}
 	});
 	if (defined($solution)) {
+		push(@{$self->fbaFormulation_uuids()},$args->{gapfillingFormulation}->fbaFormulation_uuid());
+		push(@{$self->gapfillingFormulation_uuids()},$args->{gapfillingFormulation}->uuid());
 		return $solution;	
 	}
 	return;
@@ -1091,6 +1093,8 @@ sub gapgenModel {
 		fbaFormulation => $args->{fbaFormulation}
 	});
 	if (defined($solution)) {
+		push(@{$self->fbaFormulation_uuids()},$args->{gapgenFormulation}->fbaFormulation_uuid());
+		push(@{$self->gapgenFormulation_uuids()},$args->{gapgenFormulation}->uuid());
 		return $solution;	
 	}
 	return;

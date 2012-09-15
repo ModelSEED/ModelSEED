@@ -116,10 +116,14 @@ sub execute {
 	    #Standard commands that save results of the analysis to the database
 	    if ($opts->{overwrite}) {
 	    	print STDERR "Saving gapfilled model over original model...\n" if($opts->{verbose});
+	    	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
+	    	$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
 	    	$store->save_object($ref,$model);
 	    } elsif ($opts->{save}) {
 			$ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
 			print STDERR "Saving gapfilled model as new model ".$ref."...\n" if($opts->{verbose});
+			$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
+	    	$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
 			$store->save_object($ref,$model);
 	    }
     }
