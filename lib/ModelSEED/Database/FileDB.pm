@@ -76,7 +76,7 @@ sub save_data {
         return unless($auth->username eq $ref->alias_username);
     } elsif($ref->id_type eq 'uuid') {
         # cannot save to existing uuid
-        if($self->has_data($ref, $auth)) {
+        if(!defined($config->{schema_update}) && $self->has_data($ref, $auth)) {
              $oldUUID = $ref->id;
         }
     }
@@ -101,7 +101,6 @@ sub save_data {
 
     # now do the saving
     $self->kvstore->save_object($object->{uuid}, $object);
-
     # now save 'parents' and 'children' metadata
     my $meta = $self->kvstore->get_metadata($object->{uuid});
     $meta->{parents} = [];

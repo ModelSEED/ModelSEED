@@ -6,9 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::Compound;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::CompoundCue;
-use ModelSEED::MS::CompoundStructure;
-use ModelSEED::MS::CompoundPk;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -33,21 +30,20 @@ has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute',
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has structure_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has pkas => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has pkbs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
-# SUBOBJECTS:
-has compoundCues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(CompoundCue)', metaclass => 'Typed', reader => '_compoundCues', printOrder => '-1');
-has structures => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(CompoundStructure)', metaclass => 'Typed', reader => '_structures', printOrder => '-1');
-has pks => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(CompoundPk)', metaclass => 'Typed', reader => '_pks', printOrder => '-1');
-
-
 # LINKS:
 has abstractCompound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', weak_ref => 1);
 has comprisedOfCompounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds');
+has structures => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Structure]', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -61,6 +57,10 @@ sub _build_abstractCompound {
 sub _build_comprisedOfCompounds {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_uuids());
+}
+sub _build_structures {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('BiochemistryStructures','structures',$self->structure_uuids());
 }
 
 
@@ -183,10 +183,46 @@ my $attributes = [
             'type' => 'ArrayRef',
             'description' => 'Array of references to subcompounds that this compound is comprised of.',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'structure_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'description' => 'Array of associated molecular structures',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'cues',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'description' => 'Hash of cue uuids with cue coefficients as values',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'pkas',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'description' => 'Hash of pKa values with atom numbers as values',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'pkbs',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'description' => 'Hash of pKb values with atom numbers as values',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13};
+my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13, structure_uuids => 14, cues => 15, pkas => 16, pkbs => 17};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -201,28 +237,9 @@ sub _attributes {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'compoundCues',
-            'type' => 'encompassed',
-            'class' => 'CompoundCue'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'structures',
-            'type' => 'encompassed',
-            'class' => 'CompoundStructure'
-          },
-          {
-            'printOrder' => -1,
-            'name' => 'pks',
-            'type' => 'encompassed',
-            'class' => 'CompoundPk'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {compoundCues => 0, structures => 1, pks => 2};
+my $subobject_map = {};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -237,21 +254,6 @@ sub _subobjects {
   }
 }
 sub _aliasowner { return 'Biochemistry'; }
-
-
-# SUBOBJECT READERS:
-around 'compoundCues' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('compoundCues');
-};
-around 'structures' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('structures');
-};
-around 'pks' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('pks');
-};
 
 
 __PACKAGE__->meta->make_immutable;

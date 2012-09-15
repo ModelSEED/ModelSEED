@@ -28,6 +28,45 @@ extends 'ModelSEED::MS::DB::GapfillingFormulation';
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 biochemistry
+
+Definition:
+	ModelSEED::MS::Biochemistry = biochemistry();
+Description:
+	Returns biochemistry behind gapfilling object
+=cut
+
+sub biochemistry {
+	my ($self) = @_;
+	$self->model()->biochemistry();	
+}
+
+=head3 annotation
+
+Definition:
+	ModelSEED::MS::Annotation = annotation();
+Description:
+	Returns annotation behind gapfilling object
+=cut
+
+sub annotation {
+	my ($self) = @_;
+	$self->model()->annotation();	
+}
+
+=head3 mapping
+
+Definition:
+	ModelSEED::MS::Mapping = mapping();
+Description:
+	Returns mapping behind gapfilling object
+=cut
+
+sub mapping {
+	my ($self) = @_;
+	$self->model()->mapping();	
+}
+
 =head3 calculateReactionCosts
 
 Definition:
@@ -122,7 +161,7 @@ sub prepareFBAFormulation {
 	my $form;
 	if (!defined($self->fbaFormulation_uuid())) {
 		my $exFact = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-		$form = $exFact->buildFBAFormulation({model => $self->parent(),overrides => {
+		$form = $exFact->buildFBAFormulation({model => $self->model(),overrides => {
 			media => "Media/name/Complete",
 			notes => "Default gapfilling FBA formulation",
 			allReversible => 1,

@@ -173,6 +173,24 @@ around BUILDARGS => sub {
     return $class->$orig($args);
 };
 
+sub ancestors {
+    my $self = shift @_;
+    my $ancestors = [];
+    foreach my $db (@{$self->databases}) {
+        push(@{$ancestors},$db->ancestors(@_));
+    }
+    return $ancestors;
+}
+
+sub descendants {
+    my $self = shift @_;
+    my $descendants = [];
+    foreach my $db (@{$self->databases}) {
+        push(@{$descendants},$db->descendants(@_));
+    }
+    return $descendants;
+}
+
 sub has_data {
     my $self = shift @_;
     my $val = 0;

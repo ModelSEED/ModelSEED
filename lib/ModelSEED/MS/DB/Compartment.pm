@@ -18,7 +18,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has hierarchy => (is => 'rw', isa => 'Int', printOrder => '3', default => '', type => 'attribute', metaclass => 'Typed');
@@ -56,14 +55,6 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
             'len' => 2,
             'req' => 1,
             'printOrder' => 1,
@@ -91,7 +82,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, id => 3, name => 4, hierarchy => 5};
+my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, hierarchy => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

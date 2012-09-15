@@ -30,8 +30,12 @@ has cpdalsTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => 
 has rxnalsTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxnalsTbl' );
 has mediaTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildmediaTbl' );
 has mediacpdTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildmediacpdTbl' );
-roleTbl
-
+has roleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildroleTbl' );
+has subsystemTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildsubsystemTbl' );
+has ssroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildssroleTbl' );
+has complexTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcomplexTbl' );
+has cpxroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcpxroleTbl' );
+has rxncpxTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxncpxTbl' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -67,6 +71,30 @@ sub _buildmediaTbl {
 sub _buildmediacpdTbl {
 	my ($self) = @_;
 	return ModelSEED::Table->new(filename => $self->filepath()."mediacpd.tbl");
+}
+sub _buildroleTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."role.tbl");
+}
+sub _buildsubsystemTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."subsystem.tbl");
+}
+sub _buildssroleTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."ssrole.tbl");
+}
+sub _buildcomplexTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."complex.tbl");
+}
+sub _buildcpxroleTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."cpxrole.tbl");
+}
+sub _buildrxncpxTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."rxncpx.tbl");
 }
 
 
@@ -829,33 +857,35 @@ sub createMapping {
 			uuid => $ss->uuid()
 		});
 	}
-	my $ssroles = $args->{database}->get_objects("ssroles");
-	for (my $i=0; $i < @{$ssroles}; $i++) {
-		my $ss = $mapping->getObjectByAlias("rolesets",$ssroles->[$i]->SUBSYSTEM(),"ModelSEED");
+	my $ssroles = $self->ssroleTbl();
+	for (my $i=0; $i < $ssroles->size(); $i++) {
+		my $row = $ssroles->row($i);
+		my $ss = $mapping->getObjectByAlias("rolesets",$row->SUBSYSTEM(),"ModelSEED");
         next unless(defined($ss));
-        my $role = $mapping->getObjectByAlias("roles",$ssroles->[$i]->ROLE(),"ModelSEED");
+        my $role = $mapping->getObjectByAlias("roles",$row->ROLE(),"ModelSEED");
         next unless(defined($role));
         $ss->add("rolesetroles",{
             role_uuid => $role->uuid(),
             role => $role
         });
 	}
-	my $complexes = $args->{database}->get_objects("complex");
-	for (my $i=0; $i < @{$complexes}; $i++) {
+	my $complexes = $self->complexTbl();
+	for (my $i=0; $i < $complexes->size(); $i++) {
+		my $row = $complexes->row($i);
 		my $complex = $mapping->add("complexes",{
 			locked => "0",
-			name => $complexes->[$i]->id(),
+			name => $row->id(),
 		});
 		$mapping->addAlias({
 			attribute => "complexes",
 			aliasName => "ModelSEED",
-			alias => $complexes->[$i]->id(),
+			alias => $row->id(),
 			uuid => $complex->uuid()
 		});
 	}
-	my $complexRoles = $args->{database}->get_objects("cpxrole");
-	for (my $i=0; $i < @{$complexRoles}; $i++) {
-        my $cpx_role = $complexRoles->[$i];
+	my $complexRoles = $self->cpxroleTbl();
+	for (my $i=0; $i < $complexRoles->size(); $i++) {
+        my $cpx_role = $complexRoles->row($i);
 		my $complex = $mapping->getObjectByAlias(
             "complexes",$cpx_role->COMPLEX(),"ModelSEED"
         );
@@ -874,10 +904,10 @@ sub createMapping {
             type => $type
         });
 	}
-	my $reactionRules = $args->{database}->get_objects("rxncpx");
+	my $reactionRules = $self->rxncpxTbl();
     print "Processing ".scalar(@$reactionRules)." reactions\n" if($args->{verbose});
-	for (my $i=0; $i < @{$reactionRules}; $i++) {
-        my $rule = $reactionRules->[$i];
+	for (my $i=0; $i < rxncpxTbl->size(); $i++) {
+        my $rule = $complexRoles->row($i);
 		next unless($rule->master() eq "1");
         my $complex = $mapping->getObjectByAlias(
             "complexes", $rule->COMPLEX(), "ModelSEED"

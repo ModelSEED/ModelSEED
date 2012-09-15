@@ -18,7 +18,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type =>
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
 has compartmentIndex => (is => 'rw', isa => 'Int', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
 has label => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -62,14 +61,6 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
             'req' => 1,
             'printOrder' => 5,
             'name' => 'compartment_uuid',
@@ -109,7 +100,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, compartment_uuid => 3, compartmentIndex => 4, label => 5, pH => 6, potential => 7};
+my $attribute_map = {uuid => 0, modDate => 1, compartment_uuid => 2, compartmentIndex => 3, label => 4, pH => 5, potential => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -236,6 +236,7 @@ sub loadMFAToolkitResults {
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
 	$self->parseGapfillingResults();
+	$self->parseGapgenResults();
 }
 
 =head3 parseFluxFiles
@@ -808,7 +809,7 @@ sub parseGapfillingResults {
 	my $directory = $self->parent()->jobDirectory();
 	if (-e $directory."/GapfillingComplete.txt") {
 		my $gfsolution = $self->add("gapfillingSolutions",{});
-		$gfsolution->loadFromFile({filename => $directory."/GapfillingComplete.txt"});
+		$gfsolution->loadFromFile({filename => $directory."/CompleteGapfillingOutput.txt"});
 	}
 }
 =head3 parseGapgenResults
@@ -828,7 +829,7 @@ sub parseGapgenResults {
 			if (defined($array->[1])) {
 				my $subarray = [split(/,/,$array->[1])];
 				my $ggsolution = $self->add("gapgenSolutions",{});
-				$ggsolution->loadFromFile({
+				$ggsolution->loadFromData({
 					objective => $array->[0],
 					reactions => $subarray,
 					model => $self->model()

@@ -25,8 +25,6 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has locked => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has public => (is => 'rw', isa => 'Int', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'SEED', type => 'attribute', metaclass => 'Typed');
 has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '3', type => 'attribute', metaclass => 'Typed');
@@ -79,22 +77,6 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => -1,
-            'name' => 'locked',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'public',
-            'default' => '0',
-            'type' => 'Int',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
             'printOrder' => 1,
             'name' => 'name',
             'default' => '',
@@ -119,7 +101,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, locked => 2, public => 3, name => 4, defaultNameSpace => 5, biochemistry_uuid => 6};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, defaultNameSpace => 3, biochemistry_uuid => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -6,7 +6,9 @@
 # Date of module creation: 3/11/2012
 ########################################################################
 package ModelSEED::MS::IndexedObject;
-
+use Class::Autouse qw(
+    ModelSEED::MS::Factories::ExchangeFormatFactory
+);
 =head1 ModelSEED::MS::IndexedObject
 
 =head2 METHODS
@@ -169,6 +171,9 @@ sub add {
 	push(@{$self->$method},$obj_info); 
     return $obj_info->{object};
 };
+
+sub addFromAPI {
+    }
 
 ######################################################################
 #Alias Functions
@@ -376,6 +381,14 @@ sub _clearIndex {
 			$self->indices->{$att}->{$subatt} = {};
 		}
 	}
+}
+
+sub descendants {
+	my ($self) = @_;
+	if (!defined($self->parent()) || ref($self->parent()) ne "ModelSEED::Store") {
+		return [];
+	}
+	return $self->parent()->descendants(lc($self->_type())."/".$self->uuid());
 }
 
 1;

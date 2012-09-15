@@ -191,5 +191,7 @@ requires 'alias_public';
 requires 'add_viewer';
 requires 'remove_viewer';
 requires 'set_public';
+requires 'descendants';
+requires 'ancestors';
 
 1;

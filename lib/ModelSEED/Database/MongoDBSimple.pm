@@ -99,7 +99,7 @@ sub save_data {
         return unless($auth->username eq $ref->alias_username);
     } elsif($ref->id_type eq 'uuid') {
         # cannot save to existing uuid
-        if($self->has_data($ref, $auth)) {
+        if(!$config->{schema_update} && $self->has_data($ref, $auth)) {
              $oldUUID = $ref->id;
         }
     }

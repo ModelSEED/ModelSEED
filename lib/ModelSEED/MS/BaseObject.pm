@@ -114,7 +114,10 @@ around BUILDARGS => sub {
     }
     my $objVersion = $hash->{__VERSION__};
     my $classVersion = $class->__version__;
-    if (defined $objVersion && $objVersion != $classVersion) {
+    if (!defined($objVersion) && defined($hash->{parent})) {
+    	$objVersion = 1;
+    }
+    if (defined $objVersion && defined($classVersion) && $objVersion != $classVersion) {
         if (defined(my $fn = $class->__upgrade__($objVersion))) {
             $hash = $fn->($hash);
         } else {
@@ -245,6 +248,12 @@ sub _build_id {
 
 sub interpretReference {
 	my ($self,$ref,$expectedType) = @_;
+	if (defined($expectedType)) {
+		my $class = "ModelSEED::MS::".$expectedType;
+		if ($class->can("recognizeReference")) {
+			$ref = $class->recognizeReference($ref);
+		} 
+	}
 	my $array = [split(/\//,$ref)];
 	if (!defined($array->[2]) || (defined($expectedType) && $array->[0] ne $expectedType)) {
 		if (defined($expectedType) && @{$array} == 1) {
@@ -576,6 +585,9 @@ sub getLinkedObject {
     my $source = lc($attribute);
     if ($sourceType eq 'ModelSEED::Store') {
         my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $source);
+        if (!defined($self->store)) {
+        	ModelSEED::utilities::ERROR("Getting object from undefined store!");
+        }
         return $self->store->get_object($ref);
     } else {
         my $source = lc($sourceType);
@@ -617,7 +629,9 @@ sub biochemistry {
     my $parent = $self->parent();
     if (defined($parent) && ref($parent) eq "ModelSEED::MS::Biochemistry") {
         return $parent;
-    } elsif (defined($parent)) {
+    } elsif (ref($self) eq "ModelSEED::MS::Biochemistry") {
+    	return $self;
+	} elsif (defined($parent)) {
         return $parent->biochemistry();
     }
     ModelSEED::utilities::ERROR("Cannot find Biochemistry object in tree!");
@@ -665,6 +679,17 @@ sub mapping {
         return $parent->mapping();
     }
     ModelSEED::utilities::ERROR("Cannot find mapping object in tree!");
+}
+
+sub biochemistrystructures {
+    my ($self) = @_;
+    my $parent = $self->parent();
+    if (defined($parent) && ref($parent) eq "ModelSEED::MS::BiochemistryStructures") {
+        return $parent;
+    } elsif (defined($parent)) {
+        return $parent->biochemistrystructures();
+    }
+    ModelSEED::utilities::ERROR("Cannot find BiochemistryStructures object in tree!");
 }
 
 sub fbaproblem {

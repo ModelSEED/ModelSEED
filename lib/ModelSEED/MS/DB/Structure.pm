@@ -1,10 +1,10 @@
 ########################################################################
-# ModelSEED::MS::DB::ReactionSet - This is the moose object corresponding to the ReactionSet object
+# ModelSEED::MS::DB::Structure - This is the moose object corresponding to the Structure object
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
-package ModelSEED::MS::DB::ReactionSet;
+package ModelSEED::MS::DB::Structure;
 use ModelSEED::MS::BaseObject;
 use Moose;
 use namespace::autoclean;
@@ -12,17 +12,14 @@ extends 'ModelSEED::MS::BaseObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::MS::BiochemistryStructures', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
-has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
+has data => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has reaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -30,20 +27,14 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has reactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
-sub _build_modDate { return DateTime->now()->datetime(); }
-sub _build_reactions {
-  my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reaction_uuids());
-}
 
 
 # CONSTANTS:
-sub _type { return 'ReactionSet'; }
+sub _type { return 'Structure'; }
 
 my $attributes = [
           {
@@ -54,33 +45,17 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'modDate',
-            'type' => 'Str',
-            'perm' => 'rw'
-          },
-          {
-            'len' => 32,
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'id',
+            'name' => 'data',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'name',
+            'name' => 'cksum',
             'default' => '',
-            'type' => 'ModelSEED::varchar',
-            'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => 0,
-            'name' => 'class',
-            'default' => 'unclassified',
             'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
           },
@@ -91,18 +66,10 @@ my $attributes = [
             'name' => 'type',
             'type' => 'Str',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'reaction_uuids',
-            'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, class => 4, type => 5, reaction_uuids => 6};
+my $attribute_map = {uuid => 0, data => 1, cksum => 2, type => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
