@@ -5,7 +5,7 @@ package ModelSEED::MS::Metadata::Definitions;
 my $objectDefinitions = {};
 
 $objectDefinitions->{FBAFormulation} = {
-	parents    => ['Model'],
+	parents    => ['ModelSEED::Store'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -28,6 +28,13 @@ $objectDefinitions->{FBAFormulation} = {
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
 			req        => 0
+		},
+		{
+			name       => 'model_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
 		},
 		{
 			name       => 'media_uuid',
@@ -285,6 +292,13 @@ $objectDefinitions->{FBAFormulation} = {
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
+		{
+			name      => "model",
+			attribute => "model_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Model",
+			weak      => 0
+		},
 		{
 			name      => "media",
 			attribute => "media_uuid",
@@ -1441,6 +1455,13 @@ $objectDefinitions->{GapgenFormulation} = {
 			req        => 0
 		},
 		{
+			name       => 'model_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
 			name       => 'mediaHypothesis',
 			printOrder => 0,
 			perm       => 'rw',
@@ -1491,10 +1512,18 @@ $objectDefinitions->{GapgenFormulation} = {
 	primarykeys => [qw(uuid)],
 	links       => [
 		{
+			name      => "model",
+			attribute => "model_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Model",
+			weak      => 0
+		},
+		{
 			name      => "fbaFormulation",
 			attribute => "fbaFormulation_uuid",
-			parent    => "Model",
-			method    => "fbaFormulations"
+			parent    => "ModelSEED::Store",
+			method    => "FBAFormulation",
+			weak      => 0
 		},
 		{
 			name      => "referenceMedia",
@@ -1523,6 +1552,13 @@ $objectDefinitions->{GapfillingFormulation} = {
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
 			req        => 0
+		},
+		{
+			name       => 'model_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
 		},
 		{
 			name       => 'mediaHypothesis',
@@ -1683,10 +1719,18 @@ $objectDefinitions->{GapfillingFormulation} = {
 	primarykeys => [qw(uuid)],
 	links       => [
 		{
+			name      => "model",
+			attribute => "model_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Model",
+			weak      => 0
+		},
+		{
 			name      => "fbaFormulation",
 			attribute => "fbaFormulation_uuid",
-			parent    => "Model",
-			method    => "fbaFormulations"
+			parent    => "ModelSEED::Store",
+			method    => "FBAFormulation",
+			weak      => 0
 		},
 		{
 			name      => "guaranteedReactions",
@@ -3099,6 +3143,30 @@ $objectDefinitions->{Model} = {
 			type       => 'ModelSEED::uuid',
 			req        => 0
 		},
+		{
+			name       => 'fbaFormulation_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'gapfillingFormulation_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'gapgenFormulation_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		}
 	],
 	subobjects => [
 		{
@@ -3124,22 +3192,31 @@ $objectDefinitions->{Model} = {
 			printOrder => 3,
 			class      => "ModelReaction",
 			type       => "child"
-		},
-		{
-			name       => "fbaFormulations",
-			printOrder => -1,
-			class      => "FBAFormulation",
-			type       => "child"
-		},
-		{
-			name       => "Gapfillingformulations",
-			printOrder => -1,
-			class      => "GapfillingFormulation",
-			type       => "child"
-		},
+		}
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
+		{
+			name      => "fbaFormulations",
+			attribute => "fbaFormulation_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "FBAFormulation",
+			array     => 1
+		},
+		{
+			name      => "gapfillingFormulations",
+			attribute => "gapfillingFormulation_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapfillingFormulation",
+			array     => 1
+		},
+		{
+			name      => "gapgenFormulations",
+			attribute => "gapgenFormulation_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapgenFormulation",
+			array     => 1
+		},
 		{
 			name      => "biochemistry",
 			attribute => "biochemistry_uuid",
@@ -3163,7 +3240,7 @@ $objectDefinitions->{Model} = {
 		}
 	],
 	reference_id_types => [qw(uuid alias)],
-	version            => 1.0,
+	version            => 2.0,
 };
 
 $objectDefinitions->{Biomass} = {

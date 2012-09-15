@@ -101,7 +101,9 @@ sub buildFBAFormulation {
 	#print STDERR Data::Dumper->Dump([$data]);
 	#Creating objects and populating with provenance objects
 	my $form = ModelSEED::MS::FBAFormulation->new({
-		parent => $model,
+		parent => $model->parent(),
+		model_uuid => $model->uuid(),
+		model => $model,
 		media_uuid => $media->uuid(),
 		type => $data->{type},
 		notes => $data->{notes},
@@ -128,6 +130,7 @@ sub buildFBAFormulation {
 		parameters => $self->stringToHash($data->{parameters}),
 		numberOfSolutions => $data->{numberOfSolutions},
 	});
+	push(@{$model->fbaFormulation_uuids()},$form);
 	$form->parsePhenotypeSimulations({fbaPhenotypeSimulations => $data->{fbaPhenotypeSimulations}});
 	$form->parseObjectiveTerms({objTerms => $data->{fbaObjectiveTerms}});
 	$form->parseGeneKOList({string => $data->{geneKO}});
@@ -185,7 +188,9 @@ sub buildGapfillingFormulation {
 	});
 	#Creating gapfilling formulation object
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
-		parent => $model,
+		parent => $model->parent(),
+		model_uuid => $model->uuid(),
+		model => $model,
 		fbaFormulation_uuid => $fbaform->uuid(),
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => $data->{balancedReactionsOnly},
@@ -203,7 +208,7 @@ sub buildGapfillingFormulation {
 		gprHypothesis => $data->{gprHypothesis},
 		reactionAdditionHypothesis => $data->{reactionAdditionHypothesis},
 	});
-	$model->add("fbaFormulations",$fbaform);
+	push(@{$model->gapfillingFormulation_uuids()},$gapform);
 	$gapform->parseGeneCandidates({geneCandidates => $data->{gapfillingGeneCandidates}});
 	$gapform->parseSetMultipliers({sets => $data->{reactionSetMultipliers}});
 	$gapform->parseGuaranteedReactions({string => $data->{guaranteedReactions}});
@@ -252,7 +257,9 @@ sub buildGapgenFormulation {
 	}
 	#Creating gapfilling formulation object
 	my $gapgenform = ModelSEED::MS::GapgenFormulation->new({
-		parent => $model,
+		parent => $model->parent(),
+		model_uuid => $model->uuid(),
+		model => $model,
 		fbaFormulation_uuid => $fbaform->uuid(),
 		fbaFormulation => $fbaform,
 		referenceMedia_uuid => $media->uuid(),
@@ -262,7 +269,7 @@ sub buildGapgenFormulation {
 		gprHypothesis => $data->{gprHypothesis},
 		reactionRemovalHypothesis => $data->{reactionRemovalHypothesis},
 	});
-	$model->add("fbaFormulations",$fbaform);
+	push(@{$model->gapgenFormulation_uuids()},$gapgenform);
 	return $gapgenform;
 }
 
@@ -475,6 +482,51 @@ sub reconcileReference {
 		$output->{id} = $3;
 	}
 	return $output;
+}
+
+=head3 createFromAPI
+Definition:
+	ModelSEED::MS::$class = createFromAPI(string);
+Description:
+	Parses the input reference and translates to class, id, and type
+
+=cut
+
+sub createFromAPI {
+	my ($self,$class,$parent,$data) = @_;
+	$data->{parent} = $parent;
+	if ($class eq "Media") {
+		$data = ModelSEED::utilities::ARGS($data,["name","compounds"],{},{
+			isdefined => "isDefined",
+			isminimal => "isMinimal",
+			id => "name"
+		});
+		my $cpds = [split(/;/,$data->{compounds})];
+		my $concentrations = [];
+		if (defined($data->{concentrations})) {
+			$concentrations = [split(/;/,$data->{concentrations})];
+		}
+		$data->{mediacompounds} = [];
+		for (my $i=0; $i < @{$cpds};$i++) {
+			(my $cpd,my $type,my $idtype,my $reftext) = $parent->interpretReference($cpds->[$i],"Compound");
+			if (defined($cpd)) {
+				my $conc = "0.001";
+				if (defined($concentrations->[$i])) {
+					$conc = $concentrations->[$i];
+				}
+				push(@{$data->{mediacompounds}},{
+					compound_uuid => $cpd->uuid(),
+					concentration => $conc,
+					maxFlux => 100,
+					minFlux => -100
+				});
+			} else {
+				die "Cannot find media compound ".$cpds->[$i]."\n";
+			}
+		}
+	}
+	my $fullclass = "ModelSEED::MS::".$class;
+	return $fullclass->new($data);
 }
 
 __PACKAGE__->meta->make_immutable;

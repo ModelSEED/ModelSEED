@@ -809,7 +809,7 @@ sub parseGapfillingResults {
 	my $directory = $self->parent()->jobDirectory();
 	if (-e $directory."/GapfillingComplete.txt") {
 		my $gfsolution = $self->add("gapfillingSolutions",{});
-		$gfsolution->loadFromFile({filename => $directory."/GapfillingComplete.txt"});
+		$gfsolution->loadFromFile({filename => $directory."/CompleteGapfillingOutput.txt"});
 	}
 }
 =head3 parseGapgenResults

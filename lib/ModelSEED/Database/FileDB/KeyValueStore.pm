@@ -373,9 +373,9 @@ sub save_object {
 sub _save_object {
     my ($data, $id, $object) = @_;
 
-    if (_has_object($data, $id)) {
-	return 0;
-    }
+    #if (_has_object($data, $id)) {
+	#return 0;
+    #}
 
     my $json_obj;
     my $ref = ref($object);

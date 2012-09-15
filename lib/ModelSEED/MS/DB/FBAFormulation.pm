@@ -18,13 +18,14 @@ extends 'ModelSEED::MS::IndexedObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has regulatorymodel_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -68,6 +69,7 @@ has fbaPhenotypeSimulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
+has model => (is => 'rw', isa => 'ModelSEED::MS::Model', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model');
 has media => (is => 'rw', isa => 'ModelSEED::MS::Media', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', weak_ref => 1);
 has geneKOs => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Feature]', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs');
 has reactionKOs => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs');
@@ -77,6 +79,10 @@ has secondaryMedia => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Media]', type
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_model {
+  my ($self) = @_;
+  return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
+}
 sub _build_media {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','media',$self->media_uuid());
@@ -117,6 +123,13 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'regulatorymodel_uuid',
+            'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => -1,
+            'name' => 'model_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
           },
@@ -337,7 +350,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, media_uuid => 3, secondaryMedia_uuids => 4, fva => 5, comboDeletions => 6, fluxMinimization => 7, findMinimalMedia => 8, notes => 9, expressionData_uuid => 10, objectiveConstraintFraction => 11, allReversible => 12, defaultMaxFlux => 13, defaultMaxDrainFlux => 14, defaultMinDrainFlux => 15, maximizeObjective => 16, decomposeReversibleFlux => 17, decomposeReversibleDrainFlux => 18, fluxUseVariables => 19, drainfluxUseVariables => 20, geneKO_uuids => 21, reactionKO_uuids => 22, parameters => 23, uptakeLimits => 24, numberOfSolutions => 25, simpleThermoConstraints => 26, thermodynamicConstraints => 27, noErrorThermodynamicConstraints => 28, minimizeErrorThermodynamicConstraints => 29};
+my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, uptakeLimits => 25, numberOfSolutions => 26, simpleThermoConstraints => 27, thermodynamicConstraints => 28, noErrorThermodynamicConstraints => 29, minimizeErrorThermodynamicConstraints => 30};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

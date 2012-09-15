@@ -248,6 +248,12 @@ sub _build_id {
 
 sub interpretReference {
 	my ($self,$ref,$expectedType) = @_;
+	if (defined($expectedType)) {
+		my $class = "ModelSEED::MS::".$expectedType;
+		if ($class->can("recognizeReference")) {
+			$ref = $class->recognizeReference($ref);
+		} 
+	}
 	my $array = [split(/\//,$ref)];
 	if (!defined($array->[2]) || (defined($expectedType) && $array->[0] ne $expectedType)) {
 		if (defined($expectedType) && @{$array} == 1) {
@@ -579,6 +585,9 @@ sub getLinkedObject {
     my $source = lc($attribute);
     if ($sourceType eq 'ModelSEED::Store') {
         my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $source);
+        if (!defined($self->store)) {
+        	ModelSEED::utilities::ERROR("Getting object from undefined store!");
+        }
         return $self->store->get_object($ref);
     } else {
         my $source = lc($sourceType);
@@ -620,7 +629,9 @@ sub biochemistry {
     my $parent = $self->parent();
     if (defined($parent) && ref($parent) eq "ModelSEED::MS::Biochemistry") {
         return $parent;
-    } elsif (defined($parent)) {
+    } elsif (ref($self) eq "ModelSEED::MS::Biochemistry") {
+    	return $self;
+	} elsif (defined($parent)) {
         return $parent->biochemistry();
     }
     ModelSEED::utilities::ERROR("Cannot find Biochemistry object in tree!");

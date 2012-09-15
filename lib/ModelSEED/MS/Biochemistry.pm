@@ -500,125 +500,130 @@ sub addReactionFromHash {
 
 sub __upgrade__ {
 	my ($class,$version) = @_;
-	if ($version eq "1") {
-		return \&v1_to_v2;
-	} 
-}
-
-sub v1_to_v2 {
-	my ($hash) = @_;
-	my $bioStruct = ModelSEED::MS::BiochemistryStructures->new({});
-	if (defined($hash->{compounds})) {
-		foreach my $cpd (@{$hash->{compounds}}) {
-			if (defined($cpd->{compoundCues})) {
-				foreach my $cpdcues (@{$cpd->{compoundCues}}) {
-					$cpd->{cues}->{$cpdcues->{cue_uuid}} = $cpdcues->{count};
-				}
-				delete($cpd->{compoundCues});
-			}
-			if (defined($cpd->{pks})) {
-				foreach my $pk (@{$cpd->{pks}}) {
-					if ($pk->{type} eq "pKa") {
-						push(@{$cpd->{pkas}->{$pk->{atom}}},$pk->{pk});
-					} else {
-						push(@{$cpd->{pkbs}->{$pk->{atom}}},$pk->{pk});
-					}	
-				}
-				delete($cpd->{pks});
-			}
-			if (defined($cpd->{structures})) {
-				foreach my $struct (@{$cpd->{structures}}) {
-					my $newStruct = $bioStruct->add("structures",{
-						data => $struct->{structure},
-						type => $struct->{type}
-					});
-					push(@{$cpd->{structure_uuids}},$newStruct->uuid());
-				}
-				delete($cpd->{structures});
-			}
-		}
-		if (defined($hash->{parent})) {
-			#$hash->{parent}->save_object("biochemistryStructures/".$bioStruct->uuid(),$bioStruct);
-		}
-	}
-	if (defined($hash->{compoundSets})) {
-		foreach my $set (@{$hash->{compoundSets}}) {
-			foreach my $setcpd (@{$hash->{compounds}}) {
-				push(@{$set->{compound_uuids}},$setcpd->{compound_uuid});
-			}
-			delete($set->{compounds});
-		}
-	}
-	if (defined($hash->{reactionSets})) {
-		foreach my $set (@{$hash->{reactionSets}}) {
-			foreach my $setrxn (@{$hash->{reactions}}) {
-				push(@{$set->{reaction_uuids}},$setrxn->{reaction_uuid});
-			}
-			delete($set->{reactions});
-		}
-	}
-	if (defined($hash->{reactions})) {
-		my $rxncomp;
-		foreach my $cmp (@{$hash->{compartments}}) {
-			if ($cmp->{id} eq "c") {
-				$rxncomp = $cmp->{uuid};
-			}
-		}
-		foreach my $rxn (@{$hash->{reactions}}) {
-			if (defined($rxn->{reactionCues})) {
-				foreach my $rxncues (@{$rxn->{reactionCues}}) {
-					$rxn->{cues}->{$rxncues->{cue_uuid}} = $rxncues->{count};
-				}
-				delete($rxn->{reactionCues});
-			}
-			if (defined($rxn->{reagents})) {
-				my $newReagents = [];
-				my $reagentHash = {};
-				my $cofactorHash = {};
-				foreach my $reagent (@{$rxn->{reagents}}) {
-					if (!defined($reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}})) {
-						$reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} = 0;
-						$cofactorHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} = $reagent->{isCofactor};
-					}
-					if ($reagent->{isTransport} == 0) {
-						$reagentHash->{$reagent->{compound_uuid}}->{$rxncomp} += $reagent->{coefficient};
-					} else {
-						$reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} += $reagent->{coefficient};
-						$reagentHash->{$reagent->{compound_uuid}}->{$rxncomp} += (-1*$reagent->{coefficient});
-					}
-				}
-				foreach my $cpd (keys(%{$reagentHash})) {
-					foreach my $cmp (keys(%{$reagentHash->{$cpd}})) {
-						if ($reagentHash->{$cpd}->{$cmp} != 0) {
-							push(@{$newReagents},{
-								compound_uuid => $cpd,
-								compartment_uuid => $cmp,
-								coefficient => $reagentHash->{$cpd}->{$cmp},
-								isCofactor => $cofactorHash->{$cpd}->{$cmp},
-							});
+	if ($version == 1) {
+		return sub {
+			my ($hash) = @_;
+			print "Upgrading biochemistry from v1 to v2!\n";
+			my $bioStruct = ModelSEED::MS::BiochemistryStructures->new({});
+			if (defined($hash->{compounds})) {
+				foreach my $cpd (@{$hash->{compounds}}) {
+					if (defined($cpd->{compoundCues})) {
+						foreach my $cpdcues (@{$cpd->{compoundCues}}) {
+							$cpd->{cues}->{$cpdcues->{cue_uuid}} = $cpdcues->{count};
 						}
+						delete($cpd->{compoundCues});
+					}
+					if (defined($cpd->{pks})) {
+						foreach my $pk (@{$cpd->{pks}}) {
+							if ($pk->{type} eq "pKa") {
+								push(@{$cpd->{pkas}->{$pk->{atom}}},$pk->{pk});
+							} else {
+								push(@{$cpd->{pkbs}->{$pk->{atom}}},$pk->{pk});
+							}	
+						}
+						delete($cpd->{pks});
+					}
+					if (defined($cpd->{structures})) {
+						foreach my $struct (@{$cpd->{structures}}) {
+							my $newStruct = $bioStruct->add("structures",{
+								data => $struct->{structure},
+								type => $struct->{type}
+							});
+							push(@{$cpd->{structure_uuids}},$newStruct->uuid());
+						}
+						delete($cpd->{structures});
 					}
 				}
-				$rxn->{reagents} = $newReagents;
-			}
-		}
-	}
-	if (defined($hash->{cues})) {
-		foreach my $cue (@{$hash->{cues}}) {
-			if (defined($cue->{structures})) {
-				foreach my $struct (@{$cue->{structures}}) {
-					my $newStruct = $bioStruct->add("structures",{
-						data => $struct->{structure},
-						types => $struct->{type}
-					});
-					$cue->{structure_uuid} = $newStruct->uuid();
+				if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+					$hash->{parent}->save_object("biochemistryStructures/".$hash->{uuid},$bioStruct);
 				}
-				delete($cue->{structures});
+				$hash->{biochemistryStructures_uuid} = $bioStruct->uuid();
 			}
-		}
+			if (defined($hash->{compoundSets})) {
+				foreach my $set (@{$hash->{compoundSets}}) {
+					foreach my $setcpd (@{$hash->{compounds}}) {
+						push(@{$set->{compound_uuids}},$setcpd->{compound_uuid});
+					}
+					delete($set->{compounds});
+				}
+			}
+			if (defined($hash->{reactionSets})) {
+				foreach my $set (@{$hash->{reactionSets}}) {
+					foreach my $setrxn (@{$hash->{reactions}}) {
+						push(@{$set->{reaction_uuids}},$setrxn->{reaction_uuid});
+					}
+					delete($set->{reactions});
+				}
+			}
+			if (defined($hash->{reactions})) {
+				my $rxncomp;
+				foreach my $cmp (@{$hash->{compartments}}) {
+					if ($cmp->{id} eq "c") {
+						$rxncomp = $cmp->{uuid};
+					}
+				}
+				foreach my $rxn (@{$hash->{reactions}}) {
+					if (defined($rxn->{reactionCues})) {
+						foreach my $rxncues (@{$rxn->{reactionCues}}) {
+							$rxn->{cues}->{$rxncues->{cue_uuid}} = $rxncues->{count};
+						}
+						delete($rxn->{reactionCues});
+					}
+					if (defined($rxn->{reagents})) {
+						my $newReagents = [];
+						my $reagentHash = {};
+						my $cofactorHash = {};
+						foreach my $reagent (@{$rxn->{reagents}}) {
+							if (!defined($reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}})) {
+								$reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} = 0;
+								$cofactorHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} = $reagent->{isCofactor};
+							}
+							if ($reagent->{isTransport} == 0) {
+								$reagentHash->{$reagent->{compound_uuid}}->{$rxncomp} += $reagent->{coefficient};
+							} else {
+								$reagentHash->{$reagent->{compound_uuid}}->{$reagent->{destinationCompartment_uuid}} += $reagent->{coefficient};
+								$reagentHash->{$reagent->{compound_uuid}}->{$rxncomp} += (-1*$reagent->{coefficient});
+							}
+						}
+						foreach my $cpd (keys(%{$reagentHash})) {
+							foreach my $cmp (keys(%{$reagentHash->{$cpd}})) {
+								if ($reagentHash->{$cpd}->{$cmp} != 0) {
+									push(@{$newReagents},{
+										compound_uuid => $cpd,
+										compartment_uuid => $cmp,
+										coefficient => $reagentHash->{$cpd}->{$cmp},
+										isCofactor => $cofactorHash->{$cpd}->{$cmp},
+									});
+								}
+							}
+						}
+						$rxn->{reagents} = $newReagents;
+					}
+				}
+			}
+			if (defined($hash->{cues})) {
+				foreach my $cue (@{$hash->{cues}}) {
+					if (defined($cue->{structures})) {
+						foreach my $struct (@{$cue->{structures}}) {
+							my $newStruct = $bioStruct->add("structures",{
+								data => $struct->{structure},
+								types => $struct->{type}
+							});
+							$cue->{structure_uuid} = $newStruct->uuid();
+						}
+						delete($cue->{structures});
+					}
+				}
+			}
+			$hash->{__VERSION__} = 2;
+			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+				my $parent = $hash->{parent};
+				delete($hash->{parent});
+				$parent->save_data("biochemistry/".$hash->{uuid},$hash,{schema_update => 1});
+			}
+			return $hash;
+		};
 	}
-	#$hash->{parent}->save_data("biochemistry/".$hash->{uuid},$hash);
-	return $hash;
 }
 
 __PACKAGE__->meta->make_immutable;

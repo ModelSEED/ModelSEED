@@ -17,12 +17,17 @@ Description:
 =cut
 
 sub ARGS {
-	my ($args,$mandatoryArguments,$optionalArguments) = @_;
+	my ($args,$mandatoryArguments,$optionalArguments,$substitutions) = @_;
 	if (!defined($args)) {
 	    $args = {};
 	}
 	if (ref($args) ne "HASH") {
 		ModelSEED::utilities::ERROR("Arguments not hash");	
+	}
+	if (defined($substitutions) && ref($substitutions) eq "HASH") {
+		foreach my $original (keys(%{$substitutions})) {
+			$args->{$original} = $args->{$substitutions->{$original}};
+		}
 	}
 	if (defined($mandatoryArguments)) {
 		for (my $i=0; $i < @{$mandatoryArguments}; $i++) {

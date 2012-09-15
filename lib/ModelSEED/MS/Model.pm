@@ -1290,5 +1290,31 @@ sub computeNetworkDistances {
 	return $tbl;
 }
 
+sub __upgrade__ {
+	my ($class,$version) = @_;
+	if ($version eq "1") {
+		return sub {
+			my ($hash) = @_;
+			print "Upgrading model from v1 to v2!\n";
+			if (defined($hash->{fbaFormulations})) {
+				delete($hash->{fbaFormulations});
+			}
+			if (defined($hash->{gapfillingFormulations})) {
+				delete($hash->{gapfillingFormulations});
+			}
+			if (defined($hash->{gapgenFormulations})) {
+				delete($hash->{gapgenFormulations});
+			}
+			$hash->{__VERSION__} = 2;
+			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+				my $parent = $hash->{parent};
+				delete($hash->{parent});
+				$parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
+			}
+			return $hash;
+		};
+	} 
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

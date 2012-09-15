@@ -159,6 +159,45 @@ sub _buildknockouts {
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 biochemistry
+
+Definition:
+	ModelSEED::MS::Biochemistry = biochemistry();
+Description:
+	Returns biochemistry behind gapfilling object
+=cut
+
+sub biochemistry {
+	my ($self) = @_;
+	$self->model()->biochemistry();	
+}
+
+=head3 annotation
+
+Definition:
+	ModelSEED::MS::Annotation = annotation();
+Description:
+	Returns annotation behind gapfilling object
+=cut
+
+sub annotation {
+	my ($self) = @_;
+	$self->model()->annotation();	
+}
+
+=head3 mapping
+
+Definition:
+	ModelSEED::MS::Mapping = mapping();
+Description:
+	Returns mapping behind gapfilling object
+=cut
+
+sub mapping {
+	my ($self) = @_;
+	$self->model()->mapping();	
+}
+
 =head3 runFBA
 
 Definition:
@@ -198,7 +237,7 @@ sub createJobDirectory {
 		biomassflux => "FLUX"
 	};
 	#Print model to Model.tbl
-	my $model = $self->parent();
+	my $model = $self->model();
 	my $mdlData = ["REACTIONS","LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG"];
 	my $mdlrxn = $model->modelreactions();
 	for (my $i=0; $i < @{$mdlrxn}; $i++) {
