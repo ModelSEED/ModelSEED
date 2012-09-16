@@ -19,6 +19,7 @@ sub opt_spec {
         ["verbose|v", "Print out additional information about the object, tab-delimited"],
         ["mine", "Only list items that I own"],
         ["with|w:s@", "Append a tab-delimited column with this attribute"],
+        ["query|q:s@", "Only list sub objects matching a query"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -60,7 +61,20 @@ sub execute {
                 my $base_object = $store->get_object($ref->parent_objects->[0]);
                 my $subtypes = $ref->base_types;
                 my $subtype  = $subtypes->[@$subtypes - 1];
-                my $data     = $base_object->$subtype;
+                my $data;
+                if (defined($opts->{query})) {
+                	my $queryHash = {};
+                	my $queries = [split(/,/,join(",",@{$opts->{query}}))];
+                	foreach my $query (@{$queries}) {
+                		my $array = [split(/\=/,$query)];
+                		if (defined($array->[1])) {
+                			$queryHash->{$array->[0]} = $array->[1];
+                		}
+                	}
+                	$data = $base_object->queryObjects($subtype,$queryHash);
+                } else {
+                	$data = $base_object->$subtype;
+                }
                 $self->printForData($ref, $data, $opts);
             } else {
                 my $data = $store->get_data($ref->parent_objects->[0]);
@@ -134,7 +148,7 @@ sub determineColumns {
     my $type  = $types->[@$types - 1];
     my $with = [ "Reference" ];
     my %with = map { $_ => 1 } @$with;
-    push(@$with, @{$opts->{with} || []});
+    push(@$with, split(/,/,join(",",@{$opts->{with} || []})));
     if ( $opts->{verbose} ) {
         # If we asked for verbose, print out some default attributes
         my $additional_with = $self->verboseRules($type);
