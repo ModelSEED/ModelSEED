@@ -572,10 +572,11 @@ sub setupFBAExperiments {
 			push(@{$phenoData},$fbaSims->[$i]->uuid()."\t".$phenoko."\t".$media);
 		}
 		#Adding all additional media used as secondary media to FBAFormulation
+		my $mediaRef = $self->secondaryMedia();
 		foreach my $tempmedia (keys(%{$mediaHash})) {
 			if ($tempmedia ne $self->media()->name()) {
 				push(@{$self->secondaryMedia_uuids()},$mediaHash->{$tempmedia}->uuid());
-				push(@{$self->secondaryMedia()},$mediaHash->{$tempmedia});
+				push(@{$mediaRef},$mediaHash->{$tempmedia});
 			}
 		}
 		ModelSEED::utilities::PRINTFILE($self->jobDirectory()."/".$fbaExpFile,$phenoData);
@@ -618,7 +619,7 @@ sub createTemporaryMedia {
 		};
 	}
 	foreach my $cpd (@{$args->{additionalCpd}}) {
-		$cpdHash->{$cpd->compound_uuid()} = {
+		$cpdHash->{$cpd->uuid()} = {
 			compound_uuid => $cpd->uuid(),
 			concentration => 0.001,
 			maxFlux => 100,
@@ -626,7 +627,7 @@ sub createTemporaryMedia {
 		};
 	}
 	foreach my $cpd (keys(%{$cpdHash})) {
-		$newMedia->add("mediacompounds",$cpd);	
+		$newMedia->add("mediacompounds",$cpdHash->{$cpd});	
 	}
 	return $newMedia;
 }

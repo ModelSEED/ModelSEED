@@ -66,18 +66,28 @@ sub execute {
 		my $newpheno = {label => $i,media => $row->[$columns->{media}]};
 		if ($columns->{geneKOs} != -1 && $row->[$columns->{geneKOs}] ne "none") {
 			$newpheno->{geneKOs} = [split(/,/,$row->[$columns->{geneKOs}])];
+		} else {
+			$newpheno->{geneKOs} = [];
 		}
 		if ($columns->{reactionKOs} != -1 && $row->[$columns->{reactionKOs}] ne "none") {
 			$newpheno->{reactionKOs} = [split(/,/,$row->[$columns->{reactionKOs}])];
+		} else {
+			$newpheno->{reactionKOs} = [];
 		}
 		if ($columns->{additionalCpds} != -1 && $row->[$columns->{additionalCpds}] ne "none") {
 			$newpheno->{additionalCpds} = [split(/,/,$row->[$columns->{additionalCpds}])];
+		} else {
+			$newpheno->{additionalCpds} = [];
 		}
 		if ($columns->{pH} != -1) {
 			$newpheno->{pH} = $row->[$columns->{pH}];
+		} else {
+			$newpheno->{pH} = 7;
 		}
 		if ($columns->{temperature} != -1) {
 			$newpheno->{temperature} = $row->[$columns->{temperature}];
+		} else {
+			$newpheno->{temperature} = 298;
 		}
 		if ($columns->{growth} != -1) {
 			$newpheno->{growth} = $row->[$columns->{growth}];
