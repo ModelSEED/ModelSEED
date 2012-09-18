@@ -98,6 +98,14 @@ sub execute {
                 print STDERR "Error, unknown option: '$var'.\n";
                 exit;
             }
+
+            $val = $config->validate_user_option($var, $val);
+
+            unless (defined($val)) {
+                print STDERR "Error with option: $var=$val\n";
+                exit;
+            }
+
             push(@$vars, [$var, $val]);
         }
 

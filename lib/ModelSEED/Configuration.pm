@@ -68,6 +68,7 @@ use Moose; #X::Singleton;
 use namespace::autoclean;
 use JSON qw(encode_json decode_json);
 use Try::Tiny;
+use Cwd qw(abs_path);
 use File::Path qw(mkpath);
 use File::Basename qw(dirname);
 use autodie;
@@ -104,10 +105,25 @@ sub possible_user_options {
     }
 }
 
-
 sub user_options {
     my ($self) = @_;
     return $self->config->{user_options};
+}
+
+sub validate_user_option {
+    my ($self, $option, $value) = @_;
+
+    # transform relative path to absolute, if dealing with files/dirs
+    if ($option eq "ERROR_DIR"
+        || $option eq "MFATK_CACHE"
+        || $option eq "MFATK_BIN"
+        || $option eq "CPLEX_LICENCE") {
+        $value = abs_path($value);
+    }
+
+    # should do additional validation on options
+
+    return $value
 }
 
 sub _buildConfig {
