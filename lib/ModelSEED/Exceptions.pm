@@ -39,6 +39,11 @@ use Exception::Class (
     'ModelSEED::Exception::CLI' => {
         description => "Base class for exceptions that support cli_error_text",
     },
+    'ModelSEED::Exception::Basic' => {
+        isa         => "ModelSEED::Exception::CLI",
+        description => "A generic exception with a message",
+        fields      => [qw( message )],
+      },
     'ModelSEED::Exception::Database' => {
         isa => "ModelSEED::Exception::CLI",
         description => "Exception with ModelSEED::Database"
@@ -78,6 +83,16 @@ use strict;
 use warnings;
 sub cli_error_text {
     return "An unknown error occured.\n";
+}
+1;
+
+package ModelSEED::Exception::Basic;
+use strict;
+use warnings;
+sub cli_error_text {
+    my ($self) = @_;
+    my $message = $self->message;
+    return "An error occured:\n$message";
 }
 1;
 

@@ -191,6 +191,26 @@ sub descendants {
     return $descendants;
 }
 
+sub init_database {
+    ModelSEED::Expcetion::Basic->throw(
+        message => <<ND
+Cannot call init_database on ModelSEED::Database::Composite.
+Call this function on the specific, non-composite,
+database instance instead.
+ND
+    );
+}
+
+sub delete_database {
+    ModelSEED::Exception::Basic->throw(
+        message => <<ND
+Cannot call delete_database on ModelSEED::Database::Composite.
+Call this function on the specific, non-composite,
+database instance instead.
+ND
+    );
+}
+
 sub has_data {
     my $self = shift @_;
     my $val = 0;

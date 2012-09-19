@@ -172,6 +172,35 @@ Return a hash-ref of uuid to array-ref of parent uuids for each
 object that is a descendant of the current object. This hash includes
 the current object uuid as a key.
 
+=head2 Database Setup and Teardown Functions
+
+=head3 init_database
+
+Called with no arguments to initialize the database. This should
+be called once before running any other database functions. This
+function is responsible for one-time operations like creating
+metadata, setting up indexes, etc. Returns true if successful,
+otherwise false.
+
+=head3 delete_database
+
+    \$ = $db->delete_database(\%);
+
+This function does clean-up operations to remove the database from
+the system, returning true if it succeeded, false otherwise.  The
+function accepts a hash reference that currently supports one option:
+
+=over 4
+
+=item keep_data
+
+This is a boolean indicating that the data stored should not be
+deleted. If this is supplied and true, the delete_database function
+should preserve the data objects currently stored. This option is
+useful if you need to re-initialize a database for whatever reason.
+
+=back
+
 =cut
 
 package ModelSEED::Database;
@@ -193,5 +222,8 @@ requires 'remove_viewer';
 requires 'set_public';
 requires 'descendants';
 requires 'ancestors';
+# Database initialization / deletion functions
+requires 'init_database';
+requires 'delete_database';
 
 1;

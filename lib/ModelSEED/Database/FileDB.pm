@@ -474,4 +474,12 @@ sub _build_graph {
     return $graph;
 }
 
+# TODO : replace with needed logic:
+sub init_database {
+    return 1;
+}
+sub delete_database {
+    return 1;
+}
+
 1;

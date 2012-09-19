@@ -53,7 +53,7 @@ has JSON => (
 $ModelSEED::Database::MongoDBSimple::aliasCollection = "aliases";
 $ModelSEED::Database::MongoDBSimple::ancestorCollection = "ancestors";
 
-sub initialize {
+sub init_database {
     my ($self) = @_;
     my $alias_collection = $ModelSEED::Database::MongoDBSimple::aliasCollection;
     my $ancestor_collection = $ModelSEED::Database::MongoDBSimple::ancestorCollection;
@@ -66,6 +66,14 @@ sub initialize {
     $self->db->$ancestor_collection->ensure_index({ modDate => 1 });
     my $t = Tie::IxHash->new(type => 1, owner => 1, alias => 1);
     $self->db->$alias_collection->ensure_index($t);
+    return 1;
+}
+
+sub delete_database {
+    my ($self, $config) = @_;
+    return 1 if(defined $config && $config->{keep_data});
+    $self->db->drop();
+    return 1;
 }
 
 sub has_data {
