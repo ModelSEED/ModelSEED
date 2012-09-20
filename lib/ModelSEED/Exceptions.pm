@@ -70,6 +70,11 @@ use Exception::Class (
             searchAttribute searchUUID errorText
         )],
     },
+    'ModelSEED::Exception::MissingConfig' => {
+        isa => "ModelSEED::Exception::CLI",
+        description => "Error when a config value is not set",
+        fields => [qw( variable message )],
+    },
 );
 1;
 
@@ -110,7 +115,7 @@ ND
 
 package ModelSEED::Exception::BadReference;
 sub cli_error_text {
-    my ($self) = shift;
+    my $self = shift;
     my $refstr = $self->refstr;
     return <<ND;
 Bad reference: $refstr
@@ -131,7 +136,7 @@ ND
 
 package ModelSEED::Exception::InvalidAttribute;
 sub cli_error_text {
-    my ($self) = shift;
+    my $self = shift;
     my $object = $self->object;
     my $tried  = $self->invalid_attribute;
     my $type   = $object->meta->name;
@@ -147,7 +152,7 @@ ND
 
 package ModelSEED::Exception::BadObjectLink;
 sub cli_error_text {
-    my ($self) = shift;
+    my $self = shift;
     my $sourceObject = $self->searchSource;
     my $baseObject   = $self->searchBaseObject;
     my $baseType     = $self->searchBaseType;
@@ -165,6 +170,19 @@ under the attribute "$attr" with the UUID:
     $uuid
 
 $errorText
+ND
+}
+1;
+
+package ModelSEED::Exception::MissingConfig;
+sub cli_error_text {
+    my $self = shift;
+    my $variable = $self->variable;
+    my $message  = $self->message;
+    return <<ND;
+$variable configuration is undefined!
+$message
+    \$ ms config $variable=VALUE
 ND
 }
 1;
