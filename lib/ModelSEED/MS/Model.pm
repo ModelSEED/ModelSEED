@@ -1299,7 +1299,6 @@ sub __upgrade__ {
 	if ($version eq "1") {
 		return sub {
 			my ($hash) = @_;
-			print "Upgrading model from v1 to v2!\n";
 			if (defined($hash->{fbaFormulations})) {
 				delete($hash->{fbaFormulations});
 			}
@@ -1314,6 +1313,7 @@ sub __upgrade__ {
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
 				$parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
+                $hash->{parent} = $parent;
 			}
 			return $hash;
 		};
