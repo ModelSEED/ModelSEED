@@ -28,6 +28,7 @@ sub BUILD {
     my ($self) = @_;
 
     my $kvstore = $self->kvstore();
+
     if ($kvstore->is_new()) {
         $kvstore->save_object("aliases", {});
         $kvstore->save_object($SYSTEM_META, {});
@@ -47,6 +48,30 @@ sub BUILD {
         $kvstore->set_metadata($SYSTEM_META, 'parents_children', 1);
         print STDERR "Finished rebuilding FileDB metadata.\n";
     }
+}
+
+sub init_database {
+    my ($self) = @_;
+
+    # needs to be done before new(), so does this in BUILD
+    return 1;
+}
+
+sub delete_database {
+    my ($self, $config) = @_;
+
+    return 1 if (defined($config) && $config->{keep_data});
+
+    # rm all files
+    my $dir = $self->kvstore->directory;
+    my $file = $self->kvstore->filename;
+
+    unlink "$dir/$file.ind",
+      "$dir/$file.met",
+      "$dir/$file.dat",
+      "$dir/$file.lock";
+
+    return 1;
 }
 
 sub has_data {

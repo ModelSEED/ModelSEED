@@ -3,6 +3,7 @@ use strict;
 use common::sense;
 use Try::Tiny;
 use Module::Load;
+use ModelSEED::Exceptions;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
@@ -52,8 +53,8 @@ sub execute {
     }
     push(@{$ms->config->{stores}}, $config);
     $ms->save();
-
-    $self->_initializeDatabase($name, $opt->{type}, $config);
+    my $db = $self->_get_database_instance($config);
+    $db->init_database();
 }
 
 sub _buildConfig {
@@ -101,16 +102,20 @@ sub _buildConfig {
     return $config;
 }
 
-# put database specific initialization logic here
-# args are $type and $config
-sub _initializeDatabase {
-    my ($self, $name, $type, $config) = @_;
-    if ($type eq 'file') {
-        my $db = ModelSEED::Database::FileDB->new({
-            directory => $config->{directory},
-            filename  => $name
-        });
-    }
+sub _get_database_instance {
+    my ($self, $config) = @_;
+    my $class = $config->{class};
+    my $instance;
+    try {
+        load $class;
+        $instance = $class->new($config);
+    } catch {
+        ModelSEED::Exception::DatabaseConfigError->throw(
+            dbName => $config->{name},
+            configText => JSON->new()->pretty(1)->encode($config),
+        );
+    };
+    return $instance;
 }
 
 1;

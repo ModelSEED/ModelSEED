@@ -42,8 +42,8 @@ sub _uuid {
     my $db = ModelSEED::Database::MongoDBSimple->new( db_name => 'test',);
     my $type = "biochemistry";
     # Delete the database to get it clean and fresh
-    $db->db->drop();
-    $db->initialize();
+    $db->delete_database;
+    $db->init_database;
     my $ref1 = ModelSEED::Reference->new({
         ref => "biochemistry/alice/one"
     });
@@ -368,5 +368,37 @@ sub _uuid {
     is_deeply { map { $_ => 1 } @$got_ancestors }, { map { $_ => 1 } @$expect_ancestors };
     is_deeply scalar( @{$db->ancestor_graph($ref1,$alice)->{$merge->{uuid}}}), 2;
     $test_count += 2;
+}
+
+# Test init_database, delete_database operations
+{
+    my $db = ModelSEED::Database::MongoDBSimple->new( db_name => 'test',);
+    ok $db->init_database, "First init_database call should work";
+    ok $db->init_database, "Second init_database call should also work";
+    ok $db->delete_database, "Call to delete database should work";
+
+    ok $db->init_database, "Next call to init_database after delete should work";
+    my $ref1 = ModelSEED::Reference->new({
+        ref => "biochemistry/alice/one"
+    });
+    my $alice = ModelSEED::Auth::Basic->new({
+            username => "alice",
+            password => "password",
+    });
+    my $obj1 = { uuid => _uuid(), compounds => [{ uuid => _uuid() }] };
+    ok $db->save_data($ref1, $obj1, $alice), "Save object in init_ and delete_ tests should work";
+    my $all = $db->get_aliases(undef, $alice);
+    is scalar @$all, 1, "Should get one object from database";
+    ok $db->delete_database({ keep_data => 1 }), "Call to delete_database with keep_data should return ok";
+    ok $db->init_database, "Call to init after delete w/ keep_data should return ok";
+    my $all2 = $db->get_aliases(undef, $alice);
+    is scalar @$all2, 1, "Should get one object from db after delete w/ keep_data";
+    ok $db->delete_database, "Should return ok again from delete database";
+    ok $db->init_database, "Should return ok again from init database";
+    my $all3 = $db->get_aliases(undef, $alice);
+    is scalar @$all3, 0, "Should get no objects from db after delete without keep_data";
+    ok $db->delete_database; 
+    ok $db->delete_database, "Test double-delete";
+    $test_count += 14; 
 }
 done_testing($test_count);
