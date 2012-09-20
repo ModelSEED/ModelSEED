@@ -503,7 +503,6 @@ sub __upgrade__ {
 	if ($version == 1) {
 		return sub {
 			my ($hash) = @_;
-			print "Upgrading biochemistry from v1 to v2!\n";
 			my $bioStruct = ModelSEED::MS::BiochemistryStructures->new({});
 			if (defined($hash->{compounds})) {
 				foreach my $cpd (@{$hash->{compounds}}) {
@@ -620,6 +619,7 @@ sub __upgrade__ {
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
 				$parent->save_data("biochemistry/".$hash->{uuid},$hash,{schema_update => 1});
+                $hash->{parent} = $parent;
 			}
 			return $hash;
 		};
