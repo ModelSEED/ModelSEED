@@ -10,6 +10,7 @@ use ModelSEED::MS::DB::FBAFormulation;
 package ModelSEED::MS::FBAFormulation;
 use Moose;
 use namespace::autoclean;
+use ModelSEED::Exceptions;
 extends 'ModelSEED::MS::DB::FBAFormulation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -70,7 +71,15 @@ sub _buildmfatoolkitBinary {
             }
 	}
 	if (!-e $bin) {
-                ModelSEED::utilities::ERROR("Could not find MFAToolkit executable. Make sure it is in your path, or use the MS Config parameter, 'MFATK_BIN'");
+        ModelSEED::Exception::MissingConfig->throw(
+            variable => 'MFATK_BIN',
+            message => <<ND
+This is the directory that contains the mfatoolkit binary. If it
+is not already installed, this program can be downloaded from:
+https://github.com/modelseed/mfatoolkit
+Add the binary directory to your path or use the following command:
+ND
+        );
 	}
 	return $bin;
 }
