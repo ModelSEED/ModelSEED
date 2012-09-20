@@ -353,4 +353,45 @@ sub _uuid {
     $test_count += 2;
 }
 
+# TODO : Mabye fix this so a new call is not neccesary when
+#        delete_database is called. In other words, subsequent calls
+#        to init or delete leave the database in a well defined state.
+# Test init_database, delete_database operations
+{
+    my $dir = tempdir();
+    my $new_db_sub = sub {
+        return ModelSEED::Database::FileDB->new({ directory => $dir });
+    };
+    my $db = $new_db_sub->();
+    ok $db->init_database, "First init_database call should work";
+    ok $db->init_database, "Second init_database call should also work";
+    ok $db->delete_database, "Call to delete database should work";
+    $db = $new_db_sub->();
+
+    ok $db->init_database, "Next call to init_database after delete should work";
+    my $ref1 = ModelSEED::Reference->new({
+        ref => "biochemistry/alice/one"
+    });
+    my $alice = ModelSEED::Auth::Basic->new({
+            username => "alice",
+            password => "password",
+    });
+    my $obj1 = { uuid => _uuid(), compounds => [{ uuid => _uuid() }] };
+    ok $db->save_data($ref1, $obj1, $alice), "Save object in init_ and delete_ tests should work";
+    my $all = $db->get_aliases(undef, $alice);
+    is scalar @$all, 1, "Should get one object from database";
+    ok $db->delete_database({ keep_data => 1 }), "Call to delete_database with keep_data should return ok";
+    $db = $new_db_sub->();
+    ok $db->init_database, "Call to init after delete w/ keep_data should return ok";
+    my $all2 = $db->get_aliases(undef, $alice);
+    is scalar @$all2, 1, "Should get one object from db after delete w/ keep_data";
+    ok $db->delete_database, "Should return ok again from delete database";
+    $db = $new_db_sub->();
+    ok $db->init_database, "Should return ok again from init database";
+    my $all3 = $db->get_aliases(undef, $alice);
+    is scalar @$all3, 0, "Should get no objects from db after delete without keep_data";
+    $db->delete_database; 
+    $test_count += 12; 
+}
+
 done_testing($test_count);
