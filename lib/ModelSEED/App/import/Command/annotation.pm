@@ -98,6 +98,8 @@ sub execute {
         print "Fetching $mapping_alias...\n" if(defined($opts->{verbose}));
         my $mapping_ref = ModelSEED::Reference->new(ref => $mapping_alias);
         $config->{mapping} = $store->get_object($mapping_ref);
+    } else {
+            $self->usage_error("Must supply a mapping object when importing an annotation");
     }
     print "Getting annotation...\n" if(defined($opts->{verbose}));
     my $anno = $factory->build($config);
