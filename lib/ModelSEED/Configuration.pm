@@ -107,7 +107,12 @@ sub possible_user_options {
 
 sub user_options {
     my ($self) = @_;
-    return $self->config->{user_options};
+    my $options = $self->config->{user_options};
+    if(!defined $options) {
+        $options = $self->config->{user_options} =
+            $self->possible_user_options();
+    }
+    return $options;
 }
 
 sub validate_user_option {

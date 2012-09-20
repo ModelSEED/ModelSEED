@@ -79,7 +79,7 @@ sub execute {
         # trying to set option(s)
         if (scalar @$args == 0) {
             # print usage
-            print "Usage: ms config [-i|-r] OPTION[=value]\n";
+            print "Usage: ms config [-l|-r] OPTION[=value]\n";
             print "  e.g. ms config ERROR_DIR=/home/ms/errors\n";
             print "       ms config -r ERROR_DIR\n";
             exit;
