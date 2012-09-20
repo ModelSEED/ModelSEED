@@ -73,7 +73,7 @@ sub has_data {
     $ref = $self->_cast_ref($ref);
     my $uuid = $self->_get_uuid($ref, $auth);
     return 0 unless(defined($uuid));
-    my $fh = $self->db->get_gridfs->find_one({ uuid => $uuid });
+    my $fh = $self->db->get_gridfs->files->find_one({ uuid => $uuid });
     return (defined($fh)) ? 1 : 0;
 }
 
@@ -121,9 +121,19 @@ sub save_data {
             $update_alias = 1;
         }
     }
+    # Schema Update - mark existing files with "toRemove" flag
+    if ($config->{schema_update}) {
+        my $uuid = $ref->id;
+        $self->db->get_gridfs->files->update({ "uuid" => $uuid }, { '$set' => { "toRemove" => 1 } }, undef, "multi");
+    }
     # Now save object to collection
     my $fh = $self->_object_to_fh($object);
     $self->db->get_gridfs->insert($fh, { uuid => $object->{uuid} });
+    # Schema Update - remove existing files that were marked with "toRemove" flag
+    if ($config->{schema_update}) {
+        my $uuid = $ref->id;
+        $self->db->get_gridfs->files->remove({ "uuid" => $uuid, "toRemove" => 1 });
+    }
     # Update the ancestor and descendant data if we have an old UUID
     if(defined($oldUUID)) {
         $self->_update_ancestors_and_descendants(
