@@ -22,11 +22,12 @@ has compoundListString => ( is => 'rw', isa => 'Str',printOrder => '3', type => 
 sub _buildcompoundListString {
 	my ($self) = @_;
 	my $compoundListString = "";
-	for (my $i=0; $i < @{$self->mediacompounds()}; $i++) {
+	my $mediacpds = $self->mediacompounds();
+	for (my $i=0; $i < @{$mediacpds}; $i++) {
 		if (length($compoundListString) > 0) {
 			$compoundListString .= ";"	
 		}
-		my $cpd = $self->mediacompounds()->[$i];
+		my $cpd = $mediacpds->[$i];
 		$compoundListString .= $cpd->compound()->name();
 	}
 	return $compoundListString;

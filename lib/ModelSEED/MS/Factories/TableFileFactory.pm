@@ -262,6 +262,7 @@ sub createBiochemistry {
     print "Handling compounds!\n" if($args->{verbose});
 	for (my $i=0; $i < $cpds->size(); $i++) {
 		my $cpdRow = $cpds->row($i);
+		print $cpdRow->id()."\n" if($args->{verbose});
 		my $cpdData = {
 			name => $cpdRow->name(),
 			abbreviation => $cpdRow->abbrev(),
@@ -353,12 +354,18 @@ sub createBiochemistry {
 			 }
 		}
 	}
-	print "Handling media formulations!\n" if($args->{verobse});
+	print "Handling media formulations!\n" if($args->{verbose});
 	#Adding media formulations
 	my $medias = $self->mediaTbl();
 	my $mediacpdstbl = $self->mediacpdTbl();
+	my $rowHash = {};
+	for (my $j=0; $j < $mediacpdstbl->size(); $j++) {
+		my $mediacpdRow = $mediacpdstbl->row($j);
+		push(@{$rowHash->{$mediacpdRow->MEDIA()}},$mediacpdRow);
+	}
 	for (my $i=0; $i < $medias->size(); $i++) {
 		my $mediaRow = $medias->row($i);
+		print $mediaRow->id()."\n" if($args->{verbose});
 		my $type = "unknown";
 		if ($mediaRow->id() =~ m/^Carbon/ || $mediaRow->id() =~ m/^Nitrogen/ || $mediaRow->id() =~ m/^Sulfate/ || $mediaRow->id() =~ m/^Phosphate/) {
 			$type = "biolog";
@@ -375,11 +382,6 @@ sub createBiochemistry {
 			isMinimal => 0,
 			type => $type,
 		});
-		my $rowHash = {};
-		for (my $j=0; $j < $mediacpdstbl->size(); $j++) {
-			my $mediacpdRow = $mediacpdstbl->row($i);
-			push(@{$rowHash->{$mediacpdRow->MEDIA()}},$mediacpdRow);
-		}
 		if (defined($rowHash->{$mediaRow->id()})) {
 			my $mediacpds = $rowHash->{$mediaRow->id()};
 			for (my $j=0; $j < @{$mediacpds}; $j++) {
@@ -404,6 +406,7 @@ sub createBiochemistry {
 	my $directionTranslation = {"<=>" => "=","<=" => "<","=>" => ">"};
 	for (my $i=0; $i < $rxns->size(); $i++) {
 		my $rxnRow = $rxns->row($i);
+		print $rxnRow->id()."\n" if($args->{verbose});
 		my $data = {
 			name => $rxnRow->name(),
 			abbreviation => $rxnRow->abbrev(),
@@ -415,7 +418,7 @@ sub createBiochemistry {
 			status => $rxnRow->status(),
 		};
 		foreach my $key (keys(%{$data})) {
-			if (!defined($data->{$key})) {
+			if (!defined($data->{$key}) || $data->{$key} eq "") {
 				delete $data->{$key};
 			}
 		}
@@ -426,7 +429,6 @@ sub createBiochemistry {
 			aliasType => "ModelSEED",
 		});
         $biochemistry->add("reactions", $rxn);
-		print $rxnRow->id()."\n";
 		$biochemistry->addAlias({
 			attribute => "reactions",
 			aliasName => "ModelSEED",
@@ -454,7 +456,7 @@ sub createBiochemistry {
 		#Adding structural cues
 		if ($args->{addStructuralCues} == 1) {
             my $cueListString = $rxnRow->structuralCues();
-			next unless(defined($cueListString) && length($cueListString) > 0 && @{$rxn->reactionCues} == 0 );
+			next unless(defined($cueListString) && length($cueListString) > 0 && keys(%{$rxn->cues()}) == 0 );
             # PPO uses different delmiter from Model flat-files
             my $cueDelimiter = $self->_getDelimiterRegex($cueListString);
             my $list = [split(/$cueDelimiter/, $rxnRow->structuralCues)];

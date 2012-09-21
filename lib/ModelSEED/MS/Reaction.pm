@@ -118,7 +118,7 @@ sub createEquation {
 		if (!defined($rgtHash->{$id}->{$rgt->[$i]->compartment()->id()})) {
 			$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} = 0;
 		}
-		$rgtHash->{$id}->{$rxnCompID} += $rgt->[$i]->coefficient();
+		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
 	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0) {
 		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
@@ -185,6 +185,7 @@ sub loadFromEquation {
 	my $parts = [];
 	my $cpdCmpHash;
 	my $compHash;
+	my $compUUIDHash;
 	my $cpdHash;
 	for (my $i = 0; $i < @TempArray; $i++) {
 		if ($TempArray[$i] =~ m/^\(([\.\d]+)\)$/ || $TempArray[$i] =~ m/^([\.\d]+)$/) {
@@ -212,6 +213,7 @@ sub loadFromEquation {
 					hierarchy => 3
 				});
 			}
+			$compUUIDHash->{$comp->uuid()} = $comp;
 			$compHash->{$comp->id()} = $comp;
 			$NewRow->{compartment} = $comp;
 			my $cpd;
@@ -256,7 +258,6 @@ sub loadFromEquation {
 	        # Do not include reagents with zero coefficients
 	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
 	        # Do not include Hydrogen in reagents
-	        next if $cpdHash->{$cpduuid}->formula eq 'H';
 	        $self->add("reagents", {
 	            compound_uuid               => $cpduuid,
 	            compartment_uuid            => $cmpuuid,
