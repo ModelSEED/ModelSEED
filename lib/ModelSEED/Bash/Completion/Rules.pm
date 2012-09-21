@@ -16,7 +16,7 @@ our $rules = {
     'ms_whoami' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -27,6 +27,27 @@ our $rules = {
             {
                 'options' => [ 'verbose', 'mine', 'with', 'help' ],
                 'prefix'  => '--'
+            },
+            {
+                'options' =>
+                  [ 'biochemistry/', 'mapping/', 'model/', 'annotation/' ],
+                'prefix' => ''
+            },
+            {
+                'cmd'    => 'ms list biochemistry',
+                'prefix' => 'biochemistry/'
+            },
+            {
+                'cmd'    => 'ms list mapping',
+                'prefix' => 'mapping/'
+            },
+            {
+                'cmd'    => 'ms list model',
+                'prefix' => 'model/'
+            },
+            {
+                'cmd'    => 'ms list annotation',
+                'prefix' => 'annotation/'
             }
         ],
         'edges' => []
@@ -43,7 +64,7 @@ our $rules = {
     'genome_roles' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -52,7 +73,7 @@ our $rules = {
     'bio_validate' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -82,7 +103,7 @@ our $rules = {
     'genome_readable' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -181,7 +202,7 @@ our $rules = {
     'ms_logout' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -272,7 +293,7 @@ our $rules = {
     'bio_readable' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -294,7 +315,7 @@ our $rules = {
     'ms_pp' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -303,7 +324,7 @@ our $rules = {
     'ms_revert' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -312,7 +333,7 @@ our $rules = {
     'model_sbml' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -375,7 +396,7 @@ our $rules = {
     'stores_rm' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -431,7 +452,7 @@ our $rules = {
     'mapping_readable' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -456,7 +477,7 @@ our $rules = {
     'ms_login' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -528,7 +549,7 @@ our $rules = {
     'stores_prioritize' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -541,7 +562,7 @@ our $rules = {
     'model_tohtml' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -560,7 +581,7 @@ our $rules = {
     'model_readable' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -655,7 +676,7 @@ our $rules = {
     'genome_subsystems' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],
@@ -682,7 +703,7 @@ our $rules = {
     'ms_save' => {
         'completions' => [
             {
-                'options' => ['help'],
+                'options' => [ 'help' ],
                 'prefix'  => '--'
             }
         ],

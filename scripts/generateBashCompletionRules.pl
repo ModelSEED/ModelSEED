@@ -6,6 +6,7 @@ use Test::More tests => 4;
 use Test::Deep;
 use JSON::XS;
 use Data::Dumper;
+use Try::Tiny;
 
 my %topLevelCommands = qw(
     ms ModelSEED::App::mseed
@@ -87,6 +88,16 @@ sub process_command {
     }
     if(@$option_completions != 0) {
         push(@$completions, { "prefix" => "--", "options" => $option_completions });
+    }
+    # do arguments
+    my @arg_states;
+    try {
+        @arg_states = $cmd_pkg->arg_spec();
+    };
+    for(my $i=0; $i<@arg_states; $i++) {
+        # for now, just push completions onto this state's completions
+        my $arg_state = $arg_states[$i];
+        push(@$completions, @{$arg_state->{completions}});
     }
     $states->{$state_name} = $state;
 }

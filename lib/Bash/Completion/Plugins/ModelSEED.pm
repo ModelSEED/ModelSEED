@@ -13,6 +13,9 @@ use strict;
 use common::sense;
 use Bash::Completion::Utils qw( command_in_path prefix_match );
 use ModelSEED::Bash::Completion::Rules;
+use ModelSEED::Configuration;
+use JSON::XS;
+use File::stat;
 use parent 'Bash::Completion::Plugin';
 
 sub should_activate {
@@ -23,7 +26,14 @@ sub should_activate {
     }
 }
 
+sub generate_bash_setup { 
+    return [qw(nospace default)];
+}
+
 our $rules = $ModelSEED::Bash::Completion::Rules::rules;
+our $conf  = ModelSEED::Configuration->instance;
+our $MAX_CACHE_AGE = 60; # Age in seconds for a valid ~/.modelseed_bash_completion_cache file
+
 sub complete {
     my ($self, $r) = @_;
     my @args = $r->args;
@@ -82,17 +92,57 @@ sub processCompletionRule {
         return prefix_match($r->word, @$rule);
     }
     if(ref($rule) eq 'HASH' && defined $rule->{prefix}) {
-        if (defined $rule->{options}) {
-            my $prefix = $rule->{prefix};
-            if($r->word =~ m/^$prefix/) {
-                my @candidates = map { $rule->{prefix} . $_ } @{$rule->{options}}; 
-                return prefix_match($r->word, @candidates);
-            }
-        } elsif(defined($rule->{cmd})) {
-            die "TODO";
+        my $prefix = $rule->{prefix};
+        my $match  = $r->word =~ m/^$prefix/;
+        if ($match && defined $rule->{options}) {
+            my @candidates = map { $rule->{prefix} . $_ } @{$rule->{options}}; 
+            return prefix_match($r->word, @candidates);
+        } elsif($match && defined($rule->{cmd})) {
+            return processCmdRule($rule, $r);
+            my $cmd = $rule->{cmd};
+            my @candidates = split(/\n/, `$cmd`);
+            return prefix_match($r->word, @candidates);
         }
     }
     return ();
+}
+
+sub processCmdRule {
+    my ($rule, $r) = @_;
+    my $cmd = $rule->{cmd};
+    my $tmp_file = $conf->filename . "_bash_completion_cache";
+    my $data = _read_json_file($tmp_file);
+    if(defined($data->{$cmd})) {
+        return prefix_match($r->word, @{$data->{$cmd}});
+    } else {
+        my @candidates = split(/\n/, `$cmd`);
+        $data->{$cmd} = \@candidates;
+        _write_json_file($tmp_file, $data);
+        return prefix_match($r->word, @candidates);
+    }
+}
+
+sub _read_json_file {
+    my ($filename) = @_;
+    return {} unless -f $filename;
+    open(my $fh, "<", $filename) || return {};
+    my $cacheAge = time - stat($fh)->mtime;
+    if ($cacheAge > $MAX_CACHE_AGE) {
+        close($fh);
+        return {};
+    }
+    local $\;
+    my $str = <$fh>;
+    close($fh);
+    return decode_json $str;
+}
+
+sub _write_json_file {
+    my ($filename, $data) = @_;
+    my $str = encode_json $data;
+    open(my $fh, ">", $filename) || return;
+    print $fh $str;
+    close($fh);
 }
 
 1;
