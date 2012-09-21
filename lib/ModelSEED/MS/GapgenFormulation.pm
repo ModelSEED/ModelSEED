@@ -36,6 +36,7 @@ Definition:
 	ModelSEED::MS::Biochemistry = biochemistry();
 Description:
 	Returns biochemistry behind gapfilling object
+
 =cut
 
 sub biochemistry {
@@ -49,6 +50,7 @@ Definition:
 	ModelSEED::MS::Annotation = annotation();
 Description:
 	Returns annotation behind gapfilling object
+
 =cut
 
 sub annotation {
@@ -62,6 +64,7 @@ Definition:
 	ModelSEED::MS::Mapping = mapping();
 Description:
 	Returns mapping behind gapfilling object
+
 =cut
 
 sub mapping {

@@ -26,12 +26,16 @@ extends 'ModelSEED::MS::DB::GapfillingSolution';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 loadFromFile
+
 Definition:
 	void ModelSEED::MS::Model->loadFromFile();
 Description:
 	Loads gapfilling results from file
+
 =cut
+
 sub loadFromFile {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["filename"],{

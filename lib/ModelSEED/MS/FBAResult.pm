@@ -797,6 +797,7 @@ sub parseFVAResults {
 		}
 	}
 }
+
 =head3 parseGapfillingResults
 Definition:
 	void ModelSEED::MS::Model->parseGapfillingResults();
@@ -804,6 +805,7 @@ Description:
 	Parses Gapfilling results
 
 =cut
+
 sub parseGapfillingResults {
 	my ($self) = @_;
 	my $directory = $self->parent()->jobDirectory();
@@ -812,13 +814,16 @@ sub parseGapfillingResults {
 		$gfsolution->loadFromFile({filename => $directory."/CompleteGapfillingOutput.txt"});
 	}
 }
+
 =head3 parseGapgenResults
+
 Definition:
 	void ModelSEED::MS::Model->parseGapgenResults();
 Description:
 	Parses Gapgen results
 
 =cut
+
 sub parseGapgenResults {
 	my ($self) = @_;
 	my $directory = $self->parent()->jobDirectory();

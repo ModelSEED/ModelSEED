@@ -9,6 +9,7 @@ package ModelSEED::MS::IndexedObject;
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+
 =head1 ModelSEED::MS::IndexedObject
 
 =head2 METHODS

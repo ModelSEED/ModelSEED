@@ -74,6 +74,7 @@ sub findCreateEquivalentCompartment {
 }
 
 =head3 findCreateEquivalentCompound
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentCompound({
 		modelcompound => ModelSEED::MS::ModelCompound(REQ),
@@ -115,6 +116,7 @@ sub findCreateEquivalentCompound {
 }
 
 =head3 findCreateEquivalentReaction
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentReaction({
 		modelreaction => ModelSEED::MS::ModelReaction(REQ),
@@ -169,6 +171,7 @@ sub findCreateEquivalentReaction {
 }
 
 =head3 findCreateEquivalentBiomass
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentBiomass({
 		biomass => ModelSEED::MS::Biomass(REQ),
@@ -215,6 +218,7 @@ sub findCreateEquivalentBiomass {
 }
 
 =head3 mergeModel
+
 Definition:
 	void ModelSEED::MS::Model->mergeModel({
 		model => ModelSEED::MS::Model(REQ)
@@ -361,6 +365,7 @@ sub buildModelFromAnnotation {
 }
 
 =head3 buildModelByLayers
+
 Definition:
 	void ModelSEED::MS::Model->buildModelByLayers({
 		
@@ -506,6 +511,7 @@ sub createStandardFBABiomass {
 }
 
 =head3 testBiomassCondition
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->testBiomassCondition({
 		condition => REQUIRED,
@@ -653,6 +659,7 @@ sub testBiomassCondition {
 }
 
 =head3 addReactionToModel
+
 Definition:
 	ModelSEED::MS::ModelReaction = ModelSEED::MS::Model->addReactionToModel({
 		reaction => REQUIRED,
@@ -715,6 +722,7 @@ sub addReactionToModel {
 }
 
 =head3 addCompartmentToModel
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->addCompartmentToModel({
 		Compartment => REQUIRED,
@@ -747,6 +755,7 @@ sub addCompartmentToModel {
 }
 
 =head3 addCompoundToModel
+
 Definition:
 	ModelSEED::MS::ModelCompound = ModelSEED::MS::Model->addCompoundToModel({
 		compound => REQUIRED,
@@ -784,6 +793,7 @@ sub addCompoundToModel {
 }
 
 =head3 labelBiomassCompounds
+
 Definition:
 	void ModelSEED::MS::Model->labelBiomassCompounds();
 Description:
@@ -830,6 +840,7 @@ sub parseSBML {
 }
 
 =head3 printSBML
+
 Definition:
 	void ModelSEED::MS::Model->printSBML();
 Description:
@@ -1055,6 +1066,7 @@ sub printSBML {
 #***********************************************************************************************************
 
 =head3 gapfillModel
+
 Definition:
 	ModelSEED::MS::GapfillingSolution ModelSEED::MS::Model->gapfillModel({
 		gapfillingFormulation => ModelSEED::MS::GapfillingFormulation,
@@ -1083,6 +1095,7 @@ sub gapfillModel {
 }
 
 =head3 gapgenModel
+
 Definition:
 	ModelSEED::MS::GapgenSolution = ModelSEED::MS::Model->gapgenModel({
 		gapgenFormulation => ModelSEED::MS::GapgenFormulation,
@@ -1143,12 +1156,16 @@ sub printExchangeFormat {
    	push(@{$textArray},"}");
     return join("\n",@{$textArray});
 }
+
 =head3 buildGraph
+
 Definition:
 	Graph = ModelSEED::MS::Model->buildGraph();
 Description:
 	This command builds a graph object from the model
+
 =cut
+
 sub buildGraph {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{reactions => 0});
@@ -1213,12 +1230,16 @@ sub buildGraph {
 	}
 	return $graph;
 }
+
 =head3 computeNetworkDistances
+
 Definition:
 	Table = ModelSEED::MS::Model->computeNetworkDistances();
 Description:
 	This command computes distances between all metabolites, reactions, and functional roles
+
 =cut
+
 sub computeNetworkDistances {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{

@@ -26,12 +26,16 @@ extends 'ModelSEED::MS::DB::GapgenSolution';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 loadFromData
+
 Definition:
 	void ModelSEED::MS::Model->loadFromData();
 Description:
 	Loads gapgen results from file
+
 =cut
+
 sub loadFromData {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["objective","reactions"],{
