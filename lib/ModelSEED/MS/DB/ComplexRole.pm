@@ -23,7 +23,7 @@ has triggering => (is => 'rw', isa => 'Int', printOrder => '0', default => '1', 
 
 
 # LINKS:
-has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', weak_ref => 1);
+has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', weak_ref => 1);
 
 
 # BUILDERS:

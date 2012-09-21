@@ -22,11 +22,11 @@ has roleList => ( is => 'rw', isa => 'Str',printOrder => '5', type => 'msdata', 
 sub _buildroleList {
 	my ($self) = @_;
 	my $roleList = "";
-	for (my $i=0; $i < @{$self->rolesetroles()}; $i++) {
+	for (my $i=0; $i < @{$self->roles()}; $i++) {
 		if (length($roleList) > 0) {
 			$roleList .= ";";
 		}
-		$roleList .= $self->rolesetroles()->[$i]->role()->name();		
+		$roleList .= $self->roles()->[$i]->name();		
 	}
 	return $roleList;
 }

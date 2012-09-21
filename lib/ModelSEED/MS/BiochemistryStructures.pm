@@ -29,7 +29,33 @@ extends 'ModelSEED::MS::DB::BiochemistryStructures';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 getCreateStructure
 
+Definition:
+	ModelSEED::MS::Structure = getCreateStructure({
+		data => string:structure data*
+		type => string:type of structure*
+	});
+Description:
+	Adds the specified structure to the BiochemistryStructures
+	
+=cut
+
+sub getCreateStructure {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["data","type"],{});
+	my $structure = $self->queryObject("structures",{
+		type => $args->{type},
+		data => $args->{data}
+	});
+	if (!defined($structure)) {
+		$structure = $self->add("structures",{
+			type => $args->{type},
+			data => $args->{data}
+		});
+	}
+	return $structure;
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

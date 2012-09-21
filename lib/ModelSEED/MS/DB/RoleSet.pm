@@ -6,7 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::RoleSet;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::RoleSetRole;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -23,23 +22,25 @@ has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '3', default
 has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has subclass => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '4', required => 1, type => 'attribute', metaclass => 'Typed');
+has role_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
-# SUBOBJECTS:
-has rolesetroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(RoleSetRole)', metaclass => 'Typed', reader => '_rolesetroles', printOrder => '-1');
-
-
 # LINKS:
+has roles => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Role]', type => 'link(Mapping,roles,role_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_roles', clearer => 'clear_roles');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_roles {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Mapping','roles',$self->role_uuids());
+}
 
 
 # CONSTANTS:
@@ -91,10 +92,18 @@ my $attributes = [
             'name' => 'type',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'role_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2, class => 3, subclass => 4, type => 5};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, class => 3, subclass => 4, type => 5, role_uuids => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -109,16 +118,9 @@ sub _attributes {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'rolesetroles',
-            'type' => 'encompassed',
-            'class' => 'RoleSetRole'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {rolesetroles => 0};
+my $subobject_map = {};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -133,13 +135,6 @@ sub _subobjects {
   }
 }
 sub _aliasowner { return 'Mapping'; }
-
-
-# SUBOBJECT READERS:
-around 'rolesetroles' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('rolesetroles');
-};
 
 
 __PACKAGE__->meta->make_immutable;

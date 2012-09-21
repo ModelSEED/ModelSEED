@@ -24,7 +24,7 @@ has multiplier => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attrib
 
 
 # LINKS:
-has reactionset => (is => 'rw', isa => 'ModelSEED::MS::ReactionSet', type => 'link(Biochemistry,reactionSets,reactionset_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', weak_ref => 1);
+has reactionset => (is => 'rw', isa => 'ModelSEED::MS::ReactionSet', type => 'link(Biochemistry,reactionSets,reactionset_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', clearer => 'clear_reactionset', weak_ref => 1);
 
 
 # BUILDERS:

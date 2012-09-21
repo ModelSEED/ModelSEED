@@ -37,7 +37,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has structure => (is => 'rw', isa => 'ModelSEED::MS::Structure', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', weak_ref => 1);
+has structure => (is => 'rw', isa => 'ModelSEED::MS::Structure', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', clearer => 'clear_structure', weak_ref => 1);
 
 
 # BUILDERS:

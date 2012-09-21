@@ -379,6 +379,8 @@ sub _parseRASTFeatures {
 				$row->{CONTIG}->[0] = $2;
 			} elsif ($contigData =~ m/(.+)\|(.+)\|(.+)\|(.+)/) {
 				$row->{CONTIG}->[0] = $3."|".$4;
+			} else {
+				$row->{CONTIG}->[0] = $1;
 			}
 		}
 		if (defined($ftr->{FUNCTION})) {

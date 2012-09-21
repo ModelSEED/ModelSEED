@@ -26,7 +26,7 @@ has gfSolutionReactionGeneCandidates => (is => 'rw', isa => 'ArrayRef[HashRef]',
 
 
 # LINKS:
-has modelreaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', weak_ref => 1);
+has modelreaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', weak_ref => 1);
 
 
 # BUILDERS:

@@ -41,12 +41,11 @@ sub _buildreactionRoleHash {
 	for (my $i=0; $i < @{$complexes}; $i++) {
 		my $complex = $complexes->[$i];
 		my $cpxroles = $complex->complexroles();
-		my $cpxrxns = $complex->complexreactions();
+		my $cpxrxns = $complex->reaction_uuids();
 		for (my $j=0; $j < @{$cpxroles}; $j++) {
 			my $role = $cpxroles->[$j]->role();
 			for (my $k=0; $k < @{$cpxrxns}; $k++) {
-				my $rxn = $cpxrxns->[$k]->reaction();
-				$hash->{$rxn->uuid()}->{$role->uuid()} = $role;
+				$hash->{$cpxrxns->[$k]}->{$role->uuid()} = $role;
 			}
 		}
 	}

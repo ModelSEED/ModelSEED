@@ -10,9 +10,12 @@ use common::sense;
 use ModelSEED::utilities;
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use Class::Autouse qw(
+	ModelSEED::MS::BiochemistryStructures
+    ModelSEED::MS::Biochemistry
     ModelSEED::MS::Mapping
     ModelSEED::MS::Model
     ModelSEED::MS::Factories::Annotation
+    ModelSEED::Table
 );
 use Moose;
 use namespace::autoclean;
@@ -36,65 +39,70 @@ has ssroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => 
 has complexTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcomplexTbl' );
 has cpxroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcpxroleTbl' );
 has rxncpxTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxncpxTbl' );
+has cueTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcueTbl' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
 sub _buildmodelTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."models.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/model.tbl",rows_return_as => "ref"});
+}
+sub _buildcueTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new({filename => $self->filepath()."/cue.tbl",rows_return_as => "ref"});
 }
 sub _buildbofTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."bofs.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/bof.tbl",rows_return_as => "ref"});
 }
 sub _buildcompoundTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."compounds.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/compound.tbl",rows_return_as => "ref"});
 }
 sub _buildreactionTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."reactions.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/reaction.tbl",rows_return_as => "ref"});
 }
 sub _buildcpdalsTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."cpdals.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/cpdals.tbl",rows_return_as => "ref"});
 }
 sub _buildrxnalsTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."rxnals.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/rxnals.tbl",rows_return_as => "ref"});
 }
 sub _buildmediaTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."media.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/media.tbl",rows_return_as => "ref"});
 }
 sub _buildmediacpdTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."mediacpd.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/mediacpd.tbl",rows_return_as => "ref"});
 }
 sub _buildroleTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."role.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/role.tbl",rows_return_as => "ref"});
 }
 sub _buildsubsystemTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."subsystem.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/subsystem.tbl",rows_return_as => "ref"});
 }
 sub _buildssroleTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."ssrole.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/ssroles.tbl",rows_return_as => "ref"});
 }
 sub _buildcomplexTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."complex.tbl");
+	return ModelSEED::Table->new({filename => $self->filepath()."/complex.tbl",rows_return_as => "ref"});
 }
 sub _buildcpxroleTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."cpxrole.tbl");
+	return ModelSEED::Table->new(filename => $self->filepath()."/cpxrole.tbl");
 }
 sub _buildrxncpxTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."rxncpx.tbl");
+	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl");
 }
 
 
@@ -190,10 +198,12 @@ sub createBiochemistry {
         verbose => 0
 	});
 	#Creating the biochemistry
+	my $bioStruct = ModelSEED::MS::BiochemistryStructures->new({});
 	my $biochemistry = ModelSEED::MS::Biochemistry->new({
+		biochemistryStructures_uuid => $bioStruct->uuid(),
+		biochemistrystructures => $bioStruct,
 		name=>$args->{name},
-		public => 1,
-		locked => 0
+		public => 1
 	});
 	#Adding compartments to biochemistry
     my $comps = [
@@ -221,9 +231,8 @@ sub createBiochemistry {
 	}
 	#Adding structural cues to biochemistry
 	if ($args->{addStructuralCues} == 1) {
-		my $data = ModelSEED::utilities::LOADFILE($ENV{MODEL_SEED_CORE}."/data/ReactionDB/MFAToolkitInputFiles/cueTable.txt");
-        # TODO : how to detangle this dependency on MFAToolkit ( cli call? )
-		my $priorities = ModelSEED::utilities::LOADFILE($ENV{MODEL_SEED_CORE}."/software/mfatoolkit/etc/FinalGroups.txt");
+		my $data = ModelSEED::utilities::LOADFILE($self->filepath()."/cueTable.txt");
+		my $priorities = ModelSEED::utilities::LOADFILE($self->filepath()."/FinalGroups.txt");
 		my $cuePriority;
 		for (my $i=2;$i < @{$priorities}; $i++) {
 			my $array = [split(/_/,$priorities->[$i])];
@@ -251,10 +260,9 @@ sub createBiochemistry {
 	#Adding compounds to biochemistr
 	my $cpds = $self->compoundTbl();
     print "Handling compounds!\n" if($args->{verbose});
-	for (my $i=0; $i < @{$cpds->size()}; $i++) {
+	for (my $i=0; $i < $cpds->size(); $i++) {
 		my $cpdRow = $cpds->row($i);
-		my $cpd = $biochemistry->add("compounds",{
-			locked => "0",
+		my $cpdData = {
 			name => $cpdRow->name(),
 			abbreviation => $cpdRow->abbrev(),
 			unchargedFormula => "",
@@ -263,7 +271,13 @@ sub createBiochemistry {
 			defaultCharge => $cpdRow->charge(),
 			deltaG => $cpdRow->deltaG(),
 			deltaGErr => $cpdRow->deltaGErr()
-		});
+		};
+		foreach my $key (keys(%{$cpdData})) {
+			if (!defined($cpdData->{$key}) || $cpdData->{$key} eq "") {
+				delete $cpdData->{$key};
+			}
+		}
+		my $cpd = $biochemistry->add("compounds",$cpdData);
 		$biochemistry->addAlias({
 			attribute => "compounds",
 			aliasName => "ModelSEED",
@@ -273,19 +287,11 @@ sub createBiochemistry {
 		if ($args->{addStructure} == 1) {
 			#Adding stringcode as structure 
 			if (defined($cpdRow->stringcode()) && length($cpdRow->stringcode()) > 0) {
-				$cpd->add("structures",{
-					structure => $cpdRow->stringcode(),
-					type => "stringcode"
+				$cpd->addStructure({
+					data => $cpdRow->stringcode(),
+					type => "smiles",
 				});
 			}
-			#Adding molfile as structure 
-			#if (-e $ENV{MODEL_SEED_CORE}."/data/ReactionDB/mol/pH7/".$cpds->[$i]->id().".mol") {
-			#	my $data = join("\n",@{ModelSEED::utilities::LOADFILE($ENV{MODEL_SEED_CORE}."/data/ReactionDB/mol/pH7/".$cpds->[$i]->id().".mol")});
-			#	$cpd->add("structures",{
-			#		structure => $data,
-			#		type => "molfile"
-			#	});
-			#}
 		}
 		#Adding structural cues
 		if ($args->{addStructuralCues} == 1) {
@@ -296,6 +302,9 @@ sub createBiochemistry {
                 my $list = [split($delimiterRegex,$cueListString)];
                 for (my $j=0;$j < @{$list}; $j++) {
                     my ($name, $count) = split(/:/,$list->[$j]);
+                    if ($name eq "nogroups" && !defined($count)) {
+                    	$count = 1;
+                    }
                     unless(defined $name && defined $count) {
                         warn "Bad cue: " . $list->[$j] . " for " . $cpdRow->id . "\n";
                         next;
@@ -310,10 +319,7 @@ sub createBiochemistry {
                             priority => -1
                         });
                     }
-                    $cpd->add("compoundCues",{
-                        cue_uuid => $cue->uuid(),
-                        count => $count,
-                    });
+                    $cpd->cues()->{$cue->uuid()} = $count;
                 }
             }
 		}
@@ -330,7 +336,7 @@ sub createBiochemistry {
                         warn "Bad pKa: " . $list->[$j] . " for " . $cpdRow->id . "\n";
                         next;
                     }
-			 		$cpd->add("pks", {type => "pKa", pk => $pk, atom => $atom});
+                    push(@{$cpd->pkas()->{$atom}},$pk);
 			 	}
 			 }
             if(defined $pkb && length $pkb > 0) {
@@ -342,7 +348,7 @@ sub createBiochemistry {
                         warn "Bad pKb: " . $list->[$j] . " for " . $cpdRow->id . "\n";
                         next;
                     }
-			 		$cpd->add("pks", {type => "pKb", pk => $pk, atom => $atom});
+                    push(@{$cpd->pkbs()->{$atom}},$pk);
 			 	}
 			 }
 		}
@@ -351,7 +357,7 @@ sub createBiochemistry {
 	#Adding media formulations
 	my $medias = $self->mediaTbl();
 	my $mediacpdstbl = $self->mediacpdTbl();
-	for (my $i=0; $i < @{$medias->size()}; $i++) {
+	for (my $i=0; $i < $medias->size(); $i++) {
 		my $mediaRow = $medias->row($i);
 		my $type = "unknown";
 		if ($mediaRow->id() =~ m/^Carbon/ || $mediaRow->id() =~ m/^Nitrogen/ || $mediaRow->id() =~ m/^Sulfate/ || $mediaRow->id() =~ m/^Phosphate/) {
@@ -369,18 +375,25 @@ sub createBiochemistry {
 			isMinimal => 0,
 			type => $type,
 		});
-		my $mediacpds = $mediacpdstbl->get_rows({MEDIA => $mediaRow->id()});
-		for (my $j=0; $j < @{$mediacpds->size()}; $j++) {
-			my $mediacpdRow = $mediacpds->row($i);
-			if ($mediacpdRow->type() eq "COMPOUND") {
-				my $cpd = $biochemistry->getObjectByAlias("compounds",$mediacpdRow->entity(),"ModelSEED");
-				if (defined($cpd)) {
-					$media->add("mediacompounds",{
-						compound_uuid => $cpd->uuid(),
-						concentration => $mediacpdRow->concentration(),
-						maxFlux => $mediacpdRow->maxFlux(),
-						minFlux => $mediacpdRow->minFlux(),
-					});
+		my $rowHash = {};
+		for (my $j=0; $j < $mediacpdstbl->size(); $j++) {
+			my $mediacpdRow = $mediacpdstbl->row($i);
+			push(@{$rowHash->{$mediacpdRow->MEDIA()}},$mediacpdRow);
+		}
+		if (defined($rowHash->{$mediaRow->id()})) {
+			my $mediacpds = $rowHash->{$mediaRow->id()};
+			for (my $j=0; $j < @{$mediacpds}; $j++) {
+				my $mediacpdRow = $mediacpds->[$j];
+				if ($mediacpdRow->type() eq "COMPOUND") {
+					my $cpd = $biochemistry->getObjectByAlias("compounds",$mediacpdRow->entity(),"ModelSEED");
+					if (defined($cpd)) {
+						$media->add("mediacompounds",{
+							compound_uuid => $cpd->uuid(),
+							concentration => $mediacpdRow->concentration(),
+							maxFlux => $mediacpdRow->maxFlux(),
+							minFlux => $mediacpdRow->minFlux(),
+						});
+					}
 				}
 			}
 		}
@@ -389,10 +402,9 @@ sub createBiochemistry {
 	#Adding reactions to biochemistry
 	my $rxns = $self->reactionTbl();	
 	my $directionTranslation = {"<=>" => "=","<=" => "<","=>" => ">"};
-	for (my $i=0; $i < @{$rxns->size()}; $i++) {
+	for (my $i=0; $i < $rxns->size(); $i++) {
 		my $rxnRow = $rxns->row($i);
 		my $data = {
-			locked => "0",
 			name => $rxnRow->name(),
 			abbreviation => $rxnRow->abbrev(),
 			reversibility => $directionTranslation->{$rxnRow->reversibility()},
@@ -459,10 +471,7 @@ sub createBiochemistry {
 	                        priority => -1
 	                    });
 	                }
-	                $rxn->add("reactionCues",{
-	                    cue_uuid => $cue->uuid(),
-	                    count => $count,
-	                });
+	                $rxn->cues()->{$cue->uuid()} = $count;
                 } else {
                 	warn "Bad cue: " . $list->[$j] . " for " . $rxnRow->id . "\n";
                 }
@@ -864,10 +873,7 @@ sub createMapping {
         next unless(defined($ss));
         my $role = $mapping->getObjectByAlias("roles",$row->ROLE(),"ModelSEED");
         next unless(defined($role));
-        $ss->add("rolesetroles",{
-            role_uuid => $role->uuid(),
-            role => $role
-        });
+        push(@{$ss->role_uuids()},$role->uuid());
 	}
 	my $complexes = $self->complexTbl();
 	for (my $i=0; $i < $complexes->size(); $i++) {
@@ -917,9 +923,7 @@ sub createMapping {
             "reactions", $rule->REACTION(), "ModelSEED"
         );
         next unless(defined($rxn));
-        $complex->add("complexreactions",{
-            reaction_uuid => $rxn->uuid
-        });
+        push(@{$complex->reaction_uuids()},$rxn->uuid);
 	}
 	return $mapping;	
 }

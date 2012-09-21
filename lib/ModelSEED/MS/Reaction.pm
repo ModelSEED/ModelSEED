@@ -22,6 +22,7 @@ has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata'
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'ModelSEED::MS::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
 has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroles' );
+has isTransport  => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisTransport' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -62,6 +63,20 @@ sub _buildroles {
 		return [keys(%{$hash->{$self->uuid()}})];
 	}
 	return [];
+}
+sub _buildisTransport {
+	my ($self) = @_;
+	my $rgts = $self->reagents();
+	if (!defined($rgts->[0])) {
+		return 0;	
+	}
+	my $cmp = $rgts->[0]->compartment_uuid();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		if ($rgts->[0]->compartment_uuid() ne $cmp) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 #***********************************************************************************************************

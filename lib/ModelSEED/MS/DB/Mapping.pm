@@ -17,7 +17,7 @@ use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
 
 
-our $VERSION = 1;
+our $VERSION = 2;
 # PARENT:
 has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
@@ -44,7 +44,7 @@ has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 
 
 # LINKS:
-has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry');
+has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry');
 
 
 # BUILDERS:

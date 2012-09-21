@@ -25,10 +25,10 @@ has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type
 
 
 # LINKS:
-has feature => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', weak_ref => 1);
-has ortholog => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,ortholog_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', weak_ref => 1);
-has orthologGenome => (is => 'rw', isa => 'ModelSEED::MS::Genome', type => 'link(Annotation,genomes,orthogenome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', weak_ref => 1);
-has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', weak_ref => 1);
+has feature => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', weak_ref => 1);
+has ortholog => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,ortholog_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', clearer => 'clear_ortholog', weak_ref => 1);
+has orthologGenome => (is => 'rw', isa => 'ModelSEED::MS::Genome', type => 'link(Annotation,genomes,orthogenome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', clearer => 'clear_orthologGenome', weak_ref => 1);
+has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', weak_ref => 1);
 
 
 # BUILDERS:

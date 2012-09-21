@@ -72,6 +72,14 @@ foreach my $name (keys(%{$objects})) {
     my $uuid = 0;
     my $modDate = 0;
     my $attrs = [];
+    my $linkHash = {};
+    if (defined($object->{links})) {
+	    foreach my $link (@{$object->{links}}) {
+			my $name = $link->{name};
+			my $att = $link->{attribute};
+			$linkHash->{$att} = $name;
+		}
+    }
     foreach my $attribute (@{$object->{attributes}}) {
         if (!defined($attribute->{printOrder})) {
         	$attribute->{printOrder} = -1;	
@@ -98,6 +106,9 @@ foreach my $name (keys(%{$objects})) {
         if ($attribute->{name} eq "modDate") {
             push(@$props, "lazy => 1", "builder => '_build_modDate'");
             $modDate = 1;
+        }
+        if (defined($linkHash->{$attribute->{name}})) {
+        	#push(@$props, "trigger => sub {my \$self = shift;\$self->clear_".$linkHash->{$attribute->{name}}."();}");
         }
         push(@$props, "type => 'attribute'", "metaclass => 'Typed'");
 
@@ -179,6 +190,7 @@ foreach my $name (keys(%{$objects})) {
                 "metaclass => 'Typed'",
                 "lazy => 1",
                 "builder => '_build_$soname'",
+            	"clearer => 'clear_$soname'",
             ];
             push(@$props, "weak_ref => 1") if($weak);
             push(@$output, "has $soname => (" . join(", ", @$props) . ");");

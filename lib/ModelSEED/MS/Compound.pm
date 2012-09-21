@@ -42,6 +42,59 @@ sub _build_searchnames {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 addStructure
+
+Definition:
+	ModelSEED::MS::Structure = addStructure({
+		data => string:structure data*
+		type => string:type of structure*
+		overwrite => 0/1(0)
+	});
+Description:
+	Adds the specified structure to the compound
+	
+=cut
+
+sub addStructure {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["data","type"],{
+		overwrite => 0,
+	});
+	#Checking that parent exists and has linked BiochemistryStructures
+	if (!defined($self->parent()) || !defined($self->parent()->biochemistrystructures())) {
+		ModelSEED::utilities::ERROR("Cannot add structure to a compound with no accessible BiochemistryStructures object. Make sure you have a BiochemistryStructures object in the parent biochemistry.");
+	}
+	my $bs = $self->parent()->biochemistrystructures();
+	#Checking if a structure of the same type already exists
+	my $index = -1;
+	if (defined($self->structure_uuids()->[0])) {
+		my $structs = $self->structures();
+		my $type = $args->{type};
+		for (my $i=0; $i < @{$structs}; $i++) {
+			if ($structs->[$i]->type() eq $args->{type}) {
+				if ($args->{overwrite} == 1) {
+					$index = $i;
+					last;
+				} else {
+					ModelSEED::utilities::ERROR("Compound already has structure of type '$type'. Cannot overwrite without setting overwrite flag.");
+				}
+			}
+		}
+	}
+	#Getting structure
+	my $structure = $bs->getCreateStructure({
+		data => $args->{data},
+		type => $args->{type},
+	});
+	#Adding the structure
+	if ($index == -1) {
+		push(@{$self->structure_uuids()},$structure->uuid());
+	} else {
+		$self->structure_uuids()->[$index] = $structure->uuid();
+	}
+	$self->clear_structures();
+	return $structure;
+}
 
 =head3 calculateAtomsFromFormula
 
