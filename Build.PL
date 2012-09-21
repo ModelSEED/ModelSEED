@@ -76,6 +76,7 @@ my $builder = $subclass->new(
         "Graph" => 0,
         "App::Cmd" => 0,
         "autodie" => 0,
+        "Bash::Completion" => 0,
         "Class::Autouse" => 0,
         "Clone" => 0,
         "Config::Tiny" => 0,
