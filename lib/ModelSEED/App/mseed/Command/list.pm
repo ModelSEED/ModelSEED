@@ -167,7 +167,9 @@ sub formatOutput {
     shift @$with; # Remove "Reference" column
     my $parts = [];
     unless (defined($opts) && $opts->{no_ref}) {
-        push(@$parts, $ref->ref . "/" . $object->{uuid});
+        my $ref_str = $ref->ref;
+        $ref_str .= "/" . $object->{uuid} if (defined($object->{uuid}));
+        push(@$parts, $ref_str);
     }
     foreach my $attr (@$with) {
         my $value;
