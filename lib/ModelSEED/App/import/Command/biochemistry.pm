@@ -10,14 +10,14 @@ use Class::Autouse qw(
     ModelSEED::Store
     ModelSEED::Auth::Factory
     ModelSEED::App::Helpers
-    ModelSEED::MS::Factories::PPOFactory
+    ModelSEED::MS::Factories::TableFileFactory
     ModelSEED::Database::Composite
     ModelSEED::Reference
 );
 
 sub abstract { return "Import biochemistry from local or remote database"; }
 
-sub usage_desc { return "ms import biochemistry [alias] [-s store] [-l location]"; }
+sub usage_desc { return "ms import biochemistry [alias] [options]"; }
 sub description { return <<END;
 Import biochemistry data (compounds, reactions, media, compartments,
 etc.) Alias, required, is the name that you would like to save the
@@ -34,8 +34,8 @@ END
 
 sub opt_spec {
     return (
-        ["location|l:s", "Where are you importing from. Defaults to 'model_seed'"],
-        ["model|m:s", "String for a model id to use as biochemistry source"],
+        ["filepath|f:s", "Directory with flatfiles of data you are importing"],
+        ["namespace|n:s", "Name space of database (default is 'ModelSEED')"],
         ["store|s:s", "Identify which store to save the biochemistry to"],
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
@@ -68,35 +68,22 @@ sub execute {
     print "Will be saving to $alias...\n" if($opts->{verbose});
     my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $bio;
-    if($opts->{location} && $opts->{location} eq 'local') {
-	die "Error: cannot import from local database using the new system";
-        # # Cannot go further unless we're using basic auth (legacy)
-        # unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
-        #     $self->usage_error("Cannot import from local unless you are logged in")
-        # }
-        # # Get the biochemistry object from the local PPO
-        # my $figmodel = ModelSEED::FIGMODEL->new({
-        #     username => $auth->username,
-        #     password => $auth->password,
-        # });
-        # if ($opts->{model}) {
-        #     my $mdl_id = $opts->{model};
-        #     my $mdl = $figmodel->get_model($mdl_id);
-        #     $self->usage_error("Could not find model: $mdl_id") unless(defined($mdl));
-        #     $figmodel = $mdl->figmodel();
-        # }
-        # my $factory = ModelSEED::MS::Factories::PPOFactory->new({
-        #     figmodel => $figmodel,
-        #     namespace => $auth->username,
-        # });
-        # $bio = $factory->createBiochemistry({
-        #         name => $alias,
-        #         addAliases => 1,
-        #         addStructuralCues => 1,
-        #         addStructure => 1,
-        #         addPk => 1,
-        #         verbose => $opts->{verbose},
-        # });
+    if (!defined($opts->{namespace})) {
+    	$opts->{namespace} = "ModelSEED";
+    }
+    if($opts->{filepath}) {
+        my $factory = ModelSEED::MS::Factories::TableFileFactory->new({
+             filepath => $opts->{filepath},
+             namespace => $opts->{namespace},
+        });
+        $bio = $factory->createBiochemistry({
+			name => $alias,
+			addAliases => 1,
+			addStructuralCues => 1,
+			addStructure => 1,
+			addPk => 1,
+			verbose => $opts->{verbose},
+        });
     } else {
         # Just fetch a pre-built biochemistry from the web
         my $url = "http://bioseed.mcs.anl.gov/~devoid/json_objects/FullBiochemistry.json.gz";

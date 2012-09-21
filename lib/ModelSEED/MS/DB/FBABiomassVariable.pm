@@ -27,7 +27,7 @@ has value => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', 
 
 
 # LINKS:
-has biomass => (is => 'rw', isa => 'ModelSEED::MS::Biomass', type => 'link(Model,biomasses,biomass_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', weak_ref => 1);
+has biomass => (is => 'rw', isa => 'ModelSEED::MS::Biomass', type => 'link(Model,biomasses,biomass_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', clearer => 'clear_biomass', weak_ref => 1);
 
 
 # BUILDERS:

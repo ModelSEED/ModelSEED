@@ -101,8 +101,8 @@ sub featuresInRoleSet {
     my ($self, $roleSet) = @_;
     my $roleHash = {};
     my $results = [];
-    foreach my $roleSetRole (@{$roleSet->rolesetroles}) {
-        $roleHash->{$roleSetRole->role_uuid} = 1;
+    foreach my $roleSetRoleUUID (@{$roleSet->role_uuids()}) {
+        $roleHash->{$roleSetRoleUUID} = 1;
     }
     my $features = $self->features;
     foreach my $feature (@$features) {

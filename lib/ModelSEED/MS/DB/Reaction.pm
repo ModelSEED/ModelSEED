@@ -41,7 +41,7 @@ has reagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return
 
 
 # LINKS:
-has abstractReaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', weak_ref => 1);
+has abstractReaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', clearer => 'clear_abstractReaction', weak_ref => 1);
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 

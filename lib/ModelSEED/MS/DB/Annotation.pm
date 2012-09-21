@@ -38,7 +38,7 @@ has subsystemStates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub {
 
 
 # LINKS:
-has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping');
+has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping');
 
 
 # BUILDERS:

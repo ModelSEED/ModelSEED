@@ -583,7 +583,8 @@ sub getLinkedObject {
     my ($self, $sourceType, $attribute, $uuid) = @_;
     my $source = lc($attribute);
     if ($sourceType eq 'ModelSEED::Store') {
-        my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $source);
+    	my $refName = lc(substr($attribute, 0,1)).substr($attribute,1);
+        my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $refName);
         if (!defined($self->store)) {
         	ModelSEED::utilities::ERROR("Getting object from undefined store!");
         }
@@ -682,11 +683,12 @@ sub mapping {
 
 sub biochemistrystructures {
     my ($self) = @_;
+    print $self->_type()."\n";
     my $parent = $self->parent();
     if (defined($parent) && ref($parent) eq "ModelSEED::MS::BiochemistryStructures") {
         return $parent;
     } elsif (defined($parent)) {
-        return $parent->biochemistrystructures();
+       	return $parent->biochemistrystructures();
     }
     ModelSEED::utilities::ERROR("Cannot find BiochemistryStructures object in tree!");
 }

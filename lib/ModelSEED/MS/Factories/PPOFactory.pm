@@ -782,10 +782,7 @@ sub createMapping {
         next unless(defined($ss));
         my $role = $mapping->getObjectByAlias("roles",$ssroles->[$i]->ROLE(),"ModelSEED");
         next unless(defined($role));
-        $ss->add("rolesetroles",{
-            role_uuid => $role->uuid(),
-            role => $role
-        });
+        push(@{$ss->role_uuids()},$role->uuid());
 	}
 	my $complexes = $args->{database}->get_objects("complex");
 	for (my $i=0; $i < @{$complexes}; $i++) {
@@ -834,9 +831,7 @@ sub createMapping {
             "reactions", $rule->REACTION(), "ModelSEED"
         );
         next unless(defined($rxn));
-        $complex->add("complexreactions",{
-            reaction_uuid => $rxn->uuid
-        });
+        push(@{$complex->reaction_uuids()},$rxn->uuid);
 	}
 	return $mapping;	
 }

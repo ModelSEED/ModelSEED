@@ -74,6 +74,7 @@ sub findCreateEquivalentCompartment {
 }
 
 =head3 findCreateEquivalentCompound
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentCompound({
 		modelcompound => ModelSEED::MS::ModelCompound(REQ),
@@ -115,6 +116,7 @@ sub findCreateEquivalentCompound {
 }
 
 =head3 findCreateEquivalentReaction
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentReaction({
 		modelreaction => ModelSEED::MS::ModelReaction(REQ),
@@ -169,6 +171,7 @@ sub findCreateEquivalentReaction {
 }
 
 =head3 findCreateEquivalentBiomass
+
 Definition:
 	void ModelSEED::MS::Model->findCreateEquivalentBiomass({
 		biomass => ModelSEED::MS::Biomass(REQ),
@@ -215,6 +218,7 @@ sub findCreateEquivalentBiomass {
 }
 
 =head3 mergeModel
+
 Definition:
 	void ModelSEED::MS::Model->mergeModel({
 		model => ModelSEED::MS::Model(REQ)
@@ -287,56 +291,59 @@ sub buildModelFromAnnotation {
 	for (my $i=0; $i < @{$complexes};$i++) {
 		my $cpx = $complexes->[$i];
 		my $compartments;
-		my $complexreactions = $cpx->complexreactions();
-		for (my $j=0; $j < @{$complexreactions}; $j++) {
-			$compartments->{$complexreactions->[$j]->compartment()} = {present => 0,subunits => {}};
-		}
+		my $complexreactions = $cpx->reactions();
 		my $complexroles = $cpx->complexroles();
 		for (my $j=0; $j < @{$complexroles}; $j++) {
 			my $cpxrole = $complexroles->[$j];
 			if (defined($roleFeatures->{$cpxrole->role_uuid()})) {
 				foreach my $compartment (keys(%{$roleFeatures->{$cpxrole->role_uuid()}})) {
 					if ($compartment eq "u") {
-						foreach my $rxncomp (keys(%{$compartments})) {
-							if ($cpxrole->triggering() == 1) {
-								$compartments->{$rxncomp}->{present} = 1;
-							}
-							$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-							$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-							foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
-								$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
-							}
-						}
-					} elsif (defined($compartments->{$compartment})) {
-						if ($cpxrole->triggering() == 1) {
-							$compartments->{$compartment}->{present} = 1;
-						}
-						$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-						$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-						foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
-							$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
-						}
+						$compartment = "c";
 					}
-				}
-			} elsif ($cpxrole->optional() == 0) {
-				foreach my $rxncomp (keys(%{$compartments})) {
-					$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-					$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-					$compartments->{$rxncomp}->{subunits}->{$cpxrole->role_uuid()}->{note} = "Complex-based-gapfilling";
+					if ($cpxrole->triggering() == 1) {
+						$compartments->{$compartment}->{present} = 1;
+					}
+					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
+					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
+					foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
+						$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
+					}
 				}
 			}
 		}
-		for (my $j=0; $j < @{$complexreactions}; $j++) {
-			my $cpxrxn = $complexreactions->[$j];
-			if ($compartments->{$cpxrxn->compartment()}->{present} == 1) {
-				my $mdlrxn = $self->addReactionToModel({
-					reaction => $cpxrxn->reaction(),
-					direction => $cpxrxn->reaction()->thermoReversibility()
-				});
-				$mdlrxn->addModelReactionProtein({
-					proteinDataTree => $compartments->{$cpxrxn->compartment()},
-					complex_uuid => $cpx->uuid()
-				});
+		for (my $j=0; $j < @{$complexroles}; $j++) {
+			my $cpxrole = $complexroles->[$j];
+			if (!defined($roleFeatures->{$cpxrole->role_uuid()}) && $cpxrole->optional() == 0) {
+				foreach my $cmp (keys(%{$compartments})) {
+					if ($compartments->{$cmp}->{present} == 1) {
+						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
+						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
+						$compartments->{$cmp}->{subunits}->{$cpxrole->role_uuid()}->{note} = "Complex-based-gapfilling";
+					}
+				}
+			}
+		}
+		foreach my $cmp (keys(%{$compartments})) {
+			if ($compartments->{$cmp}->{present} == 1) {
+				for (my $j=0; $j < @{$complexreactions}; $j++) {
+					my $cpxrxn = $complexreactions->[$j];
+					my $override = undef;
+					if ($cmp ne "c") {
+						my $biocmp = $self->biochemistry()->queryObject("compartments",{id => $cmp});
+						$override = $self->addCompartmentToModel({
+							compartment => $biocmp
+						});
+					}
+					my $mdlrxn = $self->addReactionToModel({
+						reaction => $cpxrxn,
+						direction => $cpxrxn->thermoReversibility(),
+						overrideCompartment => $override
+					});
+					$mdlrxn->addModelReactionProtein({
+						proteinDataTree => $compartments->{$cmp},
+						complex_uuid => $cpx->uuid()
+					});
+				}
 			}
 		}
 	}
@@ -358,6 +365,7 @@ sub buildModelFromAnnotation {
 }
 
 =head3 buildModelByLayers
+
 Definition:
 	void ModelSEED::MS::Model->buildModelByLayers({
 		
@@ -503,6 +511,7 @@ sub createStandardFBABiomass {
 }
 
 =head3 testBiomassCondition
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->testBiomassCondition({
 		condition => REQUIRED,
@@ -650,6 +659,7 @@ sub testBiomassCondition {
 }
 
 =head3 addReactionToModel
+
 Definition:
 	ModelSEED::MS::ModelReaction = ModelSEED::MS::Model->addReactionToModel({
 		reaction => REQUIRED,
@@ -667,12 +677,16 @@ sub addReactionToModel {
 	$args = ModelSEED::utilities::ARGS($args,["reaction"],{
 		direction => undef,
 		protons => undef,
+		overrideCompartment => undef
 	});
 	my $rxn = $args->{reaction};
 	if (!defined($args->{direction})) {
 		$args->{direction} = $rxn->direction();	
 	}
-	my $mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+	my $mdlcmp = $args->{overrideCompartment};
+	if (!defined($mdlcmp->{overrideCompartment}) || $rxn->isTransport()) {
+		$mdlcmp = $self->addCompartmentToModel({compartment => $rxn->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+	}
 	my $mdlrxn = $self->queryObject("modelreactions",{
 		reaction_uuid => $rxn->uuid(),
 		modelcompartment_uuid => $mdlcmp->uuid()
@@ -684,16 +698,19 @@ sub addReactionToModel {
 			protons => $rxn->defaultProtons(),
 			modelcompartment_uuid => $mdlcmp->uuid(),
 		});
-		my $speciesHash;
-		my $cpdHash;
 		my $rgts = $rxn->reagents();
 		for (my $i=0; $i < @{$rgts}; $i++) {
 			my $rgt = $rgts->[$i];
-			my $rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+			my $rgtcmp;
+			if ($rxn->isTransport()) {
+				$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
+			} else {
+				$rgtcmp = $mdlcmp;
+			}
 			my $coefficient = $rgt->coefficient();
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),
-				modelCompartment => $mdlcmp,
+				modelCompartment => $rgtcmp,
 			});
 			$mdlrxn->addReagentToReaction({
 				coefficient => $coefficient,
@@ -705,6 +722,7 @@ sub addReactionToModel {
 }
 
 =head3 addCompartmentToModel
+
 Definition:
 	ModelSEED::MS::Model = ModelSEED::MS::Model->addCompartmentToModel({
 		Compartment => REQUIRED,
@@ -737,6 +755,7 @@ sub addCompartmentToModel {
 }
 
 =head3 addCompoundToModel
+
 Definition:
 	ModelSEED::MS::ModelCompound = ModelSEED::MS::Model->addCompoundToModel({
 		compound => REQUIRED,
@@ -774,6 +793,7 @@ sub addCompoundToModel {
 }
 
 =head3 labelBiomassCompounds
+
 Definition:
 	void ModelSEED::MS::Model->labelBiomassCompounds();
 Description:
@@ -820,6 +840,7 @@ sub parseSBML {
 }
 
 =head3 printSBML
+
 Definition:
 	void ModelSEED::MS::Model->printSBML();
 Description:
@@ -1045,6 +1066,7 @@ sub printSBML {
 #***********************************************************************************************************
 
 =head3 gapfillModel
+
 Definition:
 	ModelSEED::MS::GapfillingSolution ModelSEED::MS::Model->gapfillModel({
 		gapfillingFormulation => ModelSEED::MS::GapfillingFormulation,
@@ -1073,6 +1095,7 @@ sub gapfillModel {
 }
 
 =head3 gapgenModel
+
 Definition:
 	ModelSEED::MS::GapgenSolution = ModelSEED::MS::Model->gapgenModel({
 		gapgenFormulation => ModelSEED::MS::GapgenFormulation,
@@ -1133,12 +1156,16 @@ sub printExchangeFormat {
    	push(@{$textArray},"}");
     return join("\n",@{$textArray});
 }
+
 =head3 buildGraph
+
 Definition:
 	Graph = ModelSEED::MS::Model->buildGraph();
 Description:
 	This command builds a graph object from the model
+
 =cut
+
 sub buildGraph {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{reactions => 0});
@@ -1203,12 +1230,16 @@ sub buildGraph {
 	}
 	return $graph;
 }
+
 =head3 computeNetworkDistances
+
 Definition:
 	Table = ModelSEED::MS::Model->computeNetworkDistances();
 Description:
 	This command computes distances between all metabolites, reactions, and functional roles
+
 =cut
+
 sub computeNetworkDistances {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,[],{

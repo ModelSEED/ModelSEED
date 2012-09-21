@@ -51,12 +51,12 @@ has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 
 
 # LINKS:
-has fbaFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::FBAFormulation]', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulations');
-has gapfillingFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapfillingFormulation]', type => 'link(ModelSEED::Store,GapfillingFormulation,gapfillingFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapfillingFormulations');
-has gapgenFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapgenFormulation]', type => 'link(ModelSEED::Store,GapgenFormulation,gapgenFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapgenFormulations');
-has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry');
-has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping');
-has annotation => (is => 'rw', isa => 'ModelSEED::MS::Annotation', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation');
+has fbaFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::FBAFormulation]', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulations', clearer => 'clear_fbaFormulations');
+has gapfillingFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapfillingFormulation]', type => 'link(ModelSEED::Store,GapfillingFormulation,gapfillingFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapfillingFormulations', clearer => 'clear_gapfillingFormulations');
+has gapgenFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapgenFormulation]', type => 'link(ModelSEED::Store,GapgenFormulation,gapgenFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapgenFormulations', clearer => 'clear_gapgenFormulations');
+has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry');
+has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping');
+has annotation => (is => 'rw', isa => 'ModelSEED::MS::Annotation', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation', clearer => 'clear_annotation');
 
 
 # BUILDERS:

@@ -9,6 +9,7 @@ use File::Copy::Recursive;
 package ModelSEED::utilities;
 
 =head3 ARGS
+
 Definition:
 	ARGS->({}:arguments,[string]:mandatory arguments,{}:optional arguments);
 Description:
@@ -48,6 +49,7 @@ sub ARGS {
 }
 
 =head3 USAGE
+
 Definition:
 	string = ModelSEED::utilities::USAGE([]:madatory arguments,{}:optional arguments);
 Description:
@@ -102,6 +104,7 @@ sub USAGE {
 }
 
 =head3 ERROR
+
 Definition:
 	void ModelSEED::utilities::ERROR();
 Description:	
@@ -115,6 +118,7 @@ sub ERROR {
 }
 
 =head3 USEERROR
+
 Definition:
 	void ModelSEED::utilities::USEERROR();
 Description:	
@@ -129,6 +133,7 @@ sub USEERROR {
 }
 
 =head3 USEWARNING
+
 Definition:
 	void ModelSEED::utilities::USEWARNING();
 Description:	
@@ -141,6 +146,7 @@ sub USEWARNING {
 }
 
 =head3 WARNING
+
 Definition:
 	void ModelSEED::utilities::WARNING();
 Description:	
@@ -235,6 +241,7 @@ sub LOADTABLE {
 }
 
 =head3 PRINTTABLE
+
 Definition:
 	void ModelSEED::utilities::PRINTTABLE(string:filename,{}:table);
 Description:
@@ -260,7 +267,9 @@ sub PRINTTABLE {
     	close ($out_fh);
     }
 }
+
 =head3 PRINTTABLESPARSE
+
 Definition:
 	void ModelSEED::utilities::PRINTTABLESPARSE(string:filename,table:table,string:delimiter,double:min,double:max);
 Description:	
@@ -295,6 +304,7 @@ sub PRINTTABLESPARSE {
 }
 
 =head3 MAKEXLS
+
 Definition:
 	{} = ModelSEED::utilities::MAKEXLS({
 		filename => string,
@@ -317,6 +327,7 @@ sub MAKEXLS {
 }
 
 =head3 BUILDCOMMANDLINE
+
 Definition:
 	string = ModelSEED::utilities::BUILDCOMMANDLINE({
 		function => string:function name,
@@ -345,6 +356,7 @@ sub BUILDCOMMANDLINE {
 }
 
 =head3 RUNMODELDRIVER
+
 Definition:
 	string = ModelSEED::utilities::RUNMODELDRIVER({
 		function => string:function name,
@@ -369,6 +381,7 @@ sub RUNMODELDRIVER {
 }
 
 =head3 MODELSEEDCOREDIR
+
 Definition:
 	string = ModelSEED::utilities::MODELSEEDCOREDIR();
 Description:
@@ -382,6 +395,7 @@ sub MODELSEEDCOREDIR {
 }
 
 =head3 MODELSEEDCORE
+
 Definition:
 	string = ModelSEED::utilities::MODELSEEDCORE();
 Description:
@@ -395,6 +409,7 @@ sub MODELSEEDCORE {
 }
 
 =head3 GLPK
+
 Definition:
 	string = ModelSEED::utilities::GLPK();
 Description:
@@ -408,6 +423,7 @@ sub GLPK {
 }
 
 =head3 CPLEX
+
 Definition:
 	string = ModelSEED::utilities::CPLEX();
 Description:
@@ -421,6 +437,7 @@ sub CPLEX {
 }
 
 =head3 Explore
+
 Definition:
 	string = ModelSEED::utilities::Explore($tree);
 Description:
@@ -454,6 +471,7 @@ sub Explore {
 }
 
 =head3 parseArrayString
+
 Definition:
 	string = ModelSEED::utilities::parseArrayString({
 		string => string(none),

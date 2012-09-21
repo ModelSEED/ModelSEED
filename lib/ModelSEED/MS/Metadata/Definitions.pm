@@ -4168,7 +4168,7 @@ $objectDefinitions->{Mapping} = {
 		},
 	],
 	reference_id_types => [qw(uuid alias)],
-	version            => 1.0,
+	version            => 2.0,
 };
 
 $objectDefinitions->{UniversalReaction} = {
@@ -4459,42 +4459,28 @@ $objectDefinitions->{RoleSet} = {
 			type       => 'Str',
 			len        => 32,
 			req        => 1
-		}
-	],
-	subobjects => [
-		{
-			name  => "rolesetroles",
-			class => "RoleSetRole",
-			type  => "encompassed"
 		},
-	],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{RoleSetRole} = {
-	parents    => ['RoleSet'],
-	class      => 'encompassed',
-	attributes => [
 		{
-			name       => 'role_uuid',
-			printOrder => 0,
+			name       => 'role_uuids',
+			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(complex_uuid role_uuid)],
-	links       => [
-		{
-			name      => "role",
-			attribute => "role_uuid",
-			parent    => "Mapping",
-			method    => "roles"
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
 		}
-	]
+	],
+	subobjects => [],
+	primarykeys        => [qw(uuid)],
+	links              => [
+		{
+			name      => "roles",
+			attribute => "role_uuids",
+			parent    => "Mapping",
+			method    => "roles",
+			array => 1
+		}
+	],
+	reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{Complex} = {
@@ -4524,13 +4510,16 @@ $objectDefinitions->{Complex} = {
 			req        => 0,
 			default    => ""
 		},
+		{
+			name       => 'reaction_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
 	],
 	subobjects => [
-		{
-			name  => "complexreactions",
-			class => "ComplexReaction",
-			type  => "encompassed"
-		},
 		{
 			name  => "complexroles",
 			class => "ComplexRole",
@@ -4538,7 +4527,15 @@ $objectDefinitions->{Complex} = {
 		}
 	],
 	primarykeys        => [qw(uuid)],
-	links              => [],
+	links              => [
+		{
+			name      => "reactions",
+			attribute => "reaction_uuids",
+			parent    => "Biochemistry",
+			method    => "reactions",
+			array => 1
+		}
+	],
 	reference_id_types => [qw(uuid)],
 };
 
@@ -4588,38 +4585,6 @@ $objectDefinitions->{ComplexRole} = {
 			attribute => "role_uuid",
 			parent    => "Mapping",
 			method    => "roles"
-		}
-	]
-};
-
-$objectDefinitions->{ComplexReaction} = {
-	parents    => ['Complex'],
-	class      => 'encompassed',
-	attributes => [
-		{
-			name       => 'reaction_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'compartment',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => "cytosol"
-		}
-	],
-	subobjects  => [],
-	primarykeys => [qw(complex_uuid role_uuid)],
-	links       => [
-		{
-			name      => "reaction",
-			attribute => "reaction_uuid",
-			parent    => "Biochemistry",
-			method    => "reactions"
 		}
 	]
 };

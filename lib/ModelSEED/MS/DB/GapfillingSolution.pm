@@ -34,9 +34,9 @@ has gapfillingSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', defa
 
 
 # LINKS:
-has biomassRemovals => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,biomassRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals');
-has mediaSupplements => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,mediaSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements');
-has koRestores => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]', type => 'link(Model,modelreactions,koRestore_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores');
+has biomassRemovals => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,biomassRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals', clearer => 'clear_biomassRemovals');
+has mediaSupplements => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,mediaSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements', clearer => 'clear_mediaSupplements');
+has koRestores => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]', type => 'link(Model,modelreactions,koRestore_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores', clearer => 'clear_koRestores');
 
 
 # BUILDERS:

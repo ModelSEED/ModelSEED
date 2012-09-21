@@ -6,7 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::Complex;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::ComplexReaction;
 use ModelSEED::MS::ComplexRole;
 use Moose;
 use namespace::autoclean;
@@ -21,6 +20,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Mapping', weak_ref => 1, type 
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
+has reaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -28,17 +28,21 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # SUBOBJECTS:
-has complexreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(ComplexReaction)', metaclass => 'Typed', reader => '_complexreactions', printOrder => '-1');
 has complexroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(ComplexRole)', metaclass => 'Typed', reader => '_complexroles', printOrder => '-1');
 
 
 # LINKS:
+has reactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
+sub _build_reactions {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reaction_uuids());
+}
 
 
 # CONSTANTS:
@@ -66,10 +70,18 @@ my $attributes = [
             'default' => '',
             'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'reaction_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, reaction_uuids => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -87,19 +99,13 @@ sub _attributes {
 my $subobjects = [
           {
             'printOrder' => -1,
-            'name' => 'complexreactions',
-            'type' => 'encompassed',
-            'class' => 'ComplexReaction'
-          },
-          {
-            'printOrder' => -1,
             'name' => 'complexroles',
             'type' => 'encompassed',
             'class' => 'ComplexRole'
           }
         ];
 
-my $subobject_map = {complexreactions => 0, complexroles => 1};
+my $subobject_map = {complexroles => 0};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -117,10 +123,6 @@ sub _aliasowner { return 'Mapping'; }
 
 
 # SUBOBJECT READERS:
-around 'complexreactions' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('complexreactions');
-};
 around 'complexroles' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('complexroles');

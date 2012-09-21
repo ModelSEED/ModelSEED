@@ -35,13 +35,12 @@ sub _buildroleList {
 sub _buildreactionList {
 	my ($self) = @_;
 	my $reactionList = "";
-	my $cpxrxns = $self->complexreactions();
+	my $cpxrxns = $self->reactions();
 	for (my $i=0; $i < @{$cpxrxns}; $i++) {
 		if (length($reactionList) > 0) {
 			$reactionList .= ";";
 		}
-		my $cpxreaction = $cpxrxns->[$i];
-		$reactionList .= $cpxreaction->reaction()->id()."[".$cpxreaction->compartment()."]";		
+		$reactionList .= $cpxrxns->[$i]->id();		
 	}
 	return $reactionList;
 }

@@ -22,6 +22,7 @@ has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata'
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'ModelSEED::MS::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
 has roles  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroles' );
+has isTransport  => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisTransport' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -63,6 +64,20 @@ sub _buildroles {
 	}
 	return [];
 }
+sub _buildisTransport {
+	my ($self) = @_;
+	my $rgts = $self->reagents();
+	if (!defined($rgts->[0])) {
+		return 0;	
+	}
+	my $cmp = $rgts->[0]->compartment_uuid();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		if ($rgts->[0]->compartment_uuid() ne $cmp) {
+			return 1;
+		}
+	}
+	return 0;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -103,7 +118,7 @@ sub createEquation {
 		if (!defined($rgtHash->{$id}->{$rgt->[$i]->compartment()->id()})) {
 			$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} = 0;
 		}
-		$rgtHash->{$id}->{$rxnCompID} += $rgt->[$i]->coefficient();
+		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
 	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0) {
 		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
@@ -170,6 +185,7 @@ sub loadFromEquation {
 	my $parts = [];
 	my $cpdCmpHash;
 	my $compHash;
+	my $compUUIDHash;
 	my $cpdHash;
 	for (my $i = 0; $i < @TempArray; $i++) {
 		if ($TempArray[$i] =~ m/^\(([\.\d]+)\)$/ || $TempArray[$i] =~ m/^([\.\d]+)$/) {
@@ -197,6 +213,7 @@ sub loadFromEquation {
 					hierarchy => 3
 				});
 			}
+			$compUUIDHash->{$comp->uuid()} = $comp;
 			$compHash->{$comp->id()} = $comp;
 			$NewRow->{compartment} = $comp;
 			my $cpd;
@@ -241,7 +258,6 @@ sub loadFromEquation {
 	        # Do not include reagents with zero coefficients
 	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
 	        # Do not include Hydrogen in reagents
-	        next if $cpdHash->{$cpduuid}->formula eq 'H';
 	        $self->add("reagents", {
 	            compound_uuid               => $cpduuid,
 	            compartment_uuid            => $cmpuuid,
