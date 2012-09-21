@@ -21,6 +21,7 @@ sub opt_spec {
         ["with|w:s@", "Append a tab-delimited column with this attribute"],
         ["query|q:s@", "Only list sub objects matching a query"],
         ["help|h|?", "Print this usage information"],
+        ["no_ref", "Do not print the reference column (useful for 'with' option)"]
     );
 }
 
@@ -37,8 +38,8 @@ sub execute {
         $ref = ModelSEED::Reference->new(ref => $arg);
     };
     if(defined($ref)) {
-        # Base level collection ( want a list of aliases )
         if($ref->type eq 'collection' && 0 == @{$ref->parent_collections}) {
+            # Base level collection ( want a list of aliases )
             my $aliases;
             if ($opts->{mine}) {
                 $aliases = $store->get_aliases({ type => $ref->base, owner => $auth->username });
@@ -53,8 +54,8 @@ sub execute {
                   @$aliases
             ];
             $self->printForReferences($refs, $opts, $store);
-        # Subobject listing. want a list of ids under subobject
         } elsif($ref->type eq 'collection' && @{$ref->parent_collections}) {
+            # Subobject listing. want a list of ids under subobject
             my $need_object = (defined($opts->{with}) || defined($opts->{verbose}));
             my $refs;
             if ($need_object) {
@@ -87,8 +88,8 @@ sub execute {
                 }
                 print join("\n", @$refs) . "\n";
             }
-        # Want a breakdown of the subobjects
         } elsif($ref->type eq 'object') {
+            # Want a breakdown of the subobjects
             my $data = $store->get_data($ref->base . $ref->delimiter . $ref->id);
             # Calculate the size of the padding between first and second column
             my $max =  max map { length $_ } keys %$data;
@@ -128,7 +129,7 @@ sub printForReferences {
         if ($need_object) {
             $o = $store->get_object($ref);
         }
-        print $self->formatOutput($ref, $o, $columns); 
+        print $self->formatOutput($ref, $o, $columns);
     }
 }
 
@@ -137,7 +138,7 @@ sub printForData {
     my $columns = $self->determineColumns($ref, $opts);
     print join("\t", @$columns) . "\n" if (@$columns > 1);
     foreach my $o (@$data) {
-        print $self->formatOutput($ref, $o, $columns);
+        print $self->formatOutput($ref, $o, $columns, $opts);
     }
 }
 
@@ -161,14 +162,19 @@ sub determineColumns {
 }
 
 sub formatOutput {
-    my ($self, $ref, $object, $columns) = @_;
+    my ($self, $ref, $object, $columns, $opts) = @_;
     my $with = [ @$columns ];
     shift @$with; # Remove "Reference" column
-    my $parts = [ $ref->ref ];
+    my $parts = [];
+    unless (defined($opts) && $opts->{no_ref}) {
+        my $ref_str = $ref->ref;
+        $ref_str .= "/" . $object->{uuid} if (defined($object->{uuid}));
+        push(@$parts, $ref_str);
+    }
     foreach my $attr (@$with) {
         my $value;
         if (ref $object ne 'HASH' && $object->meta->find_attribute_by_name($attr)) {
-            $value = $object->$attr; 
+            $value = $object->$attr;
         } elsif(ref $object eq 'HASH') {
             $value = $object->{$attr};
             $value = '' unless defined $value;
