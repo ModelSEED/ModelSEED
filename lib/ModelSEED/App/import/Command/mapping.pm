@@ -17,9 +17,9 @@ use Class::Autouse qw(
 
 sub abstract { return "Import mapping from local or remote database"; }
 
-sub usage_desc { return "ms import mapping [alias] [-s store] [-l location]"; }
+sub usage_desc { return "ms import mapping [alias] [options]"; }
 sub description { return <<END;
-Import mapping data (compounds, reactions, media, compartments, etc.)
+Import mapping data (roles, complexes, etc.)
 Alias, required, is the name that you would like to save the mapping as.
 
 You may supply a biochemistry with -b to use when importing the mapping
@@ -27,19 +27,19 @@ objct. If this is not supplied, the default biochemistry, i.e.
 \$ ms defaults bichemistry
 will be used.
     
-The [--location name] argument indicates where you are importing
+The [--filepath path] argument indicates where you are importing
 the mapping from. Current supported options are:
     
-    --location local : import from local sqlite or MySQL database
-    --location model_seed : import standard mapping from the model_seed
+    --filepath path : path with flat files of mapping data 
+
 END
 }
 
 sub opt_spec {
     return (
         ["biochemistry|b:s", "Reference to biochemistry to use for import"],
-        ["model|m:s", "String for a model id to use as biochemistry source"],
-        ["location|l:s", "Where are you importing from. Defaults to 'model_seed'"],
+        ["filepath|f:s", "Directory with flatfiles of data you are importing"],
+        ["namespace|n:s", "Name space of database (default is 'ModelSEED')"],
         ["store|s:s", "Identify which store to save the mapping to"],
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
@@ -74,39 +74,31 @@ sub execute {
     print "Will be saving to $alias...\n" if($opts->{verbose});
     my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $map;
-    if($opts->{location} && $opts->{location} eq 'local') {
-	die "Error: Cannot load mapping from local database in new system";
-        # Get the biochemistry object
-        # my $bio_ref = $opts->{biochemistry};
-        # $bio_ref = $helpers->process_ref_string(
-        #     $bio_ref, "biochemistry", $auth->username
-        # );
-        # if(!defined($bio_ref)) {
-        #     $bio_ref = ModelSEED::Configuration->instance->config->{'biochemistry'};
-        # }
-        # warn "Using $bio_ref biochemistry while importing mapping\n" if($opts->{verbose});
-        # my $bio = $store->get_object($bio_ref);
-        # # Cannot go further unless we're using basic auth (legacy)
-        # unless(ref($auth) && $auth->isa("ModelSEED::Auth::Basic")) {
-        #     $self->usage_error("Cannot import from local unless you are logged in")
-        # }
-        # # Get the mapping object from the local PPO
-        # my $figmodel = ModelSEED::FIGMODEL->new({
-        #     username => $auth->username,
-        #     password => $auth->password,
-        # });
-        # my $factory = ModelSEED::MS::Factories::PPOFactory->new({
-        #     figmodel => $figmodel,
-        #     namespace => $auth->username,
-        # });
-        # $map = $factory->createMapping({
-        #         name => $alias,
-        #         biochemistry => $bio,
-        #         verbose => $opts->{verbose},
-        # });
+    if (!defined($opts->{namespace})) {
+    	$opts->{namespace} = "ModelSEED";
+    }
+	if($opts->{filepath}) {
+        my $bio_ref = $opts->{biochemistry};
+        $bio_ref = $helpers->process_ref_string(
+            $bio_ref, "biochemistry", $auth->username
+        );
+        if(!defined($bio_ref)) {
+            $bio_ref = ModelSEED::Configuration->instance->config->{'biochemistry'};
+        }
+        my $bio = $store->get_object($bio_ref);
+        warn "Using $bio_ref biochemistry while importing mapping\n" if($opts->{verbose});
+        my $factory = ModelSEED::MS::Factories::TableFileFactory->new({
+             filepath => $opts->{filepath},
+             namespace => $opts->{namespace},
+        });
+		$map = $factory->createMapping({
+			name => $alias,
+			biochemistry => $bio,
+			verbose => $opts->{verbose},
+        });
     } else {
         # Just fetch a pre-built mapping from the web
-        my $url = "http://bioseed.mcs.anl.gov/~devoid/json_objects/FullMapping.json.gz";
+        my $url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultMap.json.gz";
         my $data;
         {
             my ($fh1, $compressed_filename) = tempfile();

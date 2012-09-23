@@ -98,11 +98,11 @@ sub _buildcomplexTbl {
 }
 sub _buildcpxroleTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."/cpxrole.tbl");
+	return ModelSEED::Table->new(filename => $self->filepath()."/cpxrole.tbl",rows_return_as => "ref");
 }
 sub _buildrxncpxTbl {
 	my ($self) = @_;
-	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl");
+	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl",rows_return_as => "ref");
 }
 
 
@@ -852,19 +852,20 @@ sub createMapping {
 	}
 	my $subsystems = $self->subsystemTbl();
     print "Processing ".$subsystems->size()." subsystems\n" if($args->{verbose});
-	for (my $i=0; $i < @{$subsystems}; $i++) {
+	for (my $i=0; $i < $subsystems->size(); $i++) {
+		my $row = $subsystems->row($i);
 		my $ss = $mapping->add("rolesets",{
 			public => "1",
 			locked => "0",
-			name => $subsystems->[$i]->name(),
-			class => $subsystems->[$i]->classOne(),
-			subclass => $subsystems->[$i]->classTwo(),
+			name => $row->name(),
+			class => $row->classOne(),
+			subclass => $row->classTwo(),
 			type => "SEED Subsystem"
 		});
 		$mapping->addAlias({
 			attribute => "rolesets",
 			aliasName => "ModelSEED",
-			alias => $subsystems->[$i]->id(),
+			alias => $row->id(),
 			uuid => $ss->uuid()
 		});
 	}
@@ -912,10 +913,10 @@ sub createMapping {
             type => $type
         });
 	}
-	my $reactionRules = $self->rxncpxTbl();
-    print "Processing ".scalar(@$reactionRules)." reactions\n" if($args->{verbose});
-	for (my $i=0; $i < rxncpxTbl->size(); $i++) {
-        my $rule = $complexRoles->row($i);
+	my $rxncpxTbl = $self->rxncpxTbl();
+    print "Processing ".$rxncpxTbl->size()." reactions\n" if($args->{verbose});
+	for (my $i=0; $i < $rxncpxTbl->size(); $i++) {
+        my $rule = $rxncpxTbl->row($i);
 		next unless($rule->master() eq "1");
         my $complex = $mapping->getObjectByAlias(
             "complexes", $rule->COMPLEX(), "ModelSEED"

@@ -385,7 +385,7 @@ sub _parseRASTFeatures {
 		}
 		if (defined($ftr->{FUNCTION})) {
 			my $output = ModelSEED::MS::Utilities::GlobalFunctions::functionToRoles($ftr->{FUNCTION});
-			$row->{COMPARTMENT}->[0] = $output->{compartments};
+			$row->{COMPARTMENT} = $output->{compartments};
 			$row->{COMMENT}->[0] = $output->{comment};
 			$row->{DELIMITER}->[0] = $output->{delimiter};
 			$row->{ROLES} = $output->{roles};

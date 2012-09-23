@@ -23,11 +23,9 @@ Import biochemistry data (compounds, reactions, media, compartments,
 etc.) Alias, required, is the name that you would like to save the
 biochemistry as.
     
-The [--location name] argument indicates where you are importing
-the biochemistry from. Current supported options are:
+The [--filepath path] argument indicates where flatfiles are for import.
     
---location local      : import from local sqlite or MySQL database
---location model_seed : import standard biochemistry from the model_seed
+--filepath path : import from flatfiles on local computer
 
 END
 }
@@ -86,7 +84,7 @@ sub execute {
         });
     } else {
         # Just fetch a pre-built biochemistry from the web
-        my $url = "http://bioseed.mcs.anl.gov/~devoid/json_objects/FullBiochemistry.json.gz";
+        my $url = "http://bioseed.mcs.anl.gov/~chenry/exampleObjects/defaultBiochem.json.gz";
         my $data;
         {
             my ($fh1, $compressed_filename) = tempfile();
