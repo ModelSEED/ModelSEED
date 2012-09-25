@@ -74,8 +74,8 @@ sub _buildmfatoolkitBinary {
         ModelSEED::Exception::MissingConfig->throw(
             variable => 'MFATK_BIN',
             message => <<ND
-This is the directory that contains the mfatoolkit binary. If it
-is not already installed, this program can be downloaded from:
+This is the path to the mfatoolkit binary. If it is not already
+installed, this program can be downloaded from:
 https://github.com/modelseed/mfatoolkit
 Add the binary directory to your path or use the following command:
 ND
