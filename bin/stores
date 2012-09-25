@@ -2,6 +2,7 @@
 use strict;
 use common::sense;
 use ModelSEED::App::stores;
+use ModelSEED::Exceptions;
 use Try::Tiny;
 try {
     ModelSEED::App::stores->run; 
