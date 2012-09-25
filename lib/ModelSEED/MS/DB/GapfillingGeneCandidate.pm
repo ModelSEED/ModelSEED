@@ -113,6 +113,56 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'feature_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_feature',
+            'name' => 'feature',
+            'class' => 'features',
+            'method' => 'features'
+          },
+          {
+            'attribute' => 'ortholog_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_ortholog',
+            'name' => 'ortholog',
+            'class' => 'features',
+            'method' => 'features'
+          },
+          {
+            'attribute' => 'orthogenome_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_orthologGenome',
+            'name' => 'orthologGenome',
+            'class' => 'genomes',
+            'method' => 'genomes'
+          },
+          {
+            'attribute' => 'role_uuid',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_role',
+            'name' => 'role',
+            'class' => 'roles',
+            'method' => 'roles'
+          }
+        ];
+
+my $link_map = {feature => 0, ortholog => 1, orthologGenome => 2, role => 3};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

@@ -145,6 +145,59 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'media_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_media',
+            'name' => 'media',
+            'class' => 'media',
+            'method' => 'media'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'geneKO_uuids',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_geneKOs',
+            'name' => 'geneKOs',
+            'class' => 'features',
+            'method' => 'features'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'reactionKO_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reactionKOs',
+            'name' => 'reactionKOs',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'additionalCpd_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_additionalCpds',
+            'name' => 'additionalCpds',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          }
+        ];
+
+my $link_map = {media => 0, geneKOs => 1, reactionKOs => 2, additionalCpds => 3};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

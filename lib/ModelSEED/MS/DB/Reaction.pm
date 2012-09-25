@@ -176,6 +176,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'abstractReaction_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_abstractReaction',
+            'name' => 'abstractReaction',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          }
+        ];
+
+my $link_map = {abstractReaction => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => -1,

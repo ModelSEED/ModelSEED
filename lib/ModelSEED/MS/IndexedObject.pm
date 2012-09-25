@@ -265,10 +265,12 @@ sub getObjects {
     	$self->_buildIndex({attribute=>$attribute,subAttribute=>"uuid"});
     }
     my $index = $self->indices->{$attribute}->{uuid};
-    foreach my $obj_uuid (@$uuids) {
+    foreach my $obj_uuid (@$uuids) { 
         my $obj_info = $index->{$obj_uuid}->[0];
         if (defined($obj_info)) {
             push(@$results, $self->_build_object($attribute, $obj_info));
+        } elsif (defined($self->_attributes("forwardedLinks")) && defined($self->forwardedLinks()->{$obj_uuid})) {
+        	push(@{$results},$self->getObject($attribute,$self->forwardedLinks()->{$obj_uuid}));
         } else {
             push(@$results, undef);
         }
@@ -333,6 +335,9 @@ sub _buildIndex {
 	my $att = $args->{attribute};
 	my $subatt = $args->{subAttribute};
 	my $newIndex  = {};
+	if ($att =~ m/^682F57E0/) {
+		ModelSEED::utilities::ERROR("Bad call to _buildIndex!");
+	}
 	my $method = "_$att";
 	my $subobjs = $self->$method();
 	if (@{$subobjs} > 0) {

@@ -37,6 +37,7 @@ has annotation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '10'
 has fbaFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has gapfillingFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has gapgenFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -216,10 +217,18 @@ my $attributes = [
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'forwardedLinks',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, gapfillingFormulation_uuids => 14, gapgenFormulation_uuids => 15};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, gapfillingFormulation_uuids => 14, gapgenFormulation_uuids => 15, forwardedLinks => 16};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -231,6 +240,78 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'fbaFormulation_uuids',
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_fbaFormulations',
+            'name' => 'fbaFormulations',
+            'class' => 'FBAFormulation',
+            'method' => 'FBAFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'gapfillingFormulation_uuids',
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_gapfillingFormulations',
+            'name' => 'gapfillingFormulations',
+            'class' => 'GapfillingFormulation',
+            'method' => 'GapfillingFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'gapgenFormulation_uuids',
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_gapgenFormulations',
+            'name' => 'gapgenFormulations',
+            'class' => 'GapgenFormulation',
+            'method' => 'GapgenFormulation'
+          },
+          {
+            'attribute' => 'biochemistry_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_biochemistry',
+            'name' => 'biochemistry',
+            'class' => 'Biochemistry',
+            'method' => 'Biochemistry'
+          },
+          {
+            'attribute' => 'mapping_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_mapping',
+            'name' => 'mapping',
+            'class' => 'Mapping',
+            'method' => 'Mapping'
+          },
+          {
+            'attribute' => 'annotation_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_annotation',
+            'name' => 'annotation',
+            'class' => 'Annotation',
+            'method' => 'Annotation'
+          }
+        ];
+
+my $link_map = {fbaFormulations => 0, gapfillingFormulations => 1, gapgenFormulations => 2, biochemistry => 3, mapping => 4, annotation => 5};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 
