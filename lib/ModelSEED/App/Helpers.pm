@@ -200,7 +200,7 @@ sub object_from_file {
     open ( my $fh, "<", $filename) || die "Cannot open file $filename: $!";
     my $object;
     {
-        local $\;
+        local $/;
         my $str = <$fh>;
         close($fh);
         my $json = JSON::XS->new->decode($str);
