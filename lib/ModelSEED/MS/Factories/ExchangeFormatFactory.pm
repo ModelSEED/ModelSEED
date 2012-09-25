@@ -504,6 +504,7 @@ sub createFromAPI {
 			$concentrations = [split(/;/,$data->{concentrations})];
 		}
 		$data->{mediacompounds} = [];
+		my $notfound = [];
 		for (my $i=0; $i < @{$cpds};$i++) {
 			(my $cpd,my $type,my $idtype,my $reftext) = $parent->interpretReference($cpds->[$i],"Compound");
 			if (defined($cpd)) {
@@ -518,8 +519,11 @@ sub createFromAPI {
 					minFlux => -100
 				});
 			} else {
-				die "Cannot find media compound ".$cpds->[$i]."\n";
+				push(@{$notfound},$cpds->[$i]);
 			}
+		}
+		if (@$notfound > 0) {
+			die "Cannot find media compound(s) ".join("|",@$notfound)."\n";	
 		}
 	}
 	my $fullclass = "ModelSEED::MS::".$class;
