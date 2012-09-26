@@ -47,6 +47,7 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+        ["loadsolution|l:s", "Loading existing solution into model"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -104,11 +105,24 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapfillingFormulation = $exchange_factory->buildGapfillingFormulation($input);
-    #Running gapfilling
-    print STDERR "Running Gapfilling...\n" if($opts->{verbose});
-    my $result = $model->gapfillModel({
-        gapfillingFormulation => $gapfillingFormulation,
-    });
+    my $result;
+    if (defined($opts->{loadsolution}) && -d $opts->{loadsolution}) {
+		my $fbaform = $gapfillingFormulation->prepareFBAFormulation();
+		my $directory = $fbaform->jobDirectory();
+		$fbaform->jobDirectory($opts->{loadsolution});
+		my $fbaresults = $fbaform->add("fbaResults",{});
+		$fbaresults->loadMFAToolkitResults();
+		my $solutions = $fbaresults->gapfillingSolutions();
+		if (defined($solutions->[0])) {
+			$result = $solutions->[0];
+		}
+	} else {
+		#Running gapfilling
+	    print STDERR "Running Gapfilling...\n" if($opts->{verbose});
+	    $result = $model->gapfillModel({
+	        gapfillingFormulation => $gapfillingFormulation,
+	    });
+	}
     if (!defined($result)) {
     	print STDERR " Reactions passing user criteria were insufficient to enable objective!\n";
     } else {
