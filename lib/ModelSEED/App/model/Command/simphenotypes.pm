@@ -65,17 +65,17 @@ sub execute {
 		my $row = $phenoData->{data}->[$i];
 		my $newpheno = {label => $i,media => $row->[$columns->{media}]};
 		if ($columns->{geneKOs} != -1 && $row->[$columns->{geneKOs}] ne "none") {
-			$newpheno->{geneKOs} = [split(/,/,$row->[$columns->{geneKOs}])];
+			$newpheno->{geneKOs} = [split(/;/,$row->[$columns->{geneKOs}])];
 		} else {
 			$newpheno->{geneKOs} = [];
 		}
 		if ($columns->{reactionKOs} != -1 && $row->[$columns->{reactionKOs}] ne "none") {
-			$newpheno->{reactionKOs} = [split(/,/,$row->[$columns->{reactionKOs}])];
+			$newpheno->{reactionKOs} = [split(/;/,$row->[$columns->{reactionKOs}])];
 		} else {
 			$newpheno->{reactionKOs} = [];
 		}
 		if ($columns->{additionalCpds} != -1 && $row->[$columns->{additionalCpds}] ne "none") {
-			$newpheno->{additionalCpds} = [split(/,/,$row->[$columns->{additionalCpds}])];
+			$newpheno->{additionalCpds} = [split(/;/,$row->[$columns->{additionalCpds}])];
 		} else {
 			$newpheno->{additionalCpds} = [];
 		}

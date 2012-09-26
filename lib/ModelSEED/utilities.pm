@@ -200,8 +200,8 @@ sub LOADFILE {
     my $DataArrayRef = [];
     open (my $fh, "<", $filename) || ModelSEED::utilities::ERROR("Couldn't open $filename: $!");
     while (my $Line = <$fh>) {
-        chomp($Line);
         $Line =~ s/\r//;
+        chomp($Line);
         push(@{$DataArrayRef},$Line);
     }
     close($fh);
