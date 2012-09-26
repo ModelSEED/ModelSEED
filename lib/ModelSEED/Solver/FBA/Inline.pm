@@ -10,7 +10,7 @@ sub start {
     my ($self, $fbaFormulation) = @_;
     my $results = $fbaFormulation->runFBA(); 
     my $token = "fBAFormulation/".$fbaFormulation->uuid;
-    $self->store->save_data($token, $fbaFormulation);
+    $self->store->save_object($token, $fbaFormulation);
     return $token;
 }
 
