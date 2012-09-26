@@ -47,6 +47,7 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+        ["norun", "Do not gapfill; print out the configuration as JSON"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -57,41 +58,59 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
-    #Retreiving the model object on which FBA will be performed
+    # Retreiving the model object on which FBA will be performed
     (my $model,my $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	#Standard commands to handle where output will be printed
+	# Redirect output to file if we need to
     my $out_fh;
 	if ($opts->{fileout}) {
 	    open($out_fh, ">", $opts->{fileout}) or die "Cannot open ".$opts->{fileout}.": $!";
 	} else {
 	    $out_fh = \*STDOUT;
 	}
-	#Creating gapfilling formulation
+	# Creating gapfilling formulation
 	my $input = {model => $model};
 	if ($opts->{config}) {
 		$input->{filename} = $opts->{config};
 	}
-	my $fbaoverrides = {
-		media => "media",notes => "notes",objfraction => "objectiveConstraintFraction",
-		objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux"
-	};
-	my $overrideList = {
-		nomediahyp => "!mediaHypothesis",nobiomasshyp => "!biomassHypothesis",nogprhyp => "!gprHypothesis",
-		nopathwayhyp => "!reactionAdditionHypothesis",allowunbalanced => "!balancedReactionsOnly",
-		activitybonus => "reactionActivationBonus",drainpen => "drainFluxMultiplier",directionpen => "directionalityMultiplier",
-		unfavorablepen => "deltaGMultiplier",nodeltagpen => "noDeltaGMultiplier",biomasstranspen => "biomassTransporterMultiplier",
-		singletranspen => "singleTransporterMultiplier",nostructpen => "noStructureMultiplier",transpen => "transporterMultiplier",
-		blacklistedrxns => "blacklistedReactions",gauranteedrxns => "guaranteedReactions",allowedcmps => "allowableCompartments",
-	};
+    my $fbaoverrides = {
+        media            => "media",
+        notes            => "notes",
+        objfraction      => "objectiveConstraintFraction",
+        objective        => "objectiveString",
+        rxnko            => "geneKO",
+        geneko           => "reactionKO",
+        uptakelim        => "uptakeLimits",
+        defaultmaxflux   => "defaultMaxFlux",
+        defaultmaxuptake => "defaultMaxDrainFlux",
+        defaultminuptake => "defaultMinDrainFlux"
+    };
+    my $overrideList = {
+        nomediahyp      => "!mediaHypothesis",
+        nobiomasshyp    => "!biomassHypothesis",
+        nogprhyp        => "!gprHypothesis",
+        nopathwayhyp    => "!reactionAdditionHypothesis",
+        allowunbalanced => "!balancedReactionsOnly",
+        activitybonus   => "reactionActivationBonus",
+        drainpen        => "drainFluxMultiplier",
+        directionpen    => "directionalityMultiplier",
+        unfavorablepen  => "deltaGMultiplier",
+        nodeltagpen     => "noDeltaGMultiplier",
+        biomasstranspen => "biomassTransporterMultiplier",
+        singletranspen  => "singleTransporterMultiplier",
+        nostructpen     => "noStructureMultiplier",
+        transpen        => "transporterMultiplier",
+        blacklistedrxns => "blacklistedReactions",
+        gauranteedrxns  => "guaranteedReactions",
+        allowedcmps     => "allowableCompartments",
+    };
 	foreach my $argument (keys(%{$overrideList})) {
 		if ($overrideList->{$argument} =~ m/^\!(.+)$/) {
-			$argument = $1;
+			my $real_argument = $1;
 			if (defined($opts->{$argument})) {
-				$input->{overrides}->{$overrideList->{$argument}} = 0;
+				$input->{overrides}->{$real_argument} = 0;
 			} else {
-				$input->{overrides}->{$overrideList->{$argument}} = 1;
+				$input->{overrides}->{$real_argument} = 1;
 			}
 		} elsif (defined($opts->{$argument})) {
 			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
@@ -104,7 +123,12 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapfillingFormulation = $exchange_factory->buildGapfillingFormulation($input);
-    #Running gapfilling
+    # Exit with config if thats what was requested
+    if ($opts->{norun}) {
+        print $gapfillingFormulation->toJSON();
+        exit;
+    }
+    # Running gapfilling
     print STDERR "Running Gapfilling...\n" if($opts->{verbose});
     my $result = $model->gapfillModel({
         gapfillingFormulation => $gapfillingFormulation,
@@ -113,20 +137,22 @@ sub execute {
     	print STDERR " Reactions passing user criteria were insufficient to enable objective!\n";
     } else {
 		print $out_fh $result->toJSON({pp => 1});
-	    #Standard commands that save results of the analysis to the database
-	    if ($opts->{overwrite}) {
+	    # Standard commands that save results of the analysis to the database
+        my $fbaFormulation = $gapfillingFormulation->fbaFormulation;
+	    if ($opts->{overwrite} || $opts->{save}) {
+            $store->save_object("fBAFormulation/".$fbaFormulation->uuid, $fbaFormulation);
+            $store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid, $gapfillingFormulation);
+        }
+        if ($opts->{overwrite}) {
 	    	print STDERR "Saving gapfilled model over original model...\n" if($opts->{verbose});
-	    	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
-	    	$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
-	    	$store->save_object($ref,$model);
+	    	$store->save_object($ref, $model);
 	    } elsif ($opts->{save}) {
-			$ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
-			print STDERR "Saving gapfilled model as new model ".$ref."...\n" if($opts->{verbose});
-			$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
-	    	$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
-			$store->save_object($ref,$model);
+			my $new_ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
+			print STDERR "Saving gapfilled model as new model ".$new_ref."...\n" if($opts->{verbose});
+			$store->save_object($ref, $model);
 	    }
     }
+    close $out_fh if $opts->{fileout};
 }
 
 1;

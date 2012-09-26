@@ -3,12 +3,15 @@ use strict;
 use common::sense;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
+    JSON::XS
     ModelSEED::Store
     ModelSEED::Auth::Factory
     ModelSEED::Reference
     ModelSEED::Configuration
     ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
+    ModelSEED::MS::FBAFormulation
+    ModelSEED::Solver::FBA
 );
 sub abstract { return "Fill gaps in the reaction network for a model"; }
 sub usage_desc { return "model runfba [ model || - ] [options]"; }
@@ -38,6 +41,7 @@ sub opt_spec {
         ["thermoconst","Use standard thermodynamic constraints"],
         ["nothermoerror","Do not include uncertainty in thermodynamic constraints"],
         ["minthermoerror","Minimize uncertainty in thermodynamic constraints"],
+        ["norun", "Do not run the FBA; print out the configuration as JSON"],
         ["html","Print FBA results in HTML"],
         ["help|h|?", "Print this usage information"],
     );
@@ -49,45 +53,70 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
-    #Retreiving the model object on which FBA will be performed
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
+    # Retreiving the model object on which FBA will be performed
+    my ($model, $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	#Standard commands to handle where output will be printed
     my $out_fh;
-	if ($opts->{fileout}) {
-	    open($out_fh, ">", $opts->{fileout}) or die "Cannot open ".$opts->{fileout}.": $!";
-	} else {
-	    $out_fh = \*STDOUT;
-	}
-	#Creating FBA formulation
-	my $input = {model => $model};
-	if ($opts->{config}) {
-		$input->{filename} = $opts->{config};
-	}
-	my $overrideList = {
-		media => "media",notes => "notes",fva => "fva",simulateko => "comboDeletions",
-		minimizeflux => "fluxMinimization",findminmedia => "findMinimalMedia",objfraction => "objectiveConstraintFraction",
-		allreversible => "allReversible",objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultminuptake => "defaultMinDrainFlux",defaultmaxuptake => "defaultMaxDrainFlux",
-		simplethermoconst => "simpleThermoConstraints",thermoconst => "thermodynamicConstraints",nothermoerror => "noErrorThermodynamicConstraints",
-		minthermoerror => "minimizeErrorThermodynamicConstraints"
-	};
-	foreach my $argument (keys(%{$overrideList})) {
-		if (defined($opts->{$argument})) {
-			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
-		}
-	}
-	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
-	my $fbaform = $exchange_factory->buildFBAFormulation($input);
-    #Running FBA
+    if ($opts->{fileout}) {
+        my $filename = $opts->{fileout};
+        open($out_fh, ">", $filename) or die "Cannot open $filename: $!";
+    } else {
+        $out_fh = \*STDOUT;
+    }
+    my $fbaform;
+    if ($opts->{config}) {
+        $fbaform = $helper->object_from_file("FBAFormulation", $opts->{config}, $store);
+    } else {
+        # Creating FBA formulation
+        my $input = { model => $model };
+        my $overrideList = {
+            media             => "media",
+            notes             => "notes",
+            fva               => "fva",
+            simulateko        => "comboDeletions",
+            minimizeflux      => "fluxMinimization",
+            findminmedia      => "findMinimalMedia",
+            objfraction       => "objectiveConstraintFraction",
+            allreversible     => "allReversible",
+            objective         => "objectiveString",
+            rxnko             => "geneKO",
+            geneko            => "reactionKO",
+            uptakelim         => "uptakeLimits",
+            defaultmaxflux    => "defaultMaxFlux",
+            defaultminuptake  => "defaultMinDrainFlux",
+            defaultmaxuptake  => "defaultMaxDrainFlux",
+            simplethermoconst => "simpleThermoConstraints",
+            thermoconst       => "thermodynamicConstraints",
+            nothermoerror     => "noErrorThermodynamicConstraints",
+            minthermoerror    => "minimizeErrorThermodynamicConstraints"
+        };
+        foreach my $argument (keys(%{$overrideList})) {
+            if (defined($opts->{$argument})) {
+                $input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
+            }
+        }
+	    my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
+	    $fbaform = $exchange_factory->buildFBAFormulation($input);
+    }
+    if ($opts->{norun}) {
+        # Pretty print the formulation if "norun" option supplied
+        print $fbaform->toJSON({ pp => 1});
+        exit;
+    }
+    # Running FBA
     print STDERR "Running FBA..." if($opts->{verbose});
-    my $fbaResult = $fbaform->runFBA();
-    #Standard commands that save results of the analysis to the database
+    my $solver = ModelSEED::Solver::FBA->new(store => $store);     
+    my $token = $solver->start($fbaform);
+    if (!$solver->done($token)) {
+        print STDERR $token;
+        exit;
+    } 
+    my $fbaResult = $solver->getResults($token);
     if (!defined($fbaResult)) {
     	print STDERR " FBA failed with no solution returned!\n";
     } else {
 	    push(@{$model->fbaFormulation_uuids()},$fbaform->uuid());
-	    #Standard commands that save results of the analysis to the database
+	    # Standard commands that save results of the analysis to the database
 	    if ($opts->{overwrite}) {
 	    	print STDERR "Saving model with FBA solution over original model...\n" if($opts->{verbose});
 	    	$store->save_object("fBAFormulation/".$fbaform->uuid(),$fbaform);
@@ -104,6 +133,7 @@ sub execute {
 	    	print $out_fh $fbaform->toJSON({pp => 1});
 	    }
     }
+    close $out_fh if $opts->{fileout};
 }
 
 sub _getModel {
