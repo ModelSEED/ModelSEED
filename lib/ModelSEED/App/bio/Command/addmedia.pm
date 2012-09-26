@@ -40,6 +40,11 @@ sub execute {
     }
     my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
     my $obj = $factory->createFromAPI("Media",$biochemistry,$data);
+    my $existingMedia = $biochemistry->queryObject("media",{id => $obj->id()});
+    if (defined($existingMedia)) {
+    	$obj->uuid($existingMedia->uuid());
+    	$biochemistry->remove("media",$existingMedia);
+    }
     $biochemistry->add("media",$obj);
     if (defined($opts->{saveas})) {
     	$ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
