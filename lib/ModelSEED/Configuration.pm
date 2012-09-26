@@ -101,7 +101,8 @@ sub possible_user_options {
         ERROR_DIR => $ENV{HOME} . '/.modelseed_error',
         MFATK_CACHE => '/tmp', #Actually, this appears to work fine in windows.
         MFATK_BIN => undef,
-        CPLEX_LICENCE => undef
+        CPLEX_LICENCE => undef,
+        USE_CLUSTER => 0,
     }
 }
 
