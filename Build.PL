@@ -90,7 +90,6 @@ my $builder = $subclass->new(
         "IO::Compress::Gzip" => 0,
         "IO::Uncompress::Gunzip" => 0,
         "JSON::XS" => 0,
-        "JSON::Any" => 0,
         "JSON::RPC::Client" => 0,
         "LWP" => 0,
         "Module::Load" => 0,
