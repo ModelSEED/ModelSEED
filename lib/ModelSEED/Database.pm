@@ -210,7 +210,7 @@ requires 'has_data';
 requires 'get_data';
 requires 'save_data';
 #requires 'delete_data';
-requires 'find_data';
+#requires 'find_data';
 # Alias functions
 requires 'get_aliases';
 requires 'update_alias';
