@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use Try::Tiny;
 use List::Util;
-use JSON;
+use JSON::XS;
 use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::Reference
@@ -46,7 +46,7 @@ sub execute {
     {
         local $\;
         my $str = <$fh>;
-        my $perl = JSON->new->utf8(1)->decode($str);
+        my $perl = JSON::XS->new->utf8(1)->decode($str);
         close($fh);
         $object = $store->create($ref_base_type, $perl);
     }

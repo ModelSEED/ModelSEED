@@ -8,7 +8,7 @@
 use ModelSEED::MS::Metadata::Types;
 use DateTime;
 use Data::UUID;
-use JSON;
+use JSON::XS;
 use Module::Load;
 use ModelSEED::MS::Metadata::Attribute::Typed;
 use ModelSEED::Exceptions;
@@ -189,7 +189,7 @@ sub toJSON {
     my ($self,$args) = @_;
     $args = ModelSEED::utilities::ARGS($args,[],{pp => 0});
     my $data = $self->serializeToDB();
-    my $JSON = JSON->new->utf8(1);
+    my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
     return $JSON->encode($data)
 }

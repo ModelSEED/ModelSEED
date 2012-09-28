@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use Try::Tiny;
 use List::Util;
-use JSON;
 use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::Reference

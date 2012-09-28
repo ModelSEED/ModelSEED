@@ -4,7 +4,7 @@ use warnings;
 
 use ModelSEED::Database::FileDB::KeyValueStore;
 
-use JSON::Any;
+use JSON::XS;
 use IO::Compress::Gzip qw(gzip);
 
 use Test::Deep::NoTest;
@@ -48,7 +48,7 @@ sub save_object {
 
     my $obj_size = pretty_size(total_size($obj));
 
-    my $json_obj = JSON::Any->encode($obj);
+    my $json_obj = JSON::XS->new->encode($obj);
     my $json_size = pretty_size(length($json_obj));
 
     my $gzip_obj;
