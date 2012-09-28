@@ -722,6 +722,7 @@ sub updateLinks {
     		my $aliases = $self->aliases();
     		if (defined($uuidHash->{$olduuid})) {
     			my $aliaselist = $uuidHash->{$olduuid};
+    			my $aliasesToAdd = [];
     			for (my $j=0; $j < @{$aliaselist}; $j++) {
     				my $alias = $aliaselist->[$j];
 					my $found = 0;
@@ -742,8 +743,11 @@ sub updateLinks {
 					}
 					if ($transferaliases == 1 && $found == 0) {
 						push(@{$aliases->{$alias}},$newuuid);
-						#push(@{$uuidHash->{$newuuid}},$alias);
+						push(@{$aliasesToAdd},$alias);
 					}
+				}
+				if (@{$aliasesToAdd} > 0) {
+					push(@{$uuidHash->{$newuuid}},@{$aliasesToAdd});
 				}
     		}
     	}
