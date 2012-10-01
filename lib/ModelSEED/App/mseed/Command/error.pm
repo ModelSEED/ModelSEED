@@ -24,7 +24,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $n = 0;
     if(@$args) {
         $n = $args->[0];

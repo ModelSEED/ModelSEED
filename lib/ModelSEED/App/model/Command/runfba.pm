@@ -49,7 +49,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
@@ -101,7 +101,7 @@ sub execute {
     if ($opts->{norun}) {
         # Pretty print the formulation if "norun" option supplied
         print $fbaform->toJSON({ pp => 1});
-        exit;
+        return;
     }
     # Running FBA
     print STDERR "Running FBA..." if($opts->{verbose});
@@ -109,7 +109,7 @@ sub execute {
     my $token = $solver->start($fbaform);
     if (!$solver->done($token)) {
         print STDERR $token;
-        exit;
+        return;
     } 
     my $fbaResult = $solver->getResults($token);
     if (!defined($fbaResult)) {

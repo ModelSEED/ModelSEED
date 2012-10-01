@@ -13,7 +13,7 @@ sub opt_spec { return (
 sub abstract { return "Return the currently logged in user" }
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config;
     print $auth->username . "\n"
 }

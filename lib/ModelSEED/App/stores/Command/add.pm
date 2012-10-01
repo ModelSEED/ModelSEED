@@ -38,7 +38,7 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-    print($self->usage) && exit if $opt->{help};
+    print($self->usage) && return if $opt->{help};
     my $name = shift @$args;
     unless (defined($name)) {
         $self->usage_error("Must provide name for database.");

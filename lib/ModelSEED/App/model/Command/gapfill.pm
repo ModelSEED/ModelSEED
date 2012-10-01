@@ -54,7 +54,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
@@ -126,7 +126,7 @@ sub execute {
     # Exit with config if thats what was requested
     if ($opts->{norun}) {
         print $gapfillingFormulation->toJSON();
-        exit;
+        return;
     }
     # Running gapfilling
     print STDERR "Running Gapfilling...\n" if($opts->{verbose});

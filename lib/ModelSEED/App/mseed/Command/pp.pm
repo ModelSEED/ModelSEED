@@ -11,7 +11,7 @@ sub opt_spec { return (
 }
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $str;
     {
         local $\;

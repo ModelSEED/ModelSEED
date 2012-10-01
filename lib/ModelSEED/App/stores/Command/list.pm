@@ -10,7 +10,7 @@ sub opt_spec {
 }
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $ms = ModelSEED::Configuration->new();    
     my $stores = $ms->config->{stores};
     if($opts->{verbose}) {

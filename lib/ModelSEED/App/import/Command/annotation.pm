@@ -55,7 +55,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helper = ModelSEED::App::Helpers->new;
     my $store;
@@ -76,7 +76,7 @@ sub execute {
     # If we are listing, just do that and exit
     if(defined($opts->{list})) {
         $self->printList($factory, $opts);
-        exit;
+        return;
     }
     # Check that required arguments are present
     my ($id, $alias) = @$args;

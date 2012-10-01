@@ -32,7 +32,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $blessed_params = {
         "biochemistry.alias.set" => \&_string,
         biochemistry => \&_ref,
