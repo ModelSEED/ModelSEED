@@ -6,7 +6,6 @@
 ########################################################################
 package ModelSEED::MS::DB::GapfillingSolutionReaction;
 use ModelSEED::MS::BaseObject;
-use ModelSEED::MS::GfSolutionReactionGeneCandidate;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -17,22 +16,25 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingSolution', weak_ref 
 
 
 # ATTRIBUTES:
-has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-
-
-# SUBOBJECTS:
-has gfSolutionReactionGeneCandidates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GfSolutionReactionGeneCandidate)', metaclass => 'Typed', reader => '_gfSolutionReactionGeneCandidates', printOrder => '-1');
+has candidateFeature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelreaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', weak_ref => 1);
+has reaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', weak_ref => 1);
+has candidateFeatures => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Feature]', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures');
 
 
 # BUILDERS:
-sub _build_modelreaction {
+sub _build_reaction {
   my ($self) = @_;
-  return $self->getLinkedObject('Model','modelreactions',$self->modelreaction_uuid());
+  return $self->getLinkedObject('Biochemistry','reactions',$self->reaction_uuid());
+}
+sub _build_candidateFeatures {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Annotation','features',$self->candidateFeature_uuids());
 }
 
 
@@ -43,7 +45,14 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'modelreaction_uuid',
+            'name' => 'reaction_uuid',
+            'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 1,
+            'printOrder' => 0,
+            'name' => 'compartment_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
           },
@@ -54,10 +63,18 @@ my $attributes = [
             'default' => '1',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'candidateFeature_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {modelreaction_uuid => 0, direction => 1};
+my $attribute_map = {reaction_uuid => 0, compartment_uuid => 1, direction => 2, candidateFeature_uuids => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -72,16 +89,9 @@ sub _attributes {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'gfSolutionReactionGeneCandidates',
-            'type' => 'encompassed',
-            'class' => 'GfSolutionReactionGeneCandidate'
-          }
-        ];
+my $subobjects = [];
 
-my $subobject_map = {gfSolutionReactionGeneCandidates => 0};
+my $subobject_map = {};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -95,13 +105,6 @@ sub _subobjects {
     return $subobjects;
   }
 }
-
-
-# SUBOBJECT READERS:
-around 'gfSolutionReactionGeneCandidates' => sub {
-  my ($orig, $self) = @_;
-  return $self->_build_all_objects('gfSolutionReactionGeneCandidates');
-};
 
 
 __PACKAGE__->meta->make_immutable;

@@ -14,11 +14,46 @@ extends 'ModelSEED::MS::DB::GapfillingFormulation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has guaranteedReactionString => ( is => 'rw',printOrder => 16, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildguaranteedReactionString' );
+has blacklistedReactionString => ( is => 'rw',printOrder => 17, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildblacklistedReactionString' );
+has allowableCompartmentString => ( is => 'rw',printOrder => 18, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildallowableCompartmentString' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-
+sub _buildguaranteedReactionString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->guaranteedReactions()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->guaranteedReactions()->[$i]->id();
+	}
+	return $string;
+}
+sub _buildblacklistedReactionString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->blacklistedReactions()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->blacklistedReactions()->[$i]->id();
+	}
+	return $string;
+}
+sub _buildallowableCompartmentString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->allowableCompartments()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->allowableCompartments()->[$i]->id();
+	}
+	return $string;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -267,6 +302,18 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"Add positive use variable constraints"} = 0;
 	$form->parameters()->{"Biomass modification hypothesis"} = 0;
 	$form->parameters()->{"Biomass component reaction penalty"} = 500;
+	$form->inputfiles()->{"InactiveModelReactions.txt"} = [];
+	my $objterms = $form->fbaObjectiveTerms();
+	for (my $i=0; $i < @{$objterms}; $i++) {
+		my $term = $objterms->[$i];
+		if ($term->entityType() eq "Reaction" || $term->entityType() eq "Biomass") {
+			(my $obj) = $self->interpretReference($term->entityType()."/uuid/".$term->entity_uuid());
+			if (defined($obj)) {
+				push(@{$form->inputfiles()->{"InactiveModelReactions.txt"}},$obj->id());
+			}
+		}
+	}
+	$form->outputfiles()->["CompleteGapfillingOutput.txt"];
 	if ($self->biomassHypothesis() == 1) {
 		$form->parameters()->{"Biomass modification hypothesis"} = 1;
 		$self->printBiomassComponentReactions();
@@ -330,30 +377,115 @@ Description:
 sub runGapFilling {
 	my ($self,$args) = @_;
 	#Preparing fba formulation describing gapfilling problem
-	my $form = $self->prepareFBAFormulation();
-	my $directory = $form->jobDirectory()."/";
-	#Printing list of inactive reactions based on settings and fba formulation objective
-	my $inactiveList = [];
-	my $objterms = $form->fbaObjectiveTerms();
-	for (my $i=0; $i < @{$objterms}; $i++) {
-		my $term = $objterms->[$i];
-		if ($term->entityType() eq "Reaction" || $term->entityType() eq "Biomass") {
-			(my $obj) = $self->interpretReference($term->entityType()."/uuid/".$term->entity_uuid());
-			if (defined($obj)) {
-				push(@{$inactiveList},$obj->id());
+	my $form = $self->prepareFBAFormulation();	
+	#Running the gapfilling
+	my $fbaResults = $form->runFBA();
+	#Parsing solutions
+	$self->parseGapfillingResults($fbaResults);
+	return $self;
+}
+
+=head3 parseGapfillingResults
+
+Definition:
+	void parseGapfillingResults();
+Description:
+	Parses Gapfilling results
+
+=cut
+
+sub parseGapfillingResults {
+	my ($self,$fbaResults) = @_;
+	my $outputHash = $fbaResults->outputfiles();
+	if (defined($outputHash->{"GapfillingComplete.txt"})) {
+		my $filedata = $outputHash->{"GapfillingComplete.txt"};
+		$self->createSolutionsFromArray({
+			data => $filedata
+		});
+	}
+}
+
+=head3 createSolutionsFromArray
+
+Definition:
+	void createSolutionsFromArray({
+		data => [string]:gapfilling solution data,
+		model => ModelSEED::MS::Model:gapfilled model
+	});
+Description:
+	Parsing input data to generate gapfilling solutions
+
+=cut
+
+sub createSolutionsFromArray {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["data"],{
+		model => $self->model()
+	});
+	my $data = $args->{data};
+	my $mdl = $args->{model};
+	my $bio = $mdl->biochemistry();
+	my $count = 0;
+	my $rxnHash;
+	for (my $i=0; $i < @{$data}; $i++) {
+		if ($data->[$i] =~ m/^bio00001/) {
+			my $gfsolution = $self->add("gapfillingSolutions",{});
+			my $array = [split(/\t/,$data->[$i])];
+			if (defined($array->[1])) {
+				my $subarray = [split(/;/,$array->[1])];
+				for (my $j=0; $j < @{$subarray}; $j++) {
+					if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
+						my $comp = "c";
+						my $rxnid = $2;
+						my $sign = $1;
+						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						}
+						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+						}
+						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
+						} else {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
+						}
+						$count++;
+					} elsif ($subarray->[$j] =~ m/([\+])(cpd\d\d\d\d\d)DrnRxn/) {
+						my $cpdid = $2;
+						my $sign = $1;
+						my $bio = $mdl->biomasses()->[0];
+						my $biocpds = $bio->biomasscompounds();
+						my $found = 0;
+						for (my $i=0; $i < @{$biocpds}; $i++) {
+							my $biocpd = $biocpds->[$i];
+							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+								$bio->remove("biomasscompounds",$biocpd);
+								$found = 1;
+								push(@{$self->biomassRemovals()},$biocpd->modelcompound());
+								push(@{$self->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+							}
+						}
+						if ($found == 0) {
+							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+						}
+						$count += 5;
+					}
+				}
+			}
+			$gfsolution->solutionCost($count);
+			foreach my $ruuid (keys(%{$rxnHash})) {
+				foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
+					$gfsolution->add("gapfillingSolutionReactions",{
+						reaction_uuid => $uuid,
+						compartment_uuid => $cuuid,
+						direction => $rxnHash->{$ruuid}->{$cuuid}
+					});
+				}
 			}
 		}
 	}
-	ModelSEED::utilities::PRINTFILE($directory."InactiveModelReactions.txt",$inactiveList);
-	#Running the gapfilling
-	my $fbaResults = $form->runFBA();
-	#Retrieving solutions
-	my $solutions = $fbaResults->gapfillingSolutions();
-	if (!defined($solutions->[0])) {
-		print STDERR "Gapfilling solution not found. Gapfilling failed!";
-		return undef; 
-	}
-	return $solutions->[0];
 }
 
 sub parseGeneCandidates {

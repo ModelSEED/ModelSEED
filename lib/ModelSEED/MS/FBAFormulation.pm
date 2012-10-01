@@ -282,6 +282,11 @@ sub createJobDirectory {
 		ModelSEED::utilities::PRINTFILE($directory."reaction/".$bio->id(),$bioData);
 	}
 	ModelSEED::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
+	#Printing additional input files specified in formulation
+	my $inputfileHash = $self->inputfiles();
+	foreach my $filename (keys(%{$inputfileHash})) {
+		ModelSEED::utilities::PRINTFILE($directory.$filename,$inputfileHash->{$filename});
+	}
 	#Setting drain max based on media
 	my $primMedia = $self->media();
 	if ($primMedia->name() eq "Complete") {

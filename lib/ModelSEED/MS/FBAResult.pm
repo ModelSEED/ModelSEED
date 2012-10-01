@@ -237,6 +237,7 @@ sub loadMFAToolkitResults {
 	$self->parseFVAResults();
 	$self->parseGapfillingResults();
 	$self->parseGapgenResults();
+	$self->parseOutputFiles();
 }
 
 =head3 parseFluxFiles
@@ -798,52 +799,24 @@ sub parseFVAResults {
 	}
 }
 
-=head3 parseGapfillingResults
+=head3 parseOutputFiles
+
 Definition:
-	void ModelSEED::MS::Model->parseGapfillingResults();
+	void parseOutputFiles();
 Description:
-	Parses Gapfilling results
+	Parses output files specified in FBAFormulation
 
 =cut
 
-sub parseGapfillingResults {
+sub parseOutputFiles {
 	my ($self) = @_;
 	my $directory = $self->parent()->jobDirectory();
-	if (-e $directory."/GapfillingComplete.txt") {
-		my $gfsolution = $self->add("gapfillingSolutions",{});
-		$gfsolution->loadFromFile({filename => $directory."/CompleteGapfillingOutput.txt"});
-	}
-}
-
-=head3 parseGapgenResults
-
-Definition:
-	void ModelSEED::MS::Model->parseGapgenResults();
-Description:
-	Parses Gapgen results
-
-=cut
-
-sub parseGapgenResults {
-	my ($self) = @_;
-	my $directory = $self->parent()->jobDirectory();
-	if (-e $directory."/GapGenerationReport.txt") {
-		my $filedata = ModelSEED::utilities::LOADFILE($directory."/GapGenerationReport.txt");
-		for (my $i=1; $i < @{$filedata}; $i++) {
-			my $array = [split(/\t/,$filedata->[$i])];
-			if (defined($array->[1])) {
-				my $subarray = [split(/,/,$array->[1])];
-				my $ggsolution = $self->add("gapgenSolutions",{});
-				$ggsolution->loadFromData({
-					objective => $array->[0],
-					reactions => $subarray,
-					model => $self->model()
-				});
-			}
+	foreach my $filename (@{$self->parent()->outputfiles()}) {
+		if (-e $directory."/".$filename) {
+			$self->outputfiles()->{$filename} = ModelSEED::utilities::LOADFILE($directory."/".$filename);
 		}
 	}
 }
-
 
 __PACKAGE__->meta->make_immutable;
 1;

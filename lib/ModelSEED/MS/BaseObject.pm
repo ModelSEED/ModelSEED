@@ -624,6 +624,48 @@ sub getLinkedObjectArray {
     return $list;
 }
 
+sub removeLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{method};
+    	my $data = $self->$method();
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				ModelSEED::utilities::VERBOSEMSG("Removing object from link array.");
+				if (@{$ugfs} == 1) {
+					$ugfs = [];
+				} else {
+					splice(@{$ugfs},$i,1);
+				}
+				my $clearer = "clear_".$link;
+				$self->$clearer();
+			}
+		}
+    }	
+}
+
+sub addLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{method};
+    	my $data = $self->$method();
+    	my $found = 0;
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				$found = 1;
+			}
+    	}
+    	if ($found == 0) {
+    		ModelSEED::utilities::VERBOSEMSG("Removing object from link array.");
+    		my $clearer = "clear_".$link;
+			$self->$clearer();
+			push(@{$data},$object->uuid());
+    	}
+    }	
+}
+
 sub biochemistry {
     my ($self) = @_;
     my $parent = $self->parent();

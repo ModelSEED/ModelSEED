@@ -145,6 +145,56 @@ sub USEWARNING {
 	print STDERR "\n".$message."\n\n";
 }
 
+=head3 VERBOSEMSG
+
+Definition:
+	void ModelSEED::utilities::USEWARNING();
+Description:	
+	Prints a message to STDOUT if the user has set the system to verbose.
+
+=cut
+
+sub VERBOSEMSG {	
+	my ($message) = @_;
+	if (ModelSEED::utilities::VERBOSE()) {
+		print STDOUT "\n".$message."\n";
+	}
+}
+
+=head3 VERBOSE
+
+Definition:
+	bool ModelSEED::utilities::VERBOSE();
+Description:	
+	Indicates if the system is in verbose mode.
+
+=cut
+
+sub VERBOSE {	
+	if (!defined($ENV{MODEL_SEED_VERBOSE})) {
+		$ENV{MODEL_SEED_VERBOSE} = 0;
+	}
+	return $ENV{MODEL_SEED_VERBOSE};
+}
+
+=head3 SETVERBOSE
+
+Definition:
+	void ModelSEED::utilities::SETVERBOSE(bool input);
+Description:	
+	Sets the ModelSEED to be verbose or not
+
+=cut
+
+sub SETVERBOSE {	
+	my ($verbose) = @_;
+	if (defined($verbose) && $verbose eq "1") {
+		$ENV{MODEL_SEED_VERBOSE} = 1;
+	} elsif (defined($verbose)) {
+		$ENV{MODEL_SEED_VERBOSE} = 0;
+	}
+}
+
 =head3 WARNING
 
 Definition:
@@ -186,6 +236,23 @@ sub PRINTFILE {
     	print $fh $Item."\n";
     }
     close($fh);
+}
+
+=head3 TOJSON
+
+Definition:
+	void ModelSEED::utilities::TOJSON(REF);
+Description:	
+
+=cut
+
+sub TOJSON {
+    my ($ref,$prettyprint) = @_;
+    my $JSON = JSON->new->utf8(1);
+    if (defined($prettyprint) && $prettyprint == 1) {
+		$JSON->pretty(1);
+    }
+    return $JSON->encode($ref);
 }
 
 =head3 LOADFILE

@@ -35,8 +35,11 @@ has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '8', ty
 has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
 has annotation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has fbaFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has gapfillingFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has gapgenFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has integratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has integratedGapfillingSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has unintegratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has integratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has unintegratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -52,8 +55,10 @@ has modelreactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 
 # LINKS:
 has fbaFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::FBAFormulation]', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulations', clearer => 'clear_fbaFormulations');
-has gapfillingFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapfillingFormulation]', type => 'link(ModelSEED::Store,GapfillingFormulation,gapfillingFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapfillingFormulations', clearer => 'clear_gapfillingFormulations');
-has gapgenFormulations => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapgenFormulation]', type => 'link(ModelSEED::Store,GapgenFormulation,gapgenFormulation_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_gapgenFormulations', clearer => 'clear_gapgenFormulations');
+has unintegratedGapfillings => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapfillingFormulation]', type => 'link(ModelSEED::Store,GapfillingFormulation,unintegratedGapfilling_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_unintegratedGapfillings', clearer => 'clear_unintegratedGapfillings');
+has integratedGapfillings => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapfillingFormulation]', type => 'link(ModelSEED::Store,GapfillingFormulation,integratedGapfilling_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_integratedGapfillings', clearer => 'clear_integratedGapfillings');
+has unintegratedGapgens => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapgenFormulation]', type => 'link(ModelSEED::Store,GapgenFormulation,unintegratedGapgen_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_unintegratedGapgens', clearer => 'clear_unintegratedGapgens');
+has integratedGapgens => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::GapgenFormulation]', type => 'link(ModelSEED::Store,GapgenFormulation,integratedGapgen_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_integratedGapgens', clearer => 'clear_integratedGapgens');
 has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry');
 has mapping => (is => 'rw', isa => 'ModelSEED::MS::Mapping', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping');
 has annotation => (is => 'rw', isa => 'ModelSEED::MS::Annotation', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation', clearer => 'clear_annotation');
@@ -66,13 +71,21 @@ sub _build_fbaFormulations {
   my ($self) = @_;
   return $self->getLinkedObjectArray('ModelSEED::Store','FBAFormulation',$self->fbaFormulation_uuids());
 }
-sub _build_gapfillingFormulations {
+sub _build_unintegratedGapfillings {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('ModelSEED::Store','GapfillingFormulation',$self->gapfillingFormulation_uuids());
+  return $self->getLinkedObjectArray('ModelSEED::Store','GapfillingFormulation',$self->unintegratedGapfilling_uuids());
 }
-sub _build_gapgenFormulations {
+sub _build_integratedGapfillings {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('ModelSEED::Store','GapgenFormulation',$self->gapgenFormulation_uuids());
+  return $self->getLinkedObjectArray('ModelSEED::Store','GapfillingFormulation',$self->integratedGapfilling_uuids());
+}
+sub _build_unintegratedGapgens {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('ModelSEED::Store','GapgenFormulation',$self->unintegratedGapgen_uuids());
+}
+sub _build_integratedGapgens {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('ModelSEED::Store','GapgenFormulation',$self->integratedGapgen_uuids());
 }
 sub _build_biochemistry {
   my ($self) = @_;
@@ -204,7 +217,7 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'gapfillingFormulation_uuids',
+            'name' => 'integratedGapfilling_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -212,14 +225,38 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'gapgenFormulation_uuids',
+            'name' => 'integratedGapfillingSolutions',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'unintegratedGapfilling_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'integratedGapgen_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'unintegratedGapgen_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, gapfillingFormulation_uuids => 14, gapgenFormulation_uuids => 15};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, unintegratedGapgen_uuids => 18};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
