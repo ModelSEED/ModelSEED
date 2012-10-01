@@ -147,16 +147,6 @@ sub _attributes {
   }
 }
 
-<<<<<<< HEAD
-my $subobjects = [
-          {
-            'printOrder' => 0,
-            'name' => 'gapgenSolutions',
-            'type' => 'encompassed',
-            'class' => 'GapgenSolution'
-          }
-        ];
-=======
 my $links = [
           {
             'attribute' => 'model_uuid',
@@ -201,8 +191,14 @@ sub _links {
   }
 }
 
-my $subobjects = [];
->>>>>>> linkupdate_mergecpd_command
+my $subobjects = [
+          {
+            'printOrder' => 0,
+            'name' => 'gapgenSolutions',
+            'type' => 'encompassed',
+            'class' => 'GapgenSolution'
+          }
+        ];
 
 my $subobject_map = {gapgenSolutions => 0};
 sub _subobjects {

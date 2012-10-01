@@ -89,21 +89,27 @@ sub _attributes {
   }
 }
 
-<<<<<<< HEAD
-my $subobjects = [];
-=======
 my $links = [
           {
-            'attribute' => 'modelreaction_uuid',
-            'parent' => 'Model',
-            'clearer' => 'clear_modelreaction',
-            'name' => 'modelreaction',
-            'class' => 'modelreactions',
-            'method' => 'modelreactions'
+            'attribute' => 'reaction_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reaction',
+            'name' => 'reaction',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'candidateFeature_uuids',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_candidateFeatures',
+            'name' => 'candidateFeatures',
+            'class' => 'features',
+            'method' => 'features'
           }
         ];
 
-my $link_map = {modelreaction => 0};
+my $link_map = {reaction => 0, candidateFeatures => 1};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -118,15 +124,7 @@ sub _links {
   }
 }
 
-my $subobjects = [
-          {
-            'printOrder' => -1,
-            'name' => 'gfSolutionReactionGeneCandidates',
-            'type' => 'encompassed',
-            'class' => 'GfSolutionReactionGeneCandidate'
-          }
-        ];
->>>>>>> linkupdate_mergecpd_command
+my $subobjects = [];
 
 my $subobject_map = {};
 sub _subobjects {

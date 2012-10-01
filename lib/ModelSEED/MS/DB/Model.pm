@@ -35,17 +35,12 @@ has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '8', ty
 has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
 has annotation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has fbaFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-<<<<<<< HEAD
 has integratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapfillingSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has unintegratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has unintegratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-=======
-has gapfillingFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has gapgenFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
->>>>>>> linkupdate_mergecpd_command
 
 
 # ANCESTOR:
@@ -270,11 +265,7 @@ my $attributes = [
           }
         ];
 
-<<<<<<< HEAD
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, unintegratedGapgen_uuids => 18};
-=======
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, gapfillingFormulation_uuids => 14, gapgenFormulation_uuids => 15, forwardedLinks => 16};
->>>>>>> linkupdate_mergecpd_command
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, unintegratedGapgen_uuids => 18, forwardedLinks => 19};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -301,19 +292,37 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'gapfillingFormulation_uuids',
+            'attribute' => 'unintegratedGapfilling_uuids',
             'parent' => 'ModelSEED::Store',
-            'clearer' => 'clear_gapfillingFormulations',
-            'name' => 'gapfillingFormulations',
+            'clearer' => 'clear_unintegratedGapfillings',
+            'name' => 'unintegratedGapfillings',
             'class' => 'GapfillingFormulation',
             'method' => 'GapfillingFormulation'
           },
           {
             'array' => 1,
-            'attribute' => 'gapgenFormulation_uuids',
+            'attribute' => 'integratedGapfilling_uuids',
             'parent' => 'ModelSEED::Store',
-            'clearer' => 'clear_gapgenFormulations',
-            'name' => 'gapgenFormulations',
+            'clearer' => 'clear_integratedGapfillings',
+            'name' => 'integratedGapfillings',
+            'class' => 'GapfillingFormulation',
+            'method' => 'GapfillingFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'unintegratedGapgen_uuids',
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_unintegratedGapgens',
+            'name' => 'unintegratedGapgens',
+            'class' => 'GapgenFormulation',
+            'method' => 'GapgenFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'integratedGapgen_uuids',
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_integratedGapgens',
+            'name' => 'integratedGapgens',
             'class' => 'GapgenFormulation',
             'method' => 'GapgenFormulation'
           },
@@ -346,7 +355,7 @@ my $links = [
           }
         ];
 
-my $link_map = {fbaFormulations => 0, gapfillingFormulations => 1, gapgenFormulations => 2, biochemistry => 3, mapping => 4, annotation => 5};
+my $link_map = {fbaFormulations => 0, unintegratedGapfillings => 1, integratedGapfillings => 2, unintegratedGapgens => 3, integratedGapgens => 4, biochemistry => 5, mapping => 6, annotation => 7};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {
