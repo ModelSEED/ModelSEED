@@ -2140,6 +2140,14 @@ $objectDefinitions->{Biochemistry} = {
 			req        => 0,
 			default    => ""
 		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
 	],
 	subobjects => [
 		{
@@ -3206,6 +3214,14 @@ $objectDefinitions->{Model} = {
 			type       => 'ArrayRef',
 			req        => 0,
 			default    => "sub{return [];}"
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
 		}
 	],
 	subobjects => [
@@ -3829,6 +3845,14 @@ $objectDefinitions->{Annotation} = {
 			printOrder => 2,
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid'
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
 		}
 	],
 	subobjects => [
@@ -4182,6 +4206,14 @@ $objectDefinitions->{Mapping} = {
 			type       => 'ModelSEED::uuid',
 			req        => 0
 		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
 	],
 	subobjects => [
 		{

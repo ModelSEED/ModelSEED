@@ -119,6 +119,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'fbaPhenotypeSimulation_uuid',
+            'parent' => 'FBAFormulation',
+            'clearer' => 'clear_fbaPhenotypeSimulation',
+            'name' => 'fbaPhenotypeSimulation',
+            'class' => 'fbaPhenotypeSimulations',
+            'method' => 'fbaPhenotypeSimulations'
+          }
+        ];
+
+my $link_map = {fbaPhenotypeSimulation => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

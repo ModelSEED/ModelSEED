@@ -120,6 +120,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'biomass_uuid',
+            'parent' => 'Model',
+            'clearer' => 'clear_biomass',
+            'name' => 'biomass',
+            'class' => 'biomasses',
+            'method' => 'biomasses'
+          }
+        ];
+
+my $link_map = {biomass => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

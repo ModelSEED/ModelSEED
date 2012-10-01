@@ -270,6 +270,69 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'model_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_model',
+            'name' => 'model',
+            'class' => 'Model',
+            'method' => 'Model'
+          },
+          {
+            'attribute' => 'fbaFormulation_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_fbaFormulation',
+            'name' => 'fbaFormulation',
+            'class' => 'FBAFormulation',
+            'method' => 'FBAFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'guaranteedReaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_guaranteedReactions',
+            'name' => 'guaranteedReactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'blacklistedReaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_blacklistedReactions',
+            'name' => 'blacklistedReactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'allowableCompartment_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_allowableCompartments',
+            'name' => 'allowableCompartments',
+            'class' => 'compartments',
+            'method' => 'compartments'
+          }
+        ];
+
+my $link_map = {model => 0, fbaFormulation => 1, guaranteedReactions => 2, blacklistedReactions => 3, allowableCompartments => 4};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => -1,

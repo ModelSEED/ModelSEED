@@ -343,12 +343,12 @@ sub validate {
 	my $abbrevHash;
 	foreach my $cpd (@{$cpds}) {
 		if (defined($nameHash->{$cpd->name()})) {
-			push(@{$errors},"Compound names match: ".$cpd->name().": ".$cpd->uuid()."(".$cpd->id().")\t".$nameHash->{$cpd->name()}->uuid()."(".$cpd->id().")");
+			push(@{$errors},"Compound names match: ".$cpd->name().": ".$cpd->uuid()."(".$cpd->id().")\t".$nameHash->{$cpd->name()}->uuid()."(".$nameHash->{$cpd->name()}->id().")");
 		} else {
 			$nameHash->{$cpd->name()} = $cpd;
 		}
 		if (defined($abbrevHash->{$cpd->abbreviation()})) {
-			push(@{$errors},"Compound abbreviations match: ".$cpd->abbreviation().": ".$cpd->uuid()."(".$cpd->id().")\t".$abbrevHash->{$cpd->abbreviation()}->uuid()."(".$cpd->id().")");
+			push(@{$errors},"Compound abbreviations match: ".$cpd->abbreviation().": ".$cpd->uuid()."(".$cpd->id().")\t".$abbrevHash->{$cpd->abbreviation()}->uuid()."(".$abbrevHash->{$cpd->abbreviation()}->id().")");
 		} else {
 			$abbrevHash->{$cpd->abbreviation()} = $cpd;
 		}

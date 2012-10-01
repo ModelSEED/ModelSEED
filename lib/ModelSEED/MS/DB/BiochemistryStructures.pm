@@ -74,6 +74,23 @@ sub _attributes {
   }
 }
 
+my $links = [];
+
+my $link_map = {};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => 0,

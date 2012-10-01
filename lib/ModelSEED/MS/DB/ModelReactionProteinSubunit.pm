@@ -90,6 +90,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'role_uuid',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_role',
+            'name' => 'role',
+            'class' => 'roles',
+            'method' => 'roles'
+          }
+        ];
+
+my $link_map = {role => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => -1,

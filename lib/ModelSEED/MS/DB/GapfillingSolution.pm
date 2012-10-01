@@ -123,6 +123,51 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'biomassRemoval_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_biomassRemovals',
+            'name' => 'biomassRemovals',
+            'class' => 'modelcompounds',
+            'method' => 'modelcompounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'mediaSupplement_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_mediaSupplements',
+            'name' => 'mediaSupplements',
+            'class' => 'modelcompounds',
+            'method' => 'modelcompounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'koRestore_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_koRestores',
+            'name' => 'koRestores',
+            'class' => 'modelreactions',
+            'method' => 'modelreactions'
+          }
+        ];
+
+my $link_map = {biomassRemovals => 0, mediaSupplements => 1, koRestores => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => -1,
