@@ -1387,7 +1387,7 @@ $objectDefinitions->{GapgenSolution} = {
 		},
 		{
 			name      => "mediaRemovals",
-			attribute => "mediaRemovals_uuids",
+			attribute => "mediaRemoval_uuids",
 			parent    => "Model",
 			method    => "modelcompounds",
 			array     => 1
@@ -2120,7 +2120,7 @@ $objectDefinitions->{Biochemistry} = {
 			name       => 'biochemistryStructures_uuid',
 			printOrder => 1,
 			perm       => 'rw',
-			type       => 'ModelSEED::varchar',
+			type       => 'ModelSEED::uuid',
 			req        => 0,
 			default    => ""
 		},
