@@ -154,7 +154,7 @@ sub _buildConfig {
 }
 
 sub _buildJSON {
-    return JSON::XS->new->utf8(1)->pretty(1);
+    return JSON::XS->new->utf8->pretty(1);
 }
 
 sub _buildFilename {

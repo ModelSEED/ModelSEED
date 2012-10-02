@@ -2,6 +2,7 @@ package ModelSEED::App::Helpers;
 use strict;
 use warnings;
 use Try::Tiny;
+use JSON::XS;
 use Class::Autouse qw(
     ModelSEED::Reference
     ModelSEED::Configuration
@@ -42,7 +43,7 @@ sub handle_ref_lookup {
     }
     if ($opts->{raw}) {
         my $d = $store->get_data($ref);
-        return JSON->new->utf8(1)->encode($d);
+        return JSON::XS->new->utf8->encode($d);
     } elsif($opts->{full}) {
         my $object = $store->get_object($ref);
         return $object->toReadableString();
