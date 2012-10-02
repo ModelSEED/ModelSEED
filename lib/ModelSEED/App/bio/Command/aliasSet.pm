@@ -34,7 +34,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $biochem = $self->_getBiochemistry($args);
     if ($opts->{validate}) {
         $self->_validate($biochem, $args, $opts); 

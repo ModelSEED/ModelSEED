@@ -19,20 +19,20 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $config = ModelSEED::Configuration->new();
     my $pos_user_opts = $config->possible_user_options();
     my $user_opts = $config->user_options();
 
     if ($opts->{list} && $opts->{remove}) {
         print STDERR "Cannot specify both 'list' and 'remove' options.\n";
-        exit;
+        return;
     } elsif ($opts->{list} || $opts->{remove}) {
         # make sure the variables exist in user_options
         foreach my $arg (@$args) {
             unless (exists($pos_user_opts->{$arg})) {
                 print STDERR "Error, unknown option: '$arg'.\n";
-                exit;
+                return;
             }
         }
 
@@ -62,7 +62,7 @@ sub execute {
         } else {
             if (scalar @$args == 0) {
                 print STDERR "Error, no options specified.\n";
-                exit;
+                return;
             } else {
                 foreach my $arg (@$args) {
                     if (defined($pos_user_opts->{$arg})) {
@@ -82,7 +82,7 @@ sub execute {
             print "Usage: ms config [-l|-r] OPTION[=value]\n";
             print "  e.g. ms config ERROR_DIR=/home/ms/errors\n";
             print "       ms config -r ERROR_DIR\n";
-            exit;
+            return;
         }
 
         # make sure all options exist and are valid
@@ -91,19 +91,19 @@ sub execute {
             my ($var, $val) = split('=', $arg);
             unless (defined($var) && defined($val)) {
                 print STDERR "Error, incorrect option usage (syntax: OPTION=value).\n";
-                exit;
+                return;
             }
 
             unless (exists($pos_user_opts->{$var})) {
                 print STDERR "Error, unknown option: '$var'.\n";
-                exit;
+                return;
             }
 
             $val = $config->validate_user_option($var, $val);
 
             unless (defined($val)) {
                 print STDERR "Error with option: $var=$val\n";
-                exit;
+                return;
             }
 
             push(@$vars, [$var, $val]);

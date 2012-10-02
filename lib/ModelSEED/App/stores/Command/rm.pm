@@ -31,6 +31,7 @@ sub opt_spec { return (
 
 sub validate_args {
     my ($self, $opt, $args) = @_;
+    print($self->usage) && return if $opt->{help};
     unless(@$args == 1) {
         $self->usage_error("Must supply a storage interface to remove");
     }
@@ -46,7 +47,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
     my $name = $args->[0];
     my $stores = $MS->config->{stores};
     my $remove;

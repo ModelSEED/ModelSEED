@@ -27,7 +27,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $store  = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;
@@ -105,7 +105,7 @@ sub execute {
     } else {
         # ref was an empty string or completely invalid 
         my $aliases = $store->get_aliases({});
-        exit unless(@$aliases);
+        return unless(@$aliases);
         my $types = {};
         # Print counts for aliased objects
         foreach my $alias (@$aliases) {

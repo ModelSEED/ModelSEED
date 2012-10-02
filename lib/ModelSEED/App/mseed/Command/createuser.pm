@@ -23,7 +23,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $username = $args->[0];
     my $conf = ModelSEED::Configuration->new();
     if (!defined($username) || length($username) == 0) {

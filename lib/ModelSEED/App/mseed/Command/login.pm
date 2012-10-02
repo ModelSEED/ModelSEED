@@ -24,18 +24,20 @@ sub opt_spec { return (
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $username = $args->[0];
 
     my $password;
     print "Enter password: ";
+    # Please don't remove this unless you've tested
+    # that it works in windows...readkey didn't work
     if ($^O =~ m/^MSWin/) {
-    	$password = <STDIN>;#Please don't remove this unless you've tested that it works in windows... readkey didn't work
+        $password = <STDIN>;
     } else {
-   		ReadMode 2;
-    	$password = ReadLine 0;
-    	ReadMode 0;
-    	chomp($password);
+        ReadMode 2;
+        $password = ReadLine 0;
+        ReadMode 0;
+        chomp($password);
     }
     print "\n";
 
@@ -43,19 +45,18 @@ sub execute {
     my $users = $conf->config->{users};
     my $user;
     if (defined($users->{$username})) {
-	$user = $users->{$username};
-
-	unless ($self->check_password($user, $password)) {
-	    print "Invalid password.\n";
-	    exit;
-	}
+        $user = $users->{$username};
+        unless ($self->check_password($user, $password)) {
+            print "Invalid password.\n";
+            return;
+        }
     } else {
-	$user = $self->import_seed_account($username, $password, $conf);
+        $user = $self->import_seed_account($username, $password, $conf);
     }
 
     $conf->config->{login} = {
-	username => $username,
-	password => $user->{password}
+        username => $username,
+        password => $user->{password}
     };
     $conf->save();
 
@@ -70,29 +71,29 @@ sub import_seed_account {
 
     my $output;
     try {
-	$output = $svr->get_user_info({ username => $username });
+        $output = $svr->get_user_info({ username => $username });
     } catch {
-	die "Error in communicating with SEED authorization service.";
+        die "Error in communicating with SEED authorization service.";
     };
 
     if (defined($output->{error})) {
-	print $output->{error}, "\n";
-	exit;
+        print $output->{error}, "\n";
+        return;
     }
 
     # create a user object
     my $user = {
-	login => $output->{username},
-	password => $output->{password},
-	firstname => $output->{firstname},
-	lastname => $output->{lastname},
-	email => $output->{email},
+        login => $output->{username},
+        password => $output->{password},
+        firstname => $output->{firstname},
+        lastname => $output->{lastname},
+        email => $output->{email},
     };
 
     # check the password
     if (!$self->check_password($user, $password)) {
-	print "Invalid password.\n";
-	exit;
+        print "Invalid password.\n";
+        return;
     }
 
     $conf->config->{users}->{$username} = $user;
@@ -104,9 +105,9 @@ sub check_password {
     my ($self, $user, $password) = @_;
 
     if (crypt($password, $user->{password}) eq $user->{password}) {
-	return 1;
+        return 1;
     } else {
-	return 0;
+        return 0;
     }
 }
 

@@ -162,12 +162,12 @@ Description:
 
 sub runGapGeneration {
 	my ($self,$args) = @_;
-	#Preparing fba formulation describing gapfilling problem
+	# Preparing fba formulation describing gapfilling problem
 	my $form = $self->prepareFBAFormulation();
 	my $directory = $form->jobDirectory()."/";
-	#Running the gapfilling
+	# Running the gapfilling
 	my $fbaResults = $form->runFBA();
-	#Retrieving solutions
+	# Retrieving solutions
 	my $solutions = $fbaResults->gapgenSolutions();
 	if (!defined($solutions->[0])) {
 		print STDERR "Gapgen solution not found. Gapgen failed!";

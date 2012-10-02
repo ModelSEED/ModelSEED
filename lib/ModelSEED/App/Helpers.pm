@@ -30,6 +30,16 @@ a hashref containing the following fields:
 One of these or neither may be true. Raw means raw JSON output;
 full means readable format. No options means just print the ref.
 
+=head3 object_from_file
+
+    my $o = $h->object_from_file($type, $filename, $store);
+
+This returns a C<ModelSEED::MS::*> object that was encoded as JSON
+and saved to the file C<$filename>. That object is initialized with
+C<$store> as the storage interface. Note that C<$type> is the suffix
+portion of C<ModelSEED::MS::*> so "Biochemistry" for
+L<ModelSEED::MS::Biochemistry>.
+
 =cut
 
 sub handle_ref_lookup {
@@ -184,6 +194,20 @@ sub get_data {
     } else {
         return (undef, $ref);
     }
+}
+
+sub object_from_file {
+    my ($self, $type, $filename, $store) = @_;
+    open ( my $fh, "<", $filename) || die "Cannot open file $filename: $!";
+    my $object;
+    {
+        local $/;
+        my $str = <$fh>;
+        close($fh);
+        my $json = JSON::XS->new->decode($str);
+        $object = $store->create($type, $json);
+    }
+    return $object;
 }
 
 1;

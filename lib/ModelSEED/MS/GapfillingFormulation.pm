@@ -329,10 +329,10 @@ Description:
 
 sub runGapFilling {
 	my ($self,$args) = @_;
-	#Preparing fba formulation describing gapfilling problem
+	# Preparing fba formulation describing gapfilling problem
 	my $form = $self->prepareFBAFormulation();
 	my $directory = $form->jobDirectory()."/";
-	#Printing list of inactive reactions based on settings and fba formulation objective
+	# Printing list of inactive reactions based on settings and fba formulation objective
 	my $inactiveList = [];
 	my $objterms = $form->fbaObjectiveTerms();
 	for (my $i=0; $i < @{$objterms}; $i++) {
@@ -345,9 +345,9 @@ sub runGapFilling {
 		}
 	}
 	ModelSEED::utilities::PRINTFILE($directory."InactiveModelReactions.txt",$inactiveList);
-	#Running the gapfilling
+	# Running the gapfilling
 	my $fbaResults = $form->runFBA();
-	#Retrieving solutions
+	# Retrieving solutions
 	my $solutions = $fbaResults->gapfillingSolutions();
 	if (!defined($solutions->[0])) {
 		print STDERR "Gapfilling solution not found. Gapfilling failed!";
