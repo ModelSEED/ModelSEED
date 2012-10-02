@@ -40,6 +40,7 @@ has complexTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder =>
 has cpxroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcpxroleTbl' );
 has rxncpxTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxncpxTbl' );
 has cueTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcueTbl' );
+has biomassTemplateData => ( is => 'rw', isa => 'HashRef', lazy => 1, builder => '_buildbiomassTemplateData' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -104,7 +105,64 @@ sub _buildrxncpxTbl {
 	my ($self) = @_;
 	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl",rows_return_as => "ref");
 }
-
+sub _buildbiomassTemplateData() {
+	my ($self) = @_;
+	my $filedata = ModelSEED::utilities::LOADFILE($self->filepath()."/biomassTemplateData.txt");
+	my $template = {
+		"spontaneous reactions" => [],
+		"universal reactions" => [],
+		"biomass template components" => {},
+		"templates" => {},
+		"universal biomass components" => [],
+		"conditional biomass components" => [],
+	};
+	for (my $i=0; $i < @{$filedata};$i++) {
+		if ($filedata->[$i] =~ m/Spontaneous\sreactions:(.+)/) {
+			$template->{"spontaneous reactions"} = [split(/;/,$1)];
+		} elsif ($filedata->[$i] =~ m/Universal\sreactions:(.+)/) {
+			$template->{"universal reactions"} = [split(/;/,$1)];
+		} elsif ($filedata->[$i] =~ m/Biomass\stemplates:(.+)\{/) {
+			my $type = $1;
+			$i++;
+			while ($filedata->[$i] ne "}") {
+				if ($filedata->[$i] =~ m/(.+):(.+)/) {
+					my $class = $1;
+					my $compounds = $2;
+					my $array = [split(/;/,$compounds)];
+					foreach my $compound (@{$array}) {
+						my $subarray = [split(/=/,$compound)];
+						if (defined($subarray->[$1])) {
+							if ($class eq "coefficients") {
+								if (!defined($template->{"templates"}->{$type})) {
+									$template->{"templates"}->{$type}->{class} = $type;
+								}
+								$template->{"templates"}->{$type}->{$subarray->[0]} = $subarray->[1];
+							} else {
+								$template->{"biomass template components"}->{$type}->{$class}->{$subarray->[0]} = $subarray->[1];
+							}
+						}
+					}
+				}
+				$i++;
+			}
+		} elsif ($filedata->[$i] =~ m/Universal\sbiomass\scomponents\{/) {
+			$i++;
+			while ($filedata->[$i] ne "}") {
+				my $array = [split(/\t/,$filedata->[$i])];
+				push(@{$template->{"universal biomass components"}},$array);
+				$i++;
+			}
+		} elsif ($filedata->[$i] =~ m/Conditional\sbiomass\scomponents\{/) {
+			$i++;
+			while ($filedata->[$i] ne "}") {
+				my $array = [split(/\t/,$filedata->[$i])];
+				push(@{$template->{"conditional biomass components"}},$array);
+				$i++;
+			}
+		}
+	}
+	return $template;
+}
 
 #***********************************************************************************************************
 # FUNCTIONS:
@@ -532,15 +590,19 @@ sub createMapping {
 		name => $self->namespace()."/primary.mapping",
         verbose => 0,
 	});
+	my $biomassTemplateData = $self->biomassTemplateData();
+	my $spontaneousRxn = $biomassTemplateData->{"spontaneous reactions"};
+	my $universalRxn = $biomassTemplateData->{"universal reactions"};
+	my $templateData = $biomassTemplateData->{"templates"};
+	my $biomassTempComp = $biomassTemplateData->{"biomass template components"};
+	my $universalBiomassTempComp = $biomassTemplateData->{"universal biomass components"};
+	my $conditionedBiomassTempComp = $biomassTemplateData->{"conditional biomass components"};
 	my $mapping = ModelSEED::MS::Mapping->new({
 		name=>$args->{name},
 		biochemistry_uuid => $args->{biochemistry}->uuid(),
 		biochemistry => $args->{biochemistry}
 	});
     my $biochemistry = $mapping->biochemistry;
-	my $spontaneousRxn = [ qw(
-		rxn00062 rxn01208 rxn04132 rxn04133 rxn05319 rxn05467 rxn05468 rxn02374 rxn05116 rxn03012 rxn05064 rxn02666 rxn04457 rxn04456 rxn01664 rxn02916 rxn05667
-	) ];
 	for (my $i=0; $i < @{$spontaneousRxn}; $i++) {
 		my $rxn = $biochemistry->getObjectByAlias("reactions",$spontaneousRxn->[$i],"ModelSEED");
 		if (defined($rxn)) {
@@ -550,9 +612,6 @@ sub createMapping {
 			});
 		}
 	}
-	my $universalRxn = [ qw(
-		rxn05651 rxn10473 rxn10571 rxn05195 rxn05555
-	)];
 	for (my $i=0; $i < @{$universalRxn}; $i++) {
 		my $rxn = $biochemistry->getObjectByAlias("reactions",$universalRxn->[$i],"ModelSEED");
 		if (defined($rxn)) {
@@ -562,216 +621,10 @@ sub createMapping {
 			});
 		}
 	}
-    my $biomassTempComp = {
-        "Gram positive" => {
-            rna => {
-                cpd00002 => -0.262,
-                cpd00012 => 1,
-                cpd00038 => -0.323,
-                cpd00052 => -0.199,
-                cpd00062 => -0.215
-            },
-            protein => {
-                cpd00001 => 1,
-                cpd00023 => -0.0637,
-                cpd00033 => -0.0999,
-                cpd00035 => -0.0653,
-                cpd00039 => -0.0790,
-                cpd00041 => -0.0362,
-                cpd00051 => -0.0472,
-                cpd00053 => -0.0637,
-                cpd00054 => -0.0529,
-                cpd00060 => -0.0277,
-                cpd00065 => -0.0133,
-                cpd00066 => -0.0430,
-                cpd00069 => -0.0271,
-                cpd00084 => -0.0139,
-                cpd00107 => -0.0848,
-                cpd00119 => -0.0200,
-                cpd00129 => -0.0393,
-                cpd00132 => -0.0362,
-                cpd00156 => -0.0751,
-                cpd00161 => -0.0456,
-                cpd00322 => -0.0660
-            }
-        },
-        "Gram negative" => {
-            rna => {
-                cpd00002 => -0.262,
-                cpd00012 => 1,
-                cpd00038 => -0.322,
-                cpd00052 => -0.2,
-                cpd00062 => -0.216
-            },
-            protein => {
-                cpd00001 => 1,
-                cpd00023 => -0.0492,
-                cpd00033 => -0.1145,
-                cpd00035 => -0.0961,
-                cpd00039 => -0.0641,
-                cpd00041 => -0.0451,
-                cpd00051 => -0.0554,
-                cpd00053 => -0.0492,
-                cpd00054 => -0.0403,
-                cpd00060 => -0.0287,
-                cpd00065 => -0.0106,
-                cpd00066 => -0.0347,
-                cpd00069 => -0.0258,
-                cpd00084 => -0.0171,
-                cpd00107 => -0.0843,
-                cpd00119 => -0.0178,
-                cpd00129 => -0.0414,
-                cpd00132 => -0.0451,
-                cpd00156 => -0.0791,
-                cpd00161 => -0.0474,
-                cpd00322 => -0.0543
-            }
-        },
-        "Unknown" => {
-            rna => {
-                cpd00002 => -0.262,
-                cpd00012 => 1,
-                cpd00038 => -0.322,
-                cpd00052 => -0.2,
-                cpd00062 => -0.216
-            },
-            protein => {
-                cpd00001 => 1,
-                cpd00023 => -0.0492,
-                cpd00033 => -0.1145,
-                cpd00035 => -0.0961,
-                cpd00039 => -0.0641,
-                cpd00041 => -0.0451,
-                cpd00051 => -0.0554,
-                cpd00053 => -0.0492,
-                cpd00054 => -0.0403,
-                cpd00060 => -0.0287,
-                cpd00065 => -0.0106,
-                cpd00066 => -0.0347,
-                cpd00069 => -0.0258,
-                cpd00084 => -0.0171,
-                cpd00107 => -0.0843,
-                cpd00119 => -0.0178,
-                cpd00129 => -0.0414,
-                cpd00132 => -0.0451,
-                cpd00156 => -0.0791,
-                cpd00161 => -0.0474,
-                cpd00322 => -0.0543
-            }
-        }
-    };
-	my $universalBiomassTempComp = [
-		["cofactor","cpd00010","FRACTION"],
-		["cofactor","cpd11493","FRACTION"],
-		["cofactor","cpd00003","FRACTION"],
-		["cofactor","cpd00006","FRACTION"],
-		["cofactor","cpd00205","FRACTION"],
-		["cofactor","cpd00254","FRACTION"],
-		["cofactor","cpd10516","FRACTION"],
-		["cofactor","cpd00063","FRACTION"],
-		["cofactor","cpd00009","FRACTION"],
-		["cofactor","cpd00099","FRACTION"],
-		["cofactor","cpd00149","FRACTION"],
-		["cofactor","cpd00058","FRACTION"],
-		["cofactor","cpd00015","FRACTION"],
-		["cofactor","cpd10515","FRACTION"],
-		["cofactor","cpd00030","FRACTION"],
-		["cofactor","cpd00048","FRACTION"],
-		["cofactor","cpd00034","FRACTION"],
-		["cofactor","cpd00016","FRACTION"],
-		["cofactor","cpd00220","FRACTION"],
-		["cofactor","cpd00017","FRACTION"],
-		["macromolecule","cpd11416","1"],
-		["macromolecule","cpd17041","-1"],
-		["macromolecule","cpd17042","-1"],
-		["macromolecule","cpd17043","-1"],
-		["energy","cpd00002",-1],
-		["energy","cpd00001",-1],
-		["energy","cpd00008",1],
-		["energy","cpd00009",1],
-		["energy","cpd00067",1],
-		["dna","cpd00012",1],
-		["dna","cpd00115",-0.5],
-		["dna","cpd00241",-0.5],
-		["dna","cpd00356",-0.5],
-		["dna","cpd00357",-0.5],
-		["cofactor","cpd12370","cpd11493"],
-	];	
-	my $conditionedBiomassTempComp = [
-		["cofactor","cpd00201","FRACTION","AND{SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines|SUBSYSTEM:Folate_Biosynthesis|!SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines`H}"],
-		["cofactor","cpd00087","FRACTION","AND{SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines|SUBSYSTEM:Folate_Biosynthesis|!SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines`H}"],
-		["cofactor","cpd00345","FRACTION","AND{SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines|SUBSYSTEM:Folate_Biosynthesis|!SUBSYSTEM:One-carbon_metabolism_by_tetrahydropterines`H}"],
-		["cofactor","cpd00042","FRACTION","OR{SUBSYSTEM:Glutathione:_Biosynthesis_and_gamma-glutamyl_cycle`A`B|SUBSYSTEM:Glutathione:_Non-redox_reactions`A|SUBSYSTEM:Glutathione:_Redox_cycle`A`B}"],
-		["cofactor","cpd00028","FRACTION","AND{SUBSYSTEM:Heme_and_Siroheme_Biosynthesis`A`B`F}"],
-		["cofactor","cpd00557","FRACTION","AND{SUBSYSTEM:Heme_and_Siroheme_Biosynthesis`A`F}"],
-		["cofactor","cpd00264","FRACTION","AND{SUBSYSTEM:Polyamine_Metabolism}"],
-		["cofactor","cpd00118","FRACTION","AND{SUBSYSTEM:Polyamine_Metabolism`A`B`C`D`E`F`G}"],
-		["cofactor","cpd00056","FRACTION","AND{SUBSYSTEM:Thiamin_biosynthesis}"],
-		["cofactor","cpd15560","FRACTION","AND{SUBSYSTEM:Ubiquinone_Biosynthesis}"],
-		["cofactor","cpd15352","FRACTION","AND{SUBSYSTEM:Menaquinone_and_Phylloquinone_Biosynthesis}"],
-		["cofactor","cpd15500","FRACTION","AND{SUBSYSTEM:Menaquinone_and_Phylloquinone_Biosynthesis|ROLE:Ubiquinone/menaquinone biosynthesis methyltransferase UbiE (EC 2.1.1.-)}"],
-		["cofactor","cpd00166","FRACTION","AND{SUBSYSTEM:Coenzyme_B12_biosynthesis}"],
-		["lipid","cpd15793","FRACTION","AND{ROLE:Cardiolipin synthetase (EC 2.7.8.-)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15794","FRACTION","AND{ROLE:Cardiolipin synthetase (EC 2.7.8.-)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15795","FRACTION","AND{ROLE:Cardiolipin synthetase (EC 2.7.8.-)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15722","FRACTION","AND{OR{ROLE:Phosphatidylglycerophosphatase B (EC 3.1.3.27)|ROLE:Phosphatidylglycerophosphatase A (EC 3.1.3.27)}|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15723","FRACTION","AND{OR{ROLE:Phosphatidylglycerophosphatase B (EC 3.1.3.27)|ROLE:Phosphatidylglycerophosphatase A (EC 3.1.3.27)}|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15540","FRACTION","AND{OR{ROLE:Phosphatidylglycerophosphatase B (EC 3.1.3.27)|ROLE:Phosphatidylglycerophosphatase A (EC 3.1.3.27)}|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15533","FRACTION","AND{ROLE:Phosphatidylserine decarboxylase (EC 4.1.1.65)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15695","FRACTION","AND{ROLE:Phosphatidylserine decarboxylase (EC 4.1.1.65)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["lipid","cpd15696","FRACTION","AND{ROLE:Phosphatidylserine decarboxylase (EC 4.1.1.65)|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15748","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15757","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15766","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15775","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15749","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15758","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15767","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15776","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15750","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15759","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15768","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15777","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15667","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15668","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd15669","FRACTION","AND{CLASS:Gram positive|SUBSYSTEM:Fatty_Acid_Biosynthesis_FASII}"],
-		["cellwall","cpd11459","FRACTION","AND{CLASS:Gram positive}"],
-		["cellwall","cpd15432","FRACTION","AND{CLASS:Gram negative}"],
-		["cellwall","cpd02229","FRACTION","AND{!NAME:Mycoplasma|!NAME:Spiroplasma|!NAME:Ureaplasma|!NAME:phytoplasma}"],
-		["cellwall","cpd15665","FRACTION","AND{!NAME:Mycoplasma|!NAME:Spiroplasma|!NAME:Ureaplasma|!NAME:phytoplasma}"],
-		["cellwall","cpd15666","cpd15665,cpd15667,cpd15668,cpd15669","OR{COMPOUND:cpd15665|COMPOUND:cpd15667|COMPOUND:cpd15668|COMPOUND:cpd15669}"],
-		["cofactor","cpd01997","cpd00166","AND{COMPOUND:cpd00166}"],
-		["cofactor","cpd03422","cpd00166","AND{COMPOUND:cpd00166}"]
-	];
-	my $templates = [
-		$mapping->add("biomassTemplates",{
-			class => "Gram positive",
-			dna => "0.026",
-			rna => "0.0655",
-			protein => "0.5284",
-			lipid => "0.075",
-			cellwall => "0.25",
-			cofactor => "0.10"
-		}),
-		$mapping->add("biomassTemplates",{
-			class => "Gram negative",
-			dna => "0.031",
-			rna => "0.21",
-			protein => "0.563",
-			lipid => "0.093",
-			cellwall => "0.177",
-			cofactor => "0.039"
-		}),
-		$mapping->add("biomassTemplates",{
-			class => "Unknown",
-			dna => "0.031",
-			rna => "0.21",
-			protein => "0.563",
-			lipid => "0.093",
-			cellwall => "0.177",
-			cofactor => "0.039"
-		})
-	];
+	my $templates = [];
+	foreach my $template (keys(%{$templateData})) {
+		push(@$templates,$mapping->add("biomassTemplates",$templateData->{$template}));
+	}
 	foreach my $template (@{$templates}) {
 		if (defined($biomassTempComp->{$template->class()})) {
 			foreach my $type (keys(%{$biomassTempComp->{$template->class()}})) {
