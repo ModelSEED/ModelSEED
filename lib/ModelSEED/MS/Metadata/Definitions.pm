@@ -2543,7 +2543,16 @@ $objectDefinitions->{Compound} = {
 			default    => "sub{return [];}"
 		},
 		{
-			name       => 'cues',
+			name       => 'cue_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			description => "Array of cue uuids",
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'cueStoichiometry',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'HashRef',
@@ -2583,6 +2592,13 @@ $objectDefinitions->{Compound} = {
 			attribute => "comprisedOfCompound_uuids",
 			parent    => "Biochemistry",
 			method    => "compounds",
+			array     => 1
+		},
+		{
+			name      => "cues",
+			attribute => "cue_uuids",
+			parent    => "Biochemistry",
+			method    => "cues",
 			array     => 1
 		},
 		{
@@ -2688,11 +2704,21 @@ $objectDefinitions->{Reaction} = {
 			req        => 0
 		},
 		{
-			name       => 'cues',
+			name       => 'cue_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			description => "Array of cue uuids",
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'cueStoichiometry',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'HashRef',
 			req        => 0,
+			description => "Hash of cue uuids with cue coefficients as values",
 			default    => "sub{return {};}"
 		},
 		{
@@ -2714,6 +2740,13 @@ $objectDefinitions->{Reaction} = {
 			attribute => "abstractReaction_uuid",
 			parent    => "Biochemistry",
 			method    => "reactions"
+		},
+		{
+			name      => "cues",
+			attribute => "cue_uuids",
+			parent    => "Biochemistry",
+			method    => "cues",
+			array     => 1
 		}
 	],
 	reference_id_types => [qw(uuid)],

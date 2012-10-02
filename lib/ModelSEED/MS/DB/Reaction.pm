@@ -28,7 +28,8 @@ has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', t
 has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has defaultProtons => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has status => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
-has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has cue_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has cueStoichiometry => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has abstractReaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
@@ -42,6 +43,7 @@ has reagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return
 
 # LINKS:
 has abstractReaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', clearer => 'clear_abstractReaction', weak_ref => 1);
+has cues => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Cue]', type => 'link(Biochemistry,cues,cue_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_cues', clearer => 'clear_cues');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -51,6 +53,10 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_abstractReaction {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','reactions',$self->abstractReaction_uuid());
+}
+sub _build_cues {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','cues',$self->cue_uuids());
 }
 
 
@@ -146,9 +152,19 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'cues',
+            'name' => 'cue_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'description' => 'Array of cue uuids',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'cueStoichiometry',
             'default' => 'sub{return {};}',
             'type' => 'HashRef',
+            'description' => 'Hash of cue uuids with cue coefficients as values',
             'perm' => 'rw'
           },
           {
@@ -161,7 +177,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, deltaG => 5, deltaGErr => 6, direction => 7, thermoReversibility => 8, defaultProtons => 9, status => 10, cues => 11, abstractReaction_uuid => 12};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, deltaG => 5, deltaGErr => 6, direction => 7, thermoReversibility => 8, defaultProtons => 9, status => 10, cue_uuids => 11, cueStoichiometry => 12, abstractReaction_uuid => 13};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

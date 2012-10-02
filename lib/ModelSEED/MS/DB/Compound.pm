@@ -31,7 +31,8 @@ has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribut
 has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has structure_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has cue_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has cueStoichiometry => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkas => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkbs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 
@@ -43,6 +44,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 # LINKS:
 has abstractCompound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', weak_ref => 1);
 has comprisedOfCompounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds');
+has cues => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Cue]', type => 'link(Biochemistry,cues,cue_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_cues', clearer => 'clear_cues');
 has structures => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Structure]', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
@@ -57,6 +59,10 @@ sub _build_abstractCompound {
 sub _build_comprisedOfCompounds {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_uuids());
+}
+sub _build_cues {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','cues',$self->cue_uuids());
 }
 sub _build_structures {
   my ($self) = @_;
@@ -196,7 +202,16 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'cues',
+            'name' => 'cue_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'description' => 'Array of cue uuids',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'cueStoichiometry',
             'default' => 'sub{return {};}',
             'type' => 'HashRef',
             'description' => 'Hash of cue uuids with cue coefficients as values',
@@ -222,7 +237,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13, structure_uuids => 14, cues => 15, pkas => 16, pkbs => 17};
+my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13, structure_uuids => 14, cue_uuids => 15, cueStoichiometry => 16, pkas => 17, pkbs => 18};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
