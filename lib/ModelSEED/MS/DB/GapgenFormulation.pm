@@ -6,6 +6,7 @@
 ########################################################################
 package ModelSEED::MS::DB::GapgenFormulation;
 use ModelSEED::MS::BaseObject;
+use ModelSEED::MS::GapgenSolution;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -29,6 +30,10 @@ has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has gapgenSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapgenSolution)', metaclass => 'Typed', reader => '_gapgenSolutions', printOrder => '0');
 
 
 # LINKS:
@@ -142,9 +147,60 @@ sub _attributes {
   }
 }
 
-my $subobjects = [];
+my $links = [
+          {
+            'attribute' => 'model_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_model',
+            'name' => 'model',
+            'class' => 'Model',
+            'method' => 'Model'
+          },
+          {
+            'attribute' => 'fbaFormulation_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_fbaFormulation',
+            'name' => 'fbaFormulation',
+            'class' => 'FBAFormulation',
+            'method' => 'FBAFormulation'
+          },
+          {
+            'attribute' => 'referenceMedia_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_referenceMedia',
+            'name' => 'referenceMedia',
+            'class' => 'media',
+            'method' => 'media'
+          }
+        ];
 
-my $subobject_map = {};
+my $link_map = {model => 0, fbaFormulation => 1, referenceMedia => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
+my $subobjects = [
+          {
+            'printOrder' => 0,
+            'name' => 'gapgenSolutions',
+            'type' => 'encompassed',
+            'class' => 'GapgenSolution'
+          }
+        ];
+
+my $subobject_map = {gapgenSolutions => 0};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -158,6 +214,13 @@ sub _subobjects {
     return $subobjects;
   }
 }
+
+
+# SUBOBJECT READERS:
+around 'gapgenSolutions' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('gapgenSolutions');
+};
 
 
 __PACKAGE__->meta->make_immutable;

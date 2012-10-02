@@ -58,6 +58,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'feature_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_feature',
+            'name' => 'feature',
+            'class' => 'features',
+            'method' => 'features'
+          }
+        ];
+
+my $link_map = {feature => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

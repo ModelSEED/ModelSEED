@@ -40,6 +40,7 @@ has complexTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder =>
 has cpxroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcpxroleTbl' );
 has rxncpxTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxncpxTbl' );
 has cueTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcueTbl' );
+has uuidHash => ( is => 'rw', isa => 'HashRef', lazy => 1, builder => '_builduuidHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -104,7 +105,22 @@ sub _buildrxncpxTbl {
 	my ($self) = @_;
 	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl",rows_return_as => "ref");
 }
-
+sub _builduuidHash {
+	my ($self) = @_;
+	my $types = ["compartment","complexes","cpd","media","rolesets","roles","rxn"];
+	my $hash = {};
+	for (my $i=0; $i < @{$types}; $i++) {
+		if (-e $self->filepath()."/".$types->[$i]."uuid.txt") {
+			my $data = ModelSEED::utilities::LOADFILE($self->filepath()."/".$types->[$i]."uuid.txt");
+			for (my $j=0; $j < @{$data}; $j++) {
+				if ($data->[$j] =~ m/\/([^\/]+)\t(.+)/) {
+					$hash->{$types->[$i]}->{$2} = $1;
+				}
+			}
+		}
+	}
+	return $hash;
+}
 
 #***********************************************************************************************************
 # FUNCTIONS:
@@ -221,13 +237,18 @@ sub createBiochemistry {
         { id => "v", name => "Vacuole",               hierarchy => 4 },
         { id => "d", name => "Plastid",               hierarchy => 4 }
     ];
+    my $uuidhash = $self->uuidHash();
 	for (my $i=0; $i < @{$comps}; $i++) {
-		my $comp = $biochemistry->add("compartments",{
+		my $data = {
 			locked => "0",
 			id => $comps->[$i]->{id},
 			name => $comps->[$i]->{name},
 			hierarchy => $comps->[$i]->{hierarchy}
-		});
+		};
+		if (defined($uuidhash->{compartment}->{$comps->[$i]->{id}})) {
+			$data->{uuid} = $uuidhash->{compartment}->{$comps->[$i]->{id}};
+		}
+		my $comp = $biochemistry->add("compartments",$data);
 	}
 	#Adding structural cues to biochemistry
 	if ($args->{addStructuralCues} == 1) {
@@ -273,6 +294,9 @@ sub createBiochemistry {
 			deltaG => $cpdRow->deltaG(),
 			deltaGErr => $cpdRow->deltaGErr()
 		};
+		if (defined($uuidhash->{cpd}->{$cpdRow->id()})) {
+			$cpdData->{uuid} = $uuidhash->{cpd}->{$cpdRow->id()};
+		}
 		foreach my $key (keys(%{$cpdData})) {
 			if (!defined($cpdData->{$key}) || $cpdData->{$key} eq "") {
 				delete $cpdData->{$key};
@@ -417,6 +441,9 @@ sub createBiochemistry {
 			deltaGErr => $rxnRow->deltaGErr(),
 			status => $rxnRow->status(),
 		};
+		if (defined($uuidhash->{rxn}->{$rxnRow->id()})) {
+			$data->{uuid} = $uuidhash->{rxn}->{$rxnRow->id()};
+		}
 		foreach my $key (keys(%{$data})) {
 			if (!defined($data->{$key}) || $data->{$key} eq "") {
 				delete $data->{$key};
@@ -532,6 +559,7 @@ sub createMapping {
 		name => $self->namespace()."/primary.mapping",
         verbose => 0,
 	});
+	my $uuidhash = $self->uuidHash();
 	my $mapping = ModelSEED::MS::Mapping->new({
 		name=>$args->{name},
 		biochemistry_uuid => $args->{biochemistry}->uuid(),
@@ -838,11 +866,15 @@ sub createMapping {
     print "Processing ".$roles->size()." roles\n" if($args->{verbose});
 	for (my $i=0; $i < $roles->size(); $i++) {
 		my $row = $roles->row($i);
-		my $role = $mapping->add("roles",{
+		my $data = {
 			locked => "0",
 			name => $row->name(),
 			seedfeature => $row->exemplarmd5()
-		});
+		};
+		if (defined($uuidhash->{roles}->{$row->id()})) {
+			$data->{uuid} = $uuidhash->{roles}->{$row->id()};
+		}
+		my $role = $mapping->add("roles",$data);
 		$mapping->addAlias({
 			attribute => "roles",
 			aliasName => "ModelSEED",
@@ -854,14 +886,18 @@ sub createMapping {
     print "Processing ".$subsystems->size()." subsystems\n" if($args->{verbose});
 	for (my $i=0; $i < $subsystems->size(); $i++) {
 		my $row = $subsystems->row($i);
-		my $ss = $mapping->add("rolesets",{
+		my $data = {
 			public => "1",
 			locked => "0",
 			name => $row->name(),
 			class => $row->classOne(),
 			subclass => $row->classTwo(),
 			type => "SEED Subsystem"
-		});
+		};
+		if (defined($uuidhash->{rolesets}->{$row->name()})) {
+			$data->{uuid} = $uuidhash->{rolesets}->{$row->name()};
+		}
+		my $ss = $mapping->add("rolesets",$data);
 		$mapping->addAlias({
 			attribute => "rolesets",
 			aliasName => "ModelSEED",
@@ -881,10 +917,14 @@ sub createMapping {
 	my $complexes = $self->complexTbl();
 	for (my $i=0; $i < $complexes->size(); $i++) {
 		my $row = $complexes->row($i);
-		my $complex = $mapping->add("complexes",{
+		my $data = {
 			locked => "0",
 			name => $row->id(),
-		});
+		};
+		if (defined($uuidhash->{complexes}->{$row->id()})) {
+			$data->{uuid} = $uuidhash->{complexes}->{$row->id()};
+		}
+		my $complex = $mapping->add("complexes",$data);
 		$mapping->addAlias({
 			attribute => "complexes",
 			aliasName => "ModelSEED",

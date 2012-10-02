@@ -118,6 +118,33 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'role_uuids',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_roles',
+            'name' => 'roles',
+            'class' => 'roles',
+            'method' => 'roles'
+          }
+        ];
+
+my $link_map = {roles => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

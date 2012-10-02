@@ -28,6 +28,7 @@ has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'SEED', type => 'attribute', metaclass => 'Typed');
 has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '3', type => 'attribute', metaclass => 'Typed');
+has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -98,10 +99,18 @@ my $attributes = [
             'name' => 'biochemistry_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'forwardedLinks',
+            'default' => 'sub {return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2, defaultNameSpace => 3, biochemistry_uuid => 4};
+my $attribute_map = {uuid => 0, modDate => 1, name => 2, defaultNameSpace => 3, biochemistry_uuid => 4, forwardedLinks => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -113,6 +122,33 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'biochemistry_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_biochemistry',
+            'name' => 'biochemistry',
+            'class' => 'Biochemistry',
+            'method' => 'Biochemistry'
+          }
+        ];
+
+my $link_map = {biochemistry => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

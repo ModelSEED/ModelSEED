@@ -624,6 +624,48 @@ sub getLinkedObjectArray {
     return $list;
 }
 
+sub removeLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{method};
+    	my $data = $self->$method();
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				ModelSEED::utilities::VERBOSEMSG("Removing object from link array.");
+				if (@{$data} == 1) {
+					$data = [];
+				} else {
+					splice(@{$data},$i,1);
+				}
+				my $clearer = "clear_".$link;
+				$self->$clearer();
+			}
+		}
+    }	
+}
+
+sub addLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{method};
+    	my $data = $self->$method();
+    	my $found = 0;
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				$found = 1;
+			}
+    	}
+    	if ($found == 0) {
+    		ModelSEED::utilities::VERBOSEMSG("Removing object from link array.");
+    		my $clearer = "clear_".$link;
+			$self->$clearer();
+			push(@{$data},$object->uuid());
+    	}
+    }	
+}
+
 sub biochemistry {
     my ($self) = @_;
     my $parent = $self->parent();
@@ -711,6 +753,83 @@ sub store {
         return $parent->store();
     }
     return $parent;
+}
+
+sub updateLinks {
+    my ($self,$type,$olduuid,$newuuid,$recursive,$transferaliases) = @_;
+    if ($self->_type() eq "AliasSet") {
+    	print "Updating links...\n";
+    	if ($self->class() eq $type) {
+    		my $uuidHash = $self->aliasesByuuid();
+    		my $aliases = $self->aliases();
+    		if (defined($uuidHash->{$olduuid})) {
+    			my $aliaselist = $uuidHash->{$olduuid};
+    			my $aliasesToAdd = [];
+    			for (my $j=0; $j < @{$aliaselist}; $j++) {
+    				my $alias = $aliaselist->[$j];
+					my $found = 0;
+					print $j."\t".$alias."\n";
+					for (my $i=0; $i < @{$aliases->{$alias}}; $i++) {
+						print $i."\n";
+						if ($aliases->{$alias}->[$i] eq $olduuid) {
+							splice(@{$aliases->{$alias}},$i,1);
+							if (@{$aliases->{$alias}} > 0) {
+								$i--;
+							}
+						} elsif ($aliases->{$alias}->[$i] eq $newuuid) {
+							$found = 1;
+						}
+					}
+					if (@{$aliases->{$alias}} == 0) {
+						delete $aliases->{$alias};
+					}
+					if ($transferaliases == 1 && $found == 0) {
+						push(@{$aliases->{$alias}},$newuuid);
+						push(@{$aliasesToAdd},$alias);
+					}
+				}
+				if (@{$aliasesToAdd} > 0) {
+					push(@{$uuidHash->{$newuuid}},@{$aliasesToAdd});
+				}
+    		}
+    	}
+    	return;
+    }
+    my $links = $self->_links();
+    for (my $i=0; $i < @{$links}; $i++) {
+    	my $link = $links->[$i];
+    	if ($link->{class} eq $type) {
+    		my $attribute = $link->{attribute};
+    		my $clearer = $link->{clearer};
+    		my $data = $self->$attribute();
+    		if (defined($data)) {
+	    		if ($link->{array} == 1) {
+	    			for (my $j=0; $j < @{$data}; $j++) {
+	    				if ($data->[$j] eq $olduuid) {
+	    					$data->[$j] = $newuuid;
+	    					$self->$clearer();
+	    				}
+	    			}
+	    		} else {
+	    			if ($data eq $olduuid) {
+	    				$self->$attribute($data);
+	    				$self->$clearer();
+	    			}
+	    		}
+    		}
+    	}
+    }
+    if ($recursive == 1) {
+    	my $sos = $self->_subobjects();
+    	for (my $i=0; $i < @{$sos}; $i++) {
+    		my $so = $sos->[$i]->{name};
+    		print "Updating links ".$so."...\n";
+    		my $objects = $self->$so();
+    		for (my $j=0; $j < @{$objects}; $j++) {
+    			$objects->[$j]->updateLinks($type,$olduuid,$newuuid,$recursive,$transferaliases);
+    		}
+    	} 
+    }
 }
 
 sub _build_object {

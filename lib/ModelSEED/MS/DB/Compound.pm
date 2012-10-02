@@ -237,6 +237,50 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'abstractCompound_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_abstractCompound',
+            'name' => 'abstractCompound',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'comprisedOfCompound_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_comprisedOfCompounds',
+            'name' => 'comprisedOfCompounds',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'structure_uuids',
+            'parent' => 'BiochemistryStructures',
+            'clearer' => 'clear_structures',
+            'name' => 'structures',
+            'class' => 'structures',
+            'method' => 'structures'
+          }
+        ];
+
+my $link_map = {abstractCompound => 0, comprisedOfCompounds => 1, structures => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

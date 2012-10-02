@@ -1088,10 +1088,77 @@ sub gapfillModel {
 	});
 	if (defined($solution)) {
 		push(@{$self->fbaFormulation_uuids()},$args->{gapfillingFormulation}->fbaFormulation_uuid());
-		push(@{$self->gapfillingFormulation_uuids()},$args->{gapfillingFormulation}->uuid());
+		push(@{$self->unintegratedGapfilling_uuids()},$args->{gapfillingFormulation}->uuid());
 		return $solution;	
 	}
 	return;
+}
+
+=head3 integrateGapfillSolution
+
+Definition:
+	void ModelSEED::MS::Model->integrateGapfillSolution({
+		solution => ModelSEED::MS::GapfillingFormulation*
+	});
+Description:
+	Integrates a gapfilling solution into the model
+	
+=cut
+
+sub integrateGapfillSolution {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["gapfillingFormulation"],{
+		solutionNum => 0
+	});
+	ModelSEED::utilities::VERBOSEMSG("Now integrating gapfill solution into model");
+	my $gf = $args->{gapfillingFormulation};
+	my $num = $args->{solutionNum};
+	my $gfss = $gf->gapfillingSolutions();
+	if (@{$gfss} <= $num) {
+		ModelSEED::utilities::ERROR("Specified solution not found in gapfilling formulation!");
+	}
+	my $sol = $gfss->[$num];
+	#Integrating biomass removals into model
+	if (defined($sol->biomassRemovals()) && @{$sol->biomassRemovals()} > 0) {
+		my $removals = $sol->biomassRemovals();
+		foreach my $rem (@{$removals}) {
+            my $biomass = $self->biomasses()->[0];
+			my $biocpds = $biomass->biomasscompounds();
+			foreach my $biocpd (@{$biocpds}) {
+				if ($biocpd->modelcompound()->uuid() eq $rem) {
+					ModelSEED::utilities::VERBOSEMSG(
+						"Removing ".$biocpd->modelcompound()->id()." from model biomass."
+					);
+					$biomass->remove("biomasscompounds",$biocpd);
+					last;
+				}
+			}
+		}
+	}	
+	#Integrating new reactions into model
+	my $rxns = $sol->gapfillingSolutionReactions();
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i];
+		my $mdlrxn = $self->queryObjects("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
+		if (defined($mdlrxn)) {
+			ModelSEED::utilities::VERBOSEMSG(
+				"Making ".$mdlrxn->id()." reversible."
+			);
+			$mdlrxn->direction("=");
+		} else {
+			ModelSEED::utilities::VERBOSEMSG(
+				"Adding ".$mdlrxn->id()." to model in ".$rxn->direction()." direction."
+			);
+			$self->addReactionToModel({
+				reaction => $rxn->reaction(),
+				direction => $rxn->direction()
+			});
+		}
+	}
+	#Checking if gapfilling formulation is in the unintegrated list 
+	$self->removeLinkArrayItem("unintegratedGapfillings",$gf);
+	$self->addLinkArrayItem("integratedGapfillings",$gf);
+	$self->integratedGapfillingSolutions()->{$gf->uuid()} = $num;
 }
 
 =head3 gapgenModel
@@ -1121,6 +1188,51 @@ sub gapgenModel {
 		return $solution;	
 	}
 	return;
+}
+
+=head3 integrateGapgenSolution
+
+Definition:
+	void ModelSEED::MS::Model->integrateGapgenSolution({
+		solution => ModelSEED::MS::GapgenFormulation*
+	});
+Description:
+	Integrates a gapgen solution into the model
+	
+=cut
+
+sub integrateGapgenSolution {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["gapgenFormulation"],{
+		solutionNum => 0
+	});
+	ModelSEED::utilities::VERBOSEMSG("Now integrating gapgen solution into model");
+	my $gg = $args->{gapgenFormulation};
+	my $num = $args->{solutionNum};
+	my $ggss = $gg->gapgenSolutions();
+	if (@{$ggss} <= $num) {
+		ModelSEED::utilities::ERROR("Specified solution not found in gapgen formulation!");
+	}
+	my $sol = $ggss->[$num];
+	my $solrxns = $sol->gapgenSolutionReactions();
+	for (my $m=0; $m < @{$solrxns}; $m++) {
+		my $rxn = $solrxns->[$m];
+        my $direction = $rxn->direction;
+		if ($direction eq $rxn->modelreaction()->direction()) {
+			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." removed.");
+			$self->remove("modelreactions",$rxn->modelreaction());
+		} elsif ($direction eq ">") {
+			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." switched to <.");
+			$rxn->modelreaction()->direction("<");
+		} elsif ($direction eq "<") {
+			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." switched to >.");
+			$rxn->modelreaction()->direction(">");
+		}
+	}
+	#Checking if gapfilling formulation is in the unintegrated list 
+	$self->removeLinkArrayItem("unintegratedGapgens",$gg);
+	$self->addLinkArrayItem("integratedGapgens",$gg);
+	$self->integratedGapgenSolutions()->{$gg->uuid()} = $num;
 }
 
 sub printExchangeFormat {

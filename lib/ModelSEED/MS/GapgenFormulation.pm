@@ -146,6 +146,7 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"use database fields"} = "1";
 	$form->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
 	$form->parameters()->{"CPLEX solver time limit"} = "82800";
+	push(@{$form->outputfiles}, "GapGenerationReport.txt");
 	return $form;	
 }
 
@@ -167,13 +168,38 @@ sub runGapGeneration {
 	my $directory = $form->jobDirectory()."/";
 	# Running the gapfilling
 	my $fbaResults = $form->runFBA();
-	# Retrieving solutions
-	my $solutions = $fbaResults->gapgenSolutions();
-	if (!defined($solutions->[0])) {
-		print STDERR "Gapgen solution not found. Gapgen failed!";
-		return undef; 
+	#Parsing solutions
+	$self->parseGapgenResults($fbaResults);
+	return $fbaResults->gapgenSolutions();
+}
+
+=head3 parseGapgenResults
+
+Definition:
+	void parseGapgenResults();
+Description:
+	Parses Gapgen results
+
+=cut
+
+sub parseGapgenResults {
+	my ($self, $fbaResults) = @_;
+	my $outputHash = $fbaResults->outputfiles();
+	if (defined($outputHash->{"GapGenerationReport.txt"})) {
+		my $filedata = $outputHash->{"GapGenerationReport.txt"};
+		for (my $i=1; $i < @{$filedata}; $i++) {
+			my $array = [split(/\t/,$filedata->[$i])];
+			if (defined($array->[1])) {
+				my $subarray = [split(/,/,$array->[1])];
+				my $ggsolution = $self->add("gapgenSolutions",{});
+				$ggsolution->loadFromData({
+					objective => $array->[0],
+					reactions => $subarray,
+					model => $self->model()
+				});
+			}
+		}
 	}
-	return $solutions->[0];
 }
 
 __PACKAGE__->meta->make_immutable;

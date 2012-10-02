@@ -82,6 +82,32 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'modelreaction_uuid',
+            'parent' => 'Model',
+            'clearer' => 'clear_modelReaction',
+            'name' => 'modelReaction',
+            'class' => 'modelreactions',
+            'method' => 'modelreactions'
+          }
+        ];
+
+my $link_map = {modelReaction => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

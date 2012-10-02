@@ -90,6 +90,40 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'compound_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_compound',
+            'name' => 'compound',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'attribute' => 'compartment_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_compartment',
+            'name' => 'compartment',
+            'class' => 'compartments',
+            'method' => 'compartments'
+          }
+        ];
+
+my $link_map = {compound => 0, compartment => 1};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [];
 
 my $subobject_map = {};

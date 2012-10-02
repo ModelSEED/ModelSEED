@@ -14,12 +14,7 @@ sub abstract { return "Fill gaps in the reaction network for a model"; }
 sub usage_desc { return "model gapfill [ model || - ] [options]"; }
 sub opt_spec {
     return (
-        ["config|c=s", "Configuration filename for formulating the gapfilling"],
-        ["fbaconfig|c=s", "Configuration filename for the FBA formulation used by the gapfilling"],
-        ["overwrite|o", "Overwrite existing model with gapfilled model"],
-        ["save|s:s", "Save gapfilled model to new model name"],
         ["verbose|v", "Print verbose status information"],
-        ["fileout|f:s", "Name of file where FBA solution object will be printed"],
         ["media:s","Media formulation to be used for the FBA simulation"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
         ["objective:s","String describing the objective of the FBA problem"],
@@ -49,6 +44,10 @@ sub opt_spec {
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
         ["loadsolution|l:s", "Loading existing solution into model"],
         ["norun", "Do not gapfill; print out the configuration as JSON"],
+        ["integratesol|i", "Integrate first solution into model"],
+        ["printraw|r", "Print raw data instead of readable data"],
+        ["saveas|a:s", "New name the results should be saved to"],
+        ["dryrun|d", "Donot save results in database"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -62,14 +61,13 @@ sub execute {
     # Retreiving the model object on which FBA will be performed
     (my $model,my $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	# Redirect output to file if we need to
-    my $out_fh;
-	if ($opts->{fileout}) {
-	    open($out_fh, ">", $opts->{fileout}) or die "Cannot open ".$opts->{fileout}.": $!";
-	} else {
-	    $out_fh = \*STDOUT;
-	}
-	# Creating gapfilling formulation
+	if ($opts->{verbose}) {
+    	ModelSEED::utilities::SETVERBOSE(1);
+    	delete $opts->{verbose};
+    }
+	#Standard commands to handle where output will be printed
+    my $out_fh = \*STDOUT;
+	#Creating gapfilling formulation
 	my $input = {model => $model};
 	if ($opts->{config}) {
 		$input->{filename} = $opts->{config};
@@ -130,43 +128,39 @@ sub execute {
         return;
     }
     my $result;
-    if (defined($opts->{loadsolution}) && -d $opts->{loadsolution}) {
-		my $fbaform = $gapfillingFormulation->prepareFBAFormulation();
-		my $directory = $fbaform->jobDirectory();
-		$fbaform->jobDirectory($opts->{loadsolution});
-		my $fbaresults = $fbaform->add("fbaResults",{});
-		$fbaresults->loadMFAToolkitResults();
-		my $solutions = $fbaresults->gapfillingSolutions();
-		if (defined($solutions->[0])) {
-			$result = $solutions->[0];
-		}
-	} else {
-		#Running gapfilling
-	    print STDERR "Running Gapfilling...\n" if($opts->{verbose});
-	    $result = $model->gapfillModel({
-	        gapfillingFormulation => $gapfillingFormulation,
-	    });
-	}
-    if (!defined($result)) {
-    	print STDERR " Reactions passing user criteria were insufficient to enable objective!\n";
-    } else {
-		print $out_fh $result->toJSON({pp => 1});
-	    # Standard commands that save results of the analysis to the database
-        my $fbaFormulation = $gapfillingFormulation->fbaFormulation;
-	    if ($opts->{overwrite} || $opts->{save}) {
-            $store->save_object("fBAFormulation/".$fbaFormulation->uuid, $fbaFormulation);
-            $store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid, $gapfillingFormulation);
-        }
-        if ($opts->{overwrite}) {
-	    	print STDERR "Saving gapfilled model over original model...\n" if($opts->{verbose});
-	    	$store->save_object($ref, $model);
-	    } elsif ($opts->{save}) {
-			my $new_ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
-			print STDERR "Saving gapfilled model as new model ".$new_ref."...\n" if($opts->{verbose});
-			$store->save_object($ref, $model);
-	    }
+    ModelSEED::utilities::VERBOSEMSG("Running Gapfilling...");
+    $gapfillingFormulation = $model->gapfillModel({gapfillingFormulation => $gapfillingFormulation});
+    my $solutions = $gapfillingFormulation->gapfillingSolutions();
+    if (!defined($solutions) || @{$solutions} == 0) {
+    	ModelSEED::utilities::VERBOSEMSG("Reactions passing user criteria were insufficient to enable objective!");
+    	return;
     }
-    close $out_fh if $opts->{fileout};
+    my $numSolutions = @{$solutions};
+	ModelSEED::utilities::VERBOSEMSG($numSolutions." viable solutions identified.");
+    if ($opts->{printraw}) {
+    	for (my $i=0; $i < @{$solutions}; $i++) {
+    		$solutions->[$i] = $solutions->[$i]->serializeToDB();
+    	}
+    	print ModelSEED::utilities::TOJSON($solutions,1);
+    } else {
+    	print $gapfillingFormulation->toReadableString();
+    }
+    if ($opts->{integratesol}) {
+    	ModelSEED::utilities::VERBOSEMSG("Automatically integrating first solution in model.");
+    	$model->integrateGapfillSolution($gapfillingFormulation,0);
+    }
+    if ($opts->{saveas}) {
+    	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
+    	ModelSEED::utilities::VERBOSEMSG("New alias set for model:".$ref);
+    }
+    if ($opts->{dryrun}) {
+    	ModelSEED::utilities::VERBOSEMSG("Dry run selected. Results not saved!");
+    } else {
+    	ModelSEED::utilities::VERBOSEMSG("Saving model to:".$ref);
+    	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
+		$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
+    	$store->save_object($ref,$model);
+    }
 }
 
 1;

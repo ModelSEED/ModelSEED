@@ -204,6 +204,22 @@ $objectDefinitions->{FBAFormulation} = {
 			default    => "sub{return {};}"
 		},
 		{
+			name       => 'inputfiles',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'outputfiles',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
 			name       => 'uptakeLimits',
 			printOrder => -1,
 			perm       => 'rw',
@@ -678,6 +694,14 @@ $objectDefinitions->{FBAResult} = {
 			type       => 'Num',
 			req        => 0
 		},
+		{
+			name       => 'outputfiles',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
 	],
 	subobjects => [
 		{
@@ -720,18 +744,6 @@ $objectDefinitions->{FBAResult} = {
 			name       => "fbaMetaboliteProductionResults",
 			printOrder => 0,
 			class      => "FBAMetaboliteProductionResult",
-			type       => "encompassed"
-		},
-		{
-			name       => "gapfillingSolutions",
-			printOrder => 0,
-			class      => "GapfillingSolution",
-			type       => "encompassed"
-		},
-		{
-			name       => "gapgenSolutions",
-			printOrder => 0,
-			class      => "GapgenSolution",
 			type       => "encompassed"
 		}
 	],
@@ -1169,9 +1181,9 @@ $objectDefinitions->{FBAMetaboliteProductionResult} = {
 	]
 };
 
-$objectDefinitions->{GapfillingSolution} = {
-	parents    => ['FBAResult'],
-	class      => 'child',
+$objectDefinitions->{GapgenFormulation} = {
+	parents    => ['ModelSEED::Store'],
+	class      => 'parent',
 	attributes => [
 		{
 			name       => 'uuid',
@@ -1181,139 +1193,96 @@ $objectDefinitions->{GapfillingSolution} = {
 			req        => 0
 		},
 		{
+			name       => 'fbaFormulation_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'model_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'mediaHypothesis',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'biomassHypothesis',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'gprHypothesis',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'reactionRemovalHypothesis',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => "1"
+		},
+		{
+			name       => 'referenceMedia_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
 			name       => 'modDate',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
-		},
-		{
-			name       => 'solutionCost',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Num',
-			req        => 0,
-			default    => "1"
-		},
-		{
-			name       => 'biomassRemoval_uuids',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ArrayRef',
-			req        => 0,
-			default    => "sub{return [];}"
-		},
-		{
-			name       => 'mediaSupplement_uuids',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ArrayRef',
-			req        => 0,
-			default    => "sub{return [];}"
-		},
-		{
-			name       => 'koRestore_uuids',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ArrayRef',
-			req        => 0,
-			default    => "sub{return [];}"
-		},
+		}
 	],
 	subobjects => [
 		{
-			name  => "gapfillingSolutionReactions",
-			class => "GapfillingSolutionReaction",
-			type  => "encompassed"
-		},
+			name       => "gapgenSolutions",
+			printOrder => 0,
+			class      => "GapgenSolution",
+			type       => "encompassed"
+		}
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
 		{
-			name      => "biomassRemovals",
-			attribute => "biomassRemoval_uuids",
-			parent    => "Model",
-			method    => "modelcompounds",
-			array     => 1
+			name      => "model",
+			attribute => "model_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Model",
+			weak      => 0
 		},
 		{
-			name      => "mediaSupplements",
-			attribute => "mediaSupplement_uuids",
-			parent    => "Model",
-			method    => "modelcompounds",
-			array     => 1
+			name      => "fbaFormulation",
+			attribute => "fbaFormulation_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "FBAFormulation",
+			weak      => 0
 		},
 		{
-			name      => "koRestores",
-			attribute => "koRestore_uuids",
-			parent    => "Model",
-			method    => "modelreactions",
-			array     => 1
-		},
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{GapfillingSolutionReaction} = {
-	parents    => ['GapfillingSolution'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'modelreaction_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'direction',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => "1"
-		},
-	],
-	subobjects => [
-		{
-			name  => "gfSolutionReactionGeneCandidates",
-			class => "GfSolutionReactionGeneCandidate",
-			type  => "encompassed"
-		},
-	],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "modelreaction",
-			attribute => "modelreaction_uuid",
-			parent    => "Model",
-			method    => "modelreactions"
-		},
-	],
-	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{GfSolutionReactionGeneCandidate} = {
-	parents    => ['GapfillingSolutionReaction'],
-	class      => 'child',
-	attributes => [
-		{
-			name       => 'feature_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-	],
-	subobjects  => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "feature",
-			attribute => "feature_uuid",
-			parent    => "Annotation",
-			method    => "features"
-		},
+			name      => "referenceMedia",
+			attribute => "referenceMedia_uuid",
+			parent    => "Biochemistry",
+			method    => "media"
+		}
 	],
 	reference_id_types => [qw(uuid)],
 };
@@ -1436,105 +1405,6 @@ $objectDefinitions->{GapgenSolutionReaction} = {
 	reference_id_types => [qw(uuid)],
 };
 
-$objectDefinitions->{GapgenFormulation} = {
-	parents    => ['ModelSEED::Store'],
-	class      => 'parent',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'fbaFormulation_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'model_uuid',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'mediaHypothesis',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'biomassHypothesis',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'gprHypothesis',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "0"
-		},
-		{
-			name       => 'reactionRemovalHypothesis',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Bool',
-			req        => 0,
-			default    => "1"
-		},
-		{
-			name       => 'referenceMedia_uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 1
-		},
-		{
-			name       => 'modDate',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0
-		}
-	],
-	subobjects => [],
-	primarykeys => [qw(uuid)],
-	links       => [
-		{
-			name      => "model",
-			attribute => "model_uuid",
-			parent    => "ModelSEED::Store",
-			method    => "Model",
-			weak      => 0
-		},
-		{
-			name      => "fbaFormulation",
-			attribute => "fbaFormulation_uuid",
-			parent    => "ModelSEED::Store",
-			method    => "FBAFormulation",
-			weak      => 0
-		},
-		{
-			name      => "referenceMedia",
-			attribute => "referenceMedia_uuid",
-			parent    => "Biochemistry",
-			method    => "media"
-		}
-	],
-	reference_id_types => [qw(uuid)],
-};
-
 $objectDefinitions->{GapfillingFormulation} = {
 	parents    => ['ModelSEED::Store'],
 	class      => 'parent',
@@ -1548,7 +1418,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'fbaFormulation_uuid',
-			printOrder => 0,
+			printOrder => 1,
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
 			req        => 0
@@ -1562,7 +1432,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'mediaHypothesis',
-			printOrder => 0,
+			printOrder => 2,
 			perm       => 'rw',
 			type       => 'Bool',
 			req        => 0,
@@ -1570,7 +1440,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'biomassHypothesis',
-			printOrder => 0,
+			printOrder => 3,
 			perm       => 'rw',
 			type       => 'Bool',
 			req        => 0,
@@ -1578,7 +1448,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'gprHypothesis',
-			printOrder => 0,
+			printOrder => 4,
 			perm       => 'rw',
 			type       => 'Bool',
 			req        => 0,
@@ -1586,7 +1456,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'reactionAdditionHypothesis',
-			printOrder => 0,
+			printOrder => 5,
 			perm       => 'rw',
 			type       => 'Bool',
 			req        => 0,
@@ -1594,7 +1464,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'balancedReactionsOnly',
-			printOrder => 0,
+			printOrder => 6,
 			perm       => 'rw',
 			type       => 'Bool',
 			req        => 0,
@@ -1602,7 +1472,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'guaranteedReaction_uuids',
-			printOrder => 0,
+			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
 			req        => 0,
@@ -1610,7 +1480,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'blacklistedReaction_uuids',
-			printOrder => 0,
+			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
 			req        => 0,
@@ -1618,7 +1488,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'allowableCompartment_uuids',
-			printOrder => 0,
+			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
 			req        => 0,
@@ -1626,7 +1496,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'reactionActivationBonus',
-			printOrder => 0,
+			printOrder => 7,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1634,7 +1504,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'drainFluxMultiplier',
-			printOrder => 0,
+			printOrder => 8,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1642,7 +1512,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'directionalityMultiplier',
-			printOrder => 0,
+			printOrder => 9,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1650,7 +1520,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'deltaGMultiplier',
-			printOrder => 0,
+			printOrder => 10,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1658,7 +1528,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'noStructureMultiplier',
-			printOrder => 0,
+			printOrder => 11,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1666,7 +1536,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'noDeltaGMultiplier',
-			printOrder => 0,
+			printOrder => 12,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1674,7 +1544,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'biomassTransporterMultiplier',
-			printOrder => 0,
+			printOrder => 13,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1682,7 +1552,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'singleTransporterMultiplier',
-			printOrder => 0,
+			printOrder => 14,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1690,7 +1560,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 		},
 		{
 			name       => 'transporterMultiplier',
-			printOrder => 0,
+			printOrder => 15,
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 0,
@@ -1714,6 +1584,12 @@ $objectDefinitions->{GapfillingFormulation} = {
 			name  => "reactionSetMultipliers",
 			class => "ReactionSetMultiplier",
 			type  => "encompassed"
+		},
+		{
+			name       => "gapfillingSolutions",
+			printOrder => 0,
+			class      => "GapfillingSolution",
+			type       => "encompassed"
 		}
 	],
 	primarykeys => [qw(uuid)],
@@ -1755,6 +1631,146 @@ $objectDefinitions->{GapfillingFormulation} = {
 		}
 	],
 	reference_id_types => [qw(uuid)]
+};
+
+$objectDefinitions->{GapfillingSolution} = {
+	parents    => ['FBAResult'],
+	class      => 'child',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'solutionCost',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "1"
+		},
+		{
+			name       => 'biomassRemoval_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'mediaSupplement_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'koRestore_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+	],
+	subobjects => [
+		{
+			name  => "gapfillingSolutionReactions",
+			class => "GapfillingSolutionReaction",
+			type  => "encompassed"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "biomassRemovals",
+			attribute => "biomassRemoval_uuids",
+			parent    => "Model",
+			method    => "modelcompounds",
+			array     => 1
+		},
+		{
+			name      => "mediaSupplements",
+			attribute => "mediaSupplement_uuids",
+			parent    => "Model",
+			method    => "modelcompounds",
+			array     => 1
+		},
+		{
+			name      => "koRestores",
+			attribute => "koRestore_uuids",
+			parent    => "Model",
+			method    => "modelreactions",
+			array     => 1
+		},
+	],
+	reference_id_types => [qw(uuid)],
+};
+
+$objectDefinitions->{GapfillingSolutionReaction} = {
+	parents    => ['GapfillingSolution'],
+	class      => 'child',
+	attributes => [
+		{
+			name       => 'reaction_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'compartment_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'direction',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "1"
+		},
+		{
+			name       => 'candidateFeature_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+	],
+	subobjects => [],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "reaction",
+			attribute => "reaction_uuid",
+			parent    => "Biochemistry",
+			method    => "reactions"
+		},
+		{
+			name      => "candidateFeatures",
+			attribute => "candidateFeature_uuids",
+			parent    => "Annotation",
+			method    => "features",
+			array     => 1
+		},
+	],
+	reference_id_types => [qw(uuid)],
 };
 
 $objectDefinitions->{GapfillingGeneCandidate} = {
@@ -2122,8 +2138,15 @@ $objectDefinitions->{Biochemistry} = {
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
 			req        => 0,
-			default    => ""
 		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
 	],
 	subobjects => [
 		{
@@ -3152,7 +3175,7 @@ $objectDefinitions->{Model} = {
 			default    => "sub{return [];}"
 		},
 		{
-			name       => 'gapfillingFormulation_uuids',
+			name       => 'integratedGapfilling_uuids',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
@@ -3160,12 +3183,44 @@ $objectDefinitions->{Model} = {
 			default    => "sub{return [];}"
 		},
 		{
-			name       => 'gapgenFormulation_uuids',
+			name       => 'integratedGapfillingSolutions',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'unintegratedGapfilling_uuids',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
 			req        => 0,
 			default    => "sub{return [];}"
+		},
+		{
+			name       => 'integratedGapgen_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'unintegratedGapgen_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
 		}
 	],
 	subobjects => [
@@ -3204,15 +3259,29 @@ $objectDefinitions->{Model} = {
 			array     => 1
 		},
 		{
-			name      => "gapfillingFormulations",
-			attribute => "gapfillingFormulation_uuids",
+			name      => "unintegratedGapfillings",
+			attribute => "unintegratedGapfilling_uuids",
 			parent    => "ModelSEED::Store",
 			method    => "GapfillingFormulation",
 			array     => 1
 		},
 		{
-			name      => "gapgenFormulations",
-			attribute => "gapgenFormulation_uuids",
+			name      => "integratedGapfillings",
+			attribute => "integratedGapfilling_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapfillingFormulation",
+			array     => 1
+		},
+		{
+			name      => "unintegratedGapgens",
+			attribute => "unintegratedGapgen_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapgenFormulation",
+			array     => 1
+		},
+		{
+			name      => "integratedGapgens",
+			attribute => "integratedGapgen_uuids",
 			parent    => "ModelSEED::Store",
 			method    => "GapgenFormulation",
 			array     => 1
@@ -3775,6 +3844,14 @@ $objectDefinitions->{Annotation} = {
 			printOrder => 2,
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid'
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
 		}
 	],
 	subobjects => [
@@ -4128,6 +4205,14 @@ $objectDefinitions->{Mapping} = {
 			type       => 'ModelSEED::uuid',
 			req        => 0
 		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
 	],
 	subobjects => [
 		{

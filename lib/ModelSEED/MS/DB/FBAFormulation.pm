@@ -47,6 +47,8 @@ has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', def
 has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
+has outputfiles => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has uptakeLimits => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has numberOfSolutions => (is => 'rw', isa => 'Int', printOrder => '23', default => '1', type => 'attribute', metaclass => 'Typed');
 has simpleThermoConstraints => (is => 'rw', isa => 'Bool', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
@@ -303,6 +305,22 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'inputfiles',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'outputfiles',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'uptakeLimits',
             'default' => 'sub{return {};}',
             'type' => 'HashRef',
@@ -350,7 +368,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, uptakeLimits => 25, numberOfSolutions => 26, simpleThermoConstraints => 27, thermodynamicConstraints => 28, noErrorThermodynamicConstraints => 29, minimizeErrorThermodynamicConstraints => 30};
+my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, inputfiles => 25, outputfiles => 26, uptakeLimits => 27, numberOfSolutions => 28, simpleThermoConstraints => 29, thermodynamicConstraints => 30, noErrorThermodynamicConstraints => 31, minimizeErrorThermodynamicConstraints => 32};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -362,6 +380,68 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'model_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_model',
+            'name' => 'model',
+            'class' => 'Model',
+            'method' => 'Model'
+          },
+          {
+            'attribute' => 'media_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_media',
+            'name' => 'media',
+            'class' => 'media',
+            'method' => 'media'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'geneKO_uuids',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_geneKOs',
+            'name' => 'geneKOs',
+            'class' => 'features',
+            'method' => 'features'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'reactionKO_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reactionKOs',
+            'name' => 'reactionKOs',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'secondaryMedia_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_secondaryMedia',
+            'name' => 'secondaryMedia',
+            'class' => 'media',
+            'method' => 'media'
+          }
+        ];
+
+my $link_map = {model => 0, media => 1, geneKOs => 2, reactionKOs => 3, secondaryMedia => 4};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 
