@@ -235,8 +235,6 @@ sub loadMFAToolkitResults {
 	$self->parseMinimalMediaResults();
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
-	$self->parseGapfillingResults();
-	$self->parseGapgenResults();
 	$self->parseOutputFiles();
 }
 

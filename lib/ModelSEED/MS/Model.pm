@@ -1088,7 +1088,7 @@ sub gapfillModel {
 	});
 	if (defined($solution)) {
 		push(@{$self->fbaFormulation_uuids()},$args->{gapfillingFormulation}->fbaFormulation_uuid());
-		push(@{$self->gapfillingFormulation_uuids()},$args->{gapfillingFormulation}->uuid());
+		push(@{$self->unintegratedGapfilling_uuids()},$args->{gapfillingFormulation}->uuid());
 		return $solution;	
 	}
 	return;
@@ -1122,13 +1122,14 @@ sub integrateGapfillSolution {
 	if (defined($sol->biomassRemovals()) && @{$sol->biomassRemovals()} > 0) {
 		my $removals = $sol->biomassRemovals();
 		foreach my $rem (@{$removals}) {
-			my $biocpds = $self->biomasses()->[0]->biomasscompounds();
+            my $biomass = $self->biomasses()->[0];
+			my $biocpds = $biomass->biomasscompounds();
 			foreach my $biocpd (@{$biocpds}) {
 				if ($biocpd->modelcompound()->uuid() eq $rem) {
 					ModelSEED::utilities::VERBOSEMSG(
 						"Removing ".$biocpd->modelcompound()->id()." from model biomass."
 					);
-					$bio->remove("biomasscompounds",$biocpd);
+					$biomass->remove("biomasscompounds",$biocpd);
 					last;
 				}
 			}
@@ -1216,9 +1217,10 @@ sub integrateGapgenSolution {
 	my $solrxns = $sol->gapgenSolutionReactions();
 	for (my $m=0; $m < @{$solrxns}; $m++) {
 		my $rxn = $solrxns->[$m];
-		if ($rxn->direction() eq $rxn->modelreaction()->direction()) {
+        my $direction = $rxn->direction;
+		if ($direction eq $rxn->modelreaction()->direction()) {
 			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." removed.");
-			$model->remove("modelreactions",$rxn->modelreaction());
+			$self->remove("modelreactions",$rxn->modelreaction());
 		} elsif ($direction eq ">") {
 			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." switched to <.");
 			$rxn->modelreaction()->direction("<");

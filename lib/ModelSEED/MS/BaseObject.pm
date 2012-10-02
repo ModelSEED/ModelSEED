@@ -633,10 +633,10 @@ sub removeLinkArrayItem {
     	for (my $i=0; $i < @{$data}; $i++) {
 			if ($data->[$i] eq $object->uuid()) {
 				ModelSEED::utilities::VERBOSEMSG("Removing object from link array.");
-				if (@{$ugfs} == 1) {
-					$ugfs = [];
+				if (@{$data} == 1) {
+					$data = [];
 				} else {
-					splice(@{$ugfs},$i,1);
+					splice(@{$data},$i,1);
 				}
 				my $clearer = "clear_".$link;
 				$self->$clearer();

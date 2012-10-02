@@ -146,7 +146,7 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"use database fields"} = "1";
 	$form->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
 	$form->parameters()->{"CPLEX solver time limit"} = "82800";
-	$form->outputfiles()->["GapGenerationReport.txt"];
+	push(@{$form->outputfiles}, "GapGenerationReport.txt");
 	return $form;	
 }
 
@@ -169,7 +169,7 @@ sub runGapGeneration {
 	#Running the gapfilling
 	my $fbaResults = $form->runFBA();
 	#Parsing solutions
-	$self->parseGapgenResults();
+	$self->parseGapgenResults($fbaResults);
 	return $fbaResults->gapgenSolutions();
 }
 
@@ -183,7 +183,7 @@ Description:
 =cut
 
 sub parseGapgenResults {
-	my ($self) = @_;
+	my ($self, $fbaResults) = @_;
 	my $outputHash = $fbaResults->outputfiles();
 	if (defined($outputHash->{"GapGenerationReport.txt"})) {
 		my $filedata = $outputHash->{"GapGenerationReport.txt"};

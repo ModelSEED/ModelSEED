@@ -313,7 +313,7 @@ sub prepareFBAFormulation {
 			}
 		}
 	}
-	$form->outputfiles()->["CompleteGapfillingOutput.txt"];
+	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
 	if ($self->biomassHypothesis() == 1) {
 		$form->parameters()->{"Biomass modification hypothesis"} = 1;
 		$self->printBiomassComponentReactions();
@@ -478,7 +478,7 @@ sub createSolutionsFromArray {
 			foreach my $ruuid (keys(%{$rxnHash})) {
 				foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
 					$gfsolution->add("gapfillingSolutionReactions",{
-						reaction_uuid => $uuid,
+						reaction_uuid => $ruuid,
 						compartment_uuid => $cuuid,
 						direction => $rxnHash->{$ruuid}->{$cuuid}
 					});
