@@ -131,7 +131,7 @@ use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
     ModelSEED::Database::MongoDBSimple
-    JSON::Any
+    JSON::XS
 );
 with 'ModelSEED::Database';
 
@@ -166,7 +166,7 @@ around BUILDARGS => sub {
         } catch {
             ModelSEED::Exception::DatabaseConfigError->throw(
                 dbName => $config{name},
-                configText => JSON->new()->pretty(1)->encode(\%config),
+                configText => JSON::XS->new->pretty(1)->encode(\%config),
             );
         };
     }

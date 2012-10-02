@@ -5,6 +5,7 @@ use base 'App::Cmd::Command';
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
+use JSON::XS;
 use Class::Autouse qw(
     ModelSEED::MS::Mapping
     ModelSEED::Store
@@ -119,7 +120,7 @@ sub execute {
                 open(my $fh, "<", $uncompressed_filename) || die "$!: $@";
                 $string = <$fh>;
             }
-            $data = JSON->new->utf8->decode($string);
+            $data = JSON::XS->new->utf8->decode($string);
         }
         print "Validating fetched mapping...\n" if($opts->{verbose});
         $map = ModelSEED::MS::Mapping->new($data);
