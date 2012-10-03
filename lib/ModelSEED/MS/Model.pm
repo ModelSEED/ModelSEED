@@ -701,12 +701,7 @@ sub addReactionToModel {
 		my $rgts = $rxn->reagents();
 		for (my $i=0; $i < @{$rgts}; $i++) {
 			my $rgt = $rgts->[$i];
-			my $rgtcmp;
-			if ($rxn->isTransport()) {
-				$rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
-			} else {
-				$rgtcmp = $mdlcmp;
-			}
+			my $rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 			my $coefficient = $rgt->coefficient();
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),

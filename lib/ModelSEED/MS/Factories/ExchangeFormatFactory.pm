@@ -166,6 +166,7 @@ sub buildGapfillingFormulation {
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
 		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
+rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8
 rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
 rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )),
 		blacklistedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
