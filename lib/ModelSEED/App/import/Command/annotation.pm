@@ -45,6 +45,7 @@ sub opt_spec {
     return (
         ["list|l",    "List available annotated genomes"],
         ["source:s", "Restrict search to a specific data source"],
+        ["filepath|f:s", "Directory with flatfiles of data you are importing"],
         ["store|s:s", "Identify which store to save the annotation to"],
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
@@ -58,8 +59,17 @@ sub execute {
     print($self->usage) && exit if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helper = ModelSEED::App::Helpers->new;
-    my $store;
+    # Check that required arguments are present
+    my ($id, $alias) = @$args;
+    $self->usage_error("Must supply an id") unless(defined($id));
+    $self->usage_error("Must supply an alias") unless(defined($alias));
+    # Make sure the alias object is valid "username/alias_string"
+    $alias = $helper->process_ref_string(
+        $alias, "annotation", $auth->username
+    );
+    print "Will be saving to $alias...\n" if(defined($opts->{verbose}));
     # Initialize the store object
+    my $store;
     if($opts->{store}) {
         my $store_name = $opts->{store};
         my $config = ModelSEED::Configuration->instance;
@@ -70,39 +80,49 @@ sub execute {
     } else {
         $store = ModelSEED::Store->new(auth => $auth);
     }
-    my $factory = ModelSEED::MS::Factories::Annotation->new(om => $store);
-    my $sources = [ $opts->{source} ];
-    $sources = [ qw(PubSEED RAST KBase) ] unless(@$sources);
-    # If we are listing, just do that and exit
-    if(defined($opts->{list})) {
-        $self->printList($factory, $opts);
-        exit;
-    }
-    # Check that required arguments are present
-    my ($id, $alias) = @$args;
-    $self->usage_error("Must supply an id") unless(defined($id));
-    $self->usage_error("Must supply an alias") unless(defined($alias));
-    # Make sure the alias object is valid "username/alias_string"
-    $alias = $helper->process_ref_string(
-        $alias, "annotation", $auth->username
-    );
-    print "Will be saving to $alias...\n" if(defined($opts->{verbose}));
-    my $alias_ref = ModelSEED::Reference->new(ref => $alias);
-    # Get the annotation object
-    my $config = { genome_id => $id };
-    $config->{verbose} = $opts->{verbose} if(defined($opts->{verbose}));
+    # Getting a mapping object
+    my $mapping;
     if(defined($opts->{mapping})) {
         my $mapping_alias = $helper->process_ref_string(
             $opts->{mapping}, "mapping", $auth->username
         );
         print "Fetching $mapping_alias...\n" if(defined($opts->{verbose}));
         my $mapping_ref = ModelSEED::Reference->new(ref => $mapping_alias);
-        $config->{mapping} = $store->get_object($mapping_ref);
+        $mapping = $store->get_object($mapping_ref);
     } else {
-            $self->usage_error("Must supply a mapping object when importing an annotation");
+		$self->usage_error("Must supply a mapping object when importing an annotation");
     }
+    # Importing annotation from table file
+    my $anno;
     print "Getting annotation...\n" if(defined($opts->{verbose}));
-    my $anno = $factory->build($config);
+    if (defined($opts->{filepath})) {
+    	my $factory = ModelSEED::MS::Factories::TableFileFactory->new({
+    		filepath => $opts->{filepath},
+            namespace => "SEED",
+    	});
+    	$anno = $factory->createAnnotation({
+    		mapping => $mapping,
+    		genome => $id
+    	})
+    } else {
+    	print "test3\n";
+    	my $config = {
+    		genome_id => $id,
+    		mapping => $mapping
+    	};
+    	$config->{verbose} = $opts->{verbose} if(defined($opts->{verbose}));
+    	my $factory = ModelSEED::MS::Factories::Annotation->new(om => $store);
+	    my $sources = [ $opts->{source} ];
+	    $sources = [ qw(PubSEED RAST KBase) ] unless(@$sources);
+	    # If we are listing, just do that and exit
+	    if(defined($opts->{list})) {
+	        $self->printList($factory, $opts);
+	        return;
+	    }
+	    $anno = $factory->build($config);
+    }
+    my $alias_ref = ModelSEED::Reference->new(ref => $alias);
+    # Get the annotation object    
     unless($opts->{dry}) {
         my $mapping = $anno->mapping;
         my $mapping_ref = ModelSEED::Reference->new( type => "mapping", uuid => $mapping->uuid );

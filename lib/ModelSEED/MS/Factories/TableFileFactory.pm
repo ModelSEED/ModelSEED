@@ -15,6 +15,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Mapping
     ModelSEED::MS::Model
     ModelSEED::MS::Factories::Annotation
+    ModelSEED::MS::Annotation
     ModelSEED::Table
 );
 use Moose;
@@ -41,6 +42,7 @@ has cpxroleTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder =>
 has rxncpxTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildrxncpxTbl' );
 has cueTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildcueTbl' );
 has biomassTemplateData => ( is => 'rw', isa => 'HashRef', lazy => 1, builder => '_buildbiomassTemplateData' );
+has genomeTbl => ( is => 'rw', isa => 'ModelSEED::Table', lazy => 1, builder => '_buildgenomeTbl' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -105,6 +107,10 @@ sub _buildrxncpxTbl {
 	my ($self) = @_;
 	return ModelSEED::Table->new(filename => $self->filepath()."/rxncpx.tbl",rows_return_as => "ref");
 }
+sub _buildgenomeTbl {
+	my ($self) = @_;
+	return ModelSEED::Table->new(filename => $self->filepath()."/genomes.tbl",rows_return_as => "ref");
+}
 sub _buildbiomassTemplateData() {
 	my ($self) = @_;
 	my $filedata = ModelSEED::utilities::LOADFILE($self->filepath()."/biomassTemplateData.txt");
@@ -131,7 +137,7 @@ sub _buildbiomassTemplateData() {
 					my $array = [split(/;/,$compounds)];
 					foreach my $compound (@{$array}) {
 						my $subarray = [split(/=/,$compound)];
-						if (defined($subarray->[$1])) {
+						if (defined($subarray->[1])) {
 							if ($class eq "coefficients") {
 								if (!defined($template->{"templates"}->{$type})) {
 									$template->{"templates"}->{$type}->{class} = $type;
@@ -167,6 +173,12 @@ sub _buildbiomassTemplateData() {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub loadFtrTbl {
+	my ($self,$id) = @_;
+	return ModelSEED::Table->new({filename => $self->filepath()."/".$id.".tbl",rows_return_as => "ref"});
+}
+
+
 sub createModel {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["id", "annotation"],{
@@ -630,13 +642,15 @@ sub createMapping {
 			foreach my $type (keys(%{$biomassTempComp->{$template->class()}})) {
 				foreach my $cpd (keys(%{$biomassTempComp->{$template->class()}->{$type}})) {
 					my $cpdobj = $biochemistry->getObjectByAlias("compounds",$cpd,"ModelSEED");
-					$template->add("biomassTemplateComponents",{
-						class => $type,
-						coefficientType => "NUMBER",
-						coefficient => $biomassTempComp->{$template->class()}->{$type}->{$cpd},
-						compound_uuid => $cpdobj->uuid(),
-						condition => "UNIVERSAL"
-					});
+					if (defined($cpdobj)) {
+						$template->add("biomassTemplateComponents",{
+							class => $type,
+							coefficientType => "NUMBER",
+							coefficient => $biomassTempComp->{$template->class()}->{$type}->{$cpd},
+							compound_uuid => $cpdobj->uuid(),
+							condition => "UNIVERSAL"
+						});
+					}
 				}
 			}
 		}
@@ -729,7 +743,7 @@ sub createMapping {
         next unless(defined($ss));
         my $role = $mapping->getObjectByAlias("roles",$row->ROLE(),"ModelSEED");
         next unless(defined($role));
-        push(@{$ss->role_uuids()},$role->uuid());
+        $ss->addRole($role);
 	}
 	my $complexes = $self->complexTbl();
 	for (my $i=0; $i < $complexes->size(); $i++) {
@@ -786,17 +800,76 @@ sub createMapping {
 
 sub createAnnotation {
 	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["genome","mapping"],{
-		name => undef
-	});
-	if (!defined($args->{name})) {
-		$args->{name} = $self->namespace()."/".$args->{genome}.".annotation";
+	$args = ModelSEED::utilities::ARGS($args,["genome","mapping"],{});
+	if (!-e $self->filepath()."/".$args->{genome}.".tbl") {
+		ModelSEED::utilities::ERROR("Input genome ".$args->{genome}." not found in available flatfiles!");
 	}
-	my $factory = ModelSEED::MS::Factories::Annotation->new();
-	return $factory->buildMooseAnnotation({
-		genome_id => $args->{genome},
-		mapping => $args->{mapping}
+	my $genomeTbl = $self->genomeTbl();
+	my $genomeData;
+	for (my $i=0; $i < $genomeTbl->size(); $i++) {
+		my $row = $genomeTbl->row($i);
+		if ($row->id() eq $args->{genome}) {
+			$genomeData = $row;
+			last;
+		}
+	}
+	my $defaultGenome = {
+		id => $args->{genome},
+		name => $args->{genome},
+		source => "file",
+		class => "unknown",
+		taxonomy => "unknown",
+		size => 0,
+		gc => 0.5,
+		etcType => "unknown"
+	};
+	if (defined($genomeData)) {
+		$defaultGenome->{name} = $genomeData->name();
+		$defaultGenome->{source} = $genomeData->source();
+		$defaultGenome->{taxonomy} = $genomeData->taxonomy();
+		$defaultGenome->{size} = $genomeData->size();
+		$defaultGenome->{class} = $genomeData->class();
+		$defaultGenome->{gc} = $genomeData->gc();
+		$defaultGenome->{etcType} = $genomeData->etcType();
+	}
+	# Creating annotation object
+	my $anno = ModelSEED::MS::Annotation->new({
+		name=>$genomeData->name(),
+		mapping_uuid =>$args->{mapping}->uuid(),
+		mapping =>$args->{mapping}
 	});
+	# Adding genome object to annotation
+	my $genome = $anno->add("genomes",$defaultGenome);
+	# Adding features to annotation
+	my $ftrTbl = $self->loadFtrTbl($args->{genome});
+	for (my $i=0; $i < $ftrTbl->size(); $i++) {
+		my $row = $ftrTbl->row($i);
+		my $gene = $anno->add("features",{
+			genome_uuid => $genome->uuid(),
+			id => $row->id(),
+			start => $row->start(),
+			stop => $row->stop(),
+			contig => $row->contig(),
+			direction => $row->direction(),
+			type => $row->type(),
+		});
+		my $roles = [split(/\|/,$row->roles())];
+		for (my $j=0; $j < @{$roles}; $j++) {
+			my $role = $args->{mapping}->queryObject("roles",{
+				name => $roles->[$j]
+			});
+			if (!defined($role)) {
+				$role = $args->{mapping}->add("roles",{
+					name => $roles->[$j]
+				});
+			}
+			$gene->add("featureroles",{
+				role_uuid => $role->uuid(),
+				compartment => "u",
+			});
+		}
+	}
+	return $anno;
 }
 
 # The PPO files use ";" as subdelimiters in some tables
