@@ -276,7 +276,7 @@ sub createJobDirectory {
 		push(@{$mdlData},$bio->id().";=>;c;UNIVERSAL");
 		my $equation = $bio->equation();
 		$equation =~ s/\+/ + /g;
-		$equation =~ s/\)cpd/) cpd/g;
+		$equation =~ s/\)([a-zA-Z])/) $1/g;
 		$equation =~ s/=\>/ => /g;
 		my $bioData = ["NAME\tBiomass","DATABASE\t".$bio->id(),"EQUATION\t".$equation];
 		ModelSEED::utilities::PRINTFILE($directory."reaction/".$bio->id(),$bioData);
