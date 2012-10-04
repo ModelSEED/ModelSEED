@@ -1368,15 +1368,23 @@ sub computeNetworkDistances {
 	my $apsp = $graph->all_pairs_shortest_paths();
 	print STDERR "Shortest paths computed!\n";
 	if ($args->{roles} == 1 || $args->{reactions} == 1) {
-		my $roleHash;
+		my ($roleHash,%rxn2roles);
 		my $rxns = $self->modelreactions();
 		$tbl->{headings}->[0] = "Reactions";
 		if ($args->{roles} == 1) {
 			$tbl->{headings}->[0] = "Roles";
 			for (my $i=0; $i < @{$rxns}; $i++) {
-				for (my $j=0;$j < @{$rxns->[$i]->reaction()->roles()}; $j++) {
-					$roleHash->{$rxns->[$i]->reaction()->roles()->[$j]->name()} = 1;
+			    my $modelrxn = $rxns->[$i];
+			    my @roles;
+			    foreach my $protein (@{$modelrxn->modelReactionProteins()}) {
+				foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+				    push @roles, $subunit->role();
 				}
+			    }
+			    $rxn2roles{$rxns->[$i]->id()} = \@roles;
+			    for (my $j=0;$j < @roles; $j++) {
+				$roleHash->{$roles[$j]->name()} = 1;
+			    }
 			}
 			my $count = 0;
 			foreach my $role (sort(keys(%{$roleHash}))) {
@@ -1392,31 +1400,37 @@ sub computeNetworkDistances {
 				my $count = 0;
 				foreach my $role (sort(keys(%{$roleHash}))) {
 					$tbl->{headings}->[$count+1] = $role;
-					$tbl->{data}->[$count+1]->[0] = $role;
+					$tbl->{data}->[$count]->[0] = $role;
+					$count++;
 				}
 			}
 			for (my $j=0;$j < @{$rxns}; $j++) {
-				if ($i == $j) {
+				if ($args->{reactions} == 1) {
+				    if ($i == $j) {
 					$tbl->{data}->[$i]->[$j+1] = 0;
-				} elsif ($args->{reactions} == 1) {
+				    } else {
 					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 					if (!defined($tbl->{data}->[$i]->[$j+1])) {
 						$tbl->{data}->[$i]->[$j+1] = -1;
 					}
+				    }
 				} else {
-					for (my $k=0;$k < @{$rxns->[$i]->reaction()->roles()}; $k++) {
-						my $indexOne = $roleHash->{$rxns->[$i]->reaction()->roles()->[$k]->name()};
-						for (my $m=0;$m < @{$rxns->[$j]->reaction()->roles()}; $m++) {
-							my $indexTwo = $roleHash->{$rxns->[$j]->reaction()->roles()->[$m]->name()}+1;
+				        my @roles1 = @{$rxn2roles{$rxns->[$i]->id()}};
+					for (my $k=0;$k < @roles1; $k++) {
+						my $indexOne = $roleHash->{$roles1[$k]->name()};
+
+						my @roles2 = @{$rxn2roles{$rxns->[$j]->id()}};
+						for (my $m=0;$m < @roles2; $m++) {
+							my $indexTwo = $roleHash->{$roles2[$m]->name()}+1;
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-								if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
-									$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
-								}
-							} else {
+							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    }
+							} else {
+							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 							}
 							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-								$tbl->{data}->[$indexOne]->[$indexTwo] = -1;
+							    $tbl->{data}->[$indexOne]->[$indexTwo] = -1;
 							}
 						}
 					}
