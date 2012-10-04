@@ -23,8 +23,8 @@ has isCofactor => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0',
 
 
 # LINKS:
-has compound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', weak_ref => 1);
-has compartment => (is => 'rw', isa => 'ModelSEED::MS::Compartment', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', weak_ref => 1);
+has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:

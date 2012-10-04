@@ -41,9 +41,9 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has abstractCompound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', weak_ref => 1);
-has comprisedOfCompounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds');
-has structures => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Structure]', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures');
+has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
+has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', isa => 'ArrayRef[ModelSEED::MS::Compound]');
+has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', isa => 'ArrayRef[ModelSEED::MS::Structure]');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -244,7 +244,8 @@ my $links = [
             'clearer' => 'clear_abstractCompound',
             'name' => 'abstractCompound',
             'class' => 'compounds',
-            'method' => 'compounds'
+            'method' => 'compounds',
+            'can_be_undef' => 1
           },
           {
             'array' => 1,

@@ -45,7 +45,7 @@ has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 
 
 # LINKS:
-has biochemistry => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry');
+has biochemistry => (is => 'rw', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry', isa => 'ModelSEED::MS::Biochemistry');
 
 
 # BUILDERS:

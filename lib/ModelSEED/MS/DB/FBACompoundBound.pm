@@ -23,7 +23,7 @@ has lowerBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, 
 
 
 # LINKS:
-has modelCompound => (is => 'rw', isa => 'ModelSEED::MS::ModelCompound', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', weak_ref => 1);
+has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:

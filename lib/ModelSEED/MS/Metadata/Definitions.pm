@@ -2599,7 +2599,8 @@ $objectDefinitions->{Compound} = {
 			name      => "abstractCompound",
 			attribute => "abstractCompound_uuid",
 			parent    => "Biochemistry",
-			method    => "compounds"
+			method    => "compounds",
+            can_be_undef => 1,
 		},
 		{
 			name      => "comprisedOfCompounds",
@@ -2736,7 +2737,8 @@ $objectDefinitions->{Reaction} = {
 			name      => "abstractReaction",
 			attribute => "abstractReaction_uuid",
 			parent    => "Biochemistry",
-			method    => "reactions"
+			method    => "reactions",
+            can_be_undef => 1,
 		}
 	],
 	reference_id_types => [qw(uuid)],

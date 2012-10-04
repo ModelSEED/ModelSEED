@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compartment => (is => 'rw', isa => 'ModelSEED::MS::Compartment', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:

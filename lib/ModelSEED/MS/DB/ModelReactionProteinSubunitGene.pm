@@ -20,7 +20,7 @@ has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', re
 
 
 # LINKS:
-has feature => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
 
 
 # BUILDERS:

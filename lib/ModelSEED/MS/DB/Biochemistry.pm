@@ -49,7 +49,7 @@ has cues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return [];
 
 
 # LINKS:
-has biochemistrystructures => (is => 'rw', isa => 'ModelSEED::MS::BiochemistryStructures', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures');
+has biochemistrystructures => (is => 'rw', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures', isa => 'ModelSEED::MS::BiochemistryStructures');
 
 
 # BUILDERS:
