@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,compound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_compounds', clearer => 'clear_compounds');
+has compounds => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_compounds', clearer => 'clear_compounds', isa => 'ArrayRef[ModelSEED::MS::Compound]');
 
 
 # BUILDERS:

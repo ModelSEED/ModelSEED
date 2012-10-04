@@ -27,7 +27,7 @@ has fbaPhenotypeSimulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printO
 
 
 # LINKS:
-has fbaPhenotypeSimulation => (is => 'rw', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', weak_ref => 1);
+has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
 
 
 # BUILDERS:

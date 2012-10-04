@@ -59,7 +59,8 @@ This defaults to "aliasName" if not supplied.
 
 =head3 getObjectByAlias 
 
-	$aliased = $obj->getObjectByAlias($attribute,$alias,$aliasName);
+	$aliased = $obj->getObjectByAlias($attribute,$alias,$aliasSet);
+    $aliased = $obj->getObjectByAlias("compounds", "cpd01234", "ModelSEED");
 
 Return the first object that is matched by the provided alias.
 C<$attribute> is the attribute name for which the alias would apply,

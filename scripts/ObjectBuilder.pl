@@ -164,6 +164,8 @@ foreach my $name (keys(%{$objects})) {
             my $parent = $subobject->{parent};
             my $method = $subobject->{method};
             my $attr = $subobject->{attribute};
+            my $can_be_undef = $subobject->{can_be_undef};
+               $can_be_undef = 0 unless defined $can_be_undef;
             $subobject->{clearer} = "clear_".$soname;
             if (defined($functionToType->{$method})) {
             	$subobject->{class} = $functionToType->{$method};
@@ -190,13 +192,17 @@ foreach my $name (keys(%{$objects})) {
             }
             my $props = [
                 "is => 'rw'",
-                "isa => '".$type."'",
                 "type => 'link($parent,$method,$attr)'",
                 "metaclass => 'Typed'",
                 "lazy => 1",
                 "builder => '_build_$soname'",
             	"clearer => 'clear_$soname'",
             ];
+            if($can_be_undef) {
+                push(@$props, "isa => 'Maybe[$type]'");
+            } else {
+                push(@$props, "isa => '$type'");
+            }
             push(@$props, "weak_ref => 1") if($weak);
             push(@$output, "has $soname => (" . join(", ", @$props) . ");");
         }

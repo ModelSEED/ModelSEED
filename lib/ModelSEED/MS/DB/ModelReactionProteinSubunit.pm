@@ -28,7 +28,7 @@ has modelReactionProteinSubunitGenes => (is => 'rw', isa => 'ArrayRef[HashRef]',
 
 
 # LINKS:
-has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:

@@ -27,7 +27,7 @@ has value => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', 
 
 
 # LINKS:
-has modelreaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', weak_ref => 1);
+has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:

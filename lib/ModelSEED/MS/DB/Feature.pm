@@ -39,7 +39,7 @@ has featureroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { re
 
 
 # LINKS:
-has genome => (is => 'rw', isa => 'ModelSEED::MS::Genome', type => 'link(Annotation,genomes,genome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', weak_ref => 1);
+has genome => (is => 'rw', type => 'link(Annotation,genomes,genome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'ModelSEED::MS::Genome', weak_ref => 1);
 
 
 # BUILDERS:
