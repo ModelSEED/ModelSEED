@@ -167,6 +167,11 @@ sub makeDBModel {
 		for (my $i=0; $i < @{$allowedcompartments}; $i++) {
 			$hashes->{allowcomp}->{$allowedcompartments->[$i]->uuid()} = 1;
 		}
+	} else {
+		my $comps = $self->compartments();
+		foreach my $comp (@{$comps}) {
+			$hashes->{allowcomp}->{$comp->uuid()} = 1;
+		}	
 	}
 	my $reactions = $self->reactions();
 	for (my $i=0; $i < @{$reactions}; $i++) {
@@ -174,17 +179,17 @@ sub makeDBModel {
 		if (!defined($hashes->{forbidden}->{$rxn->uuid()})) {
 			my $add = 1;
 			if (!defined($hashes->{guaranteed}->{$rxn->uuid()})) {
-				if (!defined($hashes->{allowcomp}->{$rxn->compartment_uuid()})) {
+				if (!defined($hashes->{allowcomp}->{$rxn->compartment()->uuid()})) {
 					$add = 0;
 				}
 				if ($add == 1) {
-					my $transports = $rxn->transports();
-					for (my $j=0; $j < @{$transports};$j++) {
-						if (!defined($hashes->{allowcomp}->{$transports->[$j]->compartment_uuid()})) {
-							$add = 0;
-							last;
-						}
-					}
+#					my $transports = $rxn->transports();
+#					for (my $j=0; $j < @{$transports};$j++) {
+#						if (!defined($hashes->{allowcomp}->{$transports->[$j]->compartment_uuid()})) {
+#							$add = 0;
+#							last;
+#						}
+#					}
 				}
 				if ($add == 1 && $args->{balancedOnly} == 1 && $rxn->balanced() == 0) {
 					$add = 0;

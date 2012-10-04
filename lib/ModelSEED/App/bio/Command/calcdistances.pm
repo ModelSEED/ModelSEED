@@ -1,6 +1,7 @@
 package ModelSEED::App::bio::Command::calcdistances;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
+    ModelSEED::MS::Model
     ModelSEED::Store
     ModelSEED::Auth::Factory
     ModelSEED::Reference
@@ -31,6 +32,7 @@ sub execute {
     my $out_fh = \*STDOUT;
     #Performing computation
 	print STDERR "Computing network distances...\n" if($opts->{verbose});
+	my $model = $biochemistry->makeDBModel();
 	my $tbl = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
 		roles => $opts->{roles}
