@@ -1,6 +1,7 @@
 package ModelSEED::App::model::Command::calcdistances;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
+    ModelSEED::MS::Model
     ModelSEED::Store
     ModelSEED::Auth::Factory
     ModelSEED::Reference
