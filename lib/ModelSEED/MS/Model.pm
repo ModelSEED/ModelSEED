@@ -1375,7 +1375,9 @@ sub computeNetworkDistances {
 	if ($args->{roles} == 1 || $args->{reactions} == 1) {
 		my $roleHash;
 		my $rxns = $self->modelreactions();
+		$tbl->{headings}->[0] = "Reactions";
 		if ($args->{roles} == 1) {
+			$tbl->{headings}->[0] = "Roles";
 			for (my $i=0; $i < @{$rxns}; $i++) {
 				for (my $j=0;$j < @{$rxns->[$i]->reaction()->roles()}; $j++) {
 					$roleHash->{$rxns->[$i]->reaction()->roles()->[$j]->name()} = 1;
@@ -1390,22 +1392,25 @@ sub computeNetworkDistances {
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			if ($args->{reactions} == 1) {
 				$tbl->{headings}->[$i+1] = $rxns->[$i]->id();
-				$tbl->{data}->[0]->[$i+1] = $rxns->[$i]->id();
+				$tbl->{data}->[$i]->[0] = $rxns->[$i]->id();
 			} else {
 				my $count = 0;
 				foreach my $role (sort(keys(%{$roleHash}))) {
 					$tbl->{headings}->[$count+1] = $role;
-					$tbl->{data}->[0]->[$count+1] = $role;
+					$tbl->{data}->[$count+1]->[0] = $role;
 				}
 			}
 			for (my $j=0;$j < @{$rxns}; $j++) {
 				if ($i == $j) {
-					$tbl->{data}->[$i+1]->[$j+1] = 1;
+					$tbl->{data}->[$i]->[$j+1] = 0;
 				} elsif ($args->{reactions} == 1) {
-					$tbl->{data}->[$i+1]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+					if (!defined($tbl->{data}->[$i]->[$j+1])) {
+						$tbl->{data}->[$i]->[$j+1] = -1;
+					}
 				} else {
 					for (my $k=0;$k < @{$rxns->[$i]->reaction()->roles()}; $k++) {
-						my $indexOne = $roleHash->{$rxns->[$i]->reaction()->roles()->[$k]->name()}+1;
+						my $indexOne = $roleHash->{$rxns->[$i]->reaction()->roles()->[$k]->name()};
 						for (my $m=0;$m < @{$rxns->[$j]->reaction()->roles()}; $m++) {
 							my $indexTwo = $roleHash->{$rxns->[$j]->reaction()->roles()->[$m]->name()}+1;
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
@@ -1415,6 +1420,9 @@ sub computeNetworkDistances {
 							} else {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 							}
+							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+								$tbl->{data}->[$indexOne]->[$indexTwo] = -1;
+							}
 						}
 					}
 				}
@@ -1422,14 +1430,18 @@ sub computeNetworkDistances {
 		}
 	} else {
 		my $cpds = $self->modelcompounds();
+		$tbl->{headings}->[0] = "Cpd";
 		for (my $i=0;$i < @{$cpds}; $i++) {
 			$tbl->{headings}->[$i+1] = $cpds->[$i]->id();
-			$tbl->{data}->[0]->[$i+1] = $cpds->[$i]->id();
+			$tbl->{data}->[$i]->[0] = $cpds->[$i]->id();
 			for (my $j=0;$j < @{$cpds}; $j++) {
 				if ($i == $j) {
-					$tbl->{data}->[$i+1]->[$j+1] = 1;
+					$tbl->{data}->[$i]->[$j+1] = 0;
 				} else {
-					$tbl->{data}->[$i+1]->[$j+1] =  $apsp->path_length($cpds->[$i]->id(), $cpds->[$j]->id());
+					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($cpds->[$i]->id(), $cpds->[$j]->id());
+					if (!defined($tbl->{data}->[$i]->[$j+1])) {
+						$tbl->{data}->[$i]->[$j+1] = -1;
+					}
 				}
 			}
 		}
