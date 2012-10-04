@@ -253,11 +253,11 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"dissapproved compartments"} = join(";",@{$badCompList});
 	#Adding blacklisted reactions to KO list
 	my $rxnhash = {};
-	my $rxns = $form->reactionKOs();
+	my $rxns = $self->guaranteedReactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		$rxnhash->{$rxns->[$i]->id()} = 1;	
 	}
-	$rxns = $self->guaranteedReactions();
+	$rxns = $form->reactionKOs();
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		if (!defined($rxnhash->{$rxns->[$i]->id()})) {
 			push(@{$form->reactionKOs()},$rxns->[$i]);
