@@ -126,7 +126,6 @@ sub execute {
     		genome => $id
     	})
     } else {
-    	print "test3\n";
     	my $config = {
     		genome_id => $id,
     		mapping => $mapping
