@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 $|++;
+my $bio = $ARGV[0];
 use Class::Autouse qw(
     ModelSEED::MS::Model
     ModelSEED::Store
@@ -13,7 +14,10 @@ use Class::Autouse qw(
 my $auth  = ModelSEED::Auth::Factory->new->from_config;
 my $store = ModelSEED::Store->new(auth => $auth);
 my $helper = ModelSEED::App::Helpers->new();
-my ($biochemistry,my $ref) = $helper->get_object("biochemistry", ["biochemistry/chenry/main"], $store);
+my ($biochemistry,my $ref) = $helper->get_object("biochemistry", [$bio], $store);
+if (!defined($biochemistry)) {
+	ModelSEED::utilities::ERROR("Biochemistry ".$bio." not found!");
+}
 my $list = [ qw(
 	cpd00001 cpd00009 cpd00010 cpd00011 cpd00012 cpd00013 cpd00015 cpd11609 cpd11610 cpd00067 cpd00099 cpd00099 cpd12713 cpd00242 cpd00007 cpd00025
 ) ];
