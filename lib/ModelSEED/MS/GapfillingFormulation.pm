@@ -397,8 +397,8 @@ Description:
 sub parseGapfillingResults {
 	my ($self,$fbaResults) = @_;
 	my $outputHash = $fbaResults->outputfiles();
-	if (defined($outputHash->{"GapfillingComplete.txt"})) {
-		my $filedata = $outputHash->{"GapfillingComplete.txt"};
+	if (defined($outputHash->{"CompleteGapfillingOutput.txt"})) {
+		my $filedata = $outputHash->{"CompleteGapfillingOutput.txt"};
 		$self->createSolutionsFromArray({
 			data => $filedata
 		});
