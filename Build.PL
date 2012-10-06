@@ -93,6 +93,7 @@ my $builder = $subclass->new(
         "JSON::RPC::Client" => 0,
         "LWP" => 0,
         "Module::Load" => 0,
+        "Module::Util" => 0,
         "MongoDB" => 0,  # HACK
         "Moose" => 0,
         "Term::ReadKey" => 0,
