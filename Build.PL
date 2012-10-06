@@ -107,7 +107,9 @@ my $builder = $subclass->new(
         "common::sense" => 0,
         "namespace::autoclean" => 0,
     },
-    recommends => {},
+    recommends => {
+        "MongoDB" => 0, 
+    },
     recursive_test_files => 1,
     add_to_cleanup      => [ 'ModelSEED-*' ],
     create_makefile_pl => 'traditional',
