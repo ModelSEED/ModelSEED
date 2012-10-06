@@ -252,7 +252,6 @@ scripts/diffDirectories.pl
 scripts/exportMSObjectWiki.pl
 scripts/exportPodWiki.pl
 scripts/generateTablesForKbase.pl
-scripts/makeJsonSchema.pl
 scripts/ms-create-wiki-docs.pl
 scripts/QuickConvert.pm
 scripts/set_abstract_fatty_acids.pl
