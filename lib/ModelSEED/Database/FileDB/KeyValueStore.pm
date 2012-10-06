@@ -371,11 +371,11 @@ sub save_object {
 }
 
 sub _save_object {
-    my ($data, $id, $object) = @_;
+    my ($data, $id, $object, $is_overwrite) = @_;
 
-    #if (_has_object($data, $id)) {
-	#return 0;
-    #}
+    if (!$is_overwrite && _has_object($data, $id)) {
+	    return 0;
+    }
 
     my $json_obj;
     my $ref = ref($object);

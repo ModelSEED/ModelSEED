@@ -181,6 +181,11 @@ sub create {
     my $className = ucfirst($type);
     $className = "ModelSEED::MS::".$className;
     $self->_load_class($className);
+    # Temporary fix until we change BaseObject's BUILD routine
+    # - get the class's VERSION and put it in { __VERSION__ => $VERSION }
+    unless(defined $base_hash->{__VERSION__}) {
+        $base_hash->{__VERSION__} = $className::VERSION;
+    }
     $base_hash->{parent} = $self unless(defined($base_hash->{parent}));
     return $className->new($base_hash);
 }
