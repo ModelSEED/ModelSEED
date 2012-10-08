@@ -3,7 +3,7 @@ perl:
     - "5.12"
     - "5.10"
 before_install:
-    - cpanm MongoDB
+    - cpanm --notest MongoDB
 services:
     - "mongodb"
 notifications:
