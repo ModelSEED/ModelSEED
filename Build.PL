@@ -94,7 +94,6 @@ my $builder = $subclass->new(
         "LWP" => 0,
         "Module::Load" => 0,
         "Module::Util" => 0,
-        "MongoDB" => 0,  # HACK
         "Moose" => 0,
         "Term::ReadKey" => 0,
         "Test::Deep" => 0,
@@ -110,6 +109,7 @@ my $builder = $subclass->new(
         "namespace::autoclean" => 0,
     },
     recommends => {
+        MongoDB => 0,
     },
     recursive_test_files => 1,
     add_to_cleanup      => [ 'ModelSEED-*' ],
