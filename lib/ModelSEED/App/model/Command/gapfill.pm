@@ -136,14 +136,14 @@ sub execute {
     	return;
     }
     my $numSolutions = @{$solutions};
-	ModelSEED::utilities::VERBOSEMSG($numSolutions." viable solutions identified.");
     if ($opts->{printraw}) {
     	for (my $i=0; $i < @{$solutions}; $i++) {
     		$solutions->[$i] = $solutions->[$i]->serializeToDB();
     	}
     	print ModelSEED::utilities::TOJSON($solutions,1);
     } else {
-    	print $gapfillingFormulation->toReadableString();
+    	my $index = @{$model->unintegratedGapfillings()};
+    	print $gapfillingFormulation->printStudy(($index-1));
     }
     if ($opts->{integratesol}) {
     	ModelSEED::utilities::VERBOSEMSG("Automatically integrating first solution in model.");
@@ -156,7 +156,7 @@ sub execute {
     if ($opts->{dryrun}) {
     	ModelSEED::utilities::VERBOSEMSG("Dry run selected. Results not saved!");
     } else {
-    	ModelSEED::utilities::VERBOSEMSG("Saving model to:".$ref);
+    	ModelSEED::utilities::VERBOSEMSG("Saving model!");
     	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
 		$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
     	$store->save_object($ref,$model);

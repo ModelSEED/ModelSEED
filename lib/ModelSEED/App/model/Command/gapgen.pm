@@ -100,7 +100,8 @@ sub execute {
     	}
     	print ModelSEED::utilities::TOJSON($solutions,1);
     } else {
-    	print $gapgenFormulation->toReadableString();
+    	my $index = @{$model->unintegratedGapgens()};
+    	print $gapgenFormulation->printSolutions(($index-1));
     }
     if ($opts->{integratesol}) {
     	ModelSEED::utilities::VERBOSEMSG("Automatically integrating first solution in model.");
