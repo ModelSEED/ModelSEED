@@ -14,13 +14,41 @@ extends 'ModelSEED::MS::DB::GapgenFormulation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-
+has mediaID => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
+has reactionKOString => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionKOString' );
+has geneKOString => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneKOString' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-
-
+sub _buildmediaID {
+	my ($self) = @_;
+	return $self->fbaFormulation()->media()->id();
+}
+sub _buildreactionKOString {
+	my ($self) = @_;
+	my $string = "";
+	my $rxnkos = $self->fbaFormulation()->reactionKOs();
+	for (my $i=0; $i < @{$rxnkos}; $i++) {
+		if ($i > 0) {
+			$string .= ", ";
+		}
+		$string .= $rxnkos->[$i]->id();
+	}
+	return $string;
+}
+sub _buildgeneKOString {
+	my ($self) = @_;
+	my $string = "";
+	my $genekos = $self->fbaFormulation()->geneKOs();
+	for (my $i=0; $i < @{$genekos}; $i++) {
+		if ($i > 0) {
+			$string .= ", ";
+		}
+		$string .= $genekos->[$i]->id();
+	}
+	return $string;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -200,6 +228,43 @@ sub parseGapgenResults {
 			}
 		}
 	}
+}
+
+=head3 printStudy
+
+Definition:
+	string printStudy();
+Description:
+	Prints study and solutions in human readable format
+
+=cut
+sub printStudy {
+	my ($self,$index) = @_;
+	my $solutions = $self->gapgenSolutions();
+	my $numSolutions = @{$solutions};
+	my $output = "*********************************************\n";
+	$output .= "Gapgen formulation: GG".$index."\n";
+	$output .= "Media: ".$self->mediaID()."\n";
+	if ($self->geneKOString() ne "") {
+		$output .= "GeneKO: ".$self->geneKOString()."\n";
+	}
+	if ($self->reactionKOString() ne "") {
+		$output .= "ReactionKO: ".$self->reactionKOString()."\n";
+	}
+	$output .= "---------------------------------------------\n";
+	if ($numSolutions == 0) {
+		$output .= "No gapgen solutions found!\n";
+		$output .= "---------------------------------------------\n";
+	} else {
+		$output .= $numSolutions." gapgen solution(s) found.\n";
+		$output .= "---------------------------------------------\n";
+	}
+	for (my $i=0; $i < @{$solutions}; $i++) {
+		$output .= "New gapgen solution: GG".$index.".".$i."\n";
+		$output .= $solutions->[$i]->printSolution();
+		$output .= "---------------------------------------------\n";
+	}
+	return $output;
 }
 
 __PACKAGE__->meta->make_immutable;

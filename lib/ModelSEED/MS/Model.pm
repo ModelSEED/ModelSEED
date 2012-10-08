@@ -1134,7 +1134,7 @@ sub integrateGapfillSolution {
 	my $rxns = $sol->gapfillingSolutionReactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
-		my $mdlrxn = $self->queryObjects("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
+		my $mdlrxn = $self->queryObject("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
 		if (defined($mdlrxn)) {
 			ModelSEED::utilities::VERBOSEMSG(
 				"Making ".$mdlrxn->id()." reversible."
@@ -1142,7 +1142,7 @@ sub integrateGapfillSolution {
 			$mdlrxn->direction("=");
 		} else {
 			ModelSEED::utilities::VERBOSEMSG(
-				"Adding ".$mdlrxn->id()." to model in ".$rxn->direction()." direction."
+				"Adding ".$rxn->reaction()->id()." to model in ".$rxn->direction()." direction."
 			);
 			$self->addReactionToModel({
 				reaction => $rxn->reaction(),
