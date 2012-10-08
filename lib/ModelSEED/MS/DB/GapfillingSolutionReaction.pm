@@ -24,7 +24,7 @@ has candidateFeature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1'
 
 # LINKS:
 has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
-has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef[ModelSEED::MS::Feature]');
+has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef');
 
 
 # BUILDERS:
