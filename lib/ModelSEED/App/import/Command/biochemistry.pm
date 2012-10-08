@@ -51,8 +51,14 @@ sub execute {
     # Initialize the store object
     if($opts->{store}) {
         my $store_name = $opts->{store};
-        my $config = ModelSEED::Configuration->instance;
-        my $store_config = $config->config->{stores}->{$store_name};
+        my $ms = ModelSEED::Configuration->new();
+        my $config = $ms->config();
+        my $store_config;
+        foreach my $store (${$config->{stores}}) {
+        	if ($store->{name} eq $store_name) {
+        		$store_config = $store;
+        	}
+        }
         die "No such store: $store_name" unless(defined($store_config));
         my $db = ModelSEED::Database::Composite->new(databases => [ $store_config ]);
         $store = ModelSEED::Store->new(auth => $auth, database => $db);
