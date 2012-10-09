@@ -615,6 +615,7 @@ Description:
 	Prints study data and solutions in human readable format
 
 =cut
+
 sub printStudy {
 	my ($self,$index) = @_;
 	my $solutions = $self->gapfillingSolutions();

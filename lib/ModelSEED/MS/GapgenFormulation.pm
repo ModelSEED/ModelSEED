@@ -238,6 +238,7 @@ Description:
 	Prints study and solutions in human readable format
 
 =cut
+
 sub printStudy {
 	my ($self,$index) = @_;
 	my $solutions = $self->gapgenSolutions();

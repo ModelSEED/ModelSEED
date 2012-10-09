@@ -75,6 +75,7 @@ sub _buildkoRestoreString {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
 =head3 printSolution
 
 Definition:
@@ -83,6 +84,7 @@ Description:
 	Prints solution in human readable format
 
 =cut
+
 sub printSolution {
 	my ($self) = @_;
 	my $rxns = $self->gapfillingSolutionReactions();
