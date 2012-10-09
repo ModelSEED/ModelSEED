@@ -44,7 +44,7 @@ sub execute {
             if ($opts->{mine}) {
                 $aliases = $store->get_aliases({ type => $ref->base, owner => $auth->username });
             } else {
-                $aliases = $store->get_aliases({ type => $ref->base, owner => $auth->username });
+                $aliases = $store->get_aliases({ type => $ref->base });
             }
             # Construct references from alias data
             # TODO: Why isn't this part of Store / Database ?
