@@ -95,6 +95,7 @@ sub save_data {
     $auth = $config unless(defined($auth));
     $ref = $self->_cast_ref($ref);
     my ($oldUUID, $update_alias);
+    my $is_overwrite = 0;
     if ($ref->id_type eq 'alias') {
         $oldUUID = $self->_get_uuid($ref, $auth);
         # cannot write to alias not owned by callee
@@ -103,6 +104,7 @@ sub save_data {
         # cannot save to existing uuid
         if(!defined($config->{schema_update}) && $self->has_data($ref, $auth)) {
              $oldUUID = $ref->id;
+             $is_overwrite = 1;
         }
     }
     if(defined($oldUUID)) {
@@ -125,7 +127,7 @@ sub save_data {
     }
 
     # now do the saving
-    $self->kvstore->save_object($object->{uuid}, $object);
+    $self->kvstore->save_object($object->{uuid}, $object, $is_overwrite);
     # now save 'parents' and 'children' metadata
     my $meta = $self->kvstore->get_metadata($object->{uuid});
     $meta->{parents} = [];

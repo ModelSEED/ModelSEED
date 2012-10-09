@@ -2,3 +2,9 @@ language: perl
 perl:
     - "5.12"
     - "5.10"
+before_install:
+    - cpanm --notest MongoDB
+services:
+    - "mongodb"
+notifications:
+    email: false

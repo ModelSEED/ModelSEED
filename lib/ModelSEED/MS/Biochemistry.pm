@@ -619,7 +619,7 @@ sub __upgrade__ {
 				}
 			}
 			$hash->{__VERSION__} = 2;
-			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+			if ( defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store" && defined($hash->{uuid}) ) {
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
 				$parent->save_data("biochemistry/".$hash->{uuid},$hash,{schema_update => 1});

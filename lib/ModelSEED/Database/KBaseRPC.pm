@@ -12,14 +12,14 @@ package ModelSEED::Database::KBaseRPC;
 use strict;
 use common::sense;
 use Moose;
-use Bio::KBase::fbaModel::Data;
+use Module::Load;
 with 'ModelSEED::Database';
  
 has url => ( is => 'ro', isa => 'Str', required => 1 );
 has rpc => (
-    is      => 'ro',
-    isa     => 'Bio::KBase::fbaModel::Data',
-    builder => '_build_rpc'
+    is       => 'ro',
+    init_arg => undef,
+    builder  => '_build_rpc'
 );
 
 sub init_database {
@@ -107,6 +107,11 @@ sub set_public {
 
 sub _build_rpc {
     my $self = shift;
+    # Do this here because it will error out if we
+    # don't have a Bio::KBase::fbaModel::Data
+    # TODO : Implement exception for ModelSEED::Database::KBaseRPC
+    # if Bio::KBase::fbaModel::Data client lib is missing
+    load Bio::KBase::fbaModel::Data;
     return Bio::KBase::fbaModel::Data->new($self->url);
 }
 
