@@ -14,7 +14,7 @@ extends 'ModelSEED::MS::DB::GapfillingSolution';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has gpafillingReactionString => ( is => 'rw',printOrder => 2, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgpafillingReactionString' );
+has gapfillingReactionString => ( is => 'rw',printOrder => 2, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgapfillingReactionString' );
 has biomassRemovalString => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassRemovalString' );
 has mediaSupplementString => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaSupplementString' );
 has koRestoreString => ( is => 'rw',printOrder => 5, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildkoRestoreString' );
@@ -22,15 +22,15 @@ has koRestoreString => ( is => 'rw',printOrder => 5, isa => 'Str', type => 'msda
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildgpafillingReactionString {
+sub _buildgapfillingReactionString {
 	my ($self) = @_;
 	my $string = "";
 	my $gapfillingReactions = $self->gapfillingSolutionReactions();
-	for (my $i=0; $i < @{$self->$gapfillingReactions()}; $i++) {
+	for (my $i=0; $i < @{$gapfillingReactions}; $i++) {
 		if (length($string) > 0) {
 			$string .= ";";
 		}
-		$string .= $gapfillingReactions->[$i]->id().$gapfillingReactions->[$i]->direction();
+		$string .= $gapfillingReactions->[$i]->reaction()->id().$gapfillingReactions->[$i]->direction();
 	}
 	return $string;
 }
@@ -75,6 +75,47 @@ sub _buildkoRestoreString {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 printSolution
+
+Definition:
+	string printSolution();
+Description:
+	Prints solution in human readable format
+
+=cut
+sub printSolution {
+	my ($self) = @_;
+	my $rxns = $self->gapfillingSolutionReactions();
+	my $output = "Solution cost:".$self->solutionCost()."\n";
+	if (@{$rxns} > 0) {
+		$output .= "Gapfilled reactions ".@{$rxns}."{\n";
+		$output .= "ID\tDirection\tEquation\n";
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rxn = $rxns->[$i];
+			$output .= $rxn->reaction()->id()."[c]\t".$rxn->direction()."\t".$rxn->reaction()->definition()."\n";
+		}	
+		$output .= "}\n";
+	}
+	if (@{$self->biomassRemoval_uuids()} > 0) {
+		$output .= "Removed biomass compounds".@{$self->biomassRemovals()}."{\n";
+		$output .= "ID\tName\tFormula\n";
+		for (my $i=0; $i < @{$self->biomassRemovals()}; $i++) {
+			my $cpd = $self->biomassRemovals()->[$i];
+			$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->formula()."\n";
+		}	
+		$output .= "}\n";
+	}
+	if (@{$self->biomassRemoval_uuids()} > 0) {
+		$output .= "Supplemented media compounds".@{$self->mediaSupplements()}."{\n";
+		$output .= "ID\tName\tFormula\n";
+		for (my $i=0; $i < @{$self->mediaSupplements()}; $i++) {
+			my $cpd = $self->mediaSupplements()->[$i];
+			$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->formula()."\n";
+		}	
+		$output .= "}\n";
+	}
+	return $output;
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

@@ -17,6 +17,9 @@ extends 'ModelSEED::MS::DB::GapfillingFormulation';
 has guaranteedReactionString => ( is => 'rw',printOrder => 16, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildguaranteedReactionString' );
 has blacklistedReactionString => ( is => 'rw',printOrder => 17, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildblacklistedReactionString' );
 has allowableCompartmentString => ( is => 'rw',printOrder => 18, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildallowableCompartmentString' );
+has mediaID => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
+has reactionKOString => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionKOString' );
+has geneKOString => ( is => 'rw',printOrder => 19, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgeneKOString' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -51,6 +54,34 @@ sub _buildallowableCompartmentString {
 			$string .= ";";
 		}
 		$string .= $self->allowableCompartments()->[$i]->id();
+	}
+	return $string;
+}
+sub _buildmediaID {
+	my ($self) = @_;
+	return $self->fbaFormulation()->media()->id();
+}
+sub _buildreactionKOString {
+	my ($self) = @_;
+	my $string = "";
+	my $rxnkos = $self->fbaFormulation()->reactionKOs();
+	for (my $i=0; $i < @{$rxnkos}; $i++) {
+		if ($i > 0) {
+			$string .= ", ";
+		}
+		$string .= $rxnkos->[$i]->id();
+	}
+	return $string;
+}
+sub _buildgeneKOString {
+	my ($self) = @_;
+	my $string = "";
+	my $genekos = $self->fbaFormulation()->geneKOs();
+	for (my $i=0; $i < @{$genekos}; $i++) {
+		if ($i > 0) {
+			$string .= ", ";
+		}
+		$string .= $genekos->[$i]->id();
 	}
 	return $string;
 }
@@ -397,8 +428,8 @@ Description:
 sub parseGapfillingResults {
 	my ($self,$fbaResults) = @_;
 	my $outputHash = $fbaResults->outputfiles();
-	if (defined($outputHash->{"GapfillingComplete.txt"})) {
-		my $filedata = $outputHash->{"GapfillingComplete.txt"};
+	if (defined($outputHash->{"CompleteGapfillingOutput.txt"})) {
+		my $filedata = $outputHash->{"CompleteGapfillingOutput.txt"};
 		$self->createSolutionsFromArray({
 			data => $filedata
 		});
@@ -434,25 +465,7 @@ sub createSolutionsFromArray {
 			if (defined($array->[1])) {
 				my $subarray = [split(/;/,$array->[1])];
 				for (my $j=0; $j < @{$subarray}; $j++) {
-					if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
-						my $comp = "c";
-						my $rxnid = $2;
-						my $sign = $1;
-						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-						}
-						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
-						}
-						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
-						} else {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
-						}
-						$count++;
-					} elsif ($subarray->[$j] =~ m/([\+])(cpd\d\d\d\d\d)DrnRxn/) {
+					if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
 						my $cpdid = $2;
 						my $sign = $1;
 						my $bio = $mdl->biomasses()->[0];
@@ -471,6 +484,29 @@ sub createSolutionsFromArray {
 							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
 						}
 						$count += 5;
+					} elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+						my $comp = "c";
+						my $rxnid = $2;
+						my $sign = $1;
+						if ($sign eq "+") {
+							$sign = ">";
+						} else {
+							$sign = "<";
+						}
+						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						}
+						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+						}
+						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
+						} else {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
+						}
+						$count++;
 					}
 				}
 			}
@@ -569,6 +605,43 @@ sub parseAllowableCompartments {
 	$args->{data} = "uuid";
 	$args->{class} = "Compartment";
 	$self->allowableCompartment_uuids($self->parseReferenceList($args));
+}
+
+=head3 printStudy
+
+Definition:
+	string printStudy();
+Description:
+	Prints study data and solutions in human readable format
+
+=cut
+sub printStudy {
+	my ($self,$index) = @_;
+	my $solutions = $self->gapfillingSolutions();
+	my $numSolutions = @{$solutions};
+	my $output = "*********************************************\n";
+	$output .= "Gapfilling formulation: GF".$index."\n";
+	$output .= "Media: ".$self->mediaID()."\n";
+	if ($self->geneKOString() ne "") {
+		$output .= "GeneKO: ".$self->geneKOString()."\n";
+	}
+	if ($self->reactionKOString() ne "") {
+		$output .= "ReactionKO: ".$self->reactionKOString()."\n";
+	}
+	$output .= "---------------------------------------------\n";
+	if ($numSolutions == 0) {
+		$output .= "No gapfilling solutions found!\n";
+		$output .= "---------------------------------------------\n";
+	} else {
+		$output .= $numSolutions." gapfilling solution(s) found.\n";
+		$output .= "---------------------------------------------\n";
+	}
+	for (my $i=0; $i < @{$solutions}; $i++) {
+		$output .= "New gapfilling solution: GF".$index.".".$i."\n";
+		$output .= $solutions->[$i]->printSolution();
+		$output .= "---------------------------------------------\n";
+	}
+	return $output;
 }
 
 __PACKAGE__->meta->make_immutable;

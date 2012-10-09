@@ -1288,7 +1288,7 @@ $objectDefinitions->{GapgenFormulation} = {
 };
 
 $objectDefinitions->{GapgenSolution} = {
-	parents    => ['FBAResult'],
+	parents    => ['GapgenFormulation'],
 	class      => 'child',
 	attributes => [
 		{
@@ -1634,7 +1634,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 };
 
 $objectDefinitions->{GapfillingSolution} = {
-	parents    => ['FBAResult'],
+	parents    => ['GapfillingFormulation'],
 	class      => 'child',
 	attributes => [
 		{

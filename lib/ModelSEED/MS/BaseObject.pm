@@ -283,7 +283,7 @@ sub interpretReference {
 		$obj = $self->$prov()->queryObject($func,{$array->[1] => $array->[2]});
 	}
 	if (!defined($obj)) {
-		print STDERR "Could not find ".$ref."!\n";
+		ModelSEED::utilities::VERBOSEMSG("Could not find ".$ref."!");
 	}
 	return ($obj,$array->[0],$array->[1],$array->[2]);
 }
@@ -629,7 +629,7 @@ sub removeLinkArrayItem {
 	my ($self,$link,$object) = @_;
     my $linkdata = $self->_links($link);
     if (defined($linkdata) && $linkdata->{array} == 1) {
-    	my $method = $linkdata->{method};
+    	my $method = $linkdata->{attribute};
     	my $data = $self->$method();
     	for (my $i=0; $i < @{$data}; $i++) {
 			if ($data->[$i] eq $object->uuid()) {
@@ -646,11 +646,40 @@ sub removeLinkArrayItem {
     }	
 }
 
+sub replaceLinkArrayItem {
+	my ($self,$link,$oldObject,$newObject) = @_;
+    my $linkdata = $self->_links($link);
+    my $olduuid;
+    my $newuuid;
+    if (ref($oldObject) eq "SCALAR") {
+    	$olduuid = $oldObject;
+    } else {
+    	$olduuid = $oldObject->uuid();
+    }
+     if (ref($newuuid) eq "SCALAR") {
+    	$newuuid = $newuuid;
+    } else {
+    	$newuuid = $newuuid->uuid();
+    }
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	my $data = $self->$method();
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $olduuid) {
+				ModelSEED::utilities::VERBOSEMSG("Replacing object in link array.");
+				$data->[$i] = $newuuid;
+				my $clearer = "clear_".$link;
+				$self->$clearer();
+			}
+		}
+    }	
+}
+
 sub addLinkArrayItem {
 	my ($self,$link,$object) = @_;
     my $linkdata = $self->_links($link);
     if (defined($linkdata) && $linkdata->{array} == 1) {
-    	my $method = $linkdata->{method};
+    	my $method = $linkdata->{attribute};
     	my $data = $self->$method();
     	my $found = 0;
     	for (my $i=0; $i < @{$data}; $i++) {
@@ -664,6 +693,18 @@ sub addLinkArrayItem {
 			$self->$clearer();
 			push(@{$data},$object->uuid());
     	}
+    }	
+}
+
+sub clearLinkArray {
+	my ($self,$link) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	$self->$method([]);
+    	ModelSEED::utilities::VERBOSEMSG("Clearing link array.");
+    	my $clearer = "clear_".$link;
+		$self->$clearer();
     }	
 }
 

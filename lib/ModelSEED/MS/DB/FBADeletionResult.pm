@@ -21,7 +21,7 @@ has growthFraction => (is => 'rw', isa => 'Num', printOrder => '1', required => 
 
 
 # LINKS:
-has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', isa => 'ArrayRef[ModelSEED::MS::Feature]');
+has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', isa => 'ArrayRef');
 
 
 # BUILDERS:

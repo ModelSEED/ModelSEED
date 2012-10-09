@@ -32,7 +32,7 @@ has complexroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { re
 
 
 # LINKS:
-has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef[ModelSEED::MS::Reaction]');
+has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 

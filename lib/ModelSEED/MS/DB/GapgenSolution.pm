@@ -13,7 +13,7 @@ extends 'ModelSEED::MS::BaseObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenFormulation', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
@@ -34,9 +34,9 @@ has gapgenSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]');
-has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]');
-has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]');
+has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', isa => 'ArrayRef');
+has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', isa => 'ArrayRef');
+has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', isa => 'ArrayRef');
 
 
 # BUILDERS:

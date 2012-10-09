@@ -188,7 +188,7 @@ foreach my $name (keys(%{$objects})) {
             my $type = 'ModelSEED::MS::'.$class;
             if (defined($subobject->{array}) && $subobject->{array} == 1) {
             	$weak = 0;
-            	$type = "ArrayRef[".$type."]";
+            	$type = "ArrayRef";
             }
             my $props = [
                 "is => 'rw'",
