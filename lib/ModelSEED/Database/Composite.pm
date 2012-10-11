@@ -130,6 +130,7 @@ use Try::Tiny;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
+    ModelSEED::Database::KBaseRPC
     ModelSEED::Database::MongoDBSimple
     JSON::XS
 );
@@ -166,7 +167,7 @@ around BUILDARGS => sub {
         } catch {
             ModelSEED::Exception::DatabaseConfigError->throw(
                 dbName => $config{name},
-                configText => JSON::XS->new->pretty(1)->encode(\%config),
+                configText => "$_\n" . JSON::XS->new->pretty(1)->encode(\%config),
             );
         };
     }
