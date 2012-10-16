@@ -373,17 +373,7 @@ sub addCompoundFromHash {
 	my ($self,$args,$mergeto) = @_;
 
 	#remove names that are too long
-	my @remove_index=();
-	for(my $i=0;$i<scalar(@{$args->{names}});$i++){
-	    if(length($args->{names}->[$i])>255){
-		#cannot splice within loop, can miss consecutive long names
-		push(@remove_index,($i-scalar(@remove_index)));
-	    }
-	}
-
-	foreach my $remove (@remove_index){
-	    splice(@{$args->{names}},$remove,1);
-	}
+	$arg->{names} = [ grep { length($_) < 255 } @{$arg->{names}} ];
 
 	#in case all the names were too long
 	if(!$args->{names}->[0]){
@@ -404,6 +394,13 @@ sub addCompoundFromHash {
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
 	    ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+	    if(defined($mergeto) && !$cpd->getAlias($mergeto)){
+		$self->addAlias({ attribute => "compounds",
+				  aliasName => $mergeto,
+				  alias => $args->{id}->[0],
+				  uuid => $cpd->uuid()
+				});
+	    }
 	    return $cpd;
 	}
 
@@ -492,17 +489,7 @@ sub addReactionFromHash {
 	my ($self,$args,$mergeto) = @_;
 
 	#remove names that are too long
-	my @remove_index=();
-	for(my $i=0;$i<scalar(@{$args->{names}});$i++){
-	    if(length($args->{names}->[$i])>255){
-		#cannot splice within loop, can miss consecutive long names
-		push(@remove_index,($i-scalar(@remove_index)));
-	    }
-	}
-
-	foreach my $remove (@remove_index){
-	    splice(@{$args->{names}},$remove,1);
-	}
+	$arg->{names} = [ grep { length($_) < 255 } @{$arg->{names}} ];
 
 	#in case all the names were too long
 	if(!$args->{names}->[0]){
@@ -523,13 +510,20 @@ sub addReactionFromHash {
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
 		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+		if(defined($mergeto) && !$rxn->getAlias($mergeto)){
+		    $self->addAlias({ attribute => "reactions",
+				      aliasName => $mergeto,
+				      alias => $args->{id}->[0],
+				      uuid => $rxn->uuid()
+				    });
+		}
 		return $rxn;
 	}
 
 	#Checking for id uniqueness within scope of another aliasType, if passed
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
-	    if (defined($rxn)) {
+	    if( defined($rxn) ){
 		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
 		#Alias needs to be created for original namespace if found in different namespace
 		$self->addAlias({
@@ -575,16 +569,16 @@ sub addReactionFromHash {
 	    my $aliasSetName=$args->{aliasType};
 	    #If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
-		foreach my $set ( grep { $_ ne "name" || $_ ne "searchname" } @{$self->aliasSets()}){
+		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
 		    $aliasSetName=$set->name();
 		    $alias=$searchRxn->getAlias($aliasSetName);
 		    last if $alias;
 		}
-	    }
-	    #fall back onto name
-	    if(!$alias){
-		$alias=$searchRxn->name();
-		$aliasSetName="name";
+		#fall back onto name
+		if(!$alias){
+		    $alias=$searchRxn->name();
+		    $aliasSetName="could not find ID";
+		}
 	    }
 	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
 	    $self->addAlias({ attribute => "reactions",
