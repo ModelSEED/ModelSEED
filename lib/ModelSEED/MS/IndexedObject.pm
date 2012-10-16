@@ -203,15 +203,7 @@ sub addAlias {
 			class => $attInfo->{class}
 		});
 	}
-	if (defined($aliasSet->aliases()->{$args->{alias}})) {
-		my $aliases = $aliasSet->aliases()->{$args->{alias}};
-		for (my $i=0; $i < @{$aliases}; $i++) {
-			if ($aliases->[$i] eq $args->{uuid}) {
-				return;	
-			}
-		}
-	}
-	push(@{$aliasSet->aliases()->{$args->{alias}}},$args->{uuid});
+	$aliasSet->addAlias($args->{alias},$args->{uuid});
 }
 
 sub getObjectByAlias {

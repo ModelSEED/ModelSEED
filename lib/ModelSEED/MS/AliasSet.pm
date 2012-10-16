@@ -40,7 +40,21 @@ sub _buildaliasesByuuid {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
-
+sub addAlias {
+	my ($self,$alias,$uuid) = @_;
+	my $aliases = $self->aliases();
+	if (defined($aliases->{$alias})) {
+		my $uuids = $aliases->{$alias};
+		for (my $i=0; $i < @{$uuids}; $i++) {
+			if ($uuids->[$i] eq $uuid) {
+				return;	
+			}
+		}
+	}
+	push(@{$aliases->{$alias}},$uuid);
+	my $aliasesByuuid = $self->aliasesByuuid();
+	push(@{$aliasesByuuid->{$uuid}},$alias);
+}
 
 __PACKAGE__->meta->make_immutable;
 1;
