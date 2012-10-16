@@ -120,7 +120,7 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
-	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0) {
+	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0 && !$args->{hashed}) {
 		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
 		if (!defined($hcpd)) {
 			ModelSEED::utilities::ERROR("Could not find proton in biochemistry!");
@@ -177,7 +177,7 @@ sub loadFromEquation {
 	my ($self,$args) = @_;
 	$args = ModelSEED::utilities::ARGS($args,["equation","aliasType"],{});
 	my $bio = $self->parent();
-	my @TempArray = split(/\s/, $args->{equation});
+	my @TempArray = split(/\s+/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
 	my $Coefficient = 1;
 	my $rxnComp;
@@ -187,17 +187,20 @@ sub loadFromEquation {
 	my $compHash;
 	my $compUUIDHash;
 	my $cpdHash;
+	my $cpdCmpCount;
 	for (my $i = 0; $i < @TempArray; $i++) {
+	    #some identifiers may include '=' sign, need to skip actual '+' in equation
+	    next if $TempArray[$i] eq "+";
 		if ($TempArray[$i] =~ m/^\(([\.\d]+)\)$/ || $TempArray[$i] =~ m/^([\.\d]+)$/) {
 			$Coefficient = $1;
-		} elsif ($TempArray[$i] =~ m/(^[a-zA-Z0-9]+)/) {
+		} elsif ($TempArray[$i] =~ m/(^[\w\-+]+)/) {
 			$Coefficient *= -1 if ($CurrentlyOnReactants);
 			my $NewRow = {
 				compound => $1,
 				compartment => "c",
 				coefficient => $Coefficient
 			};
-			if ($TempArray[$i] =~ m/^[a-zA-Z0-9]+\[([a-zA-Z]+)\]/) {
+			if ($TempArray[$i] =~ m/^[\w\-+]+\[([a-zA-Z]+)\]/) {
 				$NewRow->{compartment} = lc($1);
 			}
             my $comp = $compHash->{$NewRow->{compartment}};
@@ -205,14 +208,14 @@ sub loadFromEquation {
                 $comp = $bio->queryObject("compartments", {id => $NewRow->{compartment} });
             }
             unless(defined($comp)) {
-				ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction!");
-				$comp = $bio->add("compartments",{
-					locked => "0",
-					id => $NewRow->{compartment},
-					name => $NewRow->{compartment},
-					hierarchy => 3
-				});
-			}
+		ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction!");
+		$comp = $bio->add("compartments",{
+		    locked => "0",
+		    id => $NewRow->{compartment},
+		    name => $NewRow->{compartment},
+		    hierarchy => 3
+				  });
+	    }
 			$compUUIDHash->{$comp->uuid()} = $comp;
 			$compHash->{$comp->id()} = $comp;
 			$NewRow->{compartment} = $comp;
@@ -230,13 +233,13 @@ sub loadFromEquation {
 					abbreviation => $NewRow->{compound}
 				});
 			}
-			$cpdHash->{$cpd->uuid()} = $cpd;
 			$NewRow->{compound} = $cpd;
 			if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
 				$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
 			}
 			$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
 			$cpdHash->{$cpd->uuid()} = $cpd;
+			$cpdCmpCount->{$cpd->uuid()."_".$comp->uuid()}++;
 			if ($comp->id() eq "c") {
 				$currCompScore = 100;
 				$rxnComp = $comp;
@@ -254,7 +257,7 @@ sub loadFromEquation {
 		$rxnComp = $bio->queryObject("compartments",{id => "c"});
 	}
 	foreach my $cpduuid (keys(%{$cpdCmpHash})) {
-       foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
+	    foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
 	        # Do not include reagents with zero coefficients
 	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
 	        # Do not include Hydrogen in reagents
@@ -263,8 +266,15 @@ sub loadFromEquation {
 	            compartment_uuid            => $cmpuuid,
 	            coefficient                 => $cpdCmpHash->{$cpduuid}->{$cmpuuid},
 	            isCofactor                  => 0,
-	        });
-       }
+			   });
+	    }
+	}
+	
+	#multiple instances of the same reaction in the same compartment is unacceptable.
+	if(scalar( grep { $cpdCmpCount->{$_} >1 } keys %$cpdCmpCount)>0){
+	    return 0;
+	}else{
+	    return 1;
 	}
 }
 
