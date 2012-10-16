@@ -570,13 +570,29 @@ sub addReactionFromHash {
 	my $code = $rxn->equationCode();
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 	if (defined($searchRxn)) {
-		ModelSEED::utilities::VERBOSEMSG("Reaction ".$searchRxn->id()." found with matching equation for Reaction ".$args->{id}->[0]);
-		$self->addAlias({ attribute => "reactions",
-				  aliasName => $args->{aliasType},
-				  alias => $args->{id}->[0],
-				  uuid => $searchRxn->uuid()
-				});
-		return $searchRxn;
+	    #Check to see if searchRxn has alias from same namespace
+	    my $alias = $searchRxn->getAlias($args->{aliasType});
+	    my $aliasSetName=$args->{aliasType};
+	    #If not, need to find any alias to use (avoiding names for now)
+	    if(!$alias){
+		foreach my $set ( grep { $_ ne "name" || $_ ne "searchname" } @{$self->aliasSets()}){
+		    $aliasSetName=$set->name();
+		    $alias=$searchRxn->getAlias($aliasSetName);
+		    last if $alias;
+		}
+	    }
+	    #fall back onto name
+	    if(!$alias){
+		$alias=$searchRxn->name();
+		$aliasSetName="name";
+	    }
+	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
+	    $self->addAlias({ attribute => "reactions",
+			      aliasName => $args->{aliasType},
+			      alias => $args->{id}->[0],
+			      uuid => $searchRxn->uuid()
+			    });
+	    return $searchRxn;
 	}
 
 	#attach reaction to biochemistry
