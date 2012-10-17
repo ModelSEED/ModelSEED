@@ -478,15 +478,10 @@ Description:
 
 sub addReactionFromHash {
 	my ($self,$args,$mergeto) = @_;
-
-	#remove names that are too long
-	$arg->{names} = [ grep { length($_) < 255 } @{$arg->{names}} ];
-
-	#in case all the names were too long
-	if(!$args->{names}->[0]){
-	    push(@{$args->{names}},$args->{id}->[0]);
-	}
-
+	# Remove names that are too long
+	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+        # In case all the names were too long, use the id as the name
+	push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
 	$args = ModelSEED::utilities::ARGS($args,["equation","id"],{
 		aliasType => $self->defaultNameSpace(),
 		names => [$args->{id}->[0]],
@@ -496,8 +491,7 @@ sub addReactionFromHash {
 		deltagerr => [10000000],
 		enzymes => []
 	});
-
-	#Checking for id uniqueness within scope of own aliasType
+	# Checking for id uniqueness within scope of own aliasType
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
 		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
@@ -510,8 +504,7 @@ sub addReactionFromHash {
 		}
 		return $rxn;
 	}
-
-	#Checking for id uniqueness within scope of another aliasType, if passed
+	# Checking for id uniqueness within scope of another aliasType, if passed
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
 	    if( defined($rxn) ){
@@ -526,8 +519,7 @@ sub addReactionFromHash {
 		return $rxn;
 	    }
 	}
-
-	#Creating reaction from equation
+	# Creating reaction from equation
 	$rxn = ModelSEED::MS::Reaction->new({
 		name => $args->{names}->[0],
 		abbreviation => $args->{abbreviation}->[0],
@@ -537,12 +529,10 @@ sub addReactionFromHash {
 		status => "OK",
 		thermoReversibility => "="
 	});
-
-	#Attach biochemistry object to reaction object
+	# Attach biochemistry object to reaction object
 	$rxn->parent($self);
-
-	#parse the equation string to finish defining the reaction object
-	#a return of zero indicates that the reaction was rejected
+	# Parse the equation string to finish defining the reaction object
+	# a return of zero indicates that the reaction was rejected
 	if(!$rxn->loadFromEquation({
 	    equation => $args->{equation}->[0],
 	    aliasType => $args->{aliasType},
@@ -550,22 +540,21 @@ sub addReactionFromHash {
 	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$args->{id}->[0]." was rejected");
 	    return undef;
 	}
-
-	#Generate equation search string and check to see if reaction not already in database
+	# Generate equation search string and check to see if reaction not already in database
 	my $code = $rxn->equationCode();
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 	if (defined($searchRxn)) {
-	    #Check to see if searchRxn has alias from same namespace
+	    # Check to see if searchRxn has alias from same namespace
 	    my $alias = $searchRxn->getAlias($args->{aliasType});
 	    my $aliasSetName=$args->{aliasType};
-	    #If not, need to find any alias to use (avoiding names for now)
+	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
 		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
 		    $aliasSetName=$set->name();
 		    $alias=$searchRxn->getAlias($aliasSetName);
 		    last if $alias;
 		}
-		#fall back onto name
+		# Fall back onto name
 		if(!$alias){
 		    $alias=$searchRxn->name();
 		    $aliasSetName="could not find ID";
@@ -579,10 +568,8 @@ sub addReactionFromHash {
 			    });
 	    return $searchRxn;
 	}
-
-	#attach reaction to biochemistry
+	# Attach reaction to biochemistry
 	$self->add("reactions", $rxn);
-
 	$self->addAlias({
 		attribute => "reactions",
 		aliasName => $args->{aliasType},
