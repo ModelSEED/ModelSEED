@@ -371,15 +371,10 @@ Description:
 
 sub addCompoundFromHash {
 	my ($self,$args,$mergeto) = @_;
-
-	#remove names that are too long
-	$arg->{names} = [ grep { length($_) < 255 } @{$arg->{names}} ];
-
-	#in case all the names were too long
-	if(!$args->{names}->[0]){
-	    push(@{$args->{names}},$args->{id}->[0]);
-	}
-	
+	# Remove names that are too long
+	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+	# In case all the names were too long, use the id as the name
+        push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
 	$args = ModelSEED::utilities::ARGS($args,["names","id"],{
 		aliasType => $self->defaultNameSpace(),
 		abbreviation => [$args->{names}->[0]],
@@ -389,8 +384,7 @@ sub addCompoundFromHash {
 		deltag => [10000000],
 		deltagerr => [10000000]
 	});
-
-	#Checking for id uniqueness within scope of own aliasType
+	# Checking for id uniqueness within scope of own aliasType
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
 	    ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
@@ -403,8 +397,7 @@ sub addCompoundFromHash {
 	    }
 	    return $cpd;
 	}
-
-	#Checking for id uniqueness within scope of another aliasType, if passed
+	# Checking for id uniqueness within scope of another aliasType, if passed
 	if($mergeto){
 	    $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$mergeto);
 	    if (defined($cpd)) {
@@ -419,10 +412,9 @@ sub addCompoundFromHash {
 		return $cpd;
 	    }
 	}
-
-	#Disabled, attempting to check names ahead of chemical structure is not recommended
-	#For metabolic models, every compound is assumed to be unique anyway
-	#Checking for name uniqueness
+	# Disabled, attempting to check names ahead of chemical structure is not recommended
+	# For metabolic models, every compound is assumed to be unique anyway
+	# Checking for name uniqueness
 	#foreach my $name (@{$args->{names}}) {
 	#	my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
 	#	$cpd = $self->queryObject("compounds",{searchnames => $name});
@@ -438,7 +430,7 @@ sub addCompoundFromHash {
 	#	}
 	#}
 
-	#Actually creating compound
+	# Actually creating compound
 	$cpd = $self->add("compounds",{
 		name => $args->{names}->[0],
 		abbreviation => $args->{abbreviation}->[0],
@@ -448,7 +440,7 @@ sub addCompoundFromHash {
 		deltaG => $args->{deltag}->[0],
 		deltaGErr => $args->{deltagerr}->[0]
 	});
-	#Adding id as alias
+	# Adding id as alias
 	$self->addAlias({
 		attribute => "compounds",
 		aliasName => $args->{aliasType},
@@ -463,7 +455,7 @@ sub addCompoundFromHash {
 		uuid => $cpd->uuid()
 			    });
 	}
-	#Adding alternative names as aliases
+	# Adding alternative names as aliases
 	foreach my $name (@{$args->{names}}) {
 		$self->addAlias({
 			attribute => "compounds",
@@ -473,8 +465,7 @@ sub addCompoundFromHash {
 		});
 	}
 	return $cpd;
-
-	#TODO: allow user option to merge based on InChI strings (if included) and/or names
+	# TODO: allow user option to merge based on InChI strings (if included) and/or names
 }
 
 =head3 addReactionFromHash
