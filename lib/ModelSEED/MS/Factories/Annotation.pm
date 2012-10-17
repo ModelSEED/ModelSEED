@@ -88,7 +88,7 @@ use Class::Autouse qw(
     ModelSEED::Client::SAP
     ModelSEED::Client::MSSeedSupport
 );
-has auth => ( is => 'rw', isa => 'ModelSEED::Auth', builder => '_build_auth' );
+has auth => ( is => 'rw', does => 'ModelSEED::Auth', builder => '_build_auth' );
 has sapsvr => (
     is      => 'rw',
     isa     => 'ModelSEED::Client::SAP',
@@ -201,8 +201,8 @@ sub build {
 }
 
 sub _getRoleObject {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["roleString","mapping"],{});					
+    my $self = shift;
+	my $args = args(["roleString","mapping"], {}, @_);
 	my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($args->{roleString});
 	my $roleObj = $args->{mapping}->queryObject("roles",{searchname => $searchName});
 	if (!defined($roleObj)) {
@@ -214,10 +214,8 @@ sub _getRoleObject {
 }
 
 sub _getMappingObject {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		mapping_uuid => undef
-	});
+    my $self = shift;
+	my $args = args([], { mapping_uuid => undef }, @_);
 	my $mappingObj;
 	if (defined($args->{mapping_uuid})) {
 		$mappingObj = $self->om()->get("Mapping",$args->{mapping_uuid});

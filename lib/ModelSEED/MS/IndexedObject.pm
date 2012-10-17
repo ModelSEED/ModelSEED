@@ -5,10 +5,6 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 # Date of module creation: 3/11/2012
 ########################################################################
-package ModelSEED::MS::IndexedObject;
-use Class::Autouse qw(
-    ModelSEED::MS::Factories::ExchangeFormatFactory
-);
 
 =head1 ModelSEED::MS::IndexedObject
 
@@ -113,7 +109,12 @@ array reference.
 
 =cut
 
+package ModelSEED::MS::IndexedObject;
 use Moose;
+use Class::Autouse qw(
+    ModelSEED::MS::Factories::ExchangeFormatFactory
+);
+use ModelSEED::utilities qw( args error );
 use namespace::autoclean;
 use ModelSEED::MS::BaseObject;
 
@@ -124,7 +125,7 @@ sub add {
     my ($self, $attribute, $data_or_object) = @_;
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        ModelSEED::utilities::ERROR("Object doesn't have subobject with name: $attribute");
+        error("Object doesn't have subobject with name: $attribute");
     }
     my $obj_info = {
         created => 0,
@@ -144,7 +145,7 @@ sub add {
         $obj_info->{object} = $data_or_object;
         $obj_info->{created} = 1;
     } else {
-        ModelSEED::utilities::ERROR("Neither data nor object passed into " . ref($self) . "->add");
+        error("Neither data nor object passed into " . ref($self) . "->add");
     }
     my $method = "_$attribute";
 	$obj_info->{object}->parent($self);
@@ -181,10 +182,8 @@ sub addFromAPI {
 #Alias Functions
 ######################################################################
 sub addAlias {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["attribute","aliasName","alias","uuid"],{
-		source => undef
-	});
+    my $self = shift;
+    my $args = args(["attribute","aliasName","alias","uuid"], { source => undef }, @_);
 	if (!defined($args->{source})) {
 		$args->{source} = $args->{aliasName};
 	}
@@ -250,7 +249,7 @@ sub getObjects {
     my ($self, $attribute, $uuids) = @_;
 	#Checking arguments
 	if(!defined($attribute) || !defined($uuids) || ref($uuids) ne 'ARRAY') {
-    	ModelSEED::utilities::ERROR("Bad arguments to getObjects.");
+    	error("Bad arguments to getObjects.");
     }
     #Retreiving objects
     my $results = [];
@@ -285,7 +284,7 @@ sub queryObjects {
     my ($self,$attribute,$query) = @_;
 	#Checking arguments
 	if(!defined($attribute) || !defined($query) || ref($query) ne 'HASH') {
-		ModelSEED::utilities::ERROR("Bad arguments to queryObjects.");
+		error("Bad arguments to queryObjects.");
     }
     #ResultSet is a map of $object => $object
     my $resultSet;
@@ -323,13 +322,13 @@ sub queryObjects {
 }
 
 sub _buildIndex {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["attribute","subAttribute"],{});
+    my $self = shift;
+    my $args = args(["attribute","subAttribute"],{}, @_);
 	my $att = $args->{attribute};
 	my $subatt = $args->{subAttribute};
 	my $newIndex  = {};
 	if ($att =~ m/^682F57E0/) {
-		ModelSEED::utilities::ERROR("Bad call to _buildIndex!");
+		error("Bad call to _buildIndex!");
 	}
 	my $method = "_$att";
 	my $subobjs = $self->$method();
@@ -364,11 +363,8 @@ sub _buildIndex {
 }
 
 sub _clearIndex {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		attribute => undef,
-		subAttribute => undef,
-	});
+    my $self = shift;
+    my $args = args([], {attribute => undef, subAttribute => undef}, @_);
 	my $att = $args->{attribute};
 	my $subatt = $args->{subAttribute};
 	if (!defined($att)) {

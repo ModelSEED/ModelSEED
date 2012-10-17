@@ -7,7 +7,7 @@
 ########################################################################
 package ModelSEED::MS::Factories::TableFileFactory;
 use common::sense;
-use ModelSEED::utilities;
+use ModelSEED::utilities qw( args );
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use Class::Autouse qw(
 	ModelSEED::MS::BiochemistryStructures
@@ -199,10 +199,8 @@ sub loadFtrTbl {
 
 
 sub createModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["id", "annotation"],{
-        verbose => 0,
-	});
+    my $self = shift;
+    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
 	$args->{biochemistry} = $args->{annotation}->mapping->biochemistry;
     $args->{mapping} = $args->{annotation}->mapping;
 	# Retrieving model data
@@ -277,15 +275,15 @@ sub createModel {
 }
 
 sub createBiochemistry {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+    my $args = args([], {
 		name => $self->namespace()."/primary.biochemistry",
 		addAliases => 1,
 		addStructuralCues => 1,
 		addStructure => 1,
 		addPK => 1,
         verbose => 0
-	});
+	}, @_);
 	#Creating the biochemistry
 	my $bioStruct = ModelSEED::MS::BiochemistryStructures->new({});
 	my $biochemistry = ModelSEED::MS::Biochemistry->new({
@@ -590,8 +588,8 @@ sub createBiochemistry {
 }
 
 sub addAliases {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{});
+    my $self = shift;
+    my $args = args(["biochemistry"], {}, @_);
 	my $biochemistry = $args->{biochemistry};
 	#Adding compound aliases
 	print "Handling compound aliases!\n" if($args->{verbose});
@@ -627,11 +625,11 @@ sub addAliases {
 }
 
 sub createMapping {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{
+    my $self = shift;
+    my $args = args(["biochemistry"], {
 		name => $self->namespace()."/primary.mapping",
         verbose => 0,
-	});
+	}, @_);
 	my $uuidhash = $self->uuidHash();
 	my $biomassTemplateData = $self->biomassTemplateData();
 	my $spontaneousRxn = $biomassTemplateData->{"spontaneous reactions"};
@@ -842,8 +840,8 @@ sub createMapping {
 }
 
 sub createAnnotation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["genome","mapping"],{});
+    my $self = shift;
+    my $args = args(["genome","mapping"], {}, @_);
 	if (!-e $self->filepath()."/".$args->{genome}.".tbl") {
 		ModelSEED::utilities::ERROR("Input genome ".$args->{genome}." not found in available flatfiles!");
 	}

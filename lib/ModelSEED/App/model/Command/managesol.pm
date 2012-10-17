@@ -10,6 +10,7 @@ use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+use ModelSEED::utilities qw( set_verbose verbose );
 sub abstract { return "Lists all gapfilling and gapgeneration solutions for model, and integrates a selected solution"; }
 sub usage_desc { return "model managesol [ model || - ] [options]"; }
 sub opt_spec {
@@ -36,7 +37,7 @@ sub execute {
     (my $model,my $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
 	if ($opts->{verbose}) {
-    	ModelSEED::utilities::SETVERBOSE(1);
+        set_verbose(1);
     	delete $opts->{verbose};
     }
     #Clearing gapgen or gapfilling solutions
@@ -137,12 +138,12 @@ sub execute {
 	#Saving results in model
 	if ($opts->{saveas}) {
     	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	ModelSEED::utilities::VERBOSEMSG("New alias set for model:".$ref);
+    	verbose("New alias set for model:".$ref);
     }
     if ($opts->{dryrun}) {
-    	ModelSEED::utilities::VERBOSEMSG("Dry run selected. Results not saved!");
+    	verbose("Dry run selected. Results not saved!");
     } else {
-    	ModelSEED::utilities::VERBOSEMSG("Saving model!");
+    	verbose("Saving model!");
        	$store->save_object($ref,$model);
     }
 }

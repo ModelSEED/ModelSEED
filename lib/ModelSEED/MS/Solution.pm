@@ -9,6 +9,7 @@ use strict;
 use ModelSEED::MS::DB::Solution;
 package ModelSEED::MS::Solution;
 use Moose;
+use ModelSEED::utilities qw( args error );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Solution';
 #***********************************************************************************************************
@@ -41,10 +42,10 @@ Description:
 =cut
 
 sub buildFromCPLEXFile {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["filename"],{});
+    my $self = shift;
+    my $args = args(["filename"], {}, @_);
 	if (!-e $args->{filename}) {
-		ModelSEED::utilities::ERROR("Solution file not found!");	
+		error("Solution file not found!");	
 	}
 	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
 	for (my $i=0; $i < @{$data}; $i++) {
@@ -91,10 +92,10 @@ Description:
 =cut
 
 sub buildFromGLPKFile {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["filename"],{});
+    my $self = shift;
+    my $args = args(["filename"], {}, @_);
 	if (!-e $args->{filename}) {
-		ModelSEED::utilities::ERROR("Solution file not found!");	
+		error("Solution file not found!");	
 	}
 	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
 	$self->method("simplex");

@@ -9,8 +9,9 @@ use strict;
 use ModelSEED::MS::DB::FBAFormulation;
 package ModelSEED::MS::FBAFormulation;
 use Moose;
-use namespace::autoclean;
 use ModelSEED::Exceptions;
+use ModelSEED::utilities qw( args );
+use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -615,8 +616,8 @@ Description:
 =cut
 
 sub createTemporaryMedia {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["name","media","additionalCpd"],{});
+    my $self = shift;
+    my $args = args(["name","media","additionalCpd"],{}, @_);
 	my $newMedia = ModelSEED::MS::Media->new({
 		isDefined => 1,
 		isMinimal => 0,
@@ -661,8 +662,8 @@ Description:
 =cut
 
 sub parsePhenotypeSimulations {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["fbaPhenotypeSimulations"],{});
+    my $self = shift;
+    my $args = args(["fbaPhenotypeSimulations"],{}, @_);
 	my $phenos = $args->{fbaPhenotypeSimulations};
 	for (my $i=0; $i < @{$phenos};$i++) {
 		my ($addnluuids,$addnlcpds,$genokouuids,$genekos,$reactionkouuids,$reactionkos) = ([],[],[],[],[],[]);
@@ -727,8 +728,8 @@ Description:
 =cut
 
 sub parseObjectiveTerms {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["objTerms"],{});
+    my $self = shift;
+    my $args = args(["objTerms"],{}, @_);
 	my $terms = $args->{objTerms};
 	for (my $i=0; $i < @{$terms};$i++) {
 		(my $obj,my $type) = $self->interpretReference($terms->[$i]->{id});
@@ -755,8 +756,8 @@ Description:
 =cut
 
 sub parseConstraints {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["constraints"],{});
+    my $self = shift;
+    my $args = args(["constraints"],{}, @_);
 	my $vartrans = {
 		f => "flux",ff => "forflux",rf => "revflux",
 		df => "drainflux",fdf => "fordrainflux",rdf => "revdrainflux",

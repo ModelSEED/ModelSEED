@@ -10,6 +10,7 @@ use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+use ModelSEED::utilities qw( verbose set_verbose );
 sub abstract { return "Fill gaps in the reaction network for a model"; }
 sub usage_desc { return "model gapfill [ model || - ] [options]"; }
 sub opt_spec {
@@ -62,7 +63,7 @@ sub execute {
     (my $model,my $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
 	if ($opts->{verbose}) {
-    	ModelSEED::utilities::SETVERBOSE(1);
+        set_verbose(1);
     	delete $opts->{verbose};
     }
 	#Standard commands to handle where output will be printed
@@ -128,11 +129,11 @@ sub execute {
         return;
     }
     my $result;
-    ModelSEED::utilities::VERBOSEMSG("Running Gapfilling...");
+    verbose("Running Gapfilling...");
     $gapfillingFormulation = $model->gapfillModel({gapfillingFormulation => $gapfillingFormulation});
     my $solutions = $gapfillingFormulation->gapfillingSolutions();
     if (!defined($solutions) || @{$solutions} == 0) {
-    	ModelSEED::utilities::VERBOSEMSG("Reactions passing user criteria were insufficient to enable objective!");
+    	verbose("Reactions passing user criteria were insufficient to enable objective!");
     	return;
     }
     my $numSolutions = @{$solutions};
@@ -146,17 +147,17 @@ sub execute {
     	print $gapfillingFormulation->printStudy(($index-1));
     }
     if ($opts->{integratesol}) {
-    	ModelSEED::utilities::VERBOSEMSG("Automatically integrating first solution in model.");
+    	verbose("Automatically integrating first solution in model.");
     	$model->integrateGapfillSolution($gapfillingFormulation,0);
     }
     if ($opts->{saveas}) {
     	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	ModelSEED::utilities::VERBOSEMSG("New alias set for model:".$ref);
+    	verbose("New alias set for model:".$ref);
     }
     if ($opts->{dryrun}) {
-    	ModelSEED::utilities::VERBOSEMSG("Dry run selected. Results not saved!");
+    	verbose("Dry run selected. Results not saved!");
     } else {
-    	ModelSEED::utilities::VERBOSEMSG("Saving model!");
+    	verbose("Saving model!");
     	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
 		$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
     	$store->save_object($ref,$model);
