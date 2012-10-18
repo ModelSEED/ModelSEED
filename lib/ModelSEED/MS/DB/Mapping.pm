@@ -27,7 +27,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'SEED', type => 'attribute', metaclass => 'Typed');
-has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '3', type => 'attribute', metaclass => 'Typed');
+has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '3', trigger => &_trigger_biochemistry_uuid, type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
@@ -45,7 +45,7 @@ has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 
 
 # LINKS:
-has biochemistry => (is => 'rw', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry', isa => 'ModelSEED::MS::Biochemistry');
+has biochemistry => (is => 'rw', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry', trigger => &_trigger_biochemistry, isa => 'ModelSEED::MS::Biochemistry');
 
 
 # BUILDERS:
@@ -54,6 +54,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_biochemistry {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Biochemistry',$self->biochemistry_uuid());
+}
+sub _trigger_biochemistry {
+   my ($self, $new, $old) = @_;
+   $self->biochemistry_uuid( $new->uuid );
+}
+sub _trigger_biochemistry_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_biochemistry if( $self->biochemistry->uuid ne $new );
 }
 
 

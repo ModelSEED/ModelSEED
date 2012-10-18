@@ -16,18 +16,26 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenSolution', weak_ref => 1
 
 
 # ATTRIBUTES:
-has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_modelreaction_uuid, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
+has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', trigger => &_trigger_modelreaction, isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelreaction {
   my ($self) = @_;
   return $self->getLinkedObject('Model','modelreactions',$self->modelreaction_uuid());
+}
+sub _trigger_modelreaction {
+   my ($self, $new, $old) = @_;
+   $self->modelreaction_uuid( $new->uuid );
+}
+sub _trigger_modelreaction_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_modelreaction if( $self->modelreaction->uuid ne $new );
 }
 
 

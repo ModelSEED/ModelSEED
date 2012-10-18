@@ -16,18 +16,26 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biomass', weak_ref => 1, type 
 
 
 # ATTRIBUTES:
-has modelcompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelcompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_modelcompound_uuid, type => 'attribute', metaclass => 'Typed');
 has coefficient => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelcompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompound', clearer => 'clear_modelcompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
+has modelcompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelcompound', clearer => 'clear_modelcompound', trigger => &_trigger_modelcompound, isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelcompound {
   my ($self) = @_;
   return $self->getLinkedObject('Model','modelcompounds',$self->modelcompound_uuid());
+}
+sub _trigger_modelcompound {
+   my ($self, $new, $old) = @_;
+   $self->modelcompound_uuid( $new->uuid );
+}
+sub _trigger_modelcompound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_modelcompound if( $self->modelcompound->uuid ne $new );
 }
 
 

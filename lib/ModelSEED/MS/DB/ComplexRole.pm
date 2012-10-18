@@ -16,20 +16,28 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Complex', weak_ref => 1, type 
 
 
 # ATTRIBUTES:
-has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_role_uuid, type => 'attribute', metaclass => 'Typed');
 has optional => (is => 'rw', isa => 'Int', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', default => 'G', type => 'attribute', metaclass => 'Typed');
 has triggering => (is => 'rw', isa => 'Int', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', trigger => &_trigger_role, isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_role {
   my ($self) = @_;
   return $self->getLinkedObject('Mapping','roles',$self->role_uuid());
+}
+sub _trigger_role {
+   my ($self, $new, $old) = @_;
+   $self->role_uuid( $new->uuid );
+}
+sub _trigger_role_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_role if( $self->role->uuid ne $new );
 }
 
 

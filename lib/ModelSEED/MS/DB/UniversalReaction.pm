@@ -17,17 +17,25 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Mapping', weak_ref => 1, type 
 
 # ATTRIBUTES:
 has type => (is => 'rw', isa => 'Str', printOrder => '4', required => 1, type => 'attribute', metaclass => 'Typed');
-has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_reaction_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
+has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', trigger => &_trigger_reaction, isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_reaction {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','reactions',$self->reaction_uuid());
+}
+sub _trigger_reaction {
+   my ($self, $new, $old) = @_;
+   $self->reaction_uuid( $new->uuid );
+}
+sub _trigger_reaction_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_reaction if( $self->reaction->uuid ne $new );
 }
 
 

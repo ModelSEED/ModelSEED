@@ -29,7 +29,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has biochemistryStructures_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', type => 'attribute', metaclass => 'Typed');
+has biochemistryStructures_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', trigger => &_trigger_biochemistryStructures_uuid, type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
@@ -49,7 +49,7 @@ has cues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return [];
 
 
 # LINKS:
-has biochemistrystructures => (is => 'rw', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures', isa => 'ModelSEED::MS::BiochemistryStructures');
+has biochemistrystructures => (is => 'rw', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures', trigger => &_trigger_biochemistrystructures, isa => 'ModelSEED::MS::BiochemistryStructures');
 
 
 # BUILDERS:
@@ -58,6 +58,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_biochemistrystructures {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','BiochemistryStructures',$self->biochemistryStructures_uuid());
+}
+sub _trigger_biochemistrystructures {
+   my ($self, $new, $old) = @_;
+   $self->biochemistryStructures_uuid( $new->uuid );
+}
+sub _trigger_biochemistryStructures_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_biochemistrystructures if( $self->biochemistrystructures->uuid ne $new );
 }
 
 

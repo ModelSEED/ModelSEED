@@ -16,17 +16,25 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::ModelReactionProteinSubunit', 
 
 
 # ATTRIBUTES:
-has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_feature_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', trigger => &_trigger_feature, isa => 'ModelSEED::MS::Feature', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_feature {
   my ($self) = @_;
   return $self->getLinkedObject('Annotation','features',$self->feature_uuid());
+}
+sub _trigger_feature {
+   my ($self, $new, $old) = @_;
+   $self->feature_uuid( $new->uuid );
+}
+sub _trigger_feature_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_feature if( $self->feature->uuid ne $new );
 }
 
 

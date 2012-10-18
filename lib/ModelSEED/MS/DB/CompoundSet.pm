@@ -22,7 +22,7 @@ has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => '
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has compound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has compound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_compound_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compounds => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_compounds', clearer => 'clear_compounds', isa => 'ArrayRef');
+has compounds => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_compounds', clearer => 'clear_compounds', trigger => &_trigger_compounds, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -39,6 +39,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_compounds {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->compound_uuids());
+}
+sub _trigger_compounds {
+   my ($self, $new, $old) = @_;
+   $self->compound_uuids( $new->uuid );
+}
+sub _trigger_compound_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_compounds if( $self->compounds->uuid ne $new );
 }
 
 

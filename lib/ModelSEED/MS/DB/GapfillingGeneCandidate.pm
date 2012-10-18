@@ -16,19 +16,19 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_r
 
 
 # ATTRIBUTES:
-has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
-has ortholog_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', trigger => &_trigger_feature_uuid, type => 'attribute', metaclass => 'Typed');
+has ortholog_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', trigger => &_trigger_ortholog_uuid, type => 'attribute', metaclass => 'Typed');
 has orthologGenome_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has similarityScore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has distanceScore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', trigger => &_trigger_role_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
-has ortholog => (is => 'rw', type => 'link(Annotation,features,ortholog_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', clearer => 'clear_ortholog', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
-has orthologGenome => (is => 'rw', type => 'link(Annotation,genomes,orthogenome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', clearer => 'clear_orthologGenome', isa => 'ModelSEED::MS::Genome', weak_ref => 1);
-has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', trigger => &_trigger_feature, isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has ortholog => (is => 'rw', type => 'link(Annotation,features,ortholog_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', clearer => 'clear_ortholog', trigger => &_trigger_ortholog, isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has orthologGenome => (is => 'rw', type => 'link(Annotation,genomes,orthogenome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', clearer => 'clear_orthologGenome', trigger => &_trigger_orthologGenome, isa => 'ModelSEED::MS::Genome', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', trigger => &_trigger_role, isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:
@@ -36,17 +36,49 @@ sub _build_feature {
   my ($self) = @_;
   return $self->getLinkedObject('Annotation','features',$self->feature_uuid());
 }
+sub _trigger_feature {
+   my ($self, $new, $old) = @_;
+   $self->feature_uuid( $new->uuid );
+}
+sub _trigger_feature_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_feature if( $self->feature->uuid ne $new );
+}
 sub _build_ortholog {
   my ($self) = @_;
   return $self->getLinkedObject('Annotation','features',$self->ortholog_uuid());
+}
+sub _trigger_ortholog {
+   my ($self, $new, $old) = @_;
+   $self->ortholog_uuid( $new->uuid );
+}
+sub _trigger_ortholog_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_ortholog if( $self->ortholog->uuid ne $new );
 }
 sub _build_orthologGenome {
   my ($self) = @_;
   return $self->getLinkedObject('Annotation','genomes',$self->orthogenome_uuid());
 }
+sub _trigger_orthologGenome {
+   my ($self, $new, $old) = @_;
+   $self->orthogenome_uuid( $new->uuid );
+}
+sub _trigger_orthogenome_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_orthologGenome if( $self->orthologGenome->uuid ne $new );
+}
 sub _build_role {
   my ($self) = @_;
   return $self->getLinkedObject('Mapping','roles',$self->role_uuid());
+}
+sub _trigger_role {
+   my ($self, $new, $old) = @_;
+   $self->role_uuid( $new->uuid );
+}
+sub _trigger_role_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_role if( $self->role->uuid ne $new );
 }
 
 

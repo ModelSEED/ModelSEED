@@ -18,13 +18,13 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
-has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', trigger => &_trigger_fbaFormulation_uuid, type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_model_uuid, type => 'attribute', metaclass => 'Typed');
 has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has reactionRemovalHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has referenceMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has referenceMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_referenceMedia_uuid, type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 
 
@@ -37,9 +37,9 @@ has gapgenSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub {
 
 
 # LINKS:
-has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
-has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', isa => 'ModelSEED::MS::FBAFormulation');
-has referenceMedia => (is => 'rw', type => 'link(Biochemistry,media,referenceMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_referenceMedia', clearer => 'clear_referenceMedia', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', trigger => &_trigger_model, isa => 'ModelSEED::MS::Model');
+has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', trigger => &_trigger_fbaFormulation, isa => 'ModelSEED::MS::FBAFormulation');
+has referenceMedia => (is => 'rw', type => 'link(Biochemistry,media,referenceMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_referenceMedia', clearer => 'clear_referenceMedia', trigger => &_trigger_referenceMedia, isa => 'ModelSEED::MS::Media', weak_ref => 1);
 
 
 # BUILDERS:
@@ -49,13 +49,37 @@ sub _build_model {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
 }
+sub _trigger_model {
+   my ($self, $new, $old) = @_;
+   $self->model_uuid( $new->uuid );
+}
+sub _trigger_model_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_model if( $self->model->uuid ne $new );
+}
 sub _build_fbaFormulation {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','FBAFormulation',$self->fbaFormulation_uuid());
 }
+sub _trigger_fbaFormulation {
+   my ($self, $new, $old) = @_;
+   $self->fbaFormulation_uuid( $new->uuid );
+}
+sub _trigger_fbaFormulation_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_fbaFormulation if( $self->fbaFormulation->uuid ne $new );
+}
 sub _build_referenceMedia {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','media',$self->referenceMedia_uuid());
+}
+sub _trigger_referenceMedia {
+   my ($self, $new, $old) = @_;
+   $self->referenceMedia_uuid( $new->uuid );
+}
+sub _trigger_referenceMedia_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_referenceMedia if( $self->referenceMedia->uuid ne $new );
 }
 
 

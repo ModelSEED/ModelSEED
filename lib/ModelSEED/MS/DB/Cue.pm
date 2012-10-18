@@ -29,7 +29,7 @@ has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute',
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has smallMolecule => (is => 'rw', isa => 'Bool', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has priority => (is => 'rw', isa => 'Int', printOrder => '9', type => 'attribute', metaclass => 'Typed');
-has structure_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has structure_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', trigger => &_trigger_structure_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -37,7 +37,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has structure => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', clearer => 'clear_structure', isa => 'ModelSEED::MS::Structure', weak_ref => 1);
+has structure => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', clearer => 'clear_structure', trigger => &_trigger_structure, isa => 'ModelSEED::MS::Structure', weak_ref => 1);
 
 
 # BUILDERS:
@@ -46,6 +46,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_structure {
   my ($self) = @_;
   return $self->getLinkedObject('BiochemistryStructures','structures',$self->structure_uuid());
+}
+sub _trigger_structure {
+   my ($self, $new, $old) = @_;
+   $self->structure_uuid( $new->uuid );
+}
+sub _trigger_structure_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_structure if( $self->structure->uuid ne $new );
 }
 
 

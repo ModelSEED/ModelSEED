@@ -16,18 +16,26 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has modelCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_modelCompound_uuid, type => 'attribute', metaclass => 'Typed');
 has maximumProduction => (is => 'rw', isa => 'Num', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
+has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', trigger => &_trigger_modelCompound, isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelCompound {
   my ($self) = @_;
   return $self->getLinkedObject('Model','modelcompounds',$self->modelCompound_uuid());
+}
+sub _trigger_modelCompound {
+   my ($self, $new, $old) = @_;
+   $self->modelCompound_uuid( $new->uuid );
+}
+sub _trigger_modelCompound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_modelCompound if( $self->modelCompound->uuid ne $new );
 }
 
 

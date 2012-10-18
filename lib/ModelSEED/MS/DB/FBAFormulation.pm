@@ -25,9 +25,9 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has regulatorymodel_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_model_uuid, type => 'attribute', metaclass => 'Typed');
+has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_media_uuid, type => 'attribute', metaclass => 'Typed');
+has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_secondaryMedia_uuids, type => 'attribute', metaclass => 'Typed');
 has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
 has comboDeletions => (is => 'rw', isa => 'Int', printOrder => '11', default => '0', type => 'attribute', metaclass => 'Typed');
 has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -44,8 +44,8 @@ has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', d
 has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_geneKO_uuids, type => 'attribute', metaclass => 'Typed');
+has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_reactionKO_uuids, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has outputfiles => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
@@ -71,11 +71,11 @@ has fbaPhenotypeSimulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
-has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
-has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
-has secondaryMedia => (is => 'rw', type => 'link(Biochemistry,media,secondaryMedia_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_secondaryMedia', clearer => 'clear_secondaryMedia', isa => 'ArrayRef');
+has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', trigger => &_trigger_model, isa => 'ModelSEED::MS::Model');
+has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', trigger => &_trigger_media, isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', trigger => &_trigger_geneKOs, isa => 'ArrayRef');
+has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', trigger => &_trigger_reactionKOs, isa => 'ArrayRef');
+has secondaryMedia => (is => 'rw', type => 'link(Biochemistry,media,secondaryMedia_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_secondaryMedia', clearer => 'clear_secondaryMedia', trigger => &_trigger_secondaryMedia, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -85,21 +85,61 @@ sub _build_model {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
 }
+sub _trigger_model {
+   my ($self, $new, $old) = @_;
+   $self->model_uuid( $new->uuid );
+}
+sub _trigger_model_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_model if( $self->model->uuid ne $new );
+}
 sub _build_media {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','media',$self->media_uuid());
+}
+sub _trigger_media {
+   my ($self, $new, $old) = @_;
+   $self->media_uuid( $new->uuid );
+}
+sub _trigger_media_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_media if( $self->media->uuid ne $new );
 }
 sub _build_geneKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_uuids());
 }
+sub _trigger_geneKOs {
+   my ($self, $new, $old) = @_;
+   $self->geneKO_uuids( $new->uuid );
+}
+sub _trigger_geneKO_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_geneKOs if( $self->geneKOs->uuid ne $new );
+}
 sub _build_reactionKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_uuids());
 }
+sub _trigger_reactionKOs {
+   my ($self, $new, $old) = @_;
+   $self->reactionKO_uuids( $new->uuid );
+}
+sub _trigger_reactionKO_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_reactionKOs if( $self->reactionKOs->uuid ne $new );
+}
 sub _build_secondaryMedia {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','media',$self->secondaryMedia_uuids());
+}
+sub _trigger_secondaryMedia {
+   my ($self, $new, $old) = @_;
+   $self->secondaryMedia_uuids( $new->uuid );
+}
+sub _trigger_secondaryMedia_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_secondaryMedia if( $self->secondaryMedia->uuid ne $new );
 }
 
 

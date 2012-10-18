@@ -16,15 +16,15 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has minimalMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has essentialNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has optionalNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has minimalMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_minimalMedia_uuid, type => 'attribute', metaclass => 'Typed');
+has essentialNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, trigger => &_trigger_essentialNutrient_uuids, type => 'attribute', metaclass => 'Typed');
+has optionalNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, trigger => &_trigger_optionalNutrient_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has minimalMedia => (is => 'rw', type => 'link(Biochemistry,media,minimalMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has essentialNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,essentialNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients', isa => 'ArrayRef');
-has optionalNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,optionalNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients', isa => 'ArrayRef');
+has minimalMedia => (is => 'rw', type => 'link(Biochemistry,media,minimalMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', trigger => &_trigger_minimalMedia, isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has essentialNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,essentialNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients', trigger => &_trigger_essentialNutrients, isa => 'ArrayRef');
+has optionalNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,optionalNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients', trigger => &_trigger_optionalNutrients, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -32,13 +32,37 @@ sub _build_minimalMedia {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','media',$self->minimalMedia_uuid());
 }
+sub _trigger_minimalMedia {
+   my ($self, $new, $old) = @_;
+   $self->minimalMedia_uuid( $new->uuid );
+}
+sub _trigger_minimalMedia_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_minimalMedia if( $self->minimalMedia->uuid ne $new );
+}
 sub _build_essentialNutrients {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->essentialNutrient_uuids());
 }
+sub _trigger_essentialNutrients {
+   my ($self, $new, $old) = @_;
+   $self->essentialNutrient_uuids( $new->uuid );
+}
+sub _trigger_essentialNutrient_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_essentialNutrients if( $self->essentialNutrients->uuid ne $new );
+}
 sub _build_optionalNutrients {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->optionalNutrient_uuids());
+}
+sub _trigger_optionalNutrients {
+   my ($self, $new, $old) = @_;
+   $self->optionalNutrient_uuids( $new->uuid );
+}
+sub _trigger_optionalNutrient_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_optionalNutrients if( $self->optionalNutrients->uuid ne $new );
 }
 
 

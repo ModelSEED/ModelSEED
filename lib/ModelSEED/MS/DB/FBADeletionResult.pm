@@ -16,18 +16,26 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has geneko_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has geneko_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, trigger => &_trigger_geneko_uuids, type => 'attribute', metaclass => 'Typed');
 has growthFraction => (is => 'rw', isa => 'Num', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', isa => 'ArrayRef');
+has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', trigger => &_trigger_genekos, isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_genekos {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->geneko_uuids());
+}
+sub _trigger_genekos {
+   my ($self, $new, $old) = @_;
+   $self->geneko_uuids( $new->uuid );
+}
+sub _trigger_geneko_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_genekos if( $self->genekos->uuid ne $new );
 }
 
 

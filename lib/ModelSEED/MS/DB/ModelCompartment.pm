@@ -18,7 +18,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type =>
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
+has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '5', required => 1, trigger => &_trigger_compartment_uuid, type => 'attribute', metaclass => 'Typed');
 has compartmentIndex => (is => 'rw', isa => 'Int', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
 has label => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has pH => (is => 'rw', isa => 'Num', printOrder => '3', default => '7', type => 'attribute', metaclass => 'Typed');
@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', trigger => &_trigger_compartment, isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:
@@ -39,6 +39,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_compartment {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_uuid());
+}
+sub _trigger_compartment {
+   my ($self, $new, $old) = @_;
+   $self->compartment_uuid( $new->uuid );
+}
+sub _trigger_compartment_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_compartment if( $self->compartment->uuid ne $new );
 }
 
 

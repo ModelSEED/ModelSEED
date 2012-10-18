@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_r
 
 
 # ATTRIBUTES:
-has reactionset_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has reactionset_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', trigger => &_trigger_reactionset_uuid, type => 'attribute', metaclass => 'Typed');
 has reactionsetType => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has multiplierType => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -24,13 +24,21 @@ has multiplier => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attrib
 
 
 # LINKS:
-has reactionset => (is => 'rw', type => 'link(Biochemistry,reactionSets,reactionset_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', clearer => 'clear_reactionset', isa => 'ModelSEED::MS::ReactionSet', weak_ref => 1);
+has reactionset => (is => 'rw', type => 'link(Biochemistry,reactionSets,reactionset_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', clearer => 'clear_reactionset', trigger => &_trigger_reactionset, isa => 'ModelSEED::MS::ReactionSet', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_reactionset {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','reactionSets',$self->reactionset_uuid());
+}
+sub _trigger_reactionset {
+   my ($self, $new, $old) = @_;
+   $self->reactionset_uuid( $new->uuid );
+}
+sub _trigger_reactionset_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_reactionset if( $self->reactionset->uuid ne $new );
 }
 
 

@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has biomass_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has biomass_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_biomass_uuid, type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'Str', printOrder => '9', type => 'attribute', metaclass => 'Typed');
 has lowerBound => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
@@ -27,13 +27,21 @@ has value => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', 
 
 
 # LINKS:
-has biomass => (is => 'rw', type => 'link(Model,biomasses,biomass_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', clearer => 'clear_biomass', isa => 'ModelSEED::MS::Biomass', weak_ref => 1);
+has biomass => (is => 'rw', type => 'link(Model,biomasses,biomass_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', clearer => 'clear_biomass', trigger => &_trigger_biomass, isa => 'ModelSEED::MS::Biomass', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_biomass {
   my ($self) = @_;
   return $self->getLinkedObject('Model','biomasses',$self->biomass_uuid());
+}
+sub _trigger_biomass {
+   my ($self, $new, $old) = @_;
+   $self->biomass_uuid( $new->uuid );
+}
+sub _trigger_biomass_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_biomass if( $self->biomass->uuid ne $new );
 }
 
 

@@ -23,17 +23,25 @@ has noGrowthCompounds => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', def
 has dependantReactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has dependantGenes => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fluxes => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has fbaPhenotypeSimulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has fbaPhenotypeSimulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_fbaPhenotypeSimulation_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
+has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', trigger => &_trigger_fbaPhenotypeSimulation, isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_fbaPhenotypeSimulation {
   my ($self) = @_;
   return $self->getLinkedObject('FBAFormulation','fbaPhenotypeSimulations',$self->fbaPhenotypeSimulation_uuid());
+}
+sub _trigger_fbaPhenotypeSimulation {
+   my ($self, $new, $old) = @_;
+   $self->fbaPhenotypeSimulation_uuid( $new->uuid );
+}
+sub _trigger_fbaPhenotypeSimulation_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_fbaPhenotypeSimulation if( $self->fbaPhenotypeSimulation->uuid ne $new );
 }
 
 

@@ -16,15 +16,15 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingSolution', weak_ref 
 
 
 # ATTRIBUTES:
-has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_reaction_uuid, type => 'attribute', metaclass => 'Typed');
 has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has candidateFeature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has candidateFeature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_candidateFeature_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
-has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef');
+has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', trigger => &_trigger_reaction, isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
+has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', trigger => &_trigger_candidateFeatures, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -32,9 +32,25 @@ sub _build_reaction {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','reactions',$self->reaction_uuid());
 }
+sub _trigger_reaction {
+   my ($self, $new, $old) = @_;
+   $self->reaction_uuid( $new->uuid );
+}
+sub _trigger_reaction_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_reaction if( $self->reaction->uuid ne $new );
+}
 sub _build_candidateFeatures {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->candidateFeature_uuids());
+}
+sub _trigger_candidateFeatures {
+   my ($self, $new, $old) = @_;
+   $self->candidateFeature_uuids( $new->uuid );
+}
+sub _trigger_candidateFeature_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_candidateFeatures if( $self->candidateFeatures->uuid ne $new );
 }
 
 

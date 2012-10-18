@@ -28,9 +28,9 @@ has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', m
 has defaultCharge => (is => 'rw', isa => 'Num', printOrder => '5', default => '0', type => 'attribute', metaclass => 'Typed');
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
-has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has structure_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', trigger => &_trigger_abstractCompound_uuid, type => 'attribute', metaclass => 'Typed');
+has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', trigger => &_trigger_comprisedOfCompound_uuids, type => 'attribute', metaclass => 'Typed');
+has structure_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_structure_uuids, type => 'attribute', metaclass => 'Typed');
 has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkas => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkbs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -41,9 +41,9 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
-has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', isa => 'ArrayRef');
-has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', isa => 'ArrayRef');
+has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', trigger => &_trigger_abstractCompound, isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
+has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', trigger => &_trigger_comprisedOfCompounds, isa => 'ArrayRef');
+has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', trigger => &_trigger_structures, isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -54,13 +54,37 @@ sub _build_abstractCompound {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','compounds',$self->abstractCompound_uuid());
 }
+sub _trigger_abstractCompound {
+   my ($self, $new, $old) = @_;
+   $self->abstractCompound_uuid( $new->uuid );
+}
+sub _trigger_abstractCompound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_abstractCompound if( $self->abstractCompound->uuid ne $new );
+}
 sub _build_comprisedOfCompounds {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_uuids());
 }
+sub _trigger_comprisedOfCompounds {
+   my ($self, $new, $old) = @_;
+   $self->comprisedOfCompound_uuids( $new->uuid );
+}
+sub _trigger_comprisedOfCompound_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_comprisedOfCompounds if( $self->comprisedOfCompounds->uuid ne $new );
+}
 sub _build_structures {
   my ($self) = @_;
   return $self->getLinkedObjectArray('BiochemistryStructures','structures',$self->structure_uuids());
+}
+sub _trigger_structures {
+   my ($self, $new, $old) = @_;
+   $self->structure_uuids( $new->uuid );
+}
+sub _trigger_structure_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_structures if( $self->structures->uuid ne $new );
 }
 
 

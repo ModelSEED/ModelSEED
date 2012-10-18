@@ -22,7 +22,7 @@ has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '3', default
 has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has subclass => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '4', required => 1, type => 'attribute', metaclass => 'Typed');
-has role_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has role_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_role_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has roles => (is => 'rw', type => 'link(Mapping,roles,role_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_roles', clearer => 'clear_roles', isa => 'ArrayRef');
+has roles => (is => 'rw', type => 'link(Mapping,roles,role_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_roles', clearer => 'clear_roles', trigger => &_trigger_roles, isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -40,6 +40,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_roles {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Mapping','roles',$self->role_uuids());
+}
+sub _trigger_roles {
+   my ($self, $new, $old) = @_;
+   $self->role_uuids( $new->uuid );
+}
+sub _trigger_role_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_roles if( $self->roles->uuid ne $new );
 }
 
 

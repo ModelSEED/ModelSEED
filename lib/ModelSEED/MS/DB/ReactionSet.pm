@@ -22,7 +22,7 @@ has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => '
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has reaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has reaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_reaction_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef');
+has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', trigger => &_trigger_reactions, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -39,6 +39,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_reactions {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reaction_uuids());
+}
+sub _trigger_reactions {
+   my ($self, $new, $old) = @_;
+   $self->reaction_uuids( $new->uuid );
+}
+sub _trigger_reaction_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_reactions if( $self->reactions->uuid ne $new );
 }
 
 

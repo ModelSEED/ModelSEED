@@ -16,20 +16,28 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', weak_ref => 1
 
 
 # ATTRIBUTES:
-has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_modelreaction_uuid, type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has upperBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has lowerBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelReaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelReaction', clearer => 'clear_modelReaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
+has modelReaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelReaction', clearer => 'clear_modelReaction', trigger => &_trigger_modelReaction, isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelReaction {
   my ($self) = @_;
   return $self->getLinkedObject('Model','modelreactions',$self->modelreaction_uuid());
+}
+sub _trigger_modelReaction {
+   my ($self, $new, $old) = @_;
+   $self->modelreaction_uuid( $new->uuid );
+}
+sub _trigger_modelreaction_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_modelReaction if( $self->modelReaction->uuid ne $new );
 }
 
 

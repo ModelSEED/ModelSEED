@@ -19,7 +19,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::BiomassTemplate', weak_ref => 
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'Str', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
-has compound_uuid => (is => 'rw', isa => 'Str', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
+has compound_uuid => (is => 'rw', isa => 'Str', printOrder => '0', default => '0', trigger => &_trigger_compound_uuid, type => 'attribute', metaclass => 'Typed');
 has coefficientType => (is => 'rw', isa => 'Str', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has coefficient => (is => 'rw', isa => 'Num', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 has condition => (is => 'rw', isa => 'Str', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
+has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', trigger => &_trigger_compound, isa => 'ModelSEED::MS::Compound', weak_ref => 1);
 
 
 # BUILDERS:
@@ -39,6 +39,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_compound {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','compounds',$self->compound_uuid());
+}
+sub _trigger_compound {
+   my ($self, $new, $old) = @_;
+   $self->compound_uuid( $new->uuid );
+}
+sub _trigger_compound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_compound if( $self->compound->uuid ne $new );
 }
 
 

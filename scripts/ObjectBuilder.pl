@@ -107,7 +107,7 @@ foreach my $name (keys(%{$objects})) {
             $modDate = 1;
         }
         if (defined($linkHash->{$attribute->{name}})) {
-        	#push(@$props, "trigger => sub {my \$self = shift;\$self->clear_".$linkHash->{$attribute->{name}}."();}");
+        	push(@$props, "trigger => \&_trigger_".$attribute->{name});
         }
         push(@$props, "type => 'attribute'", "metaclass => 'Typed'");
 
@@ -173,7 +173,6 @@ foreach my $name (keys(%{$objects})) {
             	$subobject->{class} = $method;
             }
             my $weak = (defined($subobject->{weak})) ? $subobject->{weak} : 1;
-            warn "$name $soname is notweak" if(!$weak);
             # find link class
             my $class;
             foreach my $parent_so (@{$objects->{$parent}->{subobjects}}) {
@@ -197,6 +196,7 @@ foreach my $name (keys(%{$objects})) {
                 "lazy => 1",
                 "builder => '_build_$soname'",
             	"clearer => 'clear_$soname'",
+                "trigger => \&_trigger_$soname",
             ];
             if($can_be_undef) {
                 push(@$props, "isa => 'Maybe[$type]'");
@@ -212,7 +212,7 @@ foreach my $name (keys(%{$objects})) {
     }
     push(@$output, "", "");
 
-    #Printing builders
+    # Printing builders
     push(@$output,("# BUILDERS:"));
     if ($uuid == 1) {
         push(@$output, "sub _build_uuid { return Data::UUID->new()->create_str(); }");
@@ -236,6 +236,23 @@ foreach my $name (keys(%{$objects})) {
 	            "}"
 	        );
         }
+        # And triggers
+        my $name = $subobject->{name};
+        my $attribute = $subobject->{attribute};
+        # A trigger on the object to update the UUID
+        push(@$output,
+            "sub _trigger_$name {",
+            "   my (\$self, \$new, \$old) = \@_;",
+            "   \$self->$attribute( \$new->uuid );",
+            "}"
+        );
+        # A trigger on the uuid to clear the object
+        push(@$output,
+            "sub _trigger_$attribute {",
+            "    my (\$self, \$new, \$old) = \@_;",
+            "    \$self->clear_$name if( \$self->$name\->uuid ne \$new );",
+            "}",
+        );
     }
     push(@$output, "", "");
 

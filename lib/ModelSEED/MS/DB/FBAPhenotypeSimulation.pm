@@ -20,10 +20,10 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has label => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has pH => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has temperature => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has additionalCpd_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has additionalCpd_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, trigger => &_trigger_additionalCpd_uuids, type => 'attribute', metaclass => 'Typed');
+has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, trigger => &_trigger_geneKO_uuids, type => 'attribute', metaclass => 'Typed');
+has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, trigger => &_trigger_reactionKO_uuids, type => 'attribute', metaclass => 'Typed');
+has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_media_uuid, type => 'attribute', metaclass => 'Typed');
 has observedGrowthFraction => (is => 'rw', isa => 'Num', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 
 
@@ -32,10 +32,10 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
-has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
-has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
+has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', trigger => &_trigger_media, isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', trigger => &_trigger_geneKOs, isa => 'ArrayRef');
+has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', trigger => &_trigger_reactionKOs, isa => 'ArrayRef');
+has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', trigger => &_trigger_additionalCpds, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -44,17 +44,49 @@ sub _build_media {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','media',$self->media_uuid());
 }
+sub _trigger_media {
+   my ($self, $new, $old) = @_;
+   $self->media_uuid( $new->uuid );
+}
+sub _trigger_media_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_media if( $self->media->uuid ne $new );
+}
 sub _build_geneKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_uuids());
+}
+sub _trigger_geneKOs {
+   my ($self, $new, $old) = @_;
+   $self->geneKO_uuids( $new->uuid );
+}
+sub _trigger_geneKO_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_geneKOs if( $self->geneKOs->uuid ne $new );
 }
 sub _build_reactionKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_uuids());
 }
+sub _trigger_reactionKOs {
+   my ($self, $new, $old) = @_;
+   $self->reactionKO_uuids( $new->uuid );
+}
+sub _trigger_reactionKO_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_reactionKOs if( $self->reactionKOs->uuid ne $new );
+}
 sub _build_additionalCpds {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compounds',$self->additionalCpd_uuids());
+}
+sub _trigger_additionalCpds {
+   my ($self, $new, $old) = @_;
+   $self->additionalCpd_uuids( $new->uuid );
+}
+sub _trigger_additionalCpd_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_additionalCpds if( $self->additionalCpds->uuid ne $new );
 }
 
 

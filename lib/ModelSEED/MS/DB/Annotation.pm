@@ -24,7 +24,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'SEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '2', type => 'attribute', metaclass => 'Typed');
+has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '2', trigger => &_trigger_mapping_uuid, type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
@@ -39,7 +39,7 @@ has subsystemStates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub {
 
 
 # LINKS:
-has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'ModelSEED::MS::Mapping');
+has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', trigger => &_trigger_mapping, isa => 'ModelSEED::MS::Mapping');
 
 
 # BUILDERS:
@@ -48,6 +48,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_mapping {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Mapping',$self->mapping_uuid());
+}
+sub _trigger_mapping {
+   my ($self, $new, $old) = @_;
+   $self->mapping_uuid( $new->uuid );
+}
+sub _trigger_mapping_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_mapping if( $self->mapping->uuid ne $new );
 }
 
 

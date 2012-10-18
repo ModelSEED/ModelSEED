@@ -20,16 +20,16 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', type => 'attribute', metaclass => 'Typed');
-has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', trigger => &_trigger_fbaFormulation_uuid, type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_model_uuid, type => 'attribute', metaclass => 'Typed');
 has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '2', default => '0', type => 'attribute', metaclass => 'Typed');
 has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
 has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '4', default => '0', type => 'attribute', metaclass => 'Typed');
 has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '5', default => '1', type => 'attribute', metaclass => 'Typed');
 has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '6', default => '1', type => 'attribute', metaclass => 'Typed');
-has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_guaranteedReaction_uuids, type => 'attribute', metaclass => 'Typed');
+has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_blacklistedReaction_uuids, type => 'attribute', metaclass => 'Typed');
+has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_allowableCompartment_uuids, type => 'attribute', metaclass => 'Typed');
 has reactionActivationBonus => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
 has drainFluxMultiplier => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
 has directionalityMultiplier => (is => 'rw', isa => 'Num', printOrder => '9', default => '1', type => 'attribute', metaclass => 'Typed');
@@ -53,11 +53,11 @@ has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => s
 
 
 # LINKS:
-has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
-has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', isa => 'ModelSEED::MS::FBAFormulation');
-has guaranteedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions', isa => 'ArrayRef');
-has blacklistedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions', clearer => 'clear_blacklistedReactions', isa => 'ArrayRef');
-has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', isa => 'ArrayRef');
+has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', trigger => &_trigger_model, isa => 'ModelSEED::MS::Model');
+has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', trigger => &_trigger_fbaFormulation, isa => 'ModelSEED::MS::FBAFormulation');
+has guaranteedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions', trigger => &_trigger_guaranteedReactions, isa => 'ArrayRef');
+has blacklistedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions', clearer => 'clear_blacklistedReactions', trigger => &_trigger_blacklistedReactions, isa => 'ArrayRef');
+has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', trigger => &_trigger_allowableCompartments, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -67,21 +67,61 @@ sub _build_model {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
 }
+sub _trigger_model {
+   my ($self, $new, $old) = @_;
+   $self->model_uuid( $new->uuid );
+}
+sub _trigger_model_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_model if( $self->model->uuid ne $new );
+}
 sub _build_fbaFormulation {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','FBAFormulation',$self->fbaFormulation_uuid());
+}
+sub _trigger_fbaFormulation {
+   my ($self, $new, $old) = @_;
+   $self->fbaFormulation_uuid( $new->uuid );
+}
+sub _trigger_fbaFormulation_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_fbaFormulation if( $self->fbaFormulation->uuid ne $new );
 }
 sub _build_guaranteedReactions {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->guaranteedReaction_uuids());
 }
+sub _trigger_guaranteedReactions {
+   my ($self, $new, $old) = @_;
+   $self->guaranteedReaction_uuids( $new->uuid );
+}
+sub _trigger_guaranteedReaction_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_guaranteedReactions if( $self->guaranteedReactions->uuid ne $new );
+}
 sub _build_blacklistedReactions {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->blacklistedReaction_uuids());
 }
+sub _trigger_blacklistedReactions {
+   my ($self, $new, $old) = @_;
+   $self->blacklistedReaction_uuids( $new->uuid );
+}
+sub _trigger_blacklistedReaction_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_blacklistedReactions if( $self->blacklistedReactions->uuid ne $new );
+}
 sub _build_allowableCompartments {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','compartments',$self->allowableCompartment_uuids());
+}
+sub _trigger_allowableCompartments {
+   my ($self, $new, $old) = @_;
+   $self->allowableCompartment_uuids( $new->uuid );
+}
+sub _trigger_allowableCompartment_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_allowableCompartments if( $self->allowableCompartments->uuid ne $new );
 }
 
 

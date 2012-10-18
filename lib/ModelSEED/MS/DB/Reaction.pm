@@ -29,7 +29,7 @@ has thermoReversibility => (is => 'rw', isa => 'Str', printOrder => '6', type =>
 has defaultProtons => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has status => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has abstractReaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has abstractReaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', trigger => &_trigger_abstractReaction_uuid, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -41,7 +41,7 @@ has reagents => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return
 
 
 # LINKS:
-has abstractReaction => (is => 'rw', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', clearer => 'clear_abstractReaction', isa => 'Maybe[ModelSEED::MS::Reaction]', weak_ref => 1);
+has abstractReaction => (is => 'rw', type => 'link(Biochemistry,reactions,abstractReaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractReaction', clearer => 'clear_abstractReaction', trigger => &_trigger_abstractReaction, isa => 'Maybe[ModelSEED::MS::Reaction]', weak_ref => 1);
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -51,6 +51,14 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_abstractReaction {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','reactions',$self->abstractReaction_uuid());
+}
+sub _trigger_abstractReaction {
+   my ($self, $new, $old) = @_;
+   $self->abstractReaction_uuid( $new->uuid );
+}
+sub _trigger_abstractReaction_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_abstractReaction if( $self->abstractReaction->uuid ne $new );
 }
 
 

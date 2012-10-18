@@ -16,20 +16,28 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Media', weak_ref => 1, type =>
 
 
 # ATTRIBUTES:
-has compound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_compound_uuid, type => 'attribute', metaclass => 'Typed');
 has concentration => (is => 'rw', isa => 'Num', printOrder => '0', default => '0.001', type => 'attribute', metaclass => 'Typed');
 has maxFlux => (is => 'rw', isa => 'Num', printOrder => '0', default => '100', type => 'attribute', metaclass => 'Typed');
 has minFlux => (is => 'rw', isa => 'Num', printOrder => '0', default => '-100', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
+has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', trigger => &_trigger_compound, isa => 'ModelSEED::MS::Compound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_compound {
   my ($self) = @_;
   return $self->getLinkedObject('Biochemistry','compounds',$self->compound_uuid());
+}
+sub _trigger_compound {
+   my ($self, $new, $old) = @_;
+   $self->compound_uuid( $new->uuid );
+}
+sub _trigger_compound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_compound if( $self->compound->uuid ne $new );
 }
 
 

@@ -17,7 +17,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1,
 
 
 # ATTRIBUTES:
-has complex_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has complex_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, trigger => &_trigger_complex_uuid, type => 'attribute', metaclass => 'Typed');
 has note => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
@@ -26,13 +26,21 @@ has modelReactionProteinSubunits => (is => 'rw', isa => 'ArrayRef[HashRef]', def
 
 
 # LINKS:
-has complex => (is => 'rw', type => 'link(Mapping,complexes,complex_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', isa => 'ModelSEED::MS::Complex', weak_ref => 1);
+has complex => (is => 'rw', type => 'link(Mapping,complexes,complex_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', trigger => &_trigger_complex, isa => 'ModelSEED::MS::Complex', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_complex {
   my ($self) = @_;
   return $self->getLinkedObject('Mapping','complexes',$self->complex_uuid());
+}
+sub _trigger_complex {
+   my ($self, $new, $old) = @_;
+   $self->complex_uuid( $new->uuid );
+}
+sub _trigger_complex_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_complex if( $self->complex->uuid ne $new );
 }
 
 

@@ -16,20 +16,28 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', weak_ref => 1
 
 
 # ATTRIBUTES:
-has modelcompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelcompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, trigger => &_trigger_modelcompound_uuid, type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has upperBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has lowerBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
+has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', trigger => &_trigger_modelCompound, isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelCompound {
   my ($self) = @_;
   return $self->getLinkedObject('Model','modelcompounds',$self->modelcompound_uuid());
+}
+sub _trigger_modelCompound {
+   my ($self, $new, $old) = @_;
+   $self->modelcompound_uuid( $new->uuid );
+}
+sub _trigger_modelcompound_uuid {
+    my ($self, $new, $old) = @_;
+    $self->clear_modelCompound if( $self->modelCompound->uuid ne $new );
 }
 
 

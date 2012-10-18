@@ -20,9 +20,9 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenFormulation', weak_ref =
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has solutionCost => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has biomassSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has mediaRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has additionalKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has biomassSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_biomassSupplement_uuids, type => 'attribute', metaclass => 'Typed');
+has mediaRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_mediaRemoval_uuids, type => 'attribute', metaclass => 'Typed');
+has additionalKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, trigger => &_trigger_additionalKO_uuids, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -34,9 +34,9 @@ has gapgenSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', isa => 'ArrayRef');
-has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', isa => 'ArrayRef');
-has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', isa => 'ArrayRef');
+has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', trigger => &_trigger_biomassSupplements, isa => 'ArrayRef');
+has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', trigger => &_trigger_mediaRemovals, isa => 'ArrayRef');
+has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', trigger => &_trigger_additionalKOs, isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -46,13 +46,37 @@ sub _build_biomassSupplements {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Model','modelcompounds',$self->biomassSupplement_uuids());
 }
+sub _trigger_biomassSupplements {
+   my ($self, $new, $old) = @_;
+   $self->biomassSupplement_uuids( $new->uuid );
+}
+sub _trigger_biomassSupplement_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_biomassSupplements if( $self->biomassSupplements->uuid ne $new );
+}
 sub _build_mediaRemovals {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Model','modelcompounds',$self->mediaRemoval_uuids());
 }
+sub _trigger_mediaRemovals {
+   my ($self, $new, $old) = @_;
+   $self->mediaRemoval_uuids( $new->uuid );
+}
+sub _trigger_mediaRemoval_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_mediaRemovals if( $self->mediaRemovals->uuid ne $new );
+}
 sub _build_additionalKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Model','modelreactions',$self->additionalKO_uuids());
+}
+sub _trigger_additionalKOs {
+   my ($self, $new, $old) = @_;
+   $self->additionalKO_uuids( $new->uuid );
+}
+sub _trigger_additionalKO_uuids {
+    my ($self, $new, $old) = @_;
+    $self->clear_additionalKOs if( $self->additionalKOs->uuid ne $new );
 }
 
 
