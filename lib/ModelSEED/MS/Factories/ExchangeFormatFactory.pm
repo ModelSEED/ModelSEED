@@ -48,16 +48,16 @@ Description:
 =cut
 
 sub buildFBAFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+	my $args = args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		media => "Media/name/Complete",
 		type => "singlegrowth",
 		simpleThermoConstraints => 0,
@@ -92,7 +92,7 @@ sub buildFBAFormulation {
 			coefficient => 1
 		}],
 		fbaPhenotypeSimulations => []
-	});
+	}, $data);
 	# Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{media},"Media");
 	if (!defined($media)) {
@@ -151,18 +151,18 @@ Description:
 =cut
 
 sub buildGapfillingFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+	my $args = args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
 		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
@@ -235,7 +235,7 @@ rxn01267 )),
 		transporterMultiplier => 1,
 		gapfillingGeneCandidates => [],
 		reactionSetMultipliers => [],
-	});
+	}, $data);
 	#Creating gapfilling formulation object
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
 		parent => $model->parent(),
@@ -280,25 +280,25 @@ Description:
 =cut
 
 sub buildGapgenFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+    my $args = args(["model"], {
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes			
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		referenceMedia => "Media/name/".$fbaform->media()->name(),
 		fbaFormulation => $fbaform,
 		mediaHypothesis => 0,
 		biomassHypothesis => 0,
 		gprHypothesis => 0,
 		reactionRemovalHypothesis => 1,
-	});
+	}, $data);
 	#Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{referenceMedia},"Media");
 	if (!defined($media)) {
@@ -357,13 +357,13 @@ Description:
 =cut
 
 sub parseExchangeFileArray {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+	my $args = args([],{
 		text => undef,
 		filename => undef,
 		array => [],
 		overrides => {}
-	});
+	}, @_);
 	if (defined($args->{filename}) && -e $args->{filename}) {
 		$args->{array} = ModelSEED::utilities::LOADFILE($args->{filename}); 
 		delete $args->{text};
@@ -414,13 +414,13 @@ Description:
 =cut
 
 sub buildObjectFromExchangeFileArray {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["array"],{
+    my $self = shift;
+	my $args = args(["array"],{
 		Biochemistry => undef,
 		Mapping => undef,
 		Model => undef,
 		Annotation => undef
-	});
+	}, @_);
 	my $data = $self->parseExchangeFileArray($args);
 	#The data object must have an ID, which is used to identify the type
 	if (!defined($data->{id})) {
@@ -544,6 +544,7 @@ sub createFromAPI {
 	my ($self,$class,$parent,$data) = @_;
 	$data->{parent} = $parent;
 	if ($class eq "Media") {
+        # FIXME : not sure what to do with this case, only time used?
 		$data = ModelSEED::utilities::ARGS($data,["name","compounds"],{},{
 			isdefined => "isDefined",
 			isminimal => "isMinimal",
