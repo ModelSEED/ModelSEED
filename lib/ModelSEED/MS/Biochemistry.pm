@@ -369,19 +369,23 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my $self = shift;
-	my $args = args(["names","id"],{
-		aliasType => $self->defaultNameSpace(),
-		formula => ["unknown"],
-		mass => [10000000],
-		charge => [10000000],
-		deltag => [10000000],
-		deltagerr => [10000000]
-	}, @_);
-	# Remove names that are too long
-	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    my ($self,$args,$mergeto) = @_;
+
+    # Remove names that are too long
+    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    # In case all the names were too long, use the id as the name
     push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
-    $args->{abbreviation} = $args->{names}->[0] unless defined $args->{abbreviation};
+
+    $args = ModelSEED::utilities::ARGS($args,["names","id"],{
+	aliasType => $self->defaultNameSpace(),
+	abbreviation => [$args->{names}->[0]],
+	formula => ["unknown"],
+	mass => [10000000],
+	charge => [10000000],
+	deltag => [10000000],
+	deltagerr => [10000000]
+				       });
+
 	# Checking for id uniqueness within scope of own aliasType
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
@@ -475,18 +479,23 @@ Description:
 =cut
 
 sub addReactionFromHash {
-    my $self = shift;
-	my $args = args(["equation","id"], {
-		aliasType    => $self->defaultNameSpace(),
-		direction => ["="],
-		deltag => [10000000],
-		deltagerr => [10000000],
-		enzymes => []
-	}, @_);
-    $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
-    $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
-	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
-	push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
+    my ($self,$args,$mergeto) = @_;
+
+    # Remove names that are too long
+    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    # In case all the names were too long, use the id as the name
+    push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
+
+    $args = ModelSEED::utilities::ARGS($args,["equation","id"],{
+	aliasType => $self->defaultNameSpace(),
+	names => [$args->{id}->[0]],
+	abbreviation => [$args->{id}->[0]],
+	direction => ["="],
+	deltag => [10000000],
+	deltagerr => [10000000],
+	enzymes => []
+				       });
+
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
@@ -609,7 +618,7 @@ sub checkForDuplicateReaction{
     if(defined($args->{id}) && defined($args->{type})){
 	$rxn=$self->getObjectByAlias('reactions',$args->{id},$args->{type});
     }elsif(defined($args->{uuid})){
-	$rxn->$self->getObject('reactions',{uuid=>$args->{uuid}});
+	$rxn=$self->getObject('reactions',$args->{uuid});
     }
 
     if(!defined($rxn)){
@@ -618,11 +627,11 @@ sub checkForDuplicateReaction{
     }
     
     my $code = $rxn->equationCode();
-    my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
-    if (defined($searchRxn)) {
-	return $searchRxn->uuid();
-    }else{
+    my $searchRxns = $self->queryObjects("reactions",{equationCode => $code});
+    if(scalar(@$searchRxns)==0 || (scalar(@$searchRxns)==1 && $searchRxns->[0]->uuid() eq $rxn->uuid())){
 	return 0;
+    }else{
+	return [ grep { $_->uuid() ne $rxn->uuid() } @$searchRxns];
     }
 }
 
