@@ -599,6 +599,33 @@ sub addReactionFromHash {
 	return $rxn;
 }
 
+sub checkForDuplicateReaction{
+    my $self = shift;
+    my $args = args([], {type => undef,
+			 id => undef,
+			 uuid => undef}, @_);
+    
+    my $rxn=undef;
+    if(defined($args->{id}) && defined($args->{type})){
+	$rxn=$self->getObjectByAlias('reactions',$args->{id},$args->{type});
+    }elsif(defined($args->{uuid})){
+	$rxn->$self->getObject('reactions',{uuid=>$args->{uuid}});
+    }
+
+    if(!defined($rxn)){
+	ModelSEED::utilities::USEWARNING("Reaction not found\n");
+	return -1;
+    }
+    
+    my $code = $rxn->equationCode();
+    my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
+    if (defined($searchRxn)) {
+	return $searchRxn->uuid();
+    }else{
+	return 0;
+    }
+}
+
 sub __upgrade__ {
 	my ($class,$version) = @_;
 	if ($version == 1) {

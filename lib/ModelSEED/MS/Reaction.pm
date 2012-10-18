@@ -375,5 +375,18 @@ sub checkReactionMassChargeBalance {
 	return $results;
 }
 
+sub checkForDuplicateCompounds{
+    my %cpdCmpCount=();
+    foreach my $rgt (@{$self->reagents()}){
+	$cpdCmpCount{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+    }
+
+    if(scalar( grep { $cpdCmpCount->{$_} >1 } keys %$cpdCmpCount)>0){
+	return 0;
+    }else{
+	return 1;
+    }
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
