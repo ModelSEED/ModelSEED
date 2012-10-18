@@ -10,6 +10,7 @@ use Class::Autouse qw(
     ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+use ModelSEED::utilities qw( set_verbose verbose );
 sub abstract { return "Identify changes in the model to force an objective to zero in the specified conditions"; }
 sub usage_desc { return "model gapgen [ model || - ] [options]"; }
 sub opt_spec {
@@ -48,7 +49,7 @@ sub execute {
     (my $model,my $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
 	if ($opts->{verbose}) {
-    	ModelSEED::utilities::SETVERBOSE(1);
+        set_verbose(1);
     	delete $opts->{verbose};
     }
 	#Standard commands to handle where output will be printed
@@ -83,17 +84,17 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapgenFormulation = $exchange_factory->buildGapgenFormulation($input);
-    ModelSEED::utilities::VERBOSEMSG("Running gapgeneration...");
+    verbose("Running gapgeneration...");
     $gapgenFormulation = $model->gapgenModel({
         gapgenFormulation => $gapgenFormulation,
     });
 	my $solutions = $gapgenFormulation->gapgenSolutions();
     if (!defined($solutions) || @{$solutions} == 0) {
-    	ModelSEED::utilities::VERBOSEMSG("Could not find knockouts to meet gapgen specifications!");
+    	verbose("Could not find knockouts to meet gapgen specifications!");
     	return;
     }
     my $numSolutions = @{$solutions};
-	ModelSEED::utilities::VERBOSEMSG($numSolutions." viable solutions identified.");
+	verbose($numSolutions." viable solutions identified.");
     if ($opts->{printraw}) {
     	for (my $i=0; $i < @{$solutions}; $i++) {
     		$solutions->[$i] = $solutions->[$i]->serializeToDB();
@@ -104,17 +105,17 @@ sub execute {
     	print $gapgenFormulation->printSolutions(($index-1));
     }
     if ($opts->{integratesol}) {
-    	ModelSEED::utilities::VERBOSEMSG("Automatically integrating first solution in model.");
+    	verbose("Automatically integrating first solution in model.");
     	$model->integrateGapgenSolution($gapgenFormulation,0);
     }
     if ($opts->{saveas}) {
     	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	ModelSEED::utilities::VERBOSEMSG("New alias set for model:".$ref);
+    	verbose("New alias set for model:".$ref);
     }
     if ($opts->{dryrun}) {
-    	ModelSEED::utilities::VERBOSEMSG("Dry run selected. Results not saved!");
+    	verbose("Dry run selected. Results not saved!");
     } else {
-    	ModelSEED::utilities::VERBOSEMSG("Saving model to:".$ref);
+    	verbose("Saving model to:".$ref);
     	$store->save_object("fBAFormulation/".$gapgenFormulation->fbaFormulation()->uuid(),$gapgenFormulation->fbaFormulation());
 		$store->save_object("gapgenFormulation/".$gapgenFormulation->uuid(),$gapgenFormulation);
     	$store->save_object($ref,$model);

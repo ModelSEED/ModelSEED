@@ -1,3 +1,4 @@
+package ModelSEED::utilities;
 use strict;
 use warnings;
 use Carp qw(cluck);
@@ -5,8 +6,137 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 use File::Path;
 use File::Copy::Recursive;
-#use FIGMODELTable;
-package ModelSEED::utilities;
+use parent qw( Exporter );
+our @EXPORT_OK = qw( args usage error verbose set_verbose);
+our $VERBOSE = undef; # A GLOB Reference to print verbose() calls to, or undef.
+
+=head1 ModelSEED::utilities
+
+Basic utility functions in the ModelSEED
+
+=head2 Argument Processing
+
+=head3 args
+
+    $args = args( $required, $optional, ... );
+
+Process arguments for a given function. C<required> is an ArrayRef
+of strings that correspond to required arguments for the function.
+C<optional> is a HashRef that defines arguments with default values.
+The remaining values are the arguments to the function. E.g.
+
+    sub function {
+        my $self = shift;
+        my $args = args ( [ "name" ], { phone => "867-5309" }, @_ );
+        return $args;
+    }
+    # The following calls will work
+    print Dumper function(name => "bob", phone => "555-555-5555");
+    # Prints { name => "bob", phone => "555-555-5555" }
+    print Dumper function( { name => "bob" } );
+    # Prints { name => "bob", phone => "867-5309" }
+    print Dumper function();
+    # dies, name must be defined...
+
+=head2 Warnings
+
+=head3 error
+
+    error("String");
+
+Confesses an error to stderr.
+
+=head2 Printing Verbosely
+
+There are two functions in this package that control the printing of verbose
+messages: C<verbose> and C<set_verbose>.
+
+=head3 verbose
+
+    $rtv = verbose("string one", "string two");
+
+Call with a list of strings to print a message if the verbose flag has been
+set. If the list of strings is empty, nothing is printed. Returns true if
+the verbose flag is set. Otherwise returns undef.
+
+=head3 set_verbose
+
+    $rtv = set_verbose($arg);
+
+Calling with a GLOB reference sets the filehandle that C<verbose()>
+prints to that reference and sets the verbose flag. Calling with
+the value 1 sets the verbose flag and causes C<verbose()> to print
+to C<STDERR>.  Calling with any other unsets the verbose flag.
+Returns the GLOB Reference that C<verbose()> will print to if the
+verbose flag is set. Otherwise it returns undef.
+
+=cut
+
+sub set_verbose {
+    my $val = shift;
+    if(defined $val && $val == 1) {
+        $VERBOSE = \*STDERR;
+    } elsif(defined $val && ref $val eq 'GLOB') {
+        $VERBOSE = $val;
+    } else {
+        $VERBOSE = undef;
+    }
+    return $VERBOSE;
+}
+
+sub verbose {
+    if ( defined $VERBOSE ) {
+        print $VERBOSE @_ if @_;
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+sub _get_args {
+    my $args;
+    if (ref $_[0] eq 'HASH') {
+        $args = $_[0];
+    } elsif(scalar(@_) % 2 == 0) {
+        my %hash = @_;
+        $args = \%hash;
+    } elsif(@_) {
+        my ($package, $filename, $line, $sub) = caller(1);
+        error("Final argument to $package\:\:$sub must be a ".
+              "HashRef or an Array of even length");
+    } else {
+        $args = {};
+    }
+    return $args;
+}
+
+sub usage {
+    my $mandatory = shift;
+    my $optional  = shift;
+    my $args = _get_args(@_);
+    return USAGE($mandatory, $optional, $args);
+}
+
+sub args {
+    my $mandatory = shift;
+    my $optional  = shift;
+    my $args      = _get_args(@_);
+    my @errors;
+    foreach my $arg (@$mandatory) {
+        push(@errors, $arg) unless defined($args->{$arg});
+    }
+    if (@errors) {
+        my $usage = usage($mandatory, $optional, $args);
+        my $missing = join("; ", @errors);
+        error("Mandatory arguments $missing missing. Usage: $usage");
+    }
+    foreach my $arg (keys %$optional) {
+        $args->{$arg} = $optional->{$arg} unless defined $args->{$arg};
+    }
+    return $args;
+}
+
+sub error { Carp::confess($_[0]); }
 
 =head3 ARGS
 
@@ -61,7 +191,7 @@ sub USAGE {
 	my ($mandatoryArguments,$optionalArguments,$args) = @_;
 	my $current = 1;
 	my @calldata = caller($current);
-	while ($calldata[3] eq "ModelSEED::utilities::ARGS" || $calldata[3] eq "ModelSEED::FIGMODEL::process_arguments") {
+	while ($calldata[3] eq "ModelSEED::utilities::ARGS") {
 		$current++;
 		@calldata = caller($current);
 	}
@@ -143,83 +273,6 @@ Description:
 sub USEWARNING {	
 	my ($message) = @_;
 	print STDERR "\n".$message."\n\n";
-}
-
-=head3 VERBOSEMSG
-
-Definition:
-	void ModelSEED::utilities::USEWARNING();
-Description:	
-	Prints a message to STDOUT if the user has set the system to verbose.
-
-=cut
-
-sub VERBOSEMSG {	
-	my ($message) = @_;
-	if (ModelSEED::utilities::VERBOSE()) {
-		print STDOUT "\n".$message."\n";
-	}
-}
-
-=head3 VERBOSE
-
-Definition:
-	bool ModelSEED::utilities::VERBOSE();
-Description:	
-	Indicates if the system is in verbose mode.
-
-=cut
-
-sub VERBOSE {	
-	if (!defined($ENV{MODEL_SEED_VERBOSE})) {
-		$ENV{MODEL_SEED_VERBOSE} = 0;
-	}
-	return $ENV{MODEL_SEED_VERBOSE};
-}
-
-=head3 SETVERBOSE
-
-Definition:
-	void ModelSEED::utilities::SETVERBOSE(bool input);
-Description:	
-	Sets the ModelSEED to be verbose or not
-
-=cut
-
-sub SETVERBOSE {	
-	my ($verbose) = @_;
-	if (defined($verbose) && $verbose eq "1") {
-		$ENV{MODEL_SEED_VERBOSE} = 1;
-	} elsif (defined($verbose)) {
-		$ENV{MODEL_SEED_VERBOSE} = 0;
-	}
-}
-
-=head3 WARNING
-
-Definition:
-	void ModelSEED::utilities::WARNING();
-Description:	
-
-=cut
-
-sub WARNING {	
-	my ($message) = @_;
-	Carp::cluck($message);
-}
-
-=head3 TIMESTAMP
-Definition:
-	TIMESTAMP = ModelSEED::utilities::TIMESTAMP();
-Description:	
-
-=cut
-
-sub TIMESTAMP {
-	my ($sec,$min,$hour,$day,$month,$year) = gmtime(time());
-	$year += 1900;
-	$month += 1;
-	return $year."-".$month."-".$day.' '.$hour.':'.$min.':'.$sec;
 }
 
 =head3 PRINTFILE
@@ -370,97 +423,6 @@ sub PRINTTABLESPARSE {
     }
 }
 
-=head3 MAKEXLS
-
-Definition:
-	{} = ModelSEED::utilities::MAKEXLS({
-		filename => string,
-		sheetnames => [string],
-		sheetdata => [FIGMODELTable]
-	});
-Description:
-
-=cut
-
-sub MAKEXLS {
-    my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["filename","sheetnames","sheetdata"],{});
-    my $workbook = $args->{filename};
-    for(my $i=0; $i<@{$args->{sheetdata}}; $i++) {
-        $workbook = $args->{sheetdata}->[$i]->add_as_sheet($args->{sheetnames}->[$i],$workbook);
-    }
-    $workbook->close();
-    return;
-}
-
-=head3 BUILDCOMMANDLINE
-
-Definition:
-	string = ModelSEED::utilities::BUILDCOMMANDLINE({
-		function => string:function name,
-		arguments => {}
-	});
-Description:
-	This function converts the job specifications into a ModelDriver command
-Example:
-
-=cut
-
-sub BUILDCOMMANDLINE {
-	my ($args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["function"],{
-		arguments => {},
-		nohup => 0
-	});
-	my $command = $ENV{"MODEL_SEED_CORE"}."/bin/ModelDriver ".$args->{function};
-	foreach my $argument (keys(%{$args->{arguments}})) {
-		$command .= " -".$argument." ".$args->{arguments}->{$argument};
-	}
-	if ($args->{nohup} == 1) {
-		$command = "nohup ".$command." &";
-	}
-	return $command;
-}
-
-=head3 RUNMODELDRIVER
-
-Definition:
-	string = ModelSEED::utilities::RUNMODELDRIVER({
-		function => string:function name,
-		arguments => {},
-		nohup => 0/1
-	});
-Description:
-	This function converts the job specifications into a ModelDriver command and runs it
-Example:
-
-=cut
-
-sub RUNMODELDRIVER {
-	my ($args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["function"],{
-		arguments => {},
-		nohup => 0
-	});
-	my $command = ModelSEED::utilities::BUILDCOMMANDLINE($args);
-	print "Now running:".$command."!\n";
-	system($command);
-}
-
-=head3 MODELSEEDCOREDIR
-
-Definition:
-	string = ModelSEED::utilities::MODELSEEDCOREDIR();
-Description:
-	This function converts the job specifications into a ModelDriver command and runs it
-Example:
-
-=cut
-
-sub MODELSEEDCOREDIR {
-	return $ENV{MODEL_SEED_CORE};
-}
-
 =head3 MODELSEEDCORE
 
 Definition:
@@ -501,40 +463,6 @@ Example:
 
 sub CPLEX {
 	return $ENV{CPLEX};
-}
-
-=head3 Explore
-
-Definition:
-	string = ModelSEED::utilities::Explore($tree);
-Description:
-	Scans the input data tree for anomalies
-Example:
-
-=cut
-
-sub Explore {
-	my ($data,$count) = @_;
-	foreach my $key (keys(%{$data})) {
-		print "Attribute:".$key.".".$count."\n";
-		if (ref($data->{$key}) eq "ARRAY") {
-			foreach my $obj (@{$data->{$key}}) {
-				if (ref($obj) =~ m/^HASH/) {
-					ModelSEED::utilities::Explore($obj,($count+1));
-				} elsif (ref($obj) =~ m/^ModelSEED/) {
-					print $count.".3!\n";
-				}
-			}
-		} elsif (ref($data->{$key}) =~ m/^HASH/) {
-			foreach my $keytwo (keys(%{$data->{$key}})) {
-				if (ref($data->{$key}) =~ m/ModelSEED/) {
-					print $count.".2!\n";
-				}
-			}
-		} elsif (ref($data->{$key}) =~ m/^ModelSEED/) {
-			print $count.".1!\n";
-		}
-	}
 }
 
 =head3 parseArrayString

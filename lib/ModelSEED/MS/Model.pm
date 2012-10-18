@@ -14,6 +14,7 @@ use namespace::autoclean;
 use Class::Autouse qw(
     Graph::Directed
 );
+use ModelSEED::utilities qw( error args verbose );
 extends 'ModelSEED::MS::DB::Model';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -50,8 +51,8 @@ Description:
 =cut
 
 sub findCreateEquivalentCompartment {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["modelcompartment"],{create => 1});
+	my $self = shift;
+	my $args = args(["modelcompartment"], {create => 1}, @_);
 	my $mdlcmp = $args->{modelcompartment};
 	my $cmp = $self->queryObject("modelcompartments",{
 		label => $mdlcmp->label()
@@ -87,8 +88,8 @@ Description:
 =cut
 
 sub findCreateEquivalentCompound {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["modelcompound"],{create => 1});
+    my $self = shift;
+	my $args = args(["modelcompound"], {create => 1}, @_);
 	my $inmdlcpd = $args->{modelcompound};
 	my $outcpd = $self->queryObject("modelcompounds",{
 		name => $inmdlcpd->name(),
@@ -128,8 +129,8 @@ Description:
 =cut
 
 sub findCreateEquivalentReaction {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["modelreaction"],{create => 1});
+    my $self = shift;
+    my $args = args( ["modelreaction"], { create => 1 }, @_ );
 	my $inmdlrxn = $args->{modelreaction};
 	my $outrxn = $self->queryObject("modelreactions",{
 		definition => $inmdlrxn->definition(),
@@ -183,8 +184,8 @@ Description:
 =cut
 
 sub findCreateEquivalentBiomass {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biomass"],{create => 1});
+    my $self = shift;
+    my $args = args( ["biomass"], { create => 1 }, @_ );
 	my $inmdlbio = $args->{biomass};
 	my $outbio = $self->queryObject("biomasses",{
 		definition => $inmdlbio->definition()
@@ -229,8 +230,8 @@ Description:
 =cut
 
 sub mergeModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{});
+    my $self = shift;
+    my $args = args( ["model"], {}, @_ );
 	my $mdl = $args->{model};
 	my $cmps = $mdl->modelcompartments();
 	for (my $i = 0; $i < @{$cmps}; $i++) {
@@ -266,12 +267,12 @@ Description:
 =cut
 
 sub buildModelFromAnnotation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+	my $args = args([],{
 		annotation => $self->annotation(),
 		mapping => $self->mapping(),
         verbose => 0
-	});
+	}, @_);
 	my $mapping = $args->{mapping};
 	my $annotaton = $args->{annotation};
 	my $biochem = $mapping->biochemistry();
@@ -390,11 +391,11 @@ Description:
 =cut
 
 sub createStandardFBABiomass {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+    my $args = args([], {
 		annotation => $self->annotation(),
 		mapping => $self->mapping(),
-	});
+	}, @_);
 	my $anno = $args->{annotation};
 	my $mapping = $args->{mapping};
 	my $biochem = $mapping->biochemistry();
@@ -523,10 +524,8 @@ Description:
 =cut
 
 sub testBiomassCondition {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["condition"],{
-		annotation => $self->annotation()
-	});
+    my $self = shift;
+    my $args = args(["condition"],{ annotation => $self->annotation() }, @_);
 	if ($args->{condition} ne "UNIVERSAL") {
 		my $Class = $args->{annotation}->genomes()->[0]->class();
 		my $Name = $args->{annotation}->genomes()->[0]->name();
@@ -673,12 +672,12 @@ Description:
 =cut
 
 sub addReactionToModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["reaction"],{
+    my $self = shift;
+	my $args = args(["reaction"],{
 		direction => undef,
 		protons => undef,
 		overrideCompartment => undef
-	});
+	}, @_);
 	my $rxn = $args->{reaction};
 	if (!defined($args->{direction})) {
 		$args->{direction} = $rxn->direction();	
@@ -731,12 +730,12 @@ Description:
 =cut
 
 sub addCompartmentToModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["compartment"],{
+    my $self = shift;
+    my $args = args(["compartment"],{
 		pH => 7,
 		potential => 0,
 		compartmentIndex => 0
-	});
+	}, @_);
 	my $mdlcmp = $self->queryObject("modelcompartments",{compartment_uuid => $args->{compartment}->uuid(),compartmentIndex => $args->{compartmentIndex}});
 	if (!defined($mdlcmp)) {
 		$mdlcmp = $self->add("modelcompartments",{
@@ -764,11 +763,11 @@ Description:
 =cut
 
 sub addCompoundToModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["compound","modelCompartment"],{
+    my $self = shift;
+	my $args = args(["compound","modelCompartment"],{
 		charge => undef,
 		formula => undef
-	});
+	}, @_);
 	my $mdlcpd = $self->queryObject("modelcompounds",{compound_uuid => $args->{compound}->uuid(),modelcompartment_uuid => $args->{modelCompartment}->uuid()});
 	if (!defined($mdlcpd)) {
 		if (!defined($args->{charge})) {
@@ -797,8 +796,7 @@ Description:
 =cut
 
 sub labelBiomassCompounds {
-	my ($self,$args) = @_;
-	#$args = ModelSEED::utilities::ARGS($args,[],{});#Commented out until we need it
+	my $self = shift;
 	for (my $i=0; $i < @{$self->modelcompounds()}; $i++) {
 		my $cpd = $self->modelcompounds()->[$i];
 		$cpd->isBiomassCompound(0);
@@ -844,7 +842,7 @@ Description:
 =cut
 
 sub printSBML {
-	my ($self,$args) = @_;
+    my $self = shift;
 	# convert ids to SIds
     my $idToSId = sub {
         my $id = shift @_;
@@ -1073,10 +1071,10 @@ Description:
 =cut
 
 sub gapfillModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["gapfillingFormulation"],{
+    my $self = shift;
+	my $args = args(["gapfillingFormulation"],{
 		fbaFormulation => undef,integrateSolution => 1
-	});
+	}, @_);
 	my $solution = $args->{gapfillingFormulation}->runGapFilling({
 		model => $self,
 		fbaFormulation => $args->{fbaFormulation}
@@ -1101,16 +1099,14 @@ Description:
 =cut
 
 sub integrateGapfillSolution {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["gapfillingFormulation"],{
-		solutionNum => 0
-	});
-	ModelSEED::utilities::VERBOSEMSG("Now integrating gapfill solution into model");
+    my $self = shift;
+	my $args = args(["gapfillingFormulation"], { solutionNum => 0 }, @_);
+	verbose("Now integrating gapfill solution into model");
 	my $gf = $args->{gapfillingFormulation};
 	my $num = $args->{solutionNum};
 	my $gfss = $gf->gapfillingSolutions();
 	if (@{$gfss} <= $num) {
-		ModelSEED::utilities::ERROR("Specified solution not found in gapfilling formulation!");
+		error("Specified solution not found in gapfilling formulation!");
 	}
 	my $sol = $gfss->[$num];
 	#Integrating biomass removals into model
@@ -1121,7 +1117,7 @@ sub integrateGapfillSolution {
 			my $biocpds = $biomass->biomasscompounds();
 			foreach my $biocpd (@{$biocpds}) {
 				if ($biocpd->modelcompound()->uuid() eq $rem) {
-					ModelSEED::utilities::VERBOSEMSG(
+					verbose(
 						"Removing ".$biocpd->modelcompound()->id()." from model biomass."
 					);
 					$biomass->remove("biomasscompounds",$biocpd);
@@ -1136,12 +1132,12 @@ sub integrateGapfillSolution {
 		my $rxn = $rxns->[$i];
 		my $mdlrxn = $self->queryObject("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
 		if (defined($mdlrxn)) {
-			ModelSEED::utilities::VERBOSEMSG(
+			verbose(
 				"Making ".$mdlrxn->id()." reversible."
 			);
 			$mdlrxn->direction("=");
 		} else {
-			ModelSEED::utilities::VERBOSEMSG(
+			verbose(
 				"Adding ".$rxn->reaction()->id()." to model in ".$rxn->direction()." direction."
 			);
 			$self->addReactionToModel({
@@ -1169,10 +1165,8 @@ Description:
 =cut
 
 sub gapgenModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["gapgenFormulation"],{
-		fbaFormulation => undef,integrateSolution => 1
-	});
+    my $self = shift;
+	my $args = args(["gapgenFormulation"], { fbaFormulation => undef,integrateSolution => 1 }, @_);
 	my $solution = $args->{gapgenFormulation}->runGapGeneration({
 		model => $self,
 		fbaFormulation => $args->{fbaFormulation}
@@ -1197,16 +1191,14 @@ Description:
 =cut
 
 sub integrateGapgenSolution {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["gapgenFormulation"],{
-		solutionNum => 0
-	});
-	ModelSEED::utilities::VERBOSEMSG("Now integrating gapgen solution into model");
+	my $self = shift;
+    my $args = args(["gapgenFormulation"], { solutionNum => 0 }, @_);
+	verbose("Now integrating gapgen solution into model");
 	my $gg = $args->{gapgenFormulation};
 	my $num = $args->{solutionNum};
 	my $ggss = $gg->gapgenSolutions();
 	if (@{$ggss} <= $num) {
-		ModelSEED::utilities::ERROR("Specified solution not found in gapgen formulation!");
+		error("Specified solution not found in gapgen formulation!");
 	}
 	my $sol = $ggss->[$num];
 	my $solrxns = $sol->gapgenSolutionReactions();
@@ -1214,13 +1206,13 @@ sub integrateGapgenSolution {
 		my $rxn = $solrxns->[$m];
         my $direction = $rxn->direction;
 		if ($direction eq $rxn->modelreaction()->direction()) {
-			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." removed.");
+			verbose("Reaction ".$rxn->modelreaction()->id()." removed.");
 			$self->remove("modelreactions",$rxn->modelreaction());
 		} elsif ($direction eq ">") {
-			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." switched to <.");
+			verbose("Reaction ".$rxn->modelreaction()->id()." switched to <.");
 			$rxn->modelreaction()->direction("<");
 		} elsif ($direction eq "<") {
-			ModelSEED::utilities::VERBOSEMSG("Reaction ".$rxn->modelreaction()->id()." switched to >.");
+			verbose("Reaction ".$rxn->modelreaction()->id()." switched to >.");
 			$rxn->modelreaction()->direction(">");
 		}
 	}
@@ -1274,8 +1266,8 @@ Description:
 =cut
 
 sub buildGraph {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{reactions => 0});
+    my $self = shift;
+	my $args = args([], {reactions => 0}, @_);
 	my $graph = Graph::Directed->new;
 	if ($args->{reactions} == 0) {
 		my $cpds = $self->modelcompounds();
@@ -1348,11 +1340,8 @@ Description:
 =cut
 
 sub computeNetworkDistances {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		reactions => 0,
-		roles => 0
-	});
+    my $self = shift;
+	my $args = args([], { reactions => 0, roles => 0 }, @_);
 	my $input = {};
 	my $tbl = {headings => ["Compounds"],data => []};
 	if ($args->{roles} == 1 || $args->{reactions} == 1) {

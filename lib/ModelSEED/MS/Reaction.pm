@@ -8,7 +8,7 @@
 use strict;
 use ModelSEED::MS::DB::Reaction;
 package ModelSEED::MS::Reaction;
-use ModelSEED::utilities;
+use ModelSEED::utilities qw( args error );
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Reaction';
@@ -52,7 +52,7 @@ sub _buildcompartment {
 	my ($self) = @_;
 	my $comp = $self->biochemistry()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
-		ModelSEED::utilities::ERROR("Could not find cytosol compartment in biochemistry!");	
+		error("Could not find cytosol compartment in biochemistry!");	
 	}
 	return $comp;
 }
@@ -99,11 +99,8 @@ Description:
 =cut
 
 sub createEquation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		format => "uuid",
-		hashed => 0
-	});
+    my $self = shift;
+    my $args = args([], { format => "uuid", hashed => 0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
 	my $rxnCompID = $self->compartment()->id();
@@ -123,7 +120,7 @@ sub createEquation {
 	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0) {
 		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
 		if (!defined($hcpd)) {
-			ModelSEED::utilities::ERROR("Could not find proton in biochemistry!");
+			error("Could not find proton in biochemistry!");
 		}
 		my $id = $hcpd->uuid();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
@@ -174,8 +171,8 @@ Description:
 =cut
 
 sub loadFromEquation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["equation","aliasType"],{});
+    my $self = shift;
+    my $args = args(["equation","aliasType"], {}, @_);
 	my $bio = $self->parent();
 	my @TempArray = split(/\s/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
@@ -287,8 +284,8 @@ Description:
 =cut
 
 sub checkReactionMassChargeBalance {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{rebalanceProtons => 0});
+    my $self = shift;
+    my $args = args([], {rebalanceProtons => 0}, @_);
 	my $atomHash;
 	my $netCharge = 0;
 	#Adding up atoms and charge from all reagents

@@ -10,6 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
+use ModelSEED::utilities qw ( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -72,10 +73,8 @@ Description:
 =cut
 
 sub printDBFiles {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		forceprint => 0
-	});
+    my $self = shift;
+    my $args = args([],{ forceprint => 0 }, @_);
 	my $path = $self->dataDirectory()."/fbafiles/";
 	if (!-d $path) {
 		File::Path::mkpath ($path);
@@ -133,13 +132,13 @@ Description:
 =cut
 
 sub makeDBModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+    my $args = args([],{
 		balancedOnly => 1,
 		gapfillingFormulation => undef,
 		annotation_uuid => "00000000-0000-0000-0000-000000000000",
 		mapping_uuid => "00000000-0000-0000-0000-000000000000",
-	});
+	}, @_);
 	my $mdl = ModelSEED::MS::Model->new({
 		id => $self->name().".model",
 		version => 0,
@@ -217,8 +216,8 @@ Description:
 =cut
 
 sub findCreateEquivalentCompartment {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["compartment"],{create => 1});
+    my $self = shift;
+	my $args = args(["compartment"], {create => 1}, @_);
 	my $incomp = $args->{compartment};
 	my $outcomp = $self->queryObject("compartments",{
 		name => $incomp->name()
@@ -247,8 +246,8 @@ Description:
 =cut
 
 sub findCreateEquivalentCompound {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["compound"],{create => 1});
+    my $self = shift;
+	my $args = args(["compound"], {create => 1}, @_);
 	my $incpd = $args->{compound};
 	my $outcpd = $self->queryObject("compounds",{
 		name => $incpd->name()
@@ -290,8 +289,8 @@ Description:
 =cut
 
 sub findCreateEquivalentReaction {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["reaction"],{create => 1});
+    my $self = shift;
+	my $args = args(["reaction"], {create => 1}, @_);
 	my $inrxn = $args->{reaction};
 	my $outrxn = $self->queryObject("reactions",{
 		definition => $inrxn->definition()
@@ -370,16 +369,16 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["names","id"],{
+	my $self = shift;
+	my $args = args(["names","id"],{
 		aliasType => $self->defaultNameSpace(),
-		abbreviation => [$args->{names}->[0]],
 		formula => [""],
 		mass => [0],
 		charge => [0],
 		deltag => [10000],
 		deltagerr => [0]
-	});
+	}, @_);
+    $args->{abbreviation} = $args->{names}->[0] unless defined $args->{abbreviation};
 	#Checking for id uniqueness
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
@@ -439,16 +438,16 @@ Description:
 =cut
 
 sub addReactionFromHash {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["equation","id"],{
-		aliasType => $self->defaultNameSpace(),
-		names => [$args->{id}->[0]],
-		abbreviation => [$args->{id}->[0]],
-		direction => ["="],
-		deltag => [10000],
-		deltagerr => [0],
-		enzymes => []
-	});
+    my $self = shift;
+	my $args = args(["equation","id"], {
+		aliasType    => $self->defaultNameSpace(),
+		direction    => ["="],
+		deltag       => [10000],
+		deltagerr    => [0],
+		enzymes      => []
+	}, @_);
+    $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
+    $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
