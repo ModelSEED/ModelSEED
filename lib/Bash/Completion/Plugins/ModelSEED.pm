@@ -37,8 +37,11 @@ our $MAX_CACHE_AGE = 60; # Age in seconds for a valid ~/.modelseed_bash_completi
 sub complete {
     my ($self, $r) = @_;
     my @args = $r->args;
+    # Process each arg until we get to the end of the array
+    # where we will be in $state with available completions
     my ($stateName, $state);
     while (@args >= 0) {
+        # First round, set state == first argument
         if(!defined $stateName) { 
             my $curr = shift @args;
             $stateName = $curr if defined $rules->{$curr};
@@ -46,6 +49,8 @@ sub complete {
         }
         $state = $rules->{$stateName};
         my $newStateName;
+        # Try to follow an edge, if we do go to the top
+        # of this while loop, consuming an arg off @args
         foreach my $edge (@{$state->{edges}}) {
             $newStateName = processEdge($edge, \@args);
             if(defined $newStateName) {
@@ -54,13 +59,15 @@ sub complete {
             } 
         }
         next if $newStateName;
+        # We didn't consume an edge, so produce
+        # @candidates to return to the user
         my @candidates;
-        #warn "doing completions for $stateName\n";
         foreach my $completionRule (@{$state->{completions}}) {
             my @completions = processCompletionRule($completionRule, $r);
             push(@candidates, @completions);
 
         }
+        # pass candidates to request object and return
         $r->candidates(@candidates);
         return;
     }
@@ -68,16 +75,24 @@ sub complete {
 
 sub processEdge {
     my ($edge, $args) = @_;
-    # Array : [ 'exact_match', 'new-state' ]
+    # An edge can be one of two things:
+
+    # 1. tuple where: the first element
+    # is a string that must be matched exactly
+    # and the second element is the new state name
+    # e.g. [ 'login', 'ms_login' ]
     if (ref($edge) eq 'ARRAY') {
         my $first = $args->[0];
         if($first eq $edge->[0]) {
-            shift @$args; # consume this arg
+            # We matched, consume the arg and
+            # return the new state name
+            shift @$args;
             return $edge->[1];
         }
-    # Hash : { 'regex' => qr{}, 
+    # 2. A hash with keys 'regex' and 'state', where you
+    #    must only do a regex match on that...
     } elsif (ref($edge) eq 'HASH') {
-        die "TODO";
+        die "TODO: bash_completion regex matching";
     } 
     return undef;
 }
@@ -85,8 +100,11 @@ sub processEdge {
 sub processCompletionRule {
     my ($rule, $r) = @_;
     # Rule may be:
-    #     An array, just return these candidates
-    #     A hash, with key "prefix"
+    #     1. An array of strings, just return these strings as candidates
+    #     2. A hash key "prefix". If the current option has the prefix,
+    #     there are two cases depending on what other key is defined: 
+    #       a. If "options" is defined, return that list of option strings + prefix
+    #       b. If "cmd" is defined, run that command and return the candidates
     # 
     if (ref($rule) eq 'ARRAY') {
         return prefix_match($r->word, @$rule);
@@ -99,9 +117,6 @@ sub processCompletionRule {
             return prefix_match($r->word, @candidates);
         } elsif($match && defined($rule->{cmd})) {
             return processCmdRule($rule, $r);
-            my $cmd = $rule->{cmd};
-            my @candidates = split(/\n/, `$cmd`);
-            return prefix_match($r->word, @candidates);
         }
     }
     return ();
