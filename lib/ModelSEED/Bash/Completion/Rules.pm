@@ -1,5 +1,27 @@
+
+=head1 ModelSEED::Bash::Completion::Rules
+
+Rules for performing bash-completion steps. This
+package is consumed by L<Bash::Completion::Plugin::ModelSEED>
+THIS IS AN AUTOMATICALLY GENERATED PACKAGE. DO NOT EDIT. See
+Rebuilding for instructions to regenerate this package.
+
+=head2 rules
+
+This function returns the bash completion rules.
+
+=head2 Rebuilding
+
+See scripts/generateBashCompletionRules for instructions
+on rebuilding this module.
+
+=cut
+
 package ModelSEED::Bash::Completion::Rules;
-our $rules = {
+use strict;
+use warnings;
+
+our $RULES = {
     'genome_mapping' => {
         'completions' => [
             {
@@ -719,4 +741,9 @@ our $rules = {
         'edges' => []
     }
 };
+
+sub rules {
+    return $RULES;
+}
 1;
+

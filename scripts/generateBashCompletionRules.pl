@@ -1,84 +1,108 @@
 #!/usr/bin/perl 
+
+=head1 generateBashCompletion.pl
+
+=cut
+
 use strict;
 use warnings;
 use Module::Load;
-use Test::More tests => 4;
-use Test::Deep;
 use JSON::XS;
 use Data::Dumper;
 use Try::Tiny;
+use Cwd 'abs_path';
 
-my %topLevelCommands = qw(
+# This is the mapping of command-name => App::Cmd package.
+# We generate bash-completion rules for each package and associate
+# the top-level entry with the command-name.
+my %appCmds = qw(
     ms ModelSEED::App::mseed
     stores ModelSEED::App::stores
     bio ModelSEED::App::bio
     mapping ModelSEED::App::mapping
     genome ModelSEED::App::genome
     model ModelSEED::App::model
-);
-my %innerCommands = qw(
     import ModelSEED::App::import
 );
-
-my %linkedCommands = qw(
-    ms import
-    ms stores
-    ms bio
-    ms mapping
-    ms genome
-    ms model
-);
+# This establishes how top-level commands are tied to other
+# top-level commands. In this case, ms links to each of these subcommands
 my $linkedCommands = {
     ms => {
         map { $_ => 1 } qw( import stores bio mapping genome model )
     },
 };
 
+my $filename;
+if (@ARGV) {
+    $filename = shift @ARGV;
+    run($filename);
+} else {
+    # Must include a file, probably want this as the filename:
+    my $expected = abs_path($0);
+    $expected    =~ s/\/[^\/]*$/\//;
+    $expected   .= "/../lib/ModelSEED/Bash/Completion/Rules.pm";
+    $expected    = abs_path($expected);
+    warn "Usage: $0 output-file\nFile probably should be: $expected\n";
+
+}
 
 sub process_app {
     my ($states, $app, $app_pkg, $linked_app_cmds) = @_;
     load $app_pkg;
+    # Get the "commands" for the app
     my @plugins = $app_pkg->command_plugins;
     my ($edges, $completions) = ( [], [] );
     my $basic_completion = [];
     my $state = { edges => $edges, completions => $completions };
     foreach my $cmd_pkg (@plugins) {
+        # Take the first command out of the command names
         my @commands = $cmd_pkg->command_names;
         my $command = $commands[0];
         if(defined $linked_app_cmds->{$app}->{$command}) {
+            # If we registered a "linked_app" e.g. 'ms import'
+            # put a link to the top-level app name e.g. 'import'
+            # and add the command to the basic completions
             push(@$edges, [ $command, "$command" ]);
             push(@$basic_completion, $command);
         } else {
+            # Otherwise define a new state "app_command", e.g. "ms_login"
+            # and push that state name onto the edges, the completion onto
+            # the basic compeltions, then process that command (adding additional
+            # states)
             my $command_state = "${app}_$command";
             push(@$edges, [ $command, $command_state] );
             push(@$basic_completion, $command);
             process_command($states, $app, $command, $app_pkg, $cmd_pkg);
         }
     }
+    # Don't add completions unless we have some
     if(@$basic_completion) {
         push(@$completions, $basic_completion);
     }
+    # Add this state to the states now...
     $states->{$app} = $state;
 }
 
 sub process_command {
     my ($states, $app, $cmd, $app_pkg, $cmd_pkg) = @_;
+    # Our state name is app_cmd e.g. 'ms_login'
     my $state_name = "${app}_$cmd";
     my ($edges, $completions) = ( [], [] );
     my $state = { edges => $edges, completions => $completions };
-    # do options
+    # produce completions and states for each option
     my @options = $cmd_pkg->opt_spec;
     my $option_completions = [];
     my $simple_completions = [];
     foreach my $option (@options) {
         my $str = $option->[0];
-        # If we consume an additional arg
         if ($str =~ m/[:=]/) {
+            # If we consume an additional arg
             my ($keys, $type) = split(/[:=]/, $str); 
             my @keys = split(/\|/, $keys);
             push(@$option_completions, $keys[0]);
-            # do command_option sub-state 
+            # TODO: bash completion: do command_option sub-states
         } else {
+            # Put the option onto the completions
             my @keys = split(/\|/, $str);
             push(@$option_completions, $keys[0]);
         }
@@ -86,10 +110,11 @@ sub process_command {
     if(@$simple_completions != 0) {
         push(@$completions, $simple_completions);
     }
+    # Option completions only happen if you add the "--" on the command
     if(@$option_completions != 0) {
         push(@$completions, { "prefix" => "--", "options" => $option_completions });
     }
-    # do arguments
+    # Now process arguments, this requires an "arg_spec" function in the Command
     my @arg_states;
     try {
         @arg_states = $cmd_pkg->arg_spec();
@@ -102,70 +127,48 @@ sub process_command {
     $states->{$state_name} = $state;
 }
 
-my $states = {};
-foreach my $cmd ( keys %topLevelCommands) {
-    my $pkg = $topLevelCommands{$cmd};
-    process_app($states, $cmd, $pkg, $linkedCommands);
+sub run {
+    my ($filename) = @_;
+    my $states = {};
+    foreach my $cmd ( keys %appCmds) {
+        my $pkg = $appCmds{$cmd};
+        process_app($states, $cmd, $pkg, $linkedCommands);
+    }
+    # Construct a package at filename
+    my $str = Dumper $states;
+    $str =~ s/\$VAR1/our \\\$RULES/;
+    my $tmpl = <<HEREDOC;
+=head1 ModelSEED::Bash::Completion::Rules
+
+Rules for performing bash-completion steps. This
+package is consumed by L<Bash::Completion::Plugin::ModelSEED>
+THIS IS AN AUTOMATICALLY GENERATED PACKAGE. DO NOT EDIT. See
+"Rebuilding" for instructions to regenerate this package.
+
+=head2 rules
+
+This function returns the bash completion rules.
+
+=head2 Rebuilding
+
+See scripts/generateBashCompletionRules for instructions
+on rebuilding this module.
+
+=cut
+
+package ModelSEED::Bash::Completion::Rules;
+use strict;
+use warnings;
+
+$str;
+sub rules {
+    return \\\$RULES;
 }
-foreach my $cmd ( keys %innerCommands) {
-    my $pkg = $innerCommands{$cmd};
-    process_app($states, $cmd, $pkg, $linkedCommands);
+1;
+HEREDOC
+    # Tidy it up a bit:
+    $tmpl = `echo "$tmpl" | perltidy`;
+    open(my $fh, ">", $filename) || die "Could not open $filename: $!";
+    print $fh $tmpl;
+    close($fh);
 }
-
-print Dumper $states;
-
-=head3 fsm
-
-    [
-        "ms" : {
-            "edges" : [
-                [ "stores", "stores" ],
-                [ "bio", "bio" ]
-                [ "list", "ms_list" ],
-             ],
-             "completions" : [
-                [ "stores" , "bio", "foo", "biochemistry" ],
-                { "prefix" : "biochemistry", "cmd" : 'ms list biochemistry' },
-        },
-        "ms_list" : {
-            "edges" : [
-                [ "-w", "ms_list--with" ],
-            ],
-            "completions" : [
-                [ "--with", "--help", "--no_ref" ],
-                { "prefix" : "", "options" : [ "biochemistry/", "mapping/", "model/", "annotation/" ] },
-                { "prefix" : "biochemistry/", "cmd" : 'ms list biochemistry' }
-            ],
-        },
-        "ms_list--with" : {
-            "edges" : [
-                { "regex" : "m/.+\s/", "to" : "ms_list", "c" : 1 }
-            ],
-            "completions" : []
-        }
-}
-
-# edges : an array of edge, iterate through all until match one
-#     edge may be :
-#         an array where 0 is an exeact string to match, 1 is the state to jump to, consume 1.
-#         a hash :
-#             "has key regex" : match on regex, go to "to" node, consuming "c" args
-#   
-# completions : an array of completion generators, return the subset of all that prefix-match:
-#      a completion generator may be :
-#          an array, just return that shit
-#          a hash :
-#              "has key prefix" : if we match on prefix, then...
-#                   "has key options" : add the array of options to the set to match against (useful?)
-#                   "has key cmd" : run this command and include the results in the match set
-
-# doing top-level :
-#     state name is cmd
-#     edges : subcommands "cmd_subcommand"
-#           if subcommand simply "redirects" to top-level command... edge is cmd
-#     completions : top-level options, subcommands
-
-# doing subcommands:
-#     state name is cmd_subcommand
-#     edges : option with string
-#     completions : options, argument generators
