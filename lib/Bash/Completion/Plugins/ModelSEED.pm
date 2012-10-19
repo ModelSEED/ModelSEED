@@ -30,7 +30,7 @@ sub generate_bash_setup {
     return [qw(nospace default)];
 }
 
-our $rules = $ModelSEED::Bash::Completion::Rules::rules;
+our $rules = ModelSEED::Bash::Completion::Rules::rules();
 our $conf  = ModelSEED::Configuration->instance;
 our $MAX_CACHE_AGE = 60; # Age in seconds for a valid ~/.modelseed_bash_completion_cache file
 
