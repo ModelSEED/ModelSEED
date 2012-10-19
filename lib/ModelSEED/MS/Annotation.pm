@@ -98,6 +98,25 @@ sub subsystems {
     return $subsystems;
 }
 
+sub featuresByRole {
+    my $self = shift;
+    my $args = args([], {}, @_);
+    my $features = $args->{features};
+    if (!defined $features) {
+        $features = $self->features;
+    }
+    # Hash of role_uuid => [ features ]
+    my $features_by_role = {};
+    foreach my $feature (@$features) {
+        my $ftr_roles = $feature->featureroles;
+        foreach my $ftr_role (@$ftr_roles) {
+            my $role_uuid = $ftr_role->role_uuid;
+            push(@{$features_by_role->{$role_uuid}}, $feature);
+        }
+    }
+    return $features_by_role;
+}
+
 sub featuresInRoleSet {
     my ($self, $roleSet) = @_;
     my $roleHash = {};
