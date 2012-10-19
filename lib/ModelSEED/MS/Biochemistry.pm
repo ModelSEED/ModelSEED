@@ -369,7 +369,7 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my $self = shift;
+	my ($self,$args,$mergeto) = @_;
 	my $args = args(["names","id"],{
 		aliasType => $self->defaultNameSpace(),
 		formula => ["unknown"],
@@ -377,7 +377,7 @@ sub addCompoundFromHash {
 		charge => [10000000],
 		deltag => [10000000],
 		deltagerr => [10000000]
-	}, @_);
+	}, [$args]);
 	# Remove names that are too long
 	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
     push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
@@ -475,14 +475,14 @@ Description:
 =cut
 
 sub addReactionFromHash {
-    my $self = shift;
-	my $args = args(["equation","id"], {
+    my ($self,$args,$mergeto) = @_;
+	$args = args(["equation","id"], {
 		aliasType    => $self->defaultNameSpace(),
 		direction => ["="],
 		deltag => [10000000],
 		deltagerr => [10000000],
 		enzymes => []
-	}, @_);
+	}, [$args]);
     $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
     $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
 	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
