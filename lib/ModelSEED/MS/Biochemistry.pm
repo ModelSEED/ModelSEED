@@ -370,7 +370,7 @@ Description:
 
 sub addCompoundFromHash {
 	my ($self,$args,$mergeto) = @_;
-	my $args = args(["names","id"],{
+    $args = args(["names","id"],{
 		aliasType => $self->defaultNameSpace(),
 		formula => ["unknown"],
 		mass => [10000000],
