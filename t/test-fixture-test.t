@@ -2,11 +2,27 @@
 use strict;
 use warnings;
 use ModelSEED::Test;
+use ModelSEED::Auth::Basic;
+use File::Path qw(rmtree);
 use Data::Dumper;
 use Test::More;
 use Try::Tiny;
 use File::Temp qw( tempfile );
 my $test_count = 0;
+
+# Remove the data-dir to test fetching at least once
+{
+    my $t  = ModelSEED::Test->new;
+    my $dir = $t->_test_data_dir;
+    rmtree $dir if ( -d $dir );
+}
+# Test case of stores containing an empty list:
+{
+    my $t = ModelSEED::Test->new;
+    $t->config->config->{stores} = [];
+    ok defined $t->db;
+    $test_count += 1;
+}
 
 # Two helper functions ( shuffle an array, get a tempfile )
 sub shuffle {
@@ -69,11 +85,16 @@ sub test_clears {
     $test_count += scalar( keys %$old_data );
 }
 
+sub mk_auth {
+    return ModelSEED::Auth::Basic->new(username => "bob", password => "bob");
+}
+
 my $ops = {
     config_file => { args => [ \&tempfilename ] },
     clear_auth => { data => [ 'auth', 'store' ], test => \&test_clears },
     clear_store => { data => [ 'store' ], test => \&test_clears },
     clear_db => { data => [ qw(auth store db) ], test => \&test_clears },
+    auth => { args => [ \&mk_auth ], data => [ qw(auth store) ], test => \&test_clears },
 };
 
 # Do each operation then call the getters in
@@ -104,13 +125,5 @@ foreach my $i (0..5) {
         }
     }
 }
-
-# Test data getters
-#my $t = ModelSEED::Test->new;
-#my $bio = $t->biochemistry;
-#ok defined $bio;
-#ok $bio->isa("ModelSEED::MS::Biochemistry");
-
-#$test_count += 2; 
 
 done_testing($test_count);

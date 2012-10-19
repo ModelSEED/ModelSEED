@@ -96,20 +96,7 @@ use ModelSEED::Auth::Factory;
 use ModelSEED::MS::Factories::TableFileFactory;
 
 subtype 'Filename' => as 'Str' => where { -f $_ };
-sub _config_from_hash {
-    my $hash = shift;
-    my ($fh, $filename) = tempfile;
-    close($fh);
-    return ModelSEED::Configuration->new(
-        filename => $filename,
-        config => $hash,
-    );
-}
 
-coerce 'ModelSEED::Configuration',
-    from 'HashRef',
-    via { _config_from_hash($_) };
-    
 has config_file => (
     is => 'rw',
     isa => 'Filename',
@@ -187,15 +174,13 @@ sub _test_data_dir {
 
 sub _trigger_auth {
     my ($self, $new, $old) = @_;
+    $self->clear_store;
     my $c = $self->config;
     if ( defined $new && $new->isa("ModelSEED::Auth::Basic")) {
         $c->config->{login}->{username} = $new->username;
         $c->config->{login}->{password} = $new->password;
-    } elsif( !defined $new ) {
-        $self->config->{login} = undef;
+        $c->save();
     }
-    $c->save();
-    $self->clear_store;
 }
 
 sub _trigger_config_file {
