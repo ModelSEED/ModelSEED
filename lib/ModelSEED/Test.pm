@@ -165,11 +165,11 @@ sub _test_data_dir {
     # Just make a temporary dir in case MODEL_SEED_CORE env variable is not set
     $top_dir = tempdir unless(defined $top_dir && -d $top_dir);
     my $data_dir = "$top_dir/testdb";
-    if ( !-e $data_dir ) { 
+    if ( ! -d $data_dir ) { 
         my $tgz_file = "$top_dir/testdb.tgz";
         $tgz_file    = abs_path $tgz_file;
         getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/testdb.tgz", $tgz_file);
-        `tar -xzf $tgz_file`;
+        `tar -xzf $tgz_file -C $top_dir`;
     }
     return $data_dir;
 }
