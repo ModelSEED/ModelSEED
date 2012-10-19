@@ -162,6 +162,8 @@ before 'clear_db' => sub {
 sub _test_data_dir {
     my $self = shift;
     my $top_dir  = ModelSEED::utilities::MODELSEEDCORE();
+    # Just make a temporary dir in case MODEL_SEED_CORE env variable is not set
+    $top_dir = tempdir unless(defined $top_dir && -d $top_dir);
     my $data_dir = "$top_dir/testdb";
     if ( !-e $data_dir ) { 
         my $tgz_file = "$top_dir/testdb.tgz";
