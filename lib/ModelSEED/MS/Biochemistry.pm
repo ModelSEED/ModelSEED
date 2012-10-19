@@ -369,23 +369,27 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my $self = shift;
-	my $args = args(["names","id"],{
-		aliasType => $self->defaultNameSpace(),
-		formula => ["unknown"],
-		mass => [10000000],
-		charge => [10000000],
-		deltag => [10000000],
-		deltagerr => [10000000]
-	}, @_);
-	# Remove names that are too long
-	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    my ($self,$args,$mergeto) = @_;
+
+    # Remove names that are too long
+    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    # In case all the names were too long, use the id as the name
     push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
-    $args->{abbreviation} = $args->{names}->[0] unless defined $args->{abbreviation};
+
+    $args = ModelSEED::utilities::ARGS($args,["names","id"],{
+	aliasType => $self->defaultNameSpace(),
+	abbreviation => [$args->{names}->[0]],
+	formula => ["unknown"],
+	mass => [10000000],
+	charge => [10000000],
+	deltag => [10000000],
+	deltagerr => [10000000]
+				       });
+
 	# Checking for id uniqueness within scope of own aliasType
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
-	    ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+	    ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
 	    if(defined($mergeto) && !$cpd->getAlias($mergeto)){
 		$self->addAlias({ attribute => "compounds",
 				  aliasName => $mergeto,
@@ -399,7 +403,7 @@ sub addCompoundFromHash {
 	if($mergeto){
 	    $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$mergeto);
 	    if (defined($cpd)) {
-		ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
+		ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
 		#Alias needs to be created for original namespace if found in different namespace
 		$self->addAlias({
 		    attribute => "compounds",
@@ -475,22 +479,27 @@ Description:
 =cut
 
 sub addReactionFromHash {
-    my $self = shift;
-	my $args = args(["equation","id"], {
-		aliasType    => $self->defaultNameSpace(),
-		direction => ["="],
-		deltag => [10000000],
-		deltagerr => [10000000],
-		enzymes => []
-	}, @_);
-    $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
-    $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
-	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
-	push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
+    my ($self,$args,$mergeto) = @_;
+
+    # Remove names that are too long
+    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+    # In case all the names were too long, use the id as the name
+    push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
+
+    $args = ModelSEED::utilities::ARGS($args,["equation","id"],{
+	aliasType => $self->defaultNameSpace(),
+	names => [$args->{id}->[0]],
+	abbreviation => [$args->{id}->[0]],
+	direction => ["="],
+	deltag => [10000000],
+	deltagerr => [10000000],
+	enzymes => []
+				       });
+
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
-		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType}."\n");
 		if(defined($mergeto) && !$rxn->getAlias($mergeto)){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $mergeto,
@@ -500,11 +509,12 @@ sub addReactionFromHash {
 		}
 		return $rxn;
 	}
-	# Checking for id uniqueness within scope of another aliasType, if passed
+
+	#Checking for id uniqueness within scope of another aliasType, if passed
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
 	    if( defined($rxn) ){
-		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
+		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto."\n");
 		#Alias needs to be created for original namespace if found in different namespace
 		$self->addAlias({
 		    attribute => "reactions",
@@ -527,44 +537,49 @@ sub addReactionFromHash {
 	});
 	# Attach biochemistry object to reaction object
 	$rxn->parent($self);
+
 	# Parse the equation string to finish defining the reaction object
-	# a return of zero indicates that the reaction was rejected
-	if(!$rxn->loadFromEquation({
-	    equation => $args->{equation}->[0],
-	    aliasType => $args->{aliasType},
-				   })){
-	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$args->{id}->[0]." was rejected");
-	    return undef;
-	}
-	# Generate equation search string and check to see if reaction not already in database
-	my $code = $rxn->equationCode();
-	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
-	if (defined($searchRxn)) {
-	    # Check to see if searchRxn has alias from same namespace
-	    my $alias = $searchRxn->getAlias($args->{aliasType});
-	    my $aliasSetName=$args->{aliasType};
-	    # If not, need to find any alias to use (avoiding names for now)
-	    if(!$alias){
-		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
-		    $aliasSetName=$set->name();
-		    $alias=$searchRxn->getAlias($aliasSetName);
-		    last if $alias;
-		}
-		# Fall back onto name
-		if(!$alias){
-		    $alias=$searchRxn->name();
-		    $aliasSetName="could not find ID";
-		}
+    my $noduplicates = $rxn->loadFromEquation({equation => $args->{equation}->[0],
+					       aliasType => $args->{aliasType},
+					      });
+
+    if(!$noduplicates){
+	ModelSEED::utilities::verbose("Reaction ".$args->{id}->[0]." was rejected on account of their being duplicates"."\n");
+	return undef;
+    }
+
+    # Generate equation search string and check to see if reaction not already in database
+    my $searchRxns = $self->checkForDuplicateReactions($rxn);
+    if (defined($searchRxns) && scalar(@$searchRxns)>0) {
+	#just report the first one found because this reaction will be skipped anyway.
+	my $searchRxn=$searchRxns->[0];
+
+	# Check to see if searchRxn has alias from same namespace
+	my $alias = $searchRxn->getAlias($args->{aliasType});
+	my $aliasSetName=$args->{aliasType};
+	# If not, need to find any alias to use (avoiding names for now)
+	if(!$alias){
+	    foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
+		$aliasSetName=$set->name();
+		$alias=$searchRxn->getAlias($aliasSetName);
+		last if $alias;
 	    }
-	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
-	    $self->addAlias({ attribute => "reactions",
-			      aliasName => $args->{aliasType},
-			      alias => $args->{id}->[0],
-			      uuid => $searchRxn->uuid()
-			    });
-	    return $searchRxn;
+	    # Fall back onto name
+	    if(!$alias){
+		$alias=$searchRxn->name();
+		$aliasSetName="could not find ID";
+	    }
 	}
-	# Attach reaction to biochemistry
+	ModelSEED::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]."\n");
+	$self->addAlias({ attribute => "reactions",
+			  aliasName => $args->{aliasType},
+			  alias => $args->{id}->[0],
+			  uuid => $searchRxn->uuid()
+			});
+	return $searchRxn;
+    }
+
+        # Attach reaction to biochemistry
 	$self->add("reactions", $rxn);
 	$self->addAlias({
 		attribute => "reactions",
@@ -615,6 +630,26 @@ sub mergeBiochemistry {
     for (my $i)
     
     
+}
+
+=head3 checkForDuplicateReactions
+Definition:
+	void checkForDuplicateReactions(ModelSEED::MS::Reaction);
+Description:
+	This command checks if the input reaction is a duplicate for an existing reaction
+
+=cut
+
+sub checkForDuplicateReactions {
+    my ($self,$rxn) = @_;
+
+    my $code=$rxn->equationCode();
+    my $searchRxns = $self->queryObjects("reactions",{equationCode => $code});
+    if(scalar(@$searchRxns)==0 || (scalar(@$searchRxns)==1 && $searchRxns->[0]->uuid() eq $rxn->uuid())){
+		return [];
+    }else{
+		return [ grep { $_->uuid() ne $rxn->uuid() } @$searchRxns];
+    }
 }
 
 sub __upgrade__ {

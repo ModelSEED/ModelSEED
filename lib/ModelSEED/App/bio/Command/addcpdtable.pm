@@ -29,7 +29,7 @@ sub execute {
 
     #verbosity
     if ($opts->{verbose}) {
-    	ModelSEED::utilities::SETVERBOSE(1);
+    	ModelSEED::utilities::set_verbose(1);
     	delete $opts->{verbose};
     }
 
