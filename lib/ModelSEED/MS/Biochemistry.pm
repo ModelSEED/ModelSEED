@@ -377,7 +377,7 @@ sub addCompoundFromHash {
 		charge => [10000000],
 		deltag => [10000000],
 		deltagerr => [10000000]
-	}, [$args]);
+	}, $args);
 	# Remove names that are too long
 	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
     push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
@@ -482,7 +482,7 @@ sub addReactionFromHash {
 		deltag => [10000000],
 		deltagerr => [10000000],
 		enzymes => []
-	}, [$args]);
+	}, $args);
     $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
     $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
 	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
