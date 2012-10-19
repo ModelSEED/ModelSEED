@@ -1,5 +1,5 @@
 ########################################################################
-# ModelSEED::Configuration - This moose object stores data on user env
+# ModelSEED::Test - Test fixtures for the ModelSEED
 # Authors: Christopher Henry, Scott Devoid, Paul Frybarger
 # Contact email: chenry@mcs.anl.gov
 # Development location:
@@ -16,26 +16,69 @@ Test fixtures for the ModelSEED
 =head2 SYNOPSIS
 
     my $test = ModelSEED::Test->new;
-    # Set the configuration from a filename
-    $test->configFromFile( $filename );
+    my $conf  = $test->config;
+    my $db    = $test->db;
+    my $auth  = $test->auth;
+    my $store = $test->store;
 
-    # Create a new test database
-    $test->newTestDatabase();
+=head2 METHODS
 
-    $test->store;
-    $test->auth;
+=head3 new
 
-=head3 Trigger Setup
+Construct a new test instance. This object is designed
+to not modify your working environment. It is configurable,
+but the defaults should do what you want... give you an auth;
+a database and store that contain test data. And not interact
+with your main system.
 
-When the config_file is updated, config is cleard and
-set to the new config location. When config is changed,
-auth and db are updated with the corresponding config info.
+=head3 config_file
 
-    config_file => config =>
-        auth
-        db  => data update
-            => store
+Returns the path to the configuration file used. This can
+be set to a custom config_file if you want.
 
+=head3 config
+
+Returns the L<ModelSEED::Configuration> instance in use.  If you
+pass in a different instance, it will use that one.  If you pass
+in a hash reference, it will construct a Configuration object based
+on that and save it to a temporary location.
+
+=head3 db_config
+
+Returns the HashRef corresponding to the database configuration
+in the config object. If you pass in a hash-ref, this will update
+the database configuration and destroy the existing database.
+
+=head3 db
+
+Returns the L<ModelSEED::Database> object in use. If you pass
+in a different database, it will use that one, deleting the existing
+database.
+
+=head3 auth
+
+Returns a L<ModelSEED::Auth> object. By default, this is a basic
+auth with username: "alice", password: "alice".
+
+=head3 store
+
+Returns a L<ModelSEED::Store> object (using the auth and database objects).
+
+=head2 Update System
+
+Each attribute of this object is ordered into a hierarchy. Changes
+to the base settings (e.g. C<config_file>) will propagate up and
+reset nearly every other attribute. This should make switching data
+easy, but adds additional complexity.
+
+    # x => y
+    # Changes to x cause y to reset
+
+    config_file  => config
+    config       => auth db
+    auth         => store ( and save config )
+    db           => store ( and save config )
+    
 =cut
 
 package ModelSEED::Test;
@@ -53,12 +96,26 @@ use ModelSEED::Auth::Factory;
 use ModelSEED::MS::Factories::TableFileFactory;
 
 subtype 'Filename' => as 'Str' => where { -f $_ };
+sub _config_from_hash {
+    my $hash = shift;
+    my ($fh, $filename) = tempfile;
+    close($fh);
+    return ModelSEED::Configuration->new(
+        filename => $filename,
+        config => $hash,
+    );
+}
+
+coerce 'ModelSEED::Configuration',
+    from 'HashRef',
+    via { _config_from_hash($_) };
+    
 has config_file => (
     is => 'rw',
     isa => 'Filename',
     builder => '_build_config_file',
     lazy => 1,
-    trigger => \&trigger_config_file,
+    trigger => \&_trigger_config_file,
 );
 has config => (
     is      => 'rw',
@@ -97,34 +154,23 @@ has db_config => (
     lazy    => 1
 );
 
-around 'clear_db' => sub {
-    my $orig = shift;
+after 'clear_auth' => sub {
+    my $self = shift;
+    $self->clear_store;
+};
+
+after 'clear_db' => sub {
+    my $self = shift;
+    $self->clear_store;
+};
+
+
+before 'clear_db' => sub {
     my $self = shift;
     $self->db->delete_database;
     $self->clear_store;
-    $self->$orig();
-    $self->db($self->_build_db());
-    $self->db->init_database;
-    $self->_load_test_data();
 };
 
-sub _load_test_data {
-    my $self = shift;
-    my $store = $self->store;
-    my $data_dir = $self->_test_data_dir;
-    my $factory = ModelSEED::MS::Factories::TableFileFactory->new(
-        filepath => $data_dir, namespace => 'ModelSEED' 
-    );
-    my $user = $self->auth->username;
-    my $bio = $factory->createBiochemistry;
-    $store->save_object("biochemistry/$user/testdb", $bio);
-    my $map = $factory->createMapping(biochemistry => $bio);
-    $store->save_object("mapping/$user/testdb", $map);
-    my $ann = $factory->createAnnotation(genome => "testgenome", mapping => $map);
-    $store->save_object("annotation/$user/testdb", $ann);
-    my $mod = $ann->createStandardFBAModel();
-    $store->save_object("model/$user/testdb", $mod);
-}
 
 sub _test_data_dir {
     my $self = shift;
@@ -189,7 +235,9 @@ sub _build_auth {
 
 sub _build_store {
     my $self = shift;
-    return ModelSEED::Store->new( auth => $self->auth, database => $self->db );
+    my $store = ModelSEED::Store->new( auth => $self->auth, database => $self->db );
+    $self->_load_test_data($store);
+    return $store;
 }
 
 sub _build_db_config {
@@ -215,8 +263,28 @@ sub _build_db {
     my $self = shift;
     # Use the composite database, but only return the main one
     $self->db_config;
-    my $c =  ModelSEED::Database::Composite->new( use_config => 1 );
-    return $c->primary;
+    my $c  = ModelSEED::Database::Composite->new( use_config => 1 );
+    my $db = $c->primary; 
+    $db->init_database;
+    return $db;
+}
+
+sub _load_test_data {
+    my $self = shift;
+    my $store = shift;
+    my $data_dir = $self->_test_data_dir;
+    my $factory = ModelSEED::MS::Factories::TableFileFactory->new(
+        filepath => $data_dir, namespace => 'ModelSEED' 
+    );
+    my $user = $self->auth->username;
+    my $bio = $factory->createBiochemistry;
+    $store->save_object("biochemistry/$user/testdb", $bio);
+    my $map = $factory->createMapping(biochemistry => $bio);
+    $store->save_object("mapping/$user/testdb", $map);
+    my $ann = $factory->createAnnotation(genome => "testgenome", mapping => $map);
+    $store->save_object("annotation/$user/testdb", $ann);
+    my $mod = $ann->createStandardFBAModel();
+    $store->save_object("model/$user/testdb", $mod);
 }
 
 1;
