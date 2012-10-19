@@ -67,7 +67,7 @@ sub basic_tests {
 
 # Call basic tests in random orders
 # Need this because of trigger / builder complexity
-foreach my $i (0..5) {
+foreach my $i (0..0) {
     my $t = ModelSEED::Test->new;
     ok defined $t;
     $test_count += 1;
@@ -99,7 +99,7 @@ my $ops = {
 
 # Do each operation then call the getters in
 # random orders.
-foreach my $i (0..5) {
+foreach my $i (0..0) {
     foreach my $op (shuffle keys %$ops) {
         my $t = ModelSEED::Test->new;
         my $args = $ops->{$op}->{args};
