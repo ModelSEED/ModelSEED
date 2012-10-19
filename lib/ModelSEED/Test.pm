@@ -196,21 +196,25 @@ sub _build_db_config {
     my $self = shift;
     my $config = $self->config;
     my $stores = $config->config->{stores};
-    if(defined $stores && @$stores) {
+    if(defined $stores && @$stores > 0) {
         return $stores->[0];
     } else {
-        $self->_trigger_db_config({
+        my $conf = {
             class => 'ModelSEED::Database::FileDB',
             type => 'file',
             name => 'testdb',
             directory => tempdir(),
             filename => 'testdb',
-        });
+        };
+        $self->_trigger_db_config($conf);
+        return $conf;
     }
 }
 
 sub _build_db {
+    my $self = shift;
     # Use the composite database, but only return the main one
+    $self->db_config;
     my $c =  ModelSEED::Database::Composite->new( use_config => 1 );
     return $c->primary;
 }
