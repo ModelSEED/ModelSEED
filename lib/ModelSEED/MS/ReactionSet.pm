@@ -9,6 +9,7 @@ use strict;
 use ModelSEED::MS::DB::ReactionSet;
 package ModelSEED::MS::ReactionSet;
 use Moose;
+use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ReactionSet';
 #***********************************************************************************************************
@@ -39,9 +40,9 @@ Description:
 =cut
 
 sub modelCoverage {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{});
-	#TODO
+    my $self = shift;
+    my $args = args(["model"],{}, @_);
+	#TODO Implement modelCoverage function in ReactionSet
 	return 1;
 }
 
@@ -56,9 +57,9 @@ Description:
 =cut
 
 sub containsReaction {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["reaction"],{});
-	#TODO
+    my $self = shift;
+	my $args = args(["reaction"], {}, @_);
+	#TODO Implement containsReaction function in ReactionSet
 	return 1;
 }
 

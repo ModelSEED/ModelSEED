@@ -13,7 +13,9 @@ sub opt_spec {
     return (
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["namespace|n:s", "Name space for aliases added"],
-        ["autoadd|a","Automatically add any missing compounds to DB"]
+        ["autoadd|a","Automatically add any missing compounds to DB"],
+        ["mergeto|m:s", "Name space of identifiers used for merging compounds"],
+        ["verbose|v", "Print verbose status information"]
     );
 }
 
@@ -22,38 +24,64 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
-    my ($biochemistry,my $ref) = $helper->get_object("biochemistry", $args, $store);
+    my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Must specify an biochemistry to use") unless(defined($biochemistry));
     $self->usage_error("Must specify a valid filename for reaction table") unless(defined($args->[1]) && -e $args->[1]);
+
+    #verbosity
+    if ($opts->{verbose}) {
+    	ModelSEED::utilities::SETVERBOSE(1);
+    	delete $opts->{verbose};
+    }
+
+    #load table
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
+
+    #set namespace
     if (!defined($opts->{namespace})) {
-    	$opts->{namespace} = $biochemistry->defaultNameSpace();
+	$opts->{namespace} = $args->[0];
+	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
     } 
+
+    #creating namespaces if they don't exist
+    if(!$biochemistry->queryObject("aliasSets",{name => $opts->{namespace},attribute=>"reactions"})){
+	$biochemistry->add("aliasSets",{
+	    name => $opts->{namespace},
+	    source => $opts->{namespace},
+	    attribute => "reactions",
+	    class => "Reaction"});
+    }
+    if(defined($opts->{mergeto}) && !$biochemistry->queryObject("aliasSets",{name => $opts->{mergeto},attribute=>"reactions"})){
+	$biochemistry->add("aliasSets",{
+	    name => $opts->{mergeto},
+	    source => $opts->{mergeto},
+	    attribute => "reactions",
+	    class => "Reaction"});
+    }
+
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
     	my $rxnData = {aliasType => $opts->{namespace}};
     	for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
-    		my $heading = $tbl->{headings}->[$j];
-    		if ($heading eq "names" || $heading eq "enzymes") {
-    			$rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+    		my $heading = lc($tbl->{headings}->[$j]);
+    		if ($heading =~ /names?/ || $heading =~ /enzymes?/) {
+		    $heading="names" if $heading eq "name";
+		    $heading="enzymes" if $heading eq "enzyme";
+		    $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
     		} else {
-    			$rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+		    $rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
     		}
     	}
-    	my $rxn = $biochemistry->addReactionFromHash($rxnData);
-    	if (defined($rxn)) {
-    		push(@{$tbl->{data}->[$i]},$rxn->uuid());
-    	}
+    	my $rxn = $biochemistry->addReactionFromHash($rxnData,$opts->{mergeto});
     }
-    push(@{$tbl->{headings}},"uuid");
+
     if (defined($opts->{saveas})) {
     	$ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
     	print STDERR "Saving biochemistry with new reactions as ".$ref."...\n" if($opts->{verbose});
-		$store->save_object($ref,$biochemistry);
+	$store->save_object($ref,$biochemistry);
     } else {
     	print STDERR "Saving over original biochemistry with new reactions...\n" if($opts->{verbose});
     	$store->save_object($ref,$biochemistry);
     }
-    ModelSEED::utilities::PRINTTABLE("STDOUT",$tbl);
 }
 
 1;
