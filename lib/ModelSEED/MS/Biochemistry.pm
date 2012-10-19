@@ -623,33 +623,131 @@ Description:
 =cut
 
 sub mergeBiochemistry {
-    my $self = shift;
-	my $bio = shift;
-	my $opts = shift;
-    
-    for (my $i)
-    
-    
+    my ($self,$bio,$opts) = @_;
+    my $typelist = [
+    	"cues","compartments","compounds","reactions","media","compoundSets","reactionSets"
+    ];
+    my $types = {
+    	"cues" => "checkForDuplicateCue",
+    	"compartments" => "checkForDuplicateCompartment",
+    	"compounds" => "checkForDuplicateCompound",
+    	"reactions" => "checkForDuplicateReaction",
+    	"media" => "checkForDuplicateMedia",
+    	"compoundSets" => "checkForDuplicateCompoundSet",
+    	"reactionSets" => "checkForDuplicateReactionSet"
+    };
+    foreach my $type (@{$typelist}) {
+    	my $func = $types->{$type};
+    	my $objs = $bio->$type();
+    	my $uuidTranslation = {};
+    	for (my $j=0; $j < @{$objs}; $j++) {
+    		my $obj = $objs->[$j];
+    		if ($type eq "reactions") {
+    			$obj->parent($self);
+    		}
+    		my $dupObj = $self->$func($obj);
+    		if (defined($dupObj)) {
+    			$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
+    			$obj->uuid($dupObj->uuid());
+	    	} else {
+	    		$self->add($type,$dupObj);
+	    	}
+    	}
+    	$bio->_clearIndex();    	
+    	$bio->updateLinks($type,$uuidTranslation,1,1);
+    }
 }
 
-=head3 checkForDuplicateReactions
+=head3 checkForDuplicateReactionSet
 Definition:
-	void checkForDuplicateReactions(ModelSEED::MS::Reaction);
+	void checkForDuplicateReactionSet(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateReactionSet {
+    my ($self,$obj) = @_;
+    return $self->queryObjects("reactionSets",{reactionCodeList => $obj->reactionCodeList()});
+}
+
+=head3 checkForDuplicateCompoundSet
+Definition:
+	void checkForDuplicateCompoundSet(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateCompoundSet {
+    my ($self,$obj) = @_;
+    return $self->queryObjects("compoundSets",{compoundListString => $obj->compoundListString()});
+}
+
+=head3 checkForDuplicateMedia
+Definition:
+	void checkForDuplicateMedia(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateMedia {
+    my ($self,$obj) = @_;
+    return $self->queryObjects("media",{compoundListString => $obj->compoundListString()});
+}
+
+
+=head3 checkForDuplicateReaction
+Definition:
+	void checkForDuplicateReaction(ModelSEED::MS::Reaction);
 Description:
 	This command checks if the input reaction is a duplicate for an existing reaction
 
 =cut
 
-sub checkForDuplicateReactions {
-    my ($self,$rxn) = @_;
+sub checkForDuplicateReaction {
+    my ($self,$obj) = @_;
+    return $self->queryObjects("reactions",{equationCode => $obj->equationCode()});
+}
 
-    my $code=$rxn->equationCode();
-    my $searchRxns = $self->queryObjects("reactions",{equationCode => $code});
-    if(scalar(@$searchRxns)==0 || (scalar(@$searchRxns)==1 && $searchRxns->[0]->uuid() eq $rxn->uuid())){
-		return [];
-    }else{
-		return [ grep { $_->uuid() ne $rxn->uuid() } @$searchRxns];
-    }
+=head3 checkForDuplicateCompound
+Definition:
+	void checkForDuplicateCompound(ModelSEED::MS::Compound);
+Description:
+	This command checks if the input compound is a duplicate for an existing compound
+
+=cut
+
+sub checkForDuplicateCompound {
+    my ($self,$obj) = @_;
+    return $self->queryObject("compounds",{name => $obj->name()});
+}
+
+=head3 checkForDuplicateCompartment
+Definition:
+	void checkForDuplicateCompartment(ModelSEED::MS::Cue);
+Description:
+	This command checks if the input compartment is a duplicate for an existing compartment
+
+=cut
+
+sub checkForDuplicateCompartment {
+    my ($self,$obj) = @_;
+    return $self->queryObject("compartments",{name => $obj->name()});
+}
+
+=head3 checkForDuplicateCue
+Definition:
+	void checkForDuplicateCue(ModelSEED::MS::Cue);
+Description:
+	This command checks if the input cue is a duplicate for an existing cue
+
+=cut
+
+sub checkForDuplicateCue {
+    my ($self,$obj) = @_;
+    return $self->queryObject("cues",{name => $obj->name()});
 }
 
 sub __upgrade__ {

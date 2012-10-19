@@ -793,41 +793,43 @@ sub store {
 }
 
 sub updateLinks {
-    my ($self,$type,$olduuid,$newuuid,$recursive,$transferaliases) = @_;
+    my ($self,$type,$translation,$recursive,$transferaliases) = @_;
     if ($self->_type() eq "AliasSet") {
-    	print "Updating links...\n";
     	if ($self->class() eq $type) {
     		my $uuidHash = $self->aliasesByuuid();
     		my $aliases = $self->aliases();
-    		if (defined($uuidHash->{$olduuid})) {
-    			my $aliaselist = $uuidHash->{$olduuid};
-    			my $aliasesToAdd = [];
-    			for (my $j=0; $j < @{$aliaselist}; $j++) {
-    				my $alias = $aliaselist->[$j];
-					my $found = 0;
-					print $j."\t".$alias."\n";
-					for (my $i=0; $i < @{$aliases->{$alias}}; $i++) {
-						print $i."\n";
-						if ($aliases->{$alias}->[$i] eq $olduuid) {
-							splice(@{$aliases->{$alias}},$i,1);
-							if (@{$aliases->{$alias}} > 0) {
-								$i--;
+    		foreach my $olduuid (keys(%{$translation})) {
+	    		$newuuid = $translation->{$olduuid};
+	    		if (defined($uuidHash->{$olduuid})) {
+	    			my $aliaselist = $uuidHash->{$olduuid};
+	    			my $aliasesToAdd = [];
+	    			for (my $j=0; $j < @{$aliaselist}; $j++) {
+	    				my $alias = $aliaselist->[$j];
+						my $found = 0;
+						print $j."\t".$alias."\n";
+						for (my $i=0; $i < @{$aliases->{$alias}}; $i++) {
+							print $i."\n";
+							if ($aliases->{$alias}->[$i] eq $olduuid) {
+								splice(@{$aliases->{$alias}},$i,1);
+								if (@{$aliases->{$alias}} > 0) {
+									$i--;
+								}
+							} elsif ($aliases->{$alias}->[$i] eq $newuuid) {
+								$found = 1;
 							}
-						} elsif ($aliases->{$alias}->[$i] eq $newuuid) {
-							$found = 1;
+						}
+						if (@{$aliases->{$alias}} == 0) {
+							delete $aliases->{$alias};
+						}
+						if ($transferaliases == 1 && $found == 0) {
+							push(@{$aliases->{$alias}},$newuuid);
+							push(@{$aliasesToAdd},$alias);
 						}
 					}
-					if (@{$aliases->{$alias}} == 0) {
-						delete $aliases->{$alias};
+					if (@{$aliasesToAdd} > 0) {
+						push(@{$uuidHash->{$newuuid}},@{$aliasesToAdd});
 					}
-					if ($transferaliases == 1 && $found == 0) {
-						push(@{$aliases->{$alias}},$newuuid);
-						push(@{$aliasesToAdd},$alias);
-					}
-				}
-				if (@{$aliasesToAdd} > 0) {
-					push(@{$uuidHash->{$newuuid}},@{$aliasesToAdd});
-				}
+	    		}
     		}
     	}
     	return;
@@ -842,17 +844,15 @@ sub updateLinks {
     		if (defined($data)) {
 	    		if ($link->{array} == 1) {
 	    			for (my $j=0; $j < @{$data}; $j++) {
-	    				if ($data->[$j] eq $olduuid) {
-	    					$data->[$j] = $newuuid;
+	    				if (defined($translation->{$data->[$j]})) {
+	    					$data->[$j] = $translation->{$data->[$j]};
 	    					$self->$clearer();
 	    				}
 	    			}
-	    		} else {
-	    			if ($data eq $olduuid) {
-	    				$self->$attribute($data);
-	    				$self->$clearer();
-	    			}
-	    		}
+	    		} elsif (defined($translation->{$data})) {
+    				$data = $translation->{$data};
+    				$self->$clearer();
+    			}
     		}
     	}
     }
@@ -860,10 +860,9 @@ sub updateLinks {
     	my $sos = $self->_subobjects();
     	for (my $i=0; $i < @{$sos}; $i++) {
     		my $so = $sos->[$i]->{name};
-    		print "Updating links ".$so."...\n";
     		my $objects = $self->$so();
     		for (my $j=0; $j < @{$objects}; $j++) {
-    			$objects->[$j]->updateLinks($type,$olduuid,$newuuid,$recursive,$transferaliases);
+    			$objects->[$j]->updateLinks($type,$translation,$recursive,$transferaliases);
     		}
     	} 
     }
