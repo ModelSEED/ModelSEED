@@ -599,6 +599,24 @@ sub addReactionFromHash {
 	return $rxn;
 }
 
+=head3 mergeBiochemistry
+Definition:
+	void mergeBiochemistry(ModelSEED::MS::Biochemistry,{});
+Description:
+	This command merges the input biochemistry into the current biochemistry
+
+=cut
+
+sub mergeBiochemistry {
+    my $self = shift;
+	my $bio = shift;
+	my $opts = shift;
+    
+    for (my $i)
+    
+    
+}
+
 sub __upgrade__ {
 	my ($class,$version) = @_;
 	if ($version == 1) {
