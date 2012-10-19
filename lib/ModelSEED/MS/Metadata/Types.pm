@@ -14,7 +14,16 @@ subtype 'ModelSEED::uuid',
 	as 'Str',
     where { $_ =~ $ModelSEED::MS::Metadata::Types::uuidRegex },
 	message { "The string you provided ($_) is not a vaild UUID!" };
-	
+
 subtype 'ModelSEED::varchar',
 	as 'Str', where { !defined($_) || length($_) < 256 },
 	message { "The string you provided ($_) is too long to be a varchar!" };
+
+subtype 'ModelSEED::uid',
+  as 'Str';
+
+subtype 'ModelSEED::provenance_link',
+  as 'Str';
+
+subtype 'ModelSEED::subobject_link',
+  as 'Str';
