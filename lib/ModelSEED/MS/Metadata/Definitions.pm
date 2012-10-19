@@ -23,10 +23,10 @@ $objectDefinitions->{FBAFormulation} = {
                         req        => 0
                 },
                 {
-                        name       => 'regulatorymodel_uuid',
+                        name       => 'regulatorymodel_link',
                         printOrder => -1,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::provenance_link',
                         req        => 0
                 },
                 {
@@ -88,10 +88,10 @@ $objectDefinitions->{FBAFormulation} = {
                         default    => ''
                 },
                 {
-                        name       => 'expressionData_uuid',
+                        name       => 'expressionData_link',
                         printOrder => -1,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::subobject_link',
                         req        => 0
                 },
                 {
@@ -306,7 +306,6 @@ $objectDefinitions->{FBAFormulation} = {
                         type       => 'encompassed'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'model',
@@ -343,7 +342,7 @@ $objectDefinitions->{FBAFormulation} = {
                         array     => 1
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{FBAConstraint} = {
@@ -383,7 +382,6 @@ $objectDefinitions->{FBAConstraint} = {
                         type       => 'encompassed'
                 },
         ],
-        primarykeys => [qw(atom)],
         links       => []
 };
 
@@ -392,10 +390,10 @@ $objectDefinitions->{FBAConstraintVariable} = {
         class      => 'encompassed',
         attributes => [
                 {
-                        name       => 'entity_uuid',
+                        name       => 'entity_link',
                         printOrder => -1,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::subobject_link',
                         len        => 1,
                         req        => 0
                 },
@@ -423,7 +421,6 @@ $objectDefinitions->{FBAConstraintVariable} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(atom)],
         links       => []
 };
 
@@ -461,7 +458,6 @@ $objectDefinitions->{FBAReactionBound} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(reaction_uuid variableType)],
         links       => [
                 {
                         name      => 'modelReaction',
@@ -506,7 +502,6 @@ $objectDefinitions->{FBACompoundBound} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(reaction_uuid variableType)],
         links       => [
                 {
                         name      => 'modelCompound',
@@ -589,7 +584,6 @@ $objectDefinitions->{FBAPhenotypeSimulation} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(reaction_uuid variableType)],
         links       => [
                 {
                         name      => 'media',
@@ -626,10 +620,10 @@ $objectDefinitions->{FBAObjectiveTerm} = {
         class      => 'encompassed',
         attributes => [
                 {
-                        name       => 'entity_uuid',
+                        name       => 'entity_link',
                         printOrder => -1,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::subobject_link',
                         len        => 1,
                         req        => 0
                 },
@@ -657,7 +651,6 @@ $objectDefinitions->{FBAObjectiveTerm} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(atom)],
         links       => []
 };
 
@@ -747,9 +740,8 @@ $objectDefinitions->{FBAResult} = {
                         type       => 'encompassed'
                 }
         ],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{FBACompoundVariable} = {
@@ -819,7 +811,6 @@ $objectDefinitions->{FBACompoundVariable} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw()],
         links       => [
                 {
                         name      => 'modelcompound',
@@ -898,7 +889,6 @@ $objectDefinitions->{FBABiomassVariable} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw()],
         links       => [
                 {
                         name      => 'biomass',
@@ -977,7 +967,6 @@ $objectDefinitions->{FBAReactionVariable} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(modelfba_uuid modelcompound_uuid)],
         links       => [
                 {
                         name      => 'modelreaction',
@@ -1055,7 +1044,6 @@ $objectDefinitions->{FBAPhenotypeSimultationResult} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(fbaPhenotypeSimulation_uuid)],
         links       => [
                 {
                         name      => 'fbaPhenotypeSimulation',
@@ -1086,7 +1074,6 @@ $objectDefinitions->{FBADeletionResult} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(geneko_uuids)],
         links       => [
                 {
                         name      => 'genekos',
@@ -1125,7 +1112,6 @@ $objectDefinitions->{FBAMinimalMediaResult} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(minimalMedia_uuid)],
         links       => [
                 {
                         name      => 'minimalMedia',
@@ -1170,7 +1156,6 @@ $objectDefinitions->{FBAMetaboliteProductionResult} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(minimalMedia_uuid)],
         links       => [
                 {
                         name      => 'modelCompound',
@@ -1261,7 +1246,6 @@ $objectDefinitions->{GapgenFormulation} = {
                         type       => 'encompassed'
                 }
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'model',
@@ -1284,7 +1268,7 @@ $objectDefinitions->{GapgenFormulation} = {
                         method    => 'media'
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{GapgenSolution} = {
@@ -1345,7 +1329,6 @@ $objectDefinitions->{GapgenSolution} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'biomassSupplements',
@@ -1369,7 +1352,7 @@ $objectDefinitions->{GapgenSolution} = {
                         array     => 1
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{GapgenSolutionReaction} = {
@@ -1393,7 +1376,6 @@ $objectDefinitions->{GapgenSolutionReaction} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'modelreaction',
@@ -1402,7 +1384,7 @@ $objectDefinitions->{GapgenSolutionReaction} = {
                         method    => 'modelreactions'
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{GapfillingFormulation} = {
@@ -1592,7 +1574,6 @@ $objectDefinitions->{GapfillingFormulation} = {
                         type       => 'encompassed'
                 }
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'model',
@@ -1630,7 +1611,7 @@ $objectDefinitions->{GapfillingFormulation} = {
                         array     => 1
                 }
         ],
-        reference_id_types => [qw(uuid)]
+        reference_id_types => [qw(uid)]
 };
 
 $objectDefinitions->{GapfillingSolution} = {
@@ -1691,7 +1672,6 @@ $objectDefinitions->{GapfillingSolution} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'biomassRemovals',
@@ -1715,7 +1695,7 @@ $objectDefinitions->{GapfillingSolution} = {
                         array     => 1
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{GapfillingSolutionReaction} = {
@@ -1730,10 +1710,10 @@ $objectDefinitions->{GapfillingSolutionReaction} = {
                         req        => 1
                 },
                 {
-                        name       => 'compartment_uuid',
+                        name       => 'compartment_link',
                         printOrder => 0,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::subobject_link',
                         req        => 1
                 },
                 {
@@ -1754,13 +1734,18 @@ $objectDefinitions->{GapfillingSolutionReaction} = {
                 },
         ],
         subobjects => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'reaction',
                         attribute => 'reaction_link',
                         parent    => 'Biochemistry',
                         method    => 'reactions'
+                },
+                {
+                        name      => 'compartment',
+                        attribute => 'compartment_link',
+                        parent    => 'Biochemistry',
+                        method    => 'compartments'
                 },
                 {
                         name      => 'candidateFeatures',
@@ -1770,7 +1755,7 @@ $objectDefinitions->{GapfillingSolutionReaction} = {
                         array     => 1
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{GapfillingGeneCandidate} = {
@@ -1821,7 +1806,6 @@ $objectDefinitions->{GapfillingGeneCandidate} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'feature',
@@ -1891,7 +1875,6 @@ $objectDefinitions->{ReactionSetMultiplier} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'reactionset',
@@ -1900,7 +1883,7 @@ $objectDefinitions->{ReactionSetMultiplier} = {
                         method    => 'reactionSets'
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{User} = {
@@ -1954,9 +1937,8 @@ $objectDefinitions->{User} = {
                 },
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
         version            => 1.0,
 };
 
@@ -1987,9 +1969,8 @@ $objectDefinitions->{BiochemistryStructures} = {
                         type       => 'child'
                 }
         ],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid alias)],
+        reference_id_types => [qw(uid alias)],
         version            => 1.0,
 };
 
@@ -2029,9 +2010,8 @@ $objectDefinitions->{Structure} = {
                 }
         ],
         subobjects  => [],
-        primarykeys => [qw(type cksum compound_uuid)],
         links       => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{AliasSet} = {
@@ -2090,9 +2070,8 @@ $objectDefinitions->{AliasSet} = {
                 }     #url or pubmed ID indicating where the alias set came from
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Biochemistry} = {
@@ -2196,7 +2175,6 @@ $objectDefinitions->{Biochemistry} = {
                         description => 'Structural cues for parts of compund structures',
                 },
         ],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'biochemistrystructures',
@@ -2206,7 +2184,7 @@ $objectDefinitions->{Biochemistry} = {
                         weak      => 0
                 }
         ],
-        reference_id_types => [qw(uuid alias)],
+        reference_id_types => [qw(uid alias)],
         version            => 2.0,
 };
 
@@ -2266,9 +2244,8 @@ $objectDefinitions->{AliasSet} = {
                 }     #url or pubmed ID indicating where the alias set came from
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Compartment} = {
@@ -2320,9 +2297,8 @@ $objectDefinitions->{Compartment} = {
                 },
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Cue} = {
@@ -2435,7 +2411,6 @@ $objectDefinitions->{Cue} = {
                 }
         ],
         subobjects => [],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'structure',
@@ -2444,7 +2419,7 @@ $objectDefinitions->{Cue} = {
                         method    => 'structures',
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Compound} = {
@@ -2634,8 +2609,7 @@ $objectDefinitions->{Compound} = {
                         array     => 1
                 }
         ],
-        primarykeys => [qw(uuid)],
-        reference_id_types => [qw(uuid)]
+        reference_id_types => [qw(uid)]
 };
 
 $objectDefinitions->{Reaction} = {
@@ -2752,7 +2726,6 @@ $objectDefinitions->{Reaction} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys        => [qw(uuid)],
         links       => [
                 {
                         name      => 'abstractReaction',
@@ -2762,7 +2735,7 @@ $objectDefinitions->{Reaction} = {
                         can_be_undef => 1,
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Reagent} = {
@@ -2802,7 +2775,6 @@ $objectDefinitions->{Reagent} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(compound_uuid compartment_uuid)],
         links       => [
                 {
                         name      => 'compound',
@@ -2886,9 +2858,8 @@ $objectDefinitions->{Media} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{MediaCompound} = {
@@ -2928,7 +2899,6 @@ $objectDefinitions->{MediaCompound} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(media_uuid compound_uuid)],
         links       => [
                 {
                         name      => 'compound',
@@ -2999,7 +2969,6 @@ $objectDefinitions->{CompoundSet} = {
                 },
         ],
         subobjects => [],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'compounds',
@@ -3009,7 +2978,7 @@ $objectDefinitions->{CompoundSet} = {
                         array     => 1
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{ReactionSet} = {
@@ -3072,7 +3041,6 @@ $objectDefinitions->{ReactionSet} = {
                 },
         ],
         subobjects => [],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'reactions',
@@ -3082,7 +3050,7 @@ $objectDefinitions->{ReactionSet} = {
                         array     => 1
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Model} = {
@@ -3272,7 +3240,6 @@ $objectDefinitions->{Model} = {
                         type       => 'child'
                 }
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'fbaFormulations',
@@ -3331,7 +3298,7 @@ $objectDefinitions->{Model} = {
                         weak      => 0
                 }
         ],
-        reference_id_types => [qw(uuid alias)],
+        reference_id_types => [qw(uid alias)],
         version            => 2.0,
 };
 
@@ -3426,9 +3393,8 @@ $objectDefinitions->{Biomass} = {
                         type  => 'encompassed'
                 }
         ],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{BiomassCompound} = {
@@ -3451,7 +3417,6 @@ $objectDefinitions->{BiomassCompound} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(biomass_uuid modelcompound_uuid)],
         links       => [
                 {
                         name      => 'modelcompound',
@@ -3520,7 +3485,6 @@ $objectDefinitions->{ModelCompartment} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'compartment',
@@ -3529,7 +3493,7 @@ $objectDefinitions->{ModelCompartment} = {
                         method    => 'compartments'
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{ModelCompound} = {
@@ -3581,7 +3545,6 @@ $objectDefinitions->{ModelCompound} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(model_uuid uuid)],
         links       => [
                 {
                         name      => 'compound',
@@ -3596,7 +3559,7 @@ $objectDefinitions->{ModelCompound} = {
                         method    => 'modelcompartments'
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{ModelReaction} = {
@@ -3661,7 +3624,6 @@ $objectDefinitions->{ModelReaction} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw(model_uuid uuid)],
         links       => [
                 {
                         name      => 'reaction',
@@ -3676,7 +3638,7 @@ $objectDefinitions->{ModelReaction} = {
                         method    => 'modelcompartments'
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{ModelReactionReagent} = {
@@ -3700,7 +3662,6 @@ $objectDefinitions->{ModelReactionReagent} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(modelcompound_uuid)],
         links       => [
                 {
                         name      => 'modelcompound',
@@ -3738,7 +3699,6 @@ $objectDefinitions->{ModelReactionProtein} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw()],
         links       => [
                 {
                         name      => 'complex',
@@ -3792,7 +3752,6 @@ $objectDefinitions->{ModelReactionProteinSubunit} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw()],
         links       => [
                 {
                         name      => 'role',
@@ -3816,7 +3775,6 @@ $objectDefinitions->{ModelReactionProteinSubunitGene} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw()],
         links       => [
                 {
                         name      => 'feature',
@@ -3897,7 +3855,6 @@ $objectDefinitions->{Annotation} = {
                         type       => 'child'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'mapping',
@@ -3907,7 +3864,7 @@ $objectDefinitions->{Annotation} = {
                         weak      => 0
                 },
         ],
-        reference_id_types => [qw(uuid alias)],
+        reference_id_types => [qw(uid alias)],
         version            => 1.0,
 };
 
@@ -4000,9 +3957,8 @@ $objectDefinitions->{Genome} = {
                 },    #aerobe,facultativeAnaerobe,obligateAnaerobe
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Feature} = {
@@ -4096,7 +4052,6 @@ $objectDefinitions->{Feature} = {
                         type  => 'encompassed'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'genome',
@@ -4105,7 +4060,7 @@ $objectDefinitions->{Feature} = {
                         method    => 'genomes'
                 },
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{FeatureRole} = {
@@ -4142,7 +4097,6 @@ $objectDefinitions->{FeatureRole} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(annotation_uuid feature_uuid role_uuid)],
         links       => [
                 {
                         name      => 'role',
@@ -4158,10 +4112,10 @@ $objectDefinitions->{SubsystemState} = {
         class      => 'child',
         attributes => [
                 {
-                        name       => 'roleset_uuid',
+                        name       => 'roleset_link',
                         printOrder => 0,
                         perm       => 'rw',
-                        type       => 'ModelSEED::uuid',
+                        type       => 'ModelSEED::subobject_link',
                         req        => 0
                 },
                 {
@@ -4181,9 +4135,16 @@ $objectDefinitions->{SubsystemState} = {
                 }
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
-        links              => [],
-        reference_id_types => [qw(uuid)],
+        links              => [
+                {
+                        name      => 'roleset',
+                        attribute => 'roleset_link',
+                        parent    => 'Mapping',
+                        method    => 'rolesets'
+
+                }
+        ],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Mapping} = {
@@ -4274,7 +4235,6 @@ $objectDefinitions->{Mapping} = {
                         type  => 'child'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'biochemistry',
@@ -4284,7 +4244,7 @@ $objectDefinitions->{Mapping} = {
                         weak      => 0
                 },
         ],
-        reference_id_types => [qw(uuid alias)],
+        reference_id_types => [qw(uid alias)],
         version            => 2.0,
 };
 
@@ -4308,7 +4268,6 @@ $objectDefinitions->{UniversalReaction} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'reaction',
@@ -4409,7 +4368,6 @@ $objectDefinitions->{BiomassTemplate} = {
                         type  => 'child'
                 },
         ],
-        primarykeys => [qw(uuid)],
         links       => []
 };
 
@@ -4472,7 +4430,6 @@ $objectDefinitions->{BiomassTemplateComponent} = {
                 },
         ],
         subobjects  => [],
-        primarykeys => [qw(uuid)],
         links       => [
                 {
                         name      => 'compound',
@@ -4520,9 +4477,8 @@ $objectDefinitions->{Role} = {
                 }
         ],
         subobjects         => [],
-        primarykeys        => [qw(uuid)],
         links              => [],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{RoleSet} = {
@@ -4586,7 +4542,6 @@ $objectDefinitions->{RoleSet} = {
                 }
         ],
         subobjects => [],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'roles',
@@ -4596,7 +4551,7 @@ $objectDefinitions->{RoleSet} = {
                         array => 1
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{Complex} = {
@@ -4642,7 +4597,6 @@ $objectDefinitions->{Complex} = {
                         type  => 'encompassed'
                 }
         ],
-        primarykeys        => [qw(uuid)],
         links              => [
                 {
                         name      => 'reactions',
@@ -4652,7 +4606,7 @@ $objectDefinitions->{Complex} = {
                         array => 1
                 }
         ],
-        reference_id_types => [qw(uuid)],
+        reference_id_types => [qw(uid)],
 };
 
 $objectDefinitions->{ComplexRole} = {
@@ -4694,7 +4648,6 @@ $objectDefinitions->{ComplexRole} = {
                 }
         ],
         subobjects  => [],
-        primarykeys => [qw(complex_uuid role_uuid)],
         links       => [
                 {
                         name      => 'role',
