@@ -799,7 +799,7 @@ sub updateLinks {
     		my $uuidHash = $self->aliasesByuuid();
     		my $aliases = $self->aliases();
     		foreach my $olduuid (keys(%{$translation})) {
-	    		$newuuid = $translation->{$olduuid};
+	    		my $newuuid = $translation->{$olduuid};
 	    		if (defined($uuidHash->{$olduuid})) {
 	    			my $aliaselist = $uuidHash->{$olduuid};
 	    			my $aliasesToAdd = [];
@@ -842,7 +842,7 @@ sub updateLinks {
     		my $clearer = $link->{clearer};
     		my $data = $self->$attribute();
     		if (defined($data)) {
-	    		if ($link->{array} == 1) {
+	    		if (defined($link->{array}) && $link->{array} == 1) {
 	    			for (my $j=0; $j < @{$data}; $j++) {
 	    				if (defined($translation->{$data->[$j]})) {
 	    					$data->[$j] = $translation->{$data->[$j]};
