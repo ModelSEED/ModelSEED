@@ -9,6 +9,7 @@ use strict;
 use ModelSEED::MS::DB::ModelReaction;
 package ModelSEED::MS::ModelReaction;
 use Moose;
+use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ModelReaction';
 #***********************************************************************************************************
@@ -163,8 +164,8 @@ Description:
 =cut
 
 sub addReagentToReaction {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["coefficient","modelcompound_uuid"],{});
+    my $self = shift;
+    my $args = args(["coefficient","modelcompound_uuid"],{}, @_);
 	my $rgts = $self->modelReactionReagents();
 	for (my $i=0; $i < @{$rgts}; $i++) {
 		if ($rgts->[$i]->modelcompound_uuid() eq $args->{modelcompound_uuid}) {
@@ -190,8 +191,8 @@ Description:
 =cut
 
 sub addModelReactionProtein {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["proteinDataTree","complex_uuid"],{});
+    my $self = shift;
+    my $args = args(["proteinDataTree","complex_uuid"], {}, @_);
 	my $prots = $self->modelReactionProteins();
 	for (my $i=0; $i < @{$prots}; $i++) {
 		if ($prots->[$i]->complex_uuid() eq $args->{complex_uuid}) {

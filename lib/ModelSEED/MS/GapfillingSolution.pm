@@ -14,10 +14,59 @@ extends 'ModelSEED::MS::DB::GapfillingSolution';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has gapfillingReactionString => ( is => 'rw',printOrder => 2, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgapfillingReactionString' );
+has biomassRemovalString => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassRemovalString' );
+has mediaSupplementString => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaSupplementString' );
+has koRestoreString => ( is => 'rw',printOrder => 5, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildkoRestoreString' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildgapfillingReactionString {
+	my ($self) = @_;
+	my $string = "";
+	my $gapfillingReactions = $self->gapfillingSolutionReactions();
+	for (my $i=0; $i < @{$gapfillingReactions}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $gapfillingReactions->[$i]->reaction()->id().$gapfillingReactions->[$i]->direction();
+	}
+	return $string;
+}
+sub _buildbiomassRemovalString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->biomassRemovals()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->biomassRemovals()->[$i]->id();
+	}
+	return $string;
+}
+sub _buildmediaSupplementString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->mediaSupplements()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->mediaSupplements()->[$i]->id();
+	}
+	return $string;
+}
+sub _buildkoRestoreString {
+	my ($self) = @_;
+	my $string = "";
+	for (my $i=0; $i < @{$self->koRestores()}; $i++) {
+		if (length($string) > 0) {
+			$string .= ";";
+		}
+		$string .= $self->koRestores()->[$i]->id();
+	}
+	return $string;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -27,86 +76,47 @@ extends 'ModelSEED::MS::DB::GapfillingSolution';
 # FUNCTIONS:
 #***********************************************************************************************************
 
-=head3 loadFromFile
+=head3 printSolution
 
 Definition:
-	void ModelSEED::MS::Model->loadFromFile();
+	string printSolution();
 Description:
-	Loads gapfilling results from file
+	Prints solution in human readable format
 
 =cut
 
-sub loadFromFile {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["filename"],{
-		model => $self->model()
-	});
-	if (!-e $args->{filename}) {
-		ModelSEED::utilities::ERROR("Could not open gapfilling file ".$args->{filename});
+sub printSolution {
+	my ($self) = @_;
+	my $rxns = $self->gapfillingSolutionReactions();
+	my $output = "Solution cost:".$self->solutionCost()."\n";
+	if (@{$rxns} > 0) {
+		$output .= "Gapfilled reactions ".@{$rxns}."{\n";
+		$output .= "ID\tDirection\tEquation\n";
+		for (my $i=0; $i < @{$rxns}; $i++) {
+			my $rxn = $rxns->[$i];
+			$output .= $rxn->reaction()->id()."[c]\t".$rxn->direction()."\t".$rxn->reaction()->definition()."\n";
+		}	
+		$output .= "}\n";
 	}
-	my $filedata = ModelSEED::utilities::LOADFILE($args->{filename});
-	my $model = $args->{model};
-	my $count = 0;
-	for (my $i=0; $i < @{$filedata}; $i++) {
-		if ($filedata->[$i] =~ m/^bio00001/) {
-			my $array = [split(/\t/,$filedata->[$i])];
-			if (defined($array->[1])) {
-				my $subarray = [split(/;/,$array->[1])];
-				for (my $j=0; $j < @{$subarray}; $j++) {
-					if ($subarray->[$j] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
-						my $rxnid = $2;
-						my $sign = $1;
-						my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-						}
-						my $mdlrxn = $model->queryObject("modelreactions",{reaction_uuid => $rxn->uuid()});
-						my $direction = ">";
-						if ($sign eq "-") {
-							$direction = "<";
-						}
-						if ($rxn->direction() ne $direction) {
-							$direction = "=";
-						}
-						if (defined($mdlrxn)) { 
-							$mdlrxn->direction("=");
-						} else {
-							$mdlrxn = $model->addReactionToModel({
-								reaction => $rxn,
-								direction => $direction
-							});
-						}
-						$count++;
-						$self->add("gapfillingSolutionReactions",{
-							modelreaction_uuid => $mdlrxn->uuid(),
-							modelreaction => $mdlrxn,
-							direction => $direction
-						});	
-					} elsif ($subarray->[$j] =~ m/([\+])(cpd\d\d\d\d\d)DrnRxn/) {
-						my $cpdid = $2;
-						my $sign = $1;
-						my $bio = $model->biomasses()->[0];
-						my $biocpds = $bio->biomasscompounds();
-						my $found = 0;
-						for (my $i=0; $i < @{$biocpds}; $i++) {
-							my $biocpd = $biocpds->[$i];
-							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
-								$bio->remove("biomasscompounds",$biocpd);
-								$found = 1;
-								push(@{$self->biomassRemovals()},$biocpd->modelcompound());
-								push(@{$self->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
-							}
-						}
-						if ($found == 0) {
-							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
-						}
-					}
-				}
-			}
-			
-		}
+	if (@{$self->biomassRemoval_uuids()} > 0) {
+		$output .= "Removed biomass compounds".@{$self->biomassRemovals()}."{\n";
+		$output .= "ID\tName\tFormula\n";
+		for (my $i=0; $i < @{$self->biomassRemovals()}; $i++) {
+			my $cpd = $self->biomassRemovals()->[$i];
+			$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->formula()."\n";
+		}	
+		$output .= "}\n";
 	}
-	$self->solutionCost($count);
+	if (@{$self->biomassRemoval_uuids()} > 0) {
+		$output .= "Supplemented media compounds".@{$self->mediaSupplements()}."{\n";
+		$output .= "ID\tName\tFormula\n";
+		for (my $i=0; $i < @{$self->mediaSupplements()}; $i++) {
+			my $cpd = $self->mediaSupplements()->[$i];
+			$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->formula()."\n";
+		}	
+		$output .= "}\n";
+	}
+	return $output;
 }
 
 __PACKAGE__->meta->make_immutable;

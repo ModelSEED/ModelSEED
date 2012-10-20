@@ -72,6 +72,7 @@ TODO: This is not implemented yet and only returns "Gram negative"
 =cut
 
 use ModelSEED::MS::Model;
+use ModelSEED::utilities qw( args );
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';
@@ -118,12 +119,12 @@ sub featuresInRoleSet {
 }
 
 sub createStandardFBAModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+	my $args = args([],{
 		prefix => "Seed",
 		mapping => $self->mapping(),
         verbose => 0,
-	});
+	}, @_);
 	my $mapping = $args->{mapping};
 	my $biochem = $mapping->biochemistry();
 	my $type = "Singlegenome";
@@ -150,8 +151,7 @@ sub createStandardFBAModel {
 }
 
 sub classifyGenomeFromAnnotation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{});
+    my $self = shift;
 	return "Gram negative";
 }
 

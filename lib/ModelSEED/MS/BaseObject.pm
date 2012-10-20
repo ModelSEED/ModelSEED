@@ -8,7 +8,7 @@
 use ModelSEED::MS::Metadata::Types;
 use DateTime;
 use Data::UUID;
-use JSON;
+use JSON::XS;
 use Module::Load;
 use ModelSEED::MS::Metadata::Attribute::Typed;
 use ModelSEED::Exceptions;
@@ -98,7 +98,7 @@ Returns an HTML document for the object.
 
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities;
+use ModelSEED::utilities qw( verbose error args );
 use Scalar::Util qw(weaken);
 our $VERSION = undef;
 
@@ -186,10 +186,10 @@ sub serializeToDB {
 }
 
 sub toJSON {
-    my ($self,$args) = @_;
-    $args = ModelSEED::utilities::ARGS($args,[],{pp => 0});
+    my $self = shift;
+    my $args = args([],{pp => 0}, @_);
     my $data = $self->serializeToDB();
-    my $JSON = JSON->new->utf8(1);
+    my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
     return $JSON->encode($data)
 }
@@ -258,7 +258,7 @@ sub interpretReference {
 		if (defined($expectedType) && @{$array} == 1) {
 			$array = [$expectedType,"id",$ref];
 		} else {
-			ModelSEED::utilities::ERROR($ref." is not a valid  reference!");
+			error($ref." is not a valid  reference!");
 		}
 	}
 	my $refTypeProvObj = {
@@ -272,7 +272,7 @@ sub interpretReference {
 		"Biomass" => ["model","biomasses"]
 	};
 	if (!defined($refTypeProvObj->{$array->[0]})) {
-		ModelSEED::utilities::ERROR("No specs to handle ref type ".$array->[0]);
+		error("No specs to handle ref type ".$array->[0]);
 	}	
 	my $prov = $refTypeProvObj->{$array->[0]}->[0];
 	my $func = $refTypeProvObj->{$array->[0]}->[1];
@@ -283,19 +283,14 @@ sub interpretReference {
 		$obj = $self->$prov()->queryObject($func,{$array->[1] => $array->[2]});
 	}
 	if (!defined($obj)) {
-		print STDERR "Could not find ".$ref."!\n";
+		verbose("Could not find ".$ref."!");
 	}
 	return ($obj,$array->[0],$array->[1],$array->[2]);
 }
 
 sub parseReferenceList {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
-		string => "none",
-		delimiter => "|",
-		data => "obj",
-		class => undef
-	});
+	my $self = shift;
+	my $args = args([], { string => "none", delimiter => "|", data => "obj", class => undef }, @_);
 	my $output = [];
 	if (!defined($args->{array})) {
 		$args->{array} = ModelSEED::utilities::parseArrayString($args);
@@ -316,8 +311,8 @@ sub parseReferenceList {
 #Output functions
 ######################################################################
 sub createHTML {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{internal => 0});
+	my $self = shift;
+	my $args = args([],{internal => 0}, @_);
 	my $data = $self->_createReadableData();
 	my $output = [];
 	if ($args->{internal} == 0) {
@@ -528,7 +523,7 @@ sub add {
 
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        ModelSEED::utilities::ERROR("Object doesn't have subobject with name: $attribute");
+        error("Object doesn't have subobject with name: $attribute");
     }
 
     my $obj_info = {
@@ -545,7 +540,7 @@ sub add {
         $obj_info->{object} = $data_or_object;
         $obj_info->{created} = 1;
     } else {
-        ModelSEED::utilities::ERROR("Neither data nor object passed into " . ref($self) . "->add");
+        error("Neither data nor object passed into " . ref($self) . "->add");
     }
 
     $obj_info->{object}->parent($self);
@@ -559,7 +554,7 @@ sub remove {
 
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        ModelSEED::utilities::ERROR("Object doesn't have attribute with name: $attribute");
+        error("Object doesn't have attribute with name: $attribute");
     }
 
     my $removedCount = 0;
@@ -586,7 +581,7 @@ sub getLinkedObject {
     	my $refName = lc(substr($attribute, 0,1)).substr($attribute,1);
         my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $refName);
         if (!defined($self->store)) {
-        	ModelSEED::utilities::ERROR("Getting object from undefined store!");
+        	error("Getting object from undefined store!");
         }
         return $self->store->get_object($ref);
     } else {
@@ -604,14 +599,15 @@ sub getLinkedObject {
         }
         $object = $sourceObj->getObject($attribute,$uuid);
         return $object if defined $object;
-        ModelSEED::Exception::BadObjectLink->throw(
-            searchSource     => $self,
-            searchBaseObject => $sourceObj,
-            searchBaseType   => $sourceType,
-            searchAttribute  => $attribute,
-            searchUUID       => $uuid,
-            errorText        => 'No object found with that UUID',
-        );
+#        ModelSEED::Exception::BadObjectLink->throw(
+#            searchSource     => $self,
+#            searchBaseObject => $sourceObj,
+#            searchBaseType   => $sourceType,
+#            searchAttribute  => $attribute,
+#            searchUUID       => $uuid,
+#            errorText        => 'No object found with that UUID',
+#        );
+        return;
     }
 }
 
@@ -624,6 +620,89 @@ sub getLinkedObjectArray {
     return $list;
 }
 
+sub removeLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	my $data = $self->$method();
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				verbose("Removing object from link array.");
+				if (@{$data} == 1) {
+					$data = [];
+				} else {
+					splice(@{$data},$i,1);
+				}
+				my $clearer = "clear_".$link;
+				$self->$clearer();
+			}
+		}
+    }	
+}
+
+sub replaceLinkArrayItem {
+	my ($self,$link,$oldObject,$newObject) = @_;
+    my $linkdata = $self->_links($link);
+    my $olduuid;
+    my $newuuid;
+    if (ref($oldObject) eq "SCALAR") {
+    	$olduuid = $oldObject;
+    } else {
+    	$olduuid = $oldObject->uuid();
+    }
+     if (ref($newuuid) eq "SCALAR") {
+    	$newuuid = $newuuid;
+    } else {
+    	$newuuid = $newuuid->uuid();
+    }
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	my $data = $self->$method();
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $olduuid) {
+				verbose("Replacing object in link array.");
+				$data->[$i] = $newuuid;
+				my $clearer = "clear_".$link;
+				$self->$clearer();
+			}
+		}
+    }	
+}
+
+sub addLinkArrayItem {
+	my ($self,$link,$object) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	my $data = $self->$method();
+    	my $found = 0;
+    	for (my $i=0; $i < @{$data}; $i++) {
+			if ($data->[$i] eq $object->uuid()) {
+				$found = 1;
+			}
+    	}
+    	if ($found == 0) {
+    		verbose("Removing object from link array.");
+    		my $clearer = "clear_".$link;
+			$self->$clearer();
+			push(@{$data},$object->uuid());
+    	}
+    }	
+}
+
+sub clearLinkArray {
+	my ($self,$link) = @_;
+    my $linkdata = $self->_links($link);
+    if (defined($linkdata) && $linkdata->{array} == 1) {
+    	my $method = $linkdata->{attribute};
+    	$self->$method([]);
+    	verbose("Clearing link array.");
+    	my $clearer = "clear_".$link;
+		$self->$clearer();
+    }	
+}
+
 sub biochemistry {
     my ($self) = @_;
     my $parent = $self->parent();
@@ -634,7 +713,7 @@ sub biochemistry {
 	} elsif (defined($parent)) {
         return $parent->biochemistry();
     }
-    ModelSEED::utilities::ERROR("Cannot find Biochemistry object in tree!");
+    error("Cannot find Biochemistry object in tree!");
 }
 
 sub fbaformulation {
@@ -645,7 +724,7 @@ sub fbaformulation {
     } elsif (defined($parent)) {
         return $parent->fbaformulation();
     }
-    ModelSEED::utilities::ERROR("Cannot find FBAFormulation object in tree!");
+    error("Cannot find FBAFormulation object in tree!");
 }
 
 sub model {
@@ -656,7 +735,7 @@ sub model {
     } elsif (defined($parent)) {
         return $parent->model();
     }
-    ModelSEED::utilities::ERROR("Cannot find Model object in tree!");
+    error("Cannot find Model object in tree!");
 }
 
 sub annotation {
@@ -667,7 +746,7 @@ sub annotation {
     } elsif (defined($parent)) {
         return $parent->annotation();
     }
-    ModelSEED::utilities::ERROR("Cannot find Annotation object in tree!");
+    error("Cannot find Annotation object in tree!");
 }
 
 sub mapping {
@@ -678,7 +757,7 @@ sub mapping {
     } elsif (defined($parent)) {
         return $parent->mapping();
     }
-    ModelSEED::utilities::ERROR("Cannot find mapping object in tree!");
+    error("Cannot find mapping object in tree!");
 }
 
 sub biochemistrystructures {
@@ -690,7 +769,7 @@ sub biochemistrystructures {
     } elsif (defined($parent)) {
        	return $parent->biochemistrystructures();
     }
-    ModelSEED::utilities::ERROR("Cannot find BiochemistryStructures object in tree!");
+    error("Cannot find BiochemistryStructures object in tree!");
 }
 
 sub fbaproblem {
@@ -701,7 +780,7 @@ sub fbaproblem {
     } elsif (defined($parent)) {
         return $parent->fbaproblem();
     }
-    ModelSEED::utilities::ERROR("Cannot find fbaproblem object in tree!");
+    error("Cannot find fbaproblem object in tree!");
 }
 
 sub store {
@@ -713,6 +792,83 @@ sub store {
     return $parent;
 }
 
+sub updateLinks {
+    my ($self,$type,$olduuid,$newuuid,$recursive,$transferaliases) = @_;
+    if ($self->_type() eq "AliasSet") {
+    	print "Updating links...\n";
+    	if ($self->class() eq $type) {
+    		my $uuidHash = $self->aliasesByuuid();
+    		my $aliases = $self->aliases();
+    		if (defined($uuidHash->{$olduuid})) {
+    			my $aliaselist = $uuidHash->{$olduuid};
+    			my $aliasesToAdd = [];
+    			for (my $j=0; $j < @{$aliaselist}; $j++) {
+    				my $alias = $aliaselist->[$j];
+					my $found = 0;
+					print $j."\t".$alias."\n";
+					for (my $i=0; $i < @{$aliases->{$alias}}; $i++) {
+						print $i."\n";
+						if ($aliases->{$alias}->[$i] eq $olduuid) {
+							splice(@{$aliases->{$alias}},$i,1);
+							if (@{$aliases->{$alias}} > 0) {
+								$i--;
+							}
+						} elsif ($aliases->{$alias}->[$i] eq $newuuid) {
+							$found = 1;
+						}
+					}
+					if (@{$aliases->{$alias}} == 0) {
+						delete $aliases->{$alias};
+					}
+					if ($transferaliases == 1 && $found == 0) {
+						push(@{$aliases->{$alias}},$newuuid);
+						push(@{$aliasesToAdd},$alias);
+					}
+				}
+				if (@{$aliasesToAdd} > 0) {
+					push(@{$uuidHash->{$newuuid}},@{$aliasesToAdd});
+				}
+    		}
+    	}
+    	return;
+    }
+    my $links = $self->_links();
+    for (my $i=0; $i < @{$links}; $i++) {
+    	my $link = $links->[$i];
+    	if ($link->{class} eq $type) {
+    		my $attribute = $link->{attribute};
+    		my $clearer = $link->{clearer};
+    		my $data = $self->$attribute();
+    		if (defined($data)) {
+	    		if ($link->{array} == 1) {
+	    			for (my $j=0; $j < @{$data}; $j++) {
+	    				if ($data->[$j] eq $olduuid) {
+	    					$data->[$j] = $newuuid;
+	    					$self->$clearer();
+	    				}
+	    			}
+	    		} else {
+	    			if ($data eq $olduuid) {
+	    				$self->$attribute($data);
+	    				$self->$clearer();
+	    			}
+	    		}
+    		}
+    	}
+    }
+    if ($recursive == 1) {
+    	my $sos = $self->_subobjects();
+    	for (my $i=0; $i < @{$sos}; $i++) {
+    		my $so = $sos->[$i]->{name};
+    		print "Updating links ".$so."...\n";
+    		my $objects = $self->$so();
+    		for (my $j=0; $j < @{$objects}; $j++) {
+    			$objects->[$j]->updateLinks($type,$olduuid,$newuuid,$recursive,$transferaliases);
+    		}
+    	} 
+    }
+}
+
 sub _build_object {
     my ($self, $attribute, $obj_info) = @_;
 
@@ -721,7 +877,7 @@ sub _build_object {
     }
 	my $attInfo = $self->_subobjects($attribute);
     if (!defined($attInfo->{class})) {
-    	ModelSEED::utilities::ERROR("No class for attribute ".$attribute);	
+    	error("No class for attribute ".$attribute);	
     }
     my $class = 'ModelSEED::MS::' . $attInfo->{class};
     Module::Load::load $class;

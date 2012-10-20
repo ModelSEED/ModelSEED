@@ -4,6 +4,7 @@ use common::sense;
 use Class::Autouse qw(ModelSEED::Configuration);
 use Module::Load qw(load);
 use Try::Tiny;
+use JSON::XS;
 use ModelSEED::Exceptions;
 use base 'App::Cmd::Command';
 
@@ -30,6 +31,7 @@ sub opt_spec { return (
 
 sub validate_args {
     my ($self, $opt, $args) = @_;
+    print($self->usage) && return if $opt->{help};
     unless(@$args == 1) {
         $self->usage_error("Must supply a storage interface to remove");
     }
@@ -45,7 +47,6 @@ sub validate_args {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
     my $name = $args->[0];
     my $stores = $MS->config->{stores};
     my $remove;
@@ -72,7 +73,7 @@ sub _get_database_instance {
     } catch {
         ModelSEED::Exception::DatabaseConfigError->throw(
             dbName => $config->{name},
-            configText => JSON->new()->pretty(1)->encode($config),
+            configText => JSON::XS->new->pretty(1)->encode($config),
         );
     };
     return $instance;

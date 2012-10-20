@@ -65,7 +65,6 @@ foreach my $name (keys(%{$objects})) {
         push(@$output, "has parent => (" . join(", ", @$props) . ");");
         push(@$output, "", "");
     }
-
     #Printing attributes
     push(@$output, "# ATTRIBUTES:");
     $type = ", type => 'attribute', metaclass => 'Typed'";
@@ -165,6 +164,14 @@ foreach my $name (keys(%{$objects})) {
             my $parent = $subobject->{parent};
             my $method = $subobject->{method};
             my $attr = $subobject->{attribute};
+            my $can_be_undef = $subobject->{can_be_undef};
+               $can_be_undef = 0 unless defined $can_be_undef;
+            $subobject->{clearer} = "clear_".$soname;
+            if (defined($functionToType->{$method})) {
+            	$subobject->{class} = $functionToType->{$method};
+            } else {
+            	$subobject->{class} = $method;
+            }
             my $weak = (defined($subobject->{weak})) ? $subobject->{weak} : 1;
             warn "$name $soname is notweak" if(!$weak);
             # find link class
@@ -181,17 +188,21 @@ foreach my $name (keys(%{$objects})) {
             my $type = 'ModelSEED::MS::'.$class;
             if (defined($subobject->{array}) && $subobject->{array} == 1) {
             	$weak = 0;
-            	$type = "ArrayRef[".$type."]";
+            	$type = "ArrayRef";
             }
             my $props = [
                 "is => 'rw'",
-                "isa => '".$type."'",
                 "type => 'link($parent,$method,$attr)'",
                 "metaclass => 'Typed'",
                 "lazy => 1",
                 "builder => '_build_$soname'",
             	"clearer => 'clear_$soname'",
             ];
+            if($can_be_undef) {
+                push(@$props, "isa => 'Maybe[$type]'");
+            } else {
+                push(@$props, "isa => '$type'");
+            }
             push(@$props, "weak_ref => 1") if($weak);
             push(@$output, "has $soname => (" . join(", ", @$props) . ");");
         }
@@ -234,7 +245,7 @@ foreach my $name (keys(%{$objects})) {
     push(@$output, "sub _type { return '" . $name . "'; }");
 
 
-    # add _attributes and _subobjects
+    # add _attributes, links, and _subobjects
 
     my $attr_map = [];
     my $num = 0;
@@ -261,6 +272,30 @@ foreach my $name (keys(%{$objects})) {
          "}"
     );
 
+	my $link_map = [];
+    $num = 0;
+    map {push(@$link_map, $_->{name} . " => " . $num++)} @{$object->{links}};
+
+    my $links = Dumper($object->{links});
+    $links =~ s/\$VAR1/my \$links/;
+
+    push(@$output, "",
+         $links,
+         "my \$link_map = {" . join(", ", @$link_map) . "};",
+         "sub _links {",
+         "$tab my (\$self, \$key) = \@_;",
+         "$tab if (defined(\$key)) {",
+         "$tab $tab my \$ind = \$link_map->{\$key};",
+         "$tab $tab if (defined(\$ind)) {",
+         "$tab $tab $tab return \$links->[\$ind];",
+         "$tab $tab } else {",
+         "$tab $tab $tab return;",
+         "$tab $tab }",
+         "$tab } else {",
+         "$tab $tab return \$links;",
+         "$tab }",
+         "}"
+    );
 
     my $so_map = [];
     $num = 0;

@@ -21,7 +21,7 @@ has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', r
 
 
 # LINKS:
-has reaction => (is => 'rw', isa => 'ModelSEED::MS::Reaction', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', weak_ref => 1);
+has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
 
 
 # BUILDERS:
@@ -63,6 +63,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'reaction_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reaction',
+            'name' => 'reaction',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          }
+        ];
+
+my $link_map = {reaction => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

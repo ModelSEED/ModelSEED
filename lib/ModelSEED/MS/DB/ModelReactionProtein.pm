@@ -26,7 +26,7 @@ has modelReactionProteinSubunits => (is => 'rw', isa => 'ArrayRef[HashRef]', def
 
 
 # LINKS:
-has complex => (is => 'rw', isa => 'ModelSEED::MS::Complex', type => 'link(Mapping,complexes,complex_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', weak_ref => 1);
+has complex => (is => 'rw', type => 'link(Mapping,complexes,complex_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', isa => 'ModelSEED::MS::Complex', weak_ref => 1);
 
 
 # BUILDERS:
@@ -69,6 +69,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'complex_uuid',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_complex',
+            'name' => 'complex',
+            'class' => 'complexes',
+            'method' => 'complexes'
+          }
+        ];
+
+my $link_map = {complex => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

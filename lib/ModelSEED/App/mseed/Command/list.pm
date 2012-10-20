@@ -14,6 +14,7 @@ use base 'App::Cmd::Command';
 
 
 sub abstract { return "List and retrive objects from workspace or datastore."; }
+sub usage_desc { return "ms list [options] ref" }
 sub opt_spec {
     return (
         ["verbose|v", "Print out additional information about the object, tab-delimited"],
@@ -24,10 +25,24 @@ sub opt_spec {
         ["no_ref", "Do not print the reference column (useful for 'with' option)"]
     );
 }
+sub arg_spec {
+    return (
+        {
+            edges => [],
+            completions => [
+                { "prefix" => "", "options" => [ "biochemistry/", "mapping/", "model/", "annotation/" ] },
+                { "prefix" => "biochemistry/", "cmd" => 'ms list biochemistry' },
+                { "prefix" => "mapping/", "cmd" => 'ms list mapping' },
+                { "prefix" => "model/", "cmd" => 'ms list model' },
+                { "prefix" => "annotation/", "cmd" => 'ms list annotation' },
+            ]
+        }
+    );
+}
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $store  = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;
@@ -44,7 +59,7 @@ sub execute {
             if ($opts->{mine}) {
                 $aliases = $store->get_aliases({ type => $ref->base, owner => $auth->username });
             } else {
-                $aliases = $store->get_aliases({ type => $ref->base, owner => $auth->username });
+                $aliases = $store->get_aliases({ type => $ref->base });
             }
             # Construct references from alias data
             # TODO: Why isn't this part of Store / Database ?
@@ -105,7 +120,7 @@ sub execute {
     } else {
         # ref was an empty string or completely invalid 
         my $aliases = $store->get_aliases({});
-        exit unless(@$aliases);
+        return unless(@$aliases);
         my $types = {};
         # Print counts for aliased objects
         foreach my $alias (@$aliases) {

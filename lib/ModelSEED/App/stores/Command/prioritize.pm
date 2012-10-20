@@ -13,7 +13,7 @@ sub opt_spec { return (
 
 sub validate_args {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $stores = $MS->config->{stores} || [];
     my %map = map { $_->{name} => $_ } @$stores; 
     foreach my $name (@$args) {

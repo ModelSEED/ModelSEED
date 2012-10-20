@@ -41,9 +41,9 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has abstractCompound => (is => 'rw', isa => 'ModelSEED::MS::Compound', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', weak_ref => 1);
-has comprisedOfCompounds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds');
-has structures => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Structure]', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures');
+has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
+has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', isa => 'ArrayRef');
+has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -234,6 +234,51 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'abstractCompound_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_abstractCompound',
+            'name' => 'abstractCompound',
+            'class' => 'compounds',
+            'method' => 'compounds',
+            'can_be_undef' => 1
+          },
+          {
+            'array' => 1,
+            'attribute' => 'comprisedOfCompound_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_comprisedOfCompounds',
+            'name' => 'comprisedOfCompounds',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'structure_uuids',
+            'parent' => 'BiochemistryStructures',
+            'clearer' => 'clear_structures',
+            'name' => 'structures',
+            'class' => 'structures',
+            'method' => 'structures'
+          }
+        ];
+
+my $link_map = {abstractCompound => 0, comprisedOfCompounds => 1, structures => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

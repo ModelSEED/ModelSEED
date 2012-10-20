@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compartment => (is => 'rw', isa => 'ModelSEED::MS::Compartment', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:
@@ -112,6 +112,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'compartment_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_compartment',
+            'name' => 'compartment',
+            'class' => 'compartments',
+            'method' => 'compartments'
+          }
+        ];
+
+my $link_map = {compartment => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

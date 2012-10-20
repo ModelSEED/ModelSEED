@@ -30,7 +30,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has roles => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Role]', type => 'link(Mapping,roles,role_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_roles', clearer => 'clear_roles');
+has roles => (is => 'rw', type => 'link(Mapping,roles,role_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_roles', clearer => 'clear_roles', isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -115,6 +115,33 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'role_uuids',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_roles',
+            'name' => 'roles',
+            'class' => 'roles',
+            'method' => 'roles'
+          }
+        ];
+
+my $link_map = {roles => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

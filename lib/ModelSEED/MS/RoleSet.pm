@@ -40,6 +40,25 @@ sub _buildroleList {
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 addRole
+
+Definition:
+	void addRole();
+Description:
+	Adds role to roleset
+	
+=cut
+
+sub addRole {
+	my ($self,$role) = @_;
+	for (my $i=0; $i < @{$self->role_uuids()}; $i++) {
+		if ($self->role_uuids()->[$i] eq $role->uuid()) {
+			return;
+		}
+	}
+	push(@{$self->role_uuids()},$role->uuid());
+	$self->clear_roles();
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

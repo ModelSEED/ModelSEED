@@ -11,16 +11,64 @@ package ModelSEED::MS::Complex;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Complex';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
-has roleList => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleList' );
-has reactionList => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionList' );
+has roleList => (
+    is         => 'rw',
+    isa        => 'Str',
+    printOrder => '2',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_build_roleList'
+);
+has reactionList => (
+    is         => 'rw',
+    isa        => 'Str',
+    printOrder => '3',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_build_reactionList'
+);
 
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-sub _buildroleList {
+
+sub isActivatedWithRoles {
+    my ($self, $args) = @_;
+    $args = ModelSEED::utilities::ARGS($args, ["roles"], {});
+    my $roles = $args->{roles};
+    my $uuid_roles = {};
+    # Reduce roles to the simple uuid
+    foreach my $role (@$roles) {
+        if (ref($role) && eval { $role->isa('ModelSEED::MS::Role') }) {
+            $uuid_roles->{$role->uuid} = 1;
+        } else {
+            $uuid_roles->{$role} = 1;
+        }
+    }
+    # Match against complexrole
+    foreach my $cpx_role (@{$self->complexroles}) {
+        if ( defined($uuid_roles->{$cpx_role->role_uuid}) ) {
+            return 1; 
+        }
+    }
+}
+
+sub createModelReactionProtein {
+    my ($self, $args) = @_;
+    $args = ModelSEED::utilities::ARGS(
+        $args, [], { features => [], note => undef }
+    );
+    # Generate subunits for each complexRole (takes same args as this function)
+    my $subunits = [ map { $_->createProteinSubunit($args) } @{$self->complexroles} ];
+    my $hash = {
+        modelReactionProteinSubunits => $subunits,
+        complex_uuid => $self->uuid,
+    };
+    $hash->{note} = $args->{note} if defined $args->{note};
+    return ModelSEED::MS::ModelReactionProtein->new($hash);
+}
+
+
+sub _build_roleList {
 	my ($self) = @_;
 	my $roleList = "";
 	for (my $i=0; $i < @{$self->complexroles()}; $i++) {
@@ -32,7 +80,7 @@ sub _buildroleList {
 	}
 	return $roleList;
 }
-sub _buildreactionList {
+sub _build_reactionList {
 	my ($self) = @_;
 	my $reactionList = "";
 	my $cpxrxns = $self->reactions();
@@ -44,15 +92,6 @@ sub _buildreactionList {
 	}
 	return $reactionList;
 }
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
-
 
 __PACKAGE__->meta->make_immutable;
 1;

@@ -28,10 +28,8 @@ has figmodel => ( is => 'rw', isa => 'ModelSEED::FIGMODEL', required => 1 );
 
 # FUNCTIONS:
 sub createModel {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["id", "annotation"],{
-        verbose => 0,
-	});
+    my $self = shift;
+    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
 	# Retrieving model data
     print "Getting model metadata...\n" if($args->{verbose});
     my $id = $args->{id};
@@ -107,8 +105,8 @@ sub createModel {
 }
 
 sub createBiochemistry {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+	my $self = shift;
+	my $args = args([], {
 		name => $self->namespace()."/primary.biochemistry",
 		database => $self->figmodel()->database(),
 		addAliases => 1,
@@ -116,7 +114,7 @@ sub createBiochemistry {
 		addStructure => 1,
 		addPK => 1,
         verbose => 0
-	});
+	}, @_);
 	#Creating the biochemistry
 	my $biochemistry = ModelSEED::MS::Biochemistry->new({
 		name=>$args->{name},
@@ -402,10 +400,8 @@ sub createBiochemistry {
 }
 
 sub addAliases {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{
-		database => $self->figmodel()->database(),
-	});
+    my $self = shift;
+    my $args = args(["biochemistry"], { database => $self->figmodel()->database() }, @_);
 	my $biochemistry = $args->{biochemistry};
 	#Adding compound aliases
 	print "Handling compound aliases!\n" if($args->{verbose});
@@ -439,12 +435,12 @@ sub addAliases {
 }
 
 sub createMapping {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["biochemistry"],{
+    my $self = shift;
+    my $args = args(["biochemistry"], {
 		name => $self->namespace()."/primary.mapping",
 		database => $self->figmodel()->database(),
         verbose => 0,
-	});
+	}, @_);
 	my $mapping = ModelSEED::MS::Mapping->new({
 		name=>$args->{name},
 		biochemistry_uuid => $args->{biochemistry}->uuid(),
@@ -837,10 +833,8 @@ sub createMapping {
 }
 
 sub createAnnotation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["genome","mapping"],{
-		name => undef
-	});
+    my $self = shift;
+    my $args = args(["genome","mapping"], {}, @_);
 	if (!defined($args->{name})) {
 		$args->{name} = $self->namespace()."/".$args->{genome}.".annotation";
 	}

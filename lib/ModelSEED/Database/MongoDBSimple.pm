@@ -12,7 +12,7 @@ package ModelSEED::Database::MongoDBSimple;
 use Moose;
 use common::sense;
 use MongoDB;
-use JSON;
+use JSON::XS;
 use Tie::IxHash;
 use FileHandle;
 use Data::UUID;
@@ -44,7 +44,7 @@ has db => (
 );
 has JSON => (
     is       => 'ro',
-    isa      => 'JSON',
+    isa      => 'JSON::XS',
     builder  => '_build_json',
     lazy     => 1,
     init_arg => undef,
@@ -573,7 +573,7 @@ sub _merge_hash {
 ## Builders
 
 sub _build_json {
-    return JSON->new->utf8(1);
+    return JSON::XS->new->utf8(1);
 }
 
 sub _build_conn {

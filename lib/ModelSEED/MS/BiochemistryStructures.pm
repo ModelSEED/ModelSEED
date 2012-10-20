@@ -9,6 +9,7 @@ use strict;
 use ModelSEED::MS::DB::BiochemistryStructures;
 package ModelSEED::MS::BiochemistryStructures;
 use Moose;
+use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::BiochemistryStructures';
 #***********************************************************************************************************
@@ -43,8 +44,8 @@ Description:
 =cut
 
 sub getCreateStructure {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["data","type"],{});
+    my $self = shift;
+	my $args = args( ["data","type"], {}, @_);
 	my $structure = $self->queryObject("structures",{
 		type => $args->{type},
 		data => $args->{data}

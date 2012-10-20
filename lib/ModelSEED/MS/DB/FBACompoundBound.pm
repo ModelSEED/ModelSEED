@@ -23,7 +23,7 @@ has lowerBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, 
 
 
 # LINKS:
-has modelCompound => (is => 'rw', isa => 'ModelSEED::MS::ModelCompound', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', weak_ref => 1);
+has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelcompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:
@@ -79,6 +79,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'modelcompound_uuid',
+            'parent' => 'Model',
+            'clearer' => 'clear_modelCompound',
+            'name' => 'modelCompound',
+            'class' => 'modelcompounds',
+            'method' => 'modelcompounds'
+          }
+        ];
+
+my $link_map = {modelCompound => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

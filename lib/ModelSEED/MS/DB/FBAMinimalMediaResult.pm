@@ -22,9 +22,9 @@ has optionalNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1'
 
 
 # LINKS:
-has minimalMedia => (is => 'rw', isa => 'ModelSEED::MS::Media', type => 'link(Biochemistry,media,minimalMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', weak_ref => 1);
-has essentialNutrients => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,essentialNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients');
-has optionalNutrients => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,optionalNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients');
+has minimalMedia => (is => 'rw', type => 'link(Biochemistry,media,minimalMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has essentialNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,essentialNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients', isa => 'ArrayRef');
+has optionalNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,optionalNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients', isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -81,6 +81,50 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'minimalMedia_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_minimalMedia',
+            'name' => 'minimalMedia',
+            'class' => 'media',
+            'method' => 'media'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'essentialNutrient_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_essentialNutrients',
+            'name' => 'essentialNutrients',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'optionalNutrient_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_optionalNutrients',
+            'name' => 'optionalNutrients',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          }
+        ];
+
+my $link_map = {minimalMedia => 0, essentialNutrients => 1, optionalNutrients => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

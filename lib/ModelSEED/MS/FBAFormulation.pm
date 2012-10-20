@@ -9,8 +9,9 @@ use strict;
 use ModelSEED::MS::DB::FBAFormulation;
 package ModelSEED::MS::FBAFormulation;
 use Moose;
-use namespace::autoclean;
 use ModelSEED::Exceptions;
+use ModelSEED::utilities qw( args );
+use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -276,12 +277,17 @@ sub createJobDirectory {
 		push(@{$mdlData},$bio->id().";=>;c;UNIVERSAL");
 		my $equation = $bio->equation();
 		$equation =~ s/\+/ + /g;
-		$equation =~ s/\)cpd/) cpd/g;
+		$equation =~ s/\)([a-zA-Z])/) $1/g;
 		$equation =~ s/=\>/ => /g;
 		my $bioData = ["NAME\tBiomass","DATABASE\t".$bio->id(),"EQUATION\t".$equation];
 		ModelSEED::utilities::PRINTFILE($directory."reaction/".$bio->id(),$bioData);
 	}
 	ModelSEED::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
+	#Printing additional input files specified in formulation
+	my $inputfileHash = $self->inputfiles();
+	foreach my $filename (keys(%{$inputfileHash})) {
+		ModelSEED::utilities::PRINTFILE($directory.$filename,$inputfileHash->{$filename});
+	}
 	#Setting drain max based on media
 	my $primMedia = $self->media();
 	if ($primMedia->name() eq "Complete") {
@@ -319,7 +325,7 @@ sub createJobDirectory {
 		}
 	}
 	#Setting exchange species
-	my $exchange = "cpd11416[c]:-10000:0";
+	my $exchange = "Biomass[c]:-10000:0";
 	#TODO
 	#Setting the objective
 	my $objective = "MAX";
@@ -610,8 +616,8 @@ Description:
 =cut
 
 sub createTemporaryMedia {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["name","media","additionalCpd"],{});
+    my $self = shift;
+    my $args = args(["name","media","additionalCpd"],{}, @_);
 	my $newMedia = ModelSEED::MS::Media->new({
 		isDefined => 1,
 		isMinimal => 0,
@@ -656,8 +662,8 @@ Description:
 =cut
 
 sub parsePhenotypeSimulations {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["fbaPhenotypeSimulations"],{});
+    my $self = shift;
+    my $args = args(["fbaPhenotypeSimulations"],{}, @_);
 	my $phenos = $args->{fbaPhenotypeSimulations};
 	for (my $i=0; $i < @{$phenos};$i++) {
 		my ($addnluuids,$addnlcpds,$genokouuids,$genekos,$reactionkouuids,$reactionkos) = ([],[],[],[],[],[]);
@@ -722,8 +728,8 @@ Description:
 =cut
 
 sub parseObjectiveTerms {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["objTerms"],{});
+    my $self = shift;
+    my $args = args(["objTerms"],{}, @_);
 	my $terms = $args->{objTerms};
 	for (my $i=0; $i < @{$terms};$i++) {
 		(my $obj,my $type) = $self->interpretReference($terms->[$i]->{id});
@@ -750,8 +756,8 @@ Description:
 =cut
 
 sub parseConstraints {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["constraints"],{});
+    my $self = shift;
+    my $args = args(["constraints"],{}, @_);
 	my $vartrans = {
 		f => "flux",ff => "forflux",rf => "revflux",
 		df => "drainflux",fdf => "fordrainflux",rdf => "revdrainflux",

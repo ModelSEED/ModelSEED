@@ -19,6 +19,7 @@ has id => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metacl
 has modelCompartmentLabel => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmodelCompartmentLabel' );
 has isBiomassCompound  => ( is => 'rw', isa => 'Bool',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisBiomassCompound' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
+has formula  => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildformula' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -43,6 +44,10 @@ sub _buildisBiomassCompound {
 sub _buildmapped_uuid {
 	my ($self) = @_;
 	return "00000000-0000-0000-0000-000000000000";
+}
+sub _buildformula {
+	my ($self) = @_;
+	return $self->compound()->formula();
 }
 
 #***********************************************************************************************************

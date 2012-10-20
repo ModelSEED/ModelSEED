@@ -32,7 +32,7 @@ has complexroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { re
 
 
 # LINKS:
-has reactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions');
+has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
@@ -93,6 +93,33 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'reaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reactions',
+            'name' => 'reactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          }
+        ];
+
+my $link_map = {reactions => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

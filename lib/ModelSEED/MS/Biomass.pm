@@ -38,6 +38,7 @@ L<ModelSEED::MS::AliasSet> objects.
 =cut
 
 use Moose;
+use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biomass';
 has definition => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_definition' );
@@ -52,11 +53,11 @@ has index  => ( is => 'rw', isa => 'Int',printOrder => '-1', type => 'msdata', m
 # format : type of ids to use, default uuid
 # hashed : boolean, if true, return a md5 sum of the string in place of the string
 sub _equation_builder {
-    my ($self,$args) = @_;
-    $args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+    my $args = args([], {
         format => "uuid",
         hashed => 0
-    });
+    }, @_);
     my $cpds = $self->biomasscompounds();
     my $rgtHash;
     for (my $i=0; $i < @{$cpds}; $i++) {
@@ -153,8 +154,8 @@ sub _parse_equation_string {
 }
 
 sub loadFromEquation {
-    my ($self,$args) = @_;
-    $args = ModelSEED::utilities::ARGS($args,["equation","aliasType"],{});
+    my $self = shift;
+    my $args = args(["equation","aliasType"],{}, @_);
     my $mod = $self->parent();
     my $bio = $self->parent()->biochemistry();
     my $reagentHashes = $self->_parse_equation_string($args->{equation});

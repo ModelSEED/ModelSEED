@@ -13,13 +13,13 @@ extends 'ModelSEED::MS::BaseObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has solutionCost => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
+has solutionCost => (is => 'rw', isa => 'Num', printOrder => '1', default => '1', type => 'attribute', metaclass => 'Typed');
 has biomassRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has mediaSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has koRestore_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
@@ -34,9 +34,9 @@ has gapfillingSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', defa
 
 
 # LINKS:
-has biomassRemovals => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,biomassRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals', clearer => 'clear_biomassRemovals');
-has mediaSupplements => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelCompound]', type => 'link(Model,modelcompounds,mediaSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements', clearer => 'clear_mediaSupplements');
-has koRestores => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::ModelReaction]', type => 'link(Model,modelreactions,koRestore_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores', clearer => 'clear_koRestores');
+has biomassRemovals => (is => 'rw', type => 'link(Model,modelcompounds,biomassRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassRemovals', clearer => 'clear_biomassRemovals', isa => 'ArrayRef');
+has mediaSupplements => (is => 'rw', type => 'link(Model,modelcompounds,mediaSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaSupplements', clearer => 'clear_mediaSupplements', isa => 'ArrayRef');
+has koRestores => (is => 'rw', type => 'link(Model,modelreactions,koRestore_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_koRestores', clearer => 'clear_koRestores', isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -76,7 +76,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 1,
             'name' => 'solutionCost',
             'default' => '1',
             'type' => 'Num',
@@ -120,6 +120,51 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'array' => 1,
+            'attribute' => 'biomassRemoval_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_biomassRemovals',
+            'name' => 'biomassRemovals',
+            'class' => 'modelcompounds',
+            'method' => 'modelcompounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'mediaSupplement_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_mediaSupplements',
+            'name' => 'mediaSupplements',
+            'class' => 'modelcompounds',
+            'method' => 'modelcompounds'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'koRestore_uuids',
+            'parent' => 'Model',
+            'clearer' => 'clear_koRestores',
+            'name' => 'koRestores',
+            'class' => 'modelreactions',
+            'method' => 'modelreactions'
+          }
+        ];
+
+my $link_map = {biomassRemovals => 0, mediaSupplements => 1, koRestores => 2};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

@@ -23,7 +23,7 @@ has lowerBound => (is => 'rw', isa => 'Num', printOrder => '-1', required => 1, 
 
 
 # LINKS:
-has modelReaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelReaction', clearer => 'clear_modelReaction', weak_ref => 1);
+has modelReaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelReaction', clearer => 'clear_modelReaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:
@@ -79,6 +79,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'modelreaction_uuid',
+            'parent' => 'Model',
+            'clearer' => 'clear_modelReaction',
+            'name' => 'modelReaction',
+            'class' => 'modelreactions',
+            'method' => 'modelreactions'
+          }
+        ];
+
+my $link_map = {modelReaction => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

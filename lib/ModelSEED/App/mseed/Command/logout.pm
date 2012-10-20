@@ -12,7 +12,7 @@ sub opt_spec { return (
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $conf = ModelSEED::Configuration->new();
     delete $conf->config->{login};
     $conf->save();

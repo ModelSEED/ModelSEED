@@ -22,7 +22,7 @@ sub opt_spec { return (
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
+    print($self->usage) && return if $opts->{help};
     my $annotation = $self->_getAnnotation($args);
     $self->usage_error("Must specify an annotation to use") unless(defined($annotation));
     print map { $_->name ."\n" } @{$annotation->roles()};

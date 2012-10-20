@@ -66,7 +66,7 @@ destruction, so it's not absolutely neccesary.
 package ModelSEED::Configuration;
 use Moose; #X::Singleton;
 use namespace::autoclean;
-use JSON qw(encode_json decode_json);
+use JSON::XS;
 use Try::Tiny;
 use Cwd qw(abs_path);
 use File::Path qw(mkpath);
@@ -90,7 +90,7 @@ has config => (
 
 has JSON => (
     is       => 'ro',
-    isa      => 'JSON',
+    isa      => 'JSON::XS',
     builder  => '_buildJSON',
     lazy     => 1,
     init_arg => undef
@@ -101,7 +101,8 @@ sub possible_user_options {
         ERROR_DIR => $ENV{HOME} . '/.modelseed_error',
         MFATK_CACHE => '/tmp', #Actually, this appears to work fine in windows.
         MFATK_BIN => undef,
-        CPLEX_LICENCE => undef
+        CPLEX_LICENCE => undef,
+        USE_CLUSTER => 0,
     }
 }
 
@@ -154,7 +155,7 @@ sub _buildConfig {
 }
 
 sub _buildJSON {
-    return JSON->new->utf8(1)->pretty(1);
+    return JSON::XS->new->utf8->pretty(1);
 }
 
 sub _buildFilename {

@@ -23,7 +23,7 @@ has triggering => (is => 'rw', isa => 'Int', printOrder => '0', default => '1', 
 
 
 # LINKS:
-has role => (is => 'rw', isa => 'ModelSEED::MS::Role', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:
@@ -84,6 +84,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'role_uuid',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_role',
+            'name' => 'role',
+            'class' => 'roles',
+            'method' => 'roles'
+          }
+        ];
+
+my $link_map = {role => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

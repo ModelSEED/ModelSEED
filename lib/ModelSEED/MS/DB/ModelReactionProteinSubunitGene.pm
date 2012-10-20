@@ -20,7 +20,7 @@ has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', re
 
 
 # LINKS:
-has feature => (is => 'rw', isa => 'ModelSEED::MS::Feature', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
 
 
 # BUILDERS:
@@ -55,6 +55,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'feature_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_feature',
+            'name' => 'feature',
+            'class' => 'features',
+            'method' => 'features'
+          }
+        ];
+
+my $link_map = {feature => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

@@ -1,6 +1,7 @@
 package ModelSEED::App::model::Command::calcdistances;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
+    ModelSEED::MS::Model
     ModelSEED::Store
     ModelSEED::Auth::Factory
     ModelSEED::Reference
@@ -14,7 +15,7 @@ sub opt_spec {
     return (
         ["verbose|v", "Print verbose status information"],
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
-        ["roles|r","Calculate distances between roles (metabolites default)"],
+        ["roles|o","Calculate distances between roles (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
         ["threshold|t:s","Only print pairs with distance under threshold"],
     );

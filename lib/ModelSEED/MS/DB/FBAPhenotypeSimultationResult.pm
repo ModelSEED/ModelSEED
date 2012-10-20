@@ -27,7 +27,7 @@ has fbaPhenotypeSimulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printO
 
 
 # LINKS:
-has fbaPhenotypeSimulation => (is => 'rw', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', weak_ref => 1);
+has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
 
 
 # BUILDERS:
@@ -116,6 +116,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'fbaPhenotypeSimulation_uuid',
+            'parent' => 'FBAFormulation',
+            'clearer' => 'clear_fbaPhenotypeSimulation',
+            'name' => 'fbaPhenotypeSimulation',
+            'class' => 'fbaPhenotypeSimulations',
+            'method' => 'fbaPhenotypeSimulations'
+          }
+        ];
+
+my $link_map = {fbaPhenotypeSimulation => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

@@ -29,7 +29,7 @@ sub execute {
         load ModelSEED::PackageConfig;
     } catch {
         print STDERR "Cannot update your system automatically\n";
-        exit;
+        return;
     };
 
     if ($ModelSEED::PackageConfig::DIST_OS eq '*nix') {
@@ -40,11 +40,11 @@ sub execute {
             $self->nix_update_user();
         } else {
             print STDERR "Unknown distribution type: $dist_type\n";
-            exit;
+            return;
         }
     } else {
         print STDERR "Sorry, your os is not supported\n";
-        exit;
+        return;
     }
 }
 
@@ -118,11 +118,11 @@ sub nix_update_dev {
     if ($ec != 0) {
         print "Error, update failed: $ec\n";
         print "\n$output\n";
-        exit
+        return;
     }
 
     print "Finished!\n";
-    exit;
+    return;
 }
 
 sub nix_update_user {
@@ -134,13 +134,13 @@ sub nix_update_user {
     my $json = get $url;
     unless (defined($json)) {
         print STDERR "Couldn't find json version file.\n";
-        exit;
+        return;
     }
 
     my $versions = decode_json($json);
     if ($ModelSEED::Version::VERSION eq $versions->{current}) {
         print "Already up-to-date.\n";
-        exit;
+        return;
     }
 
     # search through versions for any special flags
@@ -149,7 +149,7 @@ sub nix_update_user {
     while ($ver ne $versions->{current}) {
         unless (defined($versions->{$ver}) && defined($versions->{$ver}->{next})) {
             print STDERR "Error with version file!\n";
-            exit;
+            return;
         }
 
         if (defined($versions->{$ver}->{fresh}) && $versions->{$ver}->{fresh}) {
@@ -169,12 +169,12 @@ sub nix_update_user {
     getstore($base_url . "/" . $ms_tgz, $tmp . "/" . $ms_tgz);
     unless (-e "$tmp/$ms_tgz") {
         print STDERR "Error, could not download '$ms_tgz'\n";
-        exit;
+        return;
     }
     getstore($base_url . "/" . $mfa_tgz, $tmp . "/" . $mfa_tgz);
     unless (-e "$tmp/$mfa_tgz") {
         print STDERR "Error, could not download '$mfa_tgz'\n";
-        exit;
+        return;
     }
 
     # everything ok, now do the installs
@@ -227,7 +227,7 @@ sub nix_update_user {
     if ($ec != 0) {
         print "Error, update failed: $ec\n";
         print "\n$output\n";
-        exit
+        return; 
     }
 }
 

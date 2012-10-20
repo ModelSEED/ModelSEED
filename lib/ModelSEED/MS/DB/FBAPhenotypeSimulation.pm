@@ -32,10 +32,10 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has media => (is => 'rw', isa => 'ModelSEED::MS::Media', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', weak_ref => 1);
-has geneKOs => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Feature]', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs');
-has reactionKOs => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs');
-has additionalCpds => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compound]', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds');
+has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
+has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
+has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -142,6 +142,59 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'media_uuid',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_media',
+            'name' => 'media',
+            'class' => 'media',
+            'method' => 'media'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'geneKO_uuids',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_geneKOs',
+            'name' => 'geneKOs',
+            'class' => 'features',
+            'method' => 'features'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'reactionKO_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_reactionKOs',
+            'name' => 'reactionKOs',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'additionalCpd_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_additionalCpds',
+            'name' => 'additionalCpds',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          }
+        ];
+
+my $link_map = {media => 0, geneKOs => 1, reactionKOs => 2, additionalCpds => 3};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

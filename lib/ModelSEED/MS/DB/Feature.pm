@@ -39,7 +39,7 @@ has featureroles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { re
 
 
 # LINKS:
-has genome => (is => 'rw', isa => 'ModelSEED::MS::Genome', type => 'link(Annotation,genomes,genome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', weak_ref => 1);
+has genome => (is => 'rw', type => 'link(Annotation,genomes,genome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_genome', clearer => 'clear_genome', isa => 'ModelSEED::MS::Genome', weak_ref => 1);
 
 
 # BUILDERS:
@@ -148,6 +148,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'genome_uuid',
+            'parent' => 'Annotation',
+            'clearer' => 'clear_genome',
+            'name' => 'genome',
+            'class' => 'genomes',
+            'method' => 'genomes'
+          }
+        ];
+
+my $link_map = {genome => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

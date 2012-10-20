@@ -4,6 +4,7 @@ use common::sense;
 use Try::Tiny;
 use Module::Load;
 use ModelSEED::Exceptions;
+use JSON::XS;
 use Class::Autouse qw(
     ModelSEED::Configuration
     ModelSEED::Database::FileDB
@@ -38,7 +39,7 @@ sub validate_args {
 
 sub execute {
     my ($self, $opt, $args) = @_;
-    print($self->usage) && exit if $opt->{help};
+    print($self->usage) && return if $opt->{help};
     my $name = shift @$args;
     unless (defined($name)) {
         $self->usage_error("Must provide name for database.");
@@ -112,7 +113,7 @@ sub _get_database_instance {
     } catch {
         ModelSEED::Exception::DatabaseConfigError->throw(
             dbName => $config->{name},
-            configText => JSON->new()->pretty(1)->encode($config),
+            configText => JSON::XS->new->pretty(1)->encode($config),
         );
     };
     return $instance;

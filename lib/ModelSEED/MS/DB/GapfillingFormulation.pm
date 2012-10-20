@@ -8,6 +8,7 @@ package ModelSEED::MS::DB::GapfillingFormulation;
 use ModelSEED::MS::BaseObject;
 use ModelSEED::MS::GapfillingGeneCandidate;
 use ModelSEED::MS::ReactionSetMultiplier;
+use ModelSEED::MS::GapfillingSolution;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -19,25 +20,25 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has fbaFormulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', type => 'attribute', metaclass => 'Typed');
 has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
-has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
-has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
-has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '0', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '0', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '0', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has reactionActivationBonus => (is => 'rw', isa => 'Num', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
-has drainFluxMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has directionalityMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has deltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has noStructureMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has noDeltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has biomassTransporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has singleTransporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has transporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
+has mediaHypothesis => (is => 'rw', isa => 'Bool', printOrder => '2', default => '0', type => 'attribute', metaclass => 'Typed');
+has biomassHypothesis => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
+has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '4', default => '0', type => 'attribute', metaclass => 'Typed');
+has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '5', default => '1', type => 'attribute', metaclass => 'Typed');
+has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '6', default => '1', type => 'attribute', metaclass => 'Typed');
+has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has reactionActivationBonus => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
+has drainFluxMultiplier => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
+has directionalityMultiplier => (is => 'rw', isa => 'Num', printOrder => '9', default => '1', type => 'attribute', metaclass => 'Typed');
+has deltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '10', default => '1', type => 'attribute', metaclass => 'Typed');
+has noStructureMultiplier => (is => 'rw', isa => 'Num', printOrder => '11', default => '1', type => 'attribute', metaclass => 'Typed');
+has noDeltaGMultiplier => (is => 'rw', isa => 'Num', printOrder => '12', default => '1', type => 'attribute', metaclass => 'Typed');
+has biomassTransporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '13', default => '1', type => 'attribute', metaclass => 'Typed');
+has singleTransporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '14', default => '1', type => 'attribute', metaclass => 'Typed');
+has transporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '15', default => '1', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 
 
@@ -48,14 +49,15 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 # SUBOBJECTS:
 has gapfillingGeneCandidates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingGeneCandidate)', metaclass => 'Typed', reader => '_gapfillingGeneCandidates', printOrder => '-1');
 has reactionSetMultipliers => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(ReactionSetMultiplier)', metaclass => 'Typed', reader => '_reactionSetMultipliers', printOrder => '-1');
+has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(GapfillingSolution)', metaclass => 'Typed', reader => '_gapfillingSolutions', printOrder => '0');
 
 
 # LINKS:
-has model => (is => 'rw', isa => 'ModelSEED::MS::Model', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model');
-has fbaFormulation => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation');
-has guaranteedReactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions');
-has blacklistedReactions => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Reaction]', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions', clearer => 'clear_blacklistedReactions');
-has allowableCompartments => (is => 'rw', isa => 'ArrayRef[ModelSEED::MS::Compartment]', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments');
+has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
+has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', isa => 'ModelSEED::MS::FBAFormulation');
+has guaranteedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions', isa => 'ArrayRef');
+has blacklistedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions', clearer => 'clear_blacklistedReactions', isa => 'ArrayRef');
+has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -96,7 +98,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 1,
             'name' => 'fbaFormulation_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
@@ -110,7 +112,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 2,
             'name' => 'mediaHypothesis',
             'default' => '0',
             'type' => 'Bool',
@@ -118,7 +120,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 3,
             'name' => 'biomassHypothesis',
             'default' => '0',
             'type' => 'Bool',
@@ -126,7 +128,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 4,
             'name' => 'gprHypothesis',
             'default' => '0',
             'type' => 'Bool',
@@ -134,7 +136,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 5,
             'name' => 'reactionAdditionHypothesis',
             'default' => '1',
             'type' => 'Bool',
@@ -142,7 +144,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 6,
             'name' => 'balancedReactionsOnly',
             'default' => '1',
             'type' => 'Bool',
@@ -150,7 +152,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => -1,
             'name' => 'guaranteedReaction_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -158,7 +160,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => -1,
             'name' => 'blacklistedReaction_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -166,7 +168,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => -1,
             'name' => 'allowableCompartment_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -174,7 +176,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 7,
             'name' => 'reactionActivationBonus',
             'default' => '0',
             'type' => 'Num',
@@ -182,7 +184,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 8,
             'name' => 'drainFluxMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -190,7 +192,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 9,
             'name' => 'directionalityMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -198,7 +200,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 10,
             'name' => 'deltaGMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -206,7 +208,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 11,
             'name' => 'noStructureMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -214,7 +216,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 12,
             'name' => 'noDeltaGMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -222,7 +224,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 13,
             'name' => 'biomassTransporterMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -230,7 +232,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 14,
             'name' => 'singleTransporterMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -238,7 +240,7 @@ my $attributes = [
           },
           {
             'req' => 0,
-            'printOrder' => 0,
+            'printOrder' => 15,
             'name' => 'transporterMultiplier',
             'default' => '1',
             'type' => 'Num',
@@ -268,6 +270,69 @@ sub _attributes {
   }
 }
 
+my $links = [
+          {
+            'attribute' => 'model_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_model',
+            'name' => 'model',
+            'class' => 'Model',
+            'method' => 'Model'
+          },
+          {
+            'attribute' => 'fbaFormulation_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_fbaFormulation',
+            'name' => 'fbaFormulation',
+            'class' => 'FBAFormulation',
+            'method' => 'FBAFormulation'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'guaranteedReaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_guaranteedReactions',
+            'name' => 'guaranteedReactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'blacklistedReaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_blacklistedReactions',
+            'name' => 'blacklistedReactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
+            'attribute' => 'allowableCompartment_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_allowableCompartments',
+            'name' => 'allowableCompartments',
+            'class' => 'compartments',
+            'method' => 'compartments'
+          }
+        ];
+
+my $link_map = {model => 0, fbaFormulation => 1, guaranteedReactions => 2, blacklistedReactions => 3, allowableCompartments => 4};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
+  }
+}
+
 my $subobjects = [
           {
             'printOrder' => -1,
@@ -280,10 +345,16 @@ my $subobjects = [
             'name' => 'reactionSetMultipliers',
             'type' => 'encompassed',
             'class' => 'ReactionSetMultiplier'
+          },
+          {
+            'printOrder' => 0,
+            'name' => 'gapfillingSolutions',
+            'type' => 'encompassed',
+            'class' => 'GapfillingSolution'
           }
         ];
 
-my $subobject_map = {gapfillingGeneCandidates => 0, reactionSetMultipliers => 1};
+my $subobject_map = {gapfillingGeneCandidates => 0, reactionSetMultipliers => 1, gapfillingSolutions => 2};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -307,6 +378,10 @@ around 'gapfillingGeneCandidates' => sub {
 around 'reactionSetMultipliers' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('reactionSetMultipliers');
+};
+around 'gapfillingSolutions' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('gapfillingSolutions');
 };
 
 

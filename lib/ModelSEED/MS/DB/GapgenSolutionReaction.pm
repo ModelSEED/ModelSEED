@@ -21,7 +21,7 @@ has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', t
 
 
 # LINKS:
-has modelreaction => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', weak_ref => 1);
+has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:
@@ -64,6 +64,32 @@ sub _attributes {
     }
   } else {
     return $attributes;
+  }
+}
+
+my $links = [
+          {
+            'attribute' => 'modelreaction_uuid',
+            'parent' => 'Model',
+            'clearer' => 'clear_modelreaction',
+            'name' => 'modelreaction',
+            'class' => 'modelreactions',
+            'method' => 'modelreactions'
+          }
+        ];
+
+my $link_map = {modelreaction => 0};
+sub _links {
+  my ($self, $key) = @_;
+  if (defined($key)) {
+    my $ind = $link_map->{$key};
+    if (defined($ind)) {
+      return $links->[$ind];
+    } else {
+      return;
+    }
+  } else {
+    return $links;
   }
 }
 

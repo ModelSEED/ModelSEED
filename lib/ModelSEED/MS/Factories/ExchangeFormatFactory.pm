@@ -48,16 +48,16 @@ Description:
 =cut
 
 sub buildFBAFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+	my $args = args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		media => "Media/name/Complete",
 		type => "singlegrowth",
 		simpleThermoConstraints => 0,
@@ -92,14 +92,13 @@ sub buildFBAFormulation {
 			coefficient => 1
 		}],
 		fbaPhenotypeSimulations => []
-	});
-	#Finding (or creating) the media
+	}, $data);
+	# Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{media},"Media");
 	if (!defined($media)) {
 		ModelSEED::utilities::ERROR("Media referenced in formulation not found in database: ".$data->{media});
 	}
-	#print STDERR Data::Dumper->Dump([$data]);
-	#Creating objects and populating with provenance objects
+	# Creating objects and populating with provenance objects
 	my $form = ModelSEED::MS::FBAFormulation->new({
 		parent => $model->parent(),
 		model_uuid => $model->uuid(),
@@ -152,22 +151,74 @@ Description:
 =cut
 
 sub buildGapfillingFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+	my $args = args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
-		guaranteedReactions => "Reaction/ModelSEED/rxn13782|Reaction/ModelSEED/rxn13783|Reaction/ModelSEED/rxn13784|Reaction/ModelSEED/rxn05294|Reaction/ModelSEED/rxn05295|Reaction/ModelSEED/rxn05296|Reaction/ModelSEED/rxn10002|Reaction/ModelSEED/rxn10088|Reaction/ModelSEED/rxn11921|Reaction/ModelSEED/rxn11922|Reaction/ModelSEED/rxn10200|Reaction/ModelSEED/rxn11923|Reaction/ModelSEED/rxn05029",
-		blacklistedReactions => "Reaction/ModelSEED/rxn12985|Reaction/ModelSEED/rxn00238|Reaction/ModelSEED/rxn07058|Reaction/ModelSEED/rxn05305|Reaction/ModelSEED/rxn00154|Reaction/ModelSEED/rxn09037|Reaction/ModelSEED/rxn10643|Reaction/ModelSEED/rxn11317|Reaction/ModelSEED/rxn05254|Reaction/ModelSEED/rxn05257|Reaction/ModelSEED/rxn05258|Reaction/ModelSEED/rxn05259|Reaction/ModelSEED/rxn05264|Reaction/ModelSEED/rxn05268|Reaction/ModelSEED/rxn05269|Reaction/ModelSEED/rxn05270|Reaction/ModelSEED/rxn05271|Reaction/ModelSEED/rxn05272|Reaction/ModelSEED/rxn05273|Reaction/ModelSEED/rxn05274|Reaction/ModelSEED/rxn05275|Reaction/ModelSEED/rxn05276|Reaction/ModelSEED/rxn05277|Reaction/ModelSEED/rxn05278|Reaction/ModelSEED/rxn05279|Reaction/ModelSEED/rxn05280|Reaction/ModelSEED/rxn05281|Reaction/ModelSEED/rxn05282|Reaction/ModelSEED/rxn05283|Reaction/ModelSEED/rxn05284|Reaction/ModelSEED/rxn05285|Reaction/ModelSEED/rxn05286|Reaction/ModelSEED/rxn05963|Reaction/ModelSEED/rxn05964|Reaction/ModelSEED/rxn05971|Reaction/ModelSEED/rxn05989|Reaction/ModelSEED/rxn05990|Reaction/ModelSEED/rxn06041|Reaction/ModelSEED/rxn06042|Reaction/ModelSEED/rxn06043|Reaction/ModelSEED/rxn06044|Reaction/ModelSEED/rxn06045|Reaction/ModelSEED/rxn06046|Reaction/ModelSEED/rxn06079|Reaction/ModelSEED/rxn06080|Reaction/ModelSEED/rxn06081|Reaction/ModelSEED/rxn06086|Reaction/ModelSEED/rxn06087|Reaction/ModelSEED/rxn06088|Reaction/ModelSEED/rxn06089|Reaction/ModelSEED/rxn06090|Reaction/ModelSEED/rxn06091|Reaction/ModelSEED/rxn06092|Reaction/ModelSEED/rxn06138|Reaction/ModelSEED/rxn06139|Reaction/ModelSEED/rxn06140|Reaction/ModelSEED/rxn06141|Reaction/ModelSEED/rxn06145|Reaction/ModelSEED/rxn06217|Reaction/ModelSEED/rxn06218|Reaction/ModelSEED/rxn06219|Reaction/ModelSEED/rxn06220|Reaction/ModelSEED/rxn06221|Reaction/ModelSEED/rxn06222|Reaction/ModelSEED/rxn06223|Reaction/ModelSEED/rxn06235|Reaction/ModelSEED/rxn06362|Reaction/ModelSEED/rxn06368|Reaction/ModelSEED/rxn06378|Reaction/ModelSEED/rxn06474|Reaction/ModelSEED/rxn06475|Reaction/ModelSEED/rxn06502|Reaction/ModelSEED/rxn06562|Reaction/ModelSEED/rxn06569|Reaction/ModelSEED/rxn06604|Reaction/ModelSEED/rxn06702|Reaction/ModelSEED/rxn06706|Reaction/ModelSEED/rxn06715|Reaction/ModelSEED/rxn06803|Reaction/ModelSEED/rxn06811|Reaction/ModelSEED/rxn06812|Reaction/ModelSEED/rxn06850|Reaction/ModelSEED/rxn06901|Reaction/ModelSEED/rxn06971|Reaction/ModelSEED/rxn06999|Reaction/ModelSEED/rxn07123|Reaction/ModelSEED/rxn07172|Reaction/ModelSEED/rxn07254|Reaction/ModelSEED/rxn07255|Reaction/ModelSEED/rxn07269|Reaction/ModelSEED/rxn07451|Reaction/ModelSEED/rxn09037|Reaction/ModelSEED/rxn10018|Reaction/ModelSEED/rxn10077|Reaction/ModelSEED/rxn10096|Reaction/ModelSEED/rxn10097|Reaction/ModelSEED/rxn10098|Reaction/ModelSEED/rxn10099|Reaction/ModelSEED/rxn10101|Reaction/ModelSEED/rxn10102|Reaction/ModelSEED/rxn10103|Reaction/ModelSEED/rxn10104|Reaction/ModelSEED/rxn10105|Reaction/ModelSEED/rxn10106|Reaction/ModelSEED/rxn10107|Reaction/ModelSEED/rxn10109|Reaction/ModelSEED/rxn10111|Reaction/ModelSEED/rxn10403|Reaction/ModelSEED/rxn10410|Reaction/ModelSEED/rxn10416|Reaction/ModelSEED/rxn11313|Reaction/ModelSEED/rxn11316|Reaction/ModelSEED/rxn11318|Reaction/ModelSEED/rxn11353|Reaction/ModelSEED/rxn05224|Reaction/ModelSEED/rxn05795|Reaction/ModelSEED/rxn05796|Reaction/ModelSEED/rxn05797|Reaction/ModelSEED/rxn05798|Reaction/ModelSEED/rxn05799|Reaction/ModelSEED/rxn05801|Reaction/ModelSEED/rxn05802|Reaction/ModelSEED/rxn05803|Reaction/ModelSEED/rxn05804|Reaction/ModelSEED/rxn05805|Reaction/ModelSEED/rxn05806|Reaction/ModelSEED/rxn05808|Reaction/ModelSEED/rxn05812|Reaction/ModelSEED/rxn05815|Reaction/ModelSEED/rxn05832|Reaction/ModelSEED/rxn05836|Reaction/ModelSEED/rxn05851|Reaction/ModelSEED/rxn05857|Reaction/ModelSEED/rxn05869|Reaction/ModelSEED/rxn05870|Reaction/ModelSEED/rxn05884|Reaction/ModelSEED/rxn05888|Reaction/ModelSEED/rxn05896|Reaction/ModelSEED/rxn05898|Reaction/ModelSEED/rxn05900|Reaction/ModelSEED/rxn05903|Reaction/ModelSEED/rxn05904|Reaction/ModelSEED/rxn05905|Reaction/ModelSEED/rxn05911|Reaction/ModelSEED/rxn05921|Reaction/ModelSEED/rxn05925|Reaction/ModelSEED/rxn05936|Reaction/ModelSEED/rxn05947|Reaction/ModelSEED/rxn05956|Reaction/ModelSEED/rxn05959|Reaction/ModelSEED/rxn05960|Reaction/ModelSEED/rxn05980|Reaction/ModelSEED/rxn05991|Reaction/ModelSEED/rxn05992|Reaction/ModelSEED/rxn05999|Reaction/ModelSEED/rxn06001|Reaction/ModelSEED/rxn06014|Reaction/ModelSEED/rxn06017|Reaction/ModelSEED/rxn06021|Reaction/ModelSEED/rxn06026|Reaction/ModelSEED/rxn06027|Reaction/ModelSEED/rxn06034|Reaction/ModelSEED/rxn06048|Reaction/ModelSEED/rxn06052|Reaction/ModelSEED/rxn06053|Reaction/ModelSEED/rxn06054|Reaction/ModelSEED/rxn06057|Reaction/ModelSEED/rxn06059|Reaction/ModelSEED/rxn06061|Reaction/ModelSEED/rxn06102|Reaction/ModelSEED/rxn06103|Reaction/ModelSEED/rxn06127|Reaction/ModelSEED/rxn06128|Reaction/ModelSEED/rxn06129|Reaction/ModelSEED/rxn06130|Reaction/ModelSEED/rxn06131|Reaction/ModelSEED/rxn06132|Reaction/ModelSEED/rxn06137|Reaction/ModelSEED/rxn06146|Reaction/ModelSEED/rxn06161|Reaction/ModelSEED/rxn06167|Reaction/ModelSEED/rxn06172|Reaction/ModelSEED/rxn06174|Reaction/ModelSEED/rxn06175|Reaction/ModelSEED/rxn06187|Reaction/ModelSEED/rxn06189|Reaction/ModelSEED/rxn06203|Reaction/ModelSEED/rxn06204|Reaction/ModelSEED/rxn06246|Reaction/ModelSEED/rxn06261|Reaction/ModelSEED/rxn06265|Reaction/ModelSEED/rxn06266|Reaction/ModelSEED/rxn06286|Reaction/ModelSEED/rxn06291|Reaction/ModelSEED/rxn06294|Reaction/ModelSEED/rxn06310|Reaction/ModelSEED/rxn06320|Reaction/ModelSEED/rxn06327|Reaction/ModelSEED/rxn06334|Reaction/ModelSEED/rxn06337|Reaction/ModelSEED/rxn06339|Reaction/ModelSEED/rxn06342|Reaction/ModelSEED/rxn06343|Reaction/ModelSEED/rxn06350|Reaction/ModelSEED/rxn06352|Reaction/ModelSEED/rxn06358|Reaction/ModelSEED/rxn06361|Reaction/ModelSEED/rxn06369|Reaction/ModelSEED/rxn06380|Reaction/ModelSEED/rxn06395|Reaction/ModelSEED/rxn06415|Reaction/ModelSEED/rxn06419|Reaction/ModelSEED/rxn06420|Reaction/ModelSEED/rxn06421|Reaction/ModelSEED/rxn06423|Reaction/ModelSEED/rxn06450|Reaction/ModelSEED/rxn06457|Reaction/ModelSEED/rxn06463|Reaction/ModelSEED/rxn06464|Reaction/ModelSEED/rxn06466|Reaction/ModelSEED/rxn06471|Reaction/ModelSEED/rxn06482|Reaction/ModelSEED/rxn06483|Reaction/ModelSEED/rxn06486|Reaction/ModelSEED/rxn06492|Reaction/ModelSEED/rxn06497|Reaction/ModelSEED/rxn06498|Reaction/ModelSEED/rxn06501|Reaction/ModelSEED/rxn06505|Reaction/ModelSEED/rxn06506|Reaction/ModelSEED/rxn06521|Reaction/ModelSEED/rxn06534|Reaction/ModelSEED/rxn06580|Reaction/ModelSEED/rxn06585|Reaction/ModelSEED/rxn06593|Reaction/ModelSEED/rxn06609|Reaction/ModelSEED/rxn06613|Reaction/ModelSEED/rxn06654|Reaction/ModelSEED/rxn06667|Reaction/ModelSEED/rxn06676|Reaction/ModelSEED/rxn06693|Reaction/ModelSEED/rxn06730|Reaction/ModelSEED/rxn06746|Reaction/ModelSEED/rxn06762|Reaction/ModelSEED/rxn06779|Reaction/ModelSEED/rxn06790|Reaction/ModelSEED/rxn06791|Reaction/ModelSEED/rxn06792|Reaction/ModelSEED/rxn06793|Reaction/ModelSEED/rxn06794|Reaction/ModelSEED/rxn06795|Reaction/ModelSEED/rxn06796|Reaction/ModelSEED/rxn06797|Reaction/ModelSEED/rxn06821|Reaction/ModelSEED/rxn06826|Reaction/ModelSEED/rxn06827|Reaction/ModelSEED/rxn06829|Reaction/ModelSEED/rxn06839|Reaction/ModelSEED/rxn06841|Reaction/ModelSEED/rxn06842|Reaction/ModelSEED/rxn06851|Reaction/ModelSEED/rxn06866|Reaction/ModelSEED/rxn06867|Reaction/ModelSEED/rxn06873|Reaction/ModelSEED/rxn06885|Reaction/ModelSEED/rxn06891|Reaction/ModelSEED/rxn06892|Reaction/ModelSEED/rxn06896|Reaction/ModelSEED/rxn06938|Reaction/ModelSEED/rxn06939|Reaction/ModelSEED/rxn06944|Reaction/ModelSEED/rxn06951|Reaction/ModelSEED/rxn06952|Reaction/ModelSEED/rxn06955|Reaction/ModelSEED/rxn06957|Reaction/ModelSEED/rxn06960|Reaction/ModelSEED/rxn06964|Reaction/ModelSEED/rxn06965|Reaction/ModelSEED/rxn07086|Reaction/ModelSEED/rxn07097|Reaction/ModelSEED/rxn07103|Reaction/ModelSEED/rxn07104|Reaction/ModelSEED/rxn07105|Reaction/ModelSEED/rxn07106|Reaction/ModelSEED/rxn07107|Reaction/ModelSEED/rxn07109|Reaction/ModelSEED/rxn07119|Reaction/ModelSEED/rxn07179|Reaction/ModelSEED/rxn07186|Reaction/ModelSEED/rxn07187|Reaction/ModelSEED/rxn07188|Reaction/ModelSEED/rxn07195|Reaction/ModelSEED/rxn07196|Reaction/ModelSEED/rxn07197|Reaction/ModelSEED/rxn07198|Reaction/ModelSEED/rxn07201|Reaction/ModelSEED/rxn07205|Reaction/ModelSEED/rxn07206|Reaction/ModelSEED/rxn07210|Reaction/ModelSEED/rxn07244|Reaction/ModelSEED/rxn07245|Reaction/ModelSEED/rxn07253|Reaction/ModelSEED/rxn07275|Reaction/ModelSEED/rxn07299|Reaction/ModelSEED/rxn07302|Reaction/ModelSEED/rxn07651|Reaction/ModelSEED/rxn07723|Reaction/ModelSEED/rxn07736|Reaction/ModelSEED/rxn07878|Reaction/ModelSEED/rxn11417|Reaction/ModelSEED/rxn11582|Reaction/ModelSEED/rxn11593|Reaction/ModelSEED/rxn11597|Reaction/ModelSEED/rxn11615|Reaction/ModelSEED/rxn11617|Reaction/ModelSEED/rxn11619|Reaction/ModelSEED/rxn11620|Reaction/ModelSEED/rxn11624|Reaction/ModelSEED/rxn11626|Reaction/ModelSEED/rxn11638|Reaction/ModelSEED/rxn11648|Reaction/ModelSEED/rxn11651|Reaction/ModelSEED/rxn11665|Reaction/ModelSEED/rxn11666|Reaction/ModelSEED/rxn11667|Reaction/ModelSEED/rxn11698|Reaction/ModelSEED/rxn11983|Reaction/ModelSEED/rxn11986|Reaction/ModelSEED/rxn11994|Reaction/ModelSEED/rxn12006|Reaction/ModelSEED/rxn12007|Reaction/ModelSEED/rxn12014|Reaction/ModelSEED/rxn12017|Reaction/ModelSEED/rxn12022|Reaction/ModelSEED/rxn12160|Reaction/ModelSEED/rxn12161|Reaction/ModelSEED/rxn01267",
+		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
+rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8
+rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
+rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )),
+		blacklistedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
+rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
+rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268
+rxn05269 rxn05270 rxn05271 rxn05272 rxn05273 rxn05274 rxn05275
+rxn05276 rxn05277 rxn05278 rxn05279 rxn05280 rxn05281 rxn05282
+rxn05283 rxn05284 rxn05285 rxn05286 rxn05963 rxn05964 rxn05971
+rxn05989 rxn05990 rxn06041 rxn06042 rxn06043 rxn06044 rxn06045
+rxn06046 rxn06079 rxn06080 rxn06081 rxn06086 rxn06087 rxn06088
+rxn06089 rxn06090 rxn06091 rxn06092 rxn06138 rxn06139 rxn06140
+rxn06141 rxn06145 rxn06217 rxn06218 rxn06219 rxn06220 rxn06221
+rxn06222 rxn06223 rxn06235 rxn06362 rxn06368 rxn06378 rxn06474
+rxn06475 rxn06502 rxn06562 rxn06569 rxn06604 rxn06702 rxn06706
+rxn06715 rxn06803 rxn06811 rxn06812 rxn06850 rxn06901 rxn06971
+rxn06999 rxn07123 rxn07172 rxn07254 rxn07255 rxn07269 rxn07451
+rxn09037 rxn10018 rxn10077 rxn10096 rxn10097 rxn10098 rxn10099
+rxn10101 rxn10102 rxn10103 rxn10104 rxn10105 rxn10106 rxn10107
+rxn10109 rxn10111 rxn10403 rxn10410 rxn10416 rxn11313 rxn11316
+rxn11318 rxn11353 rxn05224 rxn05795 rxn05796 rxn05797 rxn05798
+rxn05799 rxn05801 rxn05802 rxn05803 rxn05804 rxn05805 rxn05806
+rxn05808 rxn05812 rxn05815 rxn05832 rxn05836 rxn05851 rxn05857
+rxn05869 rxn05870 rxn05884 rxn05888 rxn05896 rxn05898 rxn05900
+rxn05903 rxn05904 rxn05905 rxn05911 rxn05921 rxn05925 rxn05936
+rxn05947 rxn05956 rxn05959 rxn05960 rxn05980 rxn05991 rxn05992
+rxn05999 rxn06001 rxn06014 rxn06017 rxn06021 rxn06026 rxn06027
+rxn06034 rxn06048 rxn06052 rxn06053 rxn06054 rxn06057 rxn06059
+rxn06061 rxn06102 rxn06103 rxn06127 rxn06128 rxn06129 rxn06130
+rxn06131 rxn06132 rxn06137 rxn06146 rxn06161 rxn06167 rxn06172
+rxn06174 rxn06175 rxn06187 rxn06189 rxn06203 rxn06204 rxn06246
+rxn06261 rxn06265 rxn06266 rxn06286 rxn06291 rxn06294 rxn06310
+rxn06320 rxn06327 rxn06334 rxn06337 rxn06339 rxn06342 rxn06343
+rxn06350 rxn06352 rxn06358 rxn06361 rxn06369 rxn06380 rxn06395
+rxn06415 rxn06419 rxn06420 rxn06421 rxn06423 rxn06450 rxn06457
+rxn06463 rxn06464 rxn06466 rxn06471 rxn06482 rxn06483 rxn06486
+rxn06492 rxn06497 rxn06498 rxn06501 rxn06505 rxn06506 rxn06521
+rxn06534 rxn06580 rxn06585 rxn06593 rxn06609 rxn06613 rxn06654
+rxn06667 rxn06676 rxn06693 rxn06730 rxn06746 rxn06762 rxn06779
+rxn06790 rxn06791 rxn06792 rxn06793 rxn06794 rxn06795 rxn06796
+rxn06797 rxn06821 rxn06826 rxn06827 rxn06829 rxn06839 rxn06841
+rxn06842 rxn06851 rxn06866 rxn06867 rxn06873 rxn06885 rxn06891
+rxn06892 rxn06896 rxn06938 rxn06939 rxn06944 rxn06951 rxn06952
+rxn06955 rxn06957 rxn06960 rxn06964 rxn06965 rxn07086 rxn07097
+rxn07103 rxn07104 rxn07105 rxn07106 rxn07107 rxn07109 rxn07119
+rxn07179 rxn07186 rxn07187 rxn07188 rxn07195 rxn07196 rxn07197
+rxn07198 rxn07201 rxn07205 rxn07206 rxn07210 rxn07244 rxn07245
+rxn07253 rxn07275 rxn07299 rxn07302 rxn07651 rxn07723 rxn07736
+rxn07878 rxn11417 rxn11582 rxn11593 rxn11597 rxn11615 rxn11617
+rxn11619 rxn11620 rxn11624 rxn11626 rxn11638 rxn11648 rxn11651
+rxn11665 rxn11666 rxn11667 rxn11698 rxn11983 rxn11986 rxn11994
+rxn12006 rxn12007 rxn12014 rxn12017 rxn12022 rxn12160 rxn12161
+rxn01267 )),
 		allowableCompartments => "Compartment/id/c|Compartment/id/e|Compartment/id/p",
 		mediaHypothesis => 1,
 		biomassHypothesis => 1,
@@ -184,7 +235,7 @@ sub buildGapfillingFormulation {
 		transporterMultiplier => 1,
 		gapfillingGeneCandidates => [],
 		reactionSetMultipliers => [],
-	});
+	}, $data);
 	#Creating gapfilling formulation object
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
 		parent => $model->parent(),
@@ -229,25 +280,25 @@ Description:
 =cut
 
 sub buildGapgenFormulation {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["model"],{
+    my $self = shift;
+    my $args = args(["model"], {
 		text => undef,
 		filename => undef,
 		overrides => {}
-	});
+	}, @_);
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes			
-	$data = ModelSEED::utilities::ARGS($data,[],{
+	$data = args([],{
 		referenceMedia => "Media/name/".$fbaform->media()->name(),
 		fbaFormulation => $fbaform,
 		mediaHypothesis => 0,
 		biomassHypothesis => 0,
 		gprHypothesis => 0,
 		reactionRemovalHypothesis => 1,
-	});
+	}, $data);
 	#Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{referenceMedia},"Media");
 	if (!defined($media)) {
@@ -306,13 +357,13 @@ Description:
 =cut
 
 sub parseExchangeFileArray {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,[],{
+    my $self = shift;
+	my $args = args([],{
 		text => undef,
 		filename => undef,
 		array => [],
 		overrides => {}
-	});
+	}, @_);
 	if (defined($args->{filename}) && -e $args->{filename}) {
 		$args->{array} = ModelSEED::utilities::LOADFILE($args->{filename}); 
 		delete $args->{text};
@@ -363,13 +414,13 @@ Description:
 =cut
 
 sub buildObjectFromExchangeFileArray {
-	my ($self,$args) = @_;
-	$args = ModelSEED::utilities::ARGS($args,["array"],{
+    my $self = shift;
+	my $args = args(["array"],{
 		Biochemistry => undef,
 		Mapping => undef,
 		Model => undef,
 		Annotation => undef
-	});
+	}, @_);
 	my $data = $self->parseExchangeFileArray($args);
 	#The data object must have an ID, which is used to identify the type
 	if (!defined($data->{id})) {
@@ -493,6 +544,7 @@ sub createFromAPI {
 	my ($self,$class,$parent,$data) = @_;
 	$data->{parent} = $parent;
 	if ($class eq "Media") {
+        # FIXME : not sure what to do with this case, only time used?
 		$data = ModelSEED::utilities::ARGS($data,["name","compounds"],{},{
 			isdefined => "isDefined",
 			isminimal => "isMinimal",
