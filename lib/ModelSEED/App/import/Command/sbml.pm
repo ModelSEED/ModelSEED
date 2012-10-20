@@ -31,22 +31,23 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && exit if $opts->{help};
-    $self->usage_error("Filename of SBML file not specified!") unless(defined($args->[0]));
-	$self->usage_error("Alias for new model and biochemistry not specified!") unless(defined($args->[1]));
-    my $filename = $args->[0];
-    my $alias = $args->[1];
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
     my $factory = ModelSEED::MS::Factories::SBMLFactory->new();
+    print($self->usage) && exit if $opts->{help};
+    if ($opts->{verbose}) {
+        set_verbose(1);
+    	delete $opts->{verbose};
+    }
+    $self->usage_error("Filename of SBML file not specified!") unless(defined($args->[0]));
+	$self->usage_error("Alias for new model and biochemistry not specified!") unless(defined($args->[1]));
+    my $filename = $args->[0];
+    my $alias = $args->[1];
 	my $input = {
 		filename => $filename,
 		verbose => 0
 	};
-	if (defined($opts->{verbose})) {
-		$input->{verbose} = $opts->{verbose};
-	}
 	if (defined($opts->{namespace})) {
 		$input->{namespace} = $opts->{namespace};
 	}
