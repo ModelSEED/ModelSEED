@@ -549,10 +549,8 @@ sub addReactionFromHash {
     }
 
     # Generate equation search string and check to see if reaction not already in database
-    my $searchRxns = $self->checkForDuplicateReactions($rxn);
-    if (defined($searchRxns) && scalar(@$searchRxns)>0) {
-	#just report the first one found because this reaction will be skipped anyway.
-	my $searchRxn=$searchRxns->[0];
+    my $searchRxn = $self->checkForDuplicateReaction($rxn);
+    if (defined($searchRxn)){
 
 	# Check to see if searchRxn has alias from same namespace
 	my $alias = $searchRxn->getAlias($args->{aliasType});
@@ -625,7 +623,13 @@ Description:
 sub mergeBiochemistry {
     my ($self,$bio,$opts) = @_;
     my $typelist = [
-    	"cues","compartments","compounds","reactions","media","compoundSets","reactionSets"
+    	"cues",
+	"compartments",
+	"compounds",
+#	"reactions",
+#	"media",
+#	"compoundSets",
+#	"reactionSets"
     ];
     my $types = {
     	"cues" => "checkForDuplicateCue",
@@ -639,22 +643,26 @@ sub mergeBiochemistry {
     foreach my $type (@{$typelist}) {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
+	print scalar(@$objs)." ".$type,"\n";
     	my $uuidTranslation = {};
     	for (my $j=0; $j < @{$objs}; $j++) {
-    		my $obj = $objs->[$j];
-    		if ($type eq "reactions") {
-    			$obj->parent($self);
-    		}
-    		my $dupObj = $self->$func($obj);
-    		if (defined($dupObj)) {
-    			$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
-    			$obj->uuid($dupObj->uuid());
-	    	} else {
-	    		$self->add($type,$dupObj);
-	    	}
+	    my $obj = $objs->[$j];
+	    if ($type eq "reactions") {
+		$obj->parent($self);
+	    }
+	    my $dupObj = $self->$func($obj,$opts);
+	    if (defined($dupObj)) {
+		print $obj->id(),"\t",$dupObj->id(),"\t",$dupObj->getAlias($opts->{namespace}),"\n";
+		print $obj->uuid(),"\t",$dupObj->uuid(),"\n";
+		$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
+		$obj->uuid($dupObj->uuid());
+		print $obj->uuid(),"\t",$dupObj->uuid(),"\n";
+	    } else {
+		$self->add($type,$obj);
+	    }
     	}
-    	$bio->_clearIndex();    	
     	$bio->updateLinks($type,$uuidTranslation,1,1);
+    	$bio->_clearIndex();    	
     }
 }
 
@@ -667,8 +675,12 @@ Description:
 =cut
 
 sub checkForDuplicateReactionSet {
-    my ($self,$obj) = @_;
-    return $self->queryObjects("reactionSets",{reactionCodeList => $obj->reactionCodeList()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("reactionSets",{reactionCodeList => $obj->reactionCodeList()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 =head3 checkForDuplicateCompoundSet
@@ -680,8 +692,12 @@ Description:
 =cut
 
 sub checkForDuplicateCompoundSet {
-    my ($self,$obj) = @_;
-    return $self->queryObjects("compoundSets",{compoundListString => $obj->compoundListString()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("compoundSets",{compoundListString => $obj->compoundListString()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 =head3 checkForDuplicateMedia
@@ -693,10 +709,13 @@ Description:
 =cut
 
 sub checkForDuplicateMedia {
-    my ($self,$obj) = @_;
-    return $self->queryObjects("media",{compoundListString => $obj->compoundListString()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("media",{compoundListString => $obj->compoundListString()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
-
 
 =head3 checkForDuplicateReaction
 Definition:
@@ -707,8 +726,12 @@ Description:
 =cut
 
 sub checkForDuplicateReaction {
-    my ($self,$obj) = @_;
-    return $self->queryObjects("reactions",{equationCode => $obj->equationCode()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("reactions",{equationCode => $obj->equationCode()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 =head3 checkForDuplicateCompound
@@ -720,8 +743,17 @@ Description:
 =cut
 
 sub checkForDuplicateCompound {
-    my ($self,$obj) = @_;
-    return $self->queryObject("compounds",{name => $obj->name()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = [];
+    if(defined($opts->{namespace})){
+	$dupObjs = $self->getObjectsByAlias("compounds",$obj->getAlias($opts->{namespace}),$opts->{namespace});
+    }else{
+	$dupObjs = $self->queryObjects("compounds",{name => $obj->name()});
+    }
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 =head3 checkForDuplicateCompartment
@@ -733,8 +765,12 @@ Description:
 =cut
 
 sub checkForDuplicateCompartment {
-    my ($self,$obj) = @_;
-    return $self->queryObject("compartments",{name => $obj->name()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("compartments",{name => $obj->name()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 =head3 checkForDuplicateCue
@@ -746,8 +782,12 @@ Description:
 =cut
 
 sub checkForDuplicateCue {
-    my ($self,$obj) = @_;
-    return $self->queryObject("cues",{name => $obj->name()});
+    my ($self,$obj,$opts) = @_;
+    my $dupObjs = $self->queryObjects("cues",{name => $obj->name()});
+    foreach my $dupObj (@$dupObjs){
+	return $dupObj if $dupObj->uuid() ne $obj->uuid();
+    }
+    return undef;
 }
 
 sub __upgrade__ {
