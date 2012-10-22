@@ -623,14 +623,13 @@ Description:
 sub mergeBiochemistry {
     my ($self,$bio,$opts) = @_;
     my $typelist = [
-    	"cues",
+	        "cues",
 		"compartments",
 		"compounds",
 	#	"reactions",
 	#	"media",
 	#	"compoundSets",
 	#	"reactionSets",
-		"aliasSets"
     ];
     my $types = {
     	"cues" => "checkForDuplicateCue",
@@ -639,41 +638,39 @@ sub mergeBiochemistry {
     	"reactions" => "checkForDuplicateReaction",
     	"media" => "checkForDuplicateMedia",
     	"compoundSets" => "checkForDuplicateCompoundSet",
-    	"reactionSets" => "checkForDuplicateReactionSet",
-    	"aliasSets" => "checkForDuplicateAliasSet"
+    	"reactionSets" => "checkForDuplicateReactionSet"
     };
     foreach my $type (@{$typelist}) {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
-		print scalar(@$objs)." ".$type,"\n";
     	my $uuidTranslation = {};
+	ModelSEED::utilities::verbose("Merging ".scalar(@$objs)."\n");
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
 		    if ($type eq "reactions") {
 				$obj->parent($self);
 		    }
 		    my $dupObj = $self->$func($obj,$opts);
-		    if (defined($dupObj)) {
-				print $obj->id(),"\t",$dupObj->id(),"\t",$dupObj->getAlias($opts->{namespace}),"\n";
-				print $obj->uuid(),"\t",$dupObj->uuid(),"\n";
+		    if (defined($dupObj)) {			
+				ModelSEED::utilities::verbose("Duplicate ".substr($type,0,-1)." found; ",$obj->id()," merged to ",$dupObj->id(),".\n");
+				if(!defined($opts->{noaliastransfer})){
+				    foreach my $set ( grep { $_->attribute() eq $type } @{$self->aliasSets()} ){
+					$self->addAlias({attribute=>$type,aliasName=>$set->name(),alias=>$obj->getAlias($set->name()),uuid=>$dupObj->uuid()});
+				    }
+				}
 				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
 				$obj->uuid($dupObj->uuid());
-				print $obj->uuid(),"\t",$dupObj->uuid(),"\n";
-				if ($type eq "aliasSets") {
-					my $aliases = $obj->aliases();
-					foreach my $alias (keys(%{$aliases})) {
-    					my $uuids = $aliases->{$alias};
-    					foreach my $uuid (@{$uuids}) {
-    						$dupObj->addAlias($alias,$uuid);
-    					}
-    				}
-				}
 		    } else {
-				$self->add($type,$obj);
+			if(!defined($opts->{noaliastransfer})){
+			    foreach my $set ( @{$self->aliasSets()} ){
+				$self->addAlias({attribute=>$type,aliasName=>$set->name(),alias=>$obj->getAlias($set->name()),uuid=>$obj->uuid()});
+			    }
+			}
+			$self->add($type,$obj);
 		    }
     	}
     	$bio->updateLinks($type,$uuidTranslation,1,1);
-    	$bio->_clearIndex();    	
+    	$bio->_clearIndex();
     }
 }
 
@@ -756,11 +753,10 @@ Description:
 
 sub checkForDuplicateCompound {
     my ($self,$obj,$opts) = @_;
-    my $dupObjs = [];
     if(defined($opts->{namespace})){
-		return $self->getObjectByAlias("compounds",$obj->getAlias($opts->{namespace}),$opts->{namespace});
+	return $self->getObjectByAlias("compounds",$obj->getAlias($opts->{mergevia}),$opts->{mergevia});
     }
-	return $self->queryObject("compounds",{name => $obj->name()});
+    return $self->queryObject("compounds",{name => $obj->name()});
 }
 
 =head3 checkForDuplicateCompartment
