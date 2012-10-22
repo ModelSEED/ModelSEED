@@ -34,13 +34,17 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
-    my $factory = ModelSEED::MS::Factories::SBMLFactory->new();
+    my $factory = ModelSEED::MS::Factories::SBMLFactory->new({
+    	auth => $auth,
+    	store => $store
+    });
     print($self->usage) && exit if $opts->{help};
     if ($opts->{verbose}) {
         set_verbose(1);
     	delete $opts->{verbose};
     }
     $self->usage_error("Filename of SBML file not specified!") unless(defined($args->[0]));
+	$self->usage_error("SBML file not found!") unless (-e $args->[0]);
 	$self->usage_error("Alias for new model and biochemistry not specified!") unless(defined($args->[1]));
     my $filename = $args->[0];
     my $alias = $args->[1];
@@ -56,12 +60,22 @@ sub execute {
 		$self->usage_error("Specified annotation ".$opts->{annotation}." not found!") unless(defined($annotation));
 		$input->{annotation} = $annotation;
 	}
-	(my $biochemistry,my $model) = $factory->parseSBML($input);
+	(my $biochemistry,my $model,my $anno,my $mapping) = $factory->parseSBML($input);
 	unless($opts->{dry}) {
         if (defined($model)) {
         	my $ref = $helper->process_ref_string($alias, "model", $auth->username);
         	$store->save_object($ref, $model);
         	print "Saved model to ".$ref."!\n" if(defined($opts->{verbose}));
+        }
+        if (defined($anno)) {
+        	my $ref = $helper->process_ref_string($alias, "annotation", $auth->username);
+        	$store->save_object($ref, $anno);
+        	print "Saved mapping to ".$ref."!\n" if(defined($opts->{verbose}));
+        }
+        if (defined($mapping)) {
+        	my $ref = $helper->process_ref_string($alias, "mapping", $auth->username);
+        	$store->save_object($ref, $mapping);
+        	print "Saved mapping to ".$ref."!\n" if(defined($opts->{verbose}));
         }
         if (defined($biochemistry)) {
         	my $ref = $helper->process_ref_string($alias, "biochemistry", $auth->username);
