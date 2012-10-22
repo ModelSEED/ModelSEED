@@ -1,6 +1,7 @@
 package ModelSEED::App::bio::Command::addcpdtable;
 use strict;
 use common::sense;
+use ModelSEED::utilities qw( args verbose set_verbose );
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -28,56 +29,53 @@ sub execute {
     $self->usage_error("Must specify a valid filename for compound table") unless(defined($args->[1]) && -e $args->[1]);
 
     #verbosity
-    if ($opts->{verbose}) {
-    	ModelSEED::utilities::SETVERBOSE(1);
-    	delete $opts->{verbose};
-    }
+    set_verbose(1) if $opts->{verbose};
 
     #load table
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
 
     #set namespace
     if (!defined($opts->{namespace})) {
-	$opts->{namespace} = $args->[0];
-	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
+    $opts->{namespace} = $args->[0];
+    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
     }
 
     #creating namespaces if they don't exist
     if(!$biochemistry->queryObject("aliasSets",{name => $opts->{namespace},attribute=>"compounds"})){
-	$biochemistry->add("aliasSets",{
-	    name => $opts->{namespace},
-	    source => $opts->{namespace},
-	    attribute => "compounds",
-	    class => "Compound"});
+    $biochemistry->add("aliasSets",{
+        name => $opts->{namespace},
+        source => $opts->{namespace},
+        attribute => "compounds",
+        class => "Compound"});
     }
     if(defined($opts->{mergeto}) && !$biochemistry->queryObject("aliasSets",{name => $opts->{mergeto},attribute=>"compounds"})){
-	$biochemistry->add("aliasSets",{
-	    name => $opts->{mergeto},
-	    source => $opts->{mergeto},
-	    attribute => "compounds",
-	    class => "Compound"});
+    $biochemistry->add("aliasSets",{
+        name => $opts->{mergeto},
+        source => $opts->{mergeto},
+        attribute => "compounds",
+        class => "Compound"});
     }
 
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
-    	my $cpdData = {aliasType => $opts->{namespace}};
-    	for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
-    		my $heading = lc($tbl->{headings}->[$j]);
-    		if ($heading =~ /names?/) {
-		    $heading="names" if $heading eq "name";
-		    $cpdData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
-    		} else {
-		    $cpdData->{$heading} = [$tbl->{data}->[$i]->[$j]];
-    		}
-    	}
-    	my $cpd = $biochemistry->addCompoundFromHash($cpdData,$opts->{mergeto});
+        my $cpdData = {aliasType => $opts->{namespace}};
+        for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
+            my $heading = lc($tbl->{headings}->[$j]);
+            if ($heading =~ /names?/) {
+            $heading="names" if $heading eq "name";
+            $cpdData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+            } else {
+            $cpdData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+            }
+        }
+        my $cpd = $biochemistry->addCompoundFromHash($cpdData,$opts->{mergeto});
     }
     if (defined($opts->{saveas})) {
-    	$ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
-    	print STDERR "Saving biochemistry with new compounds as ".$ref."...\n" if($opts->{verbose});
-	$store->save_object($ref,$biochemistry);
+        $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
+        verbose "Saving biochemistry with new compounds as ".$ref."...\n";
+    $store->save_object($ref,$biochemistry);
     } else {
-    	print STDERR "Saving over original biochemistry with new compounds...\n" if($opts->{verbose});
-    	$store->save_object($ref,$biochemistry);
+        verbose "Saving over original biochemistry with new compounds...\n";
+        $store->save_object($ref,$biochemistry);
     }
 }
 
