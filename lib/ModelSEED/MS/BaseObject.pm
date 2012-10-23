@@ -850,7 +850,7 @@ sub updateLinks {
 	    				}
 	    			}
 	    		} elsif (defined($translation->{$data})) {
-    				$data = $translation->{$data};
+    				$self->$attribute($translation->{$data});
     				$self->$clearer();
     			}
     		}
