@@ -16,17 +16,17 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::ModelReactionProteinSubunit', 
 
 
 # ATTRIBUTES:
-has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has feature_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_link)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_feature {
   my ($self) = @_;
-  return $self->getLinkedObject('Annotation','features',$self->feature_uuid());
+  return $self->getLinkedObject('Annotation','features',$self->feature_link());
 }
 
 
@@ -37,13 +37,13 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'feature_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'feature_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {feature_uuid => 0};
+my $attribute_map = {feature_link => 0};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -60,7 +60,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'feature_uuid',
+            'attribute' => 'feature_link',
             'parent' => 'Annotation',
             'clearer' => 'clear_feature',
             'name' => 'feature',

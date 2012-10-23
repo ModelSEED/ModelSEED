@@ -16,29 +16,24 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Model', weak_ref => 1, type =>
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
+has compartment_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '5', required => 1, type => 'attribute', metaclass => 'Typed');
 has compartmentIndex => (is => 'rw', isa => 'Int', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
 has label => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has pH => (is => 'rw', isa => 'Num', printOrder => '3', default => '7', type => 'attribute', metaclass => 'Typed');
 has potential => (is => 'rw', isa => 'Num', printOrder => '4', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
-
-
 # LINKS:
-has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_link)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_compartment {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_uuid());
+  return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_link());
 }
 
 
@@ -49,8 +44,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -63,8 +58,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 5,
-            'name' => 'compartment_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compartment_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -100,7 +95,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, compartment_uuid => 2, compartmentIndex => 3, label => 4, pH => 5, potential => 6};
+my $attribute_map = {uid => 0, modDate => 1, compartment_link => 2, compartmentIndex => 3, label => 4, pH => 5, potential => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -117,7 +112,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'compartment_uuid',
+            'attribute' => 'compartment_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_compartment',
             'name' => 'compartment',

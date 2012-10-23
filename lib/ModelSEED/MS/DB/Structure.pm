@@ -16,21 +16,16 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::BiochemistryStructures', weak_
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has data => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
 # LINKS:
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 
 
 # CONSTANTS:
@@ -40,8 +35,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -69,7 +64,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, data => 1, cksum => 2, type => 3};
+my $attribute_map = {uid => 0, data => 1, cksum => 2, type => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -16,20 +16,20 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Media', weak_ref => 1, type =>
 
 
 # ATTRIBUTES:
-has compound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compound_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has concentration => (is => 'rw', isa => 'Num', printOrder => '0', default => '0.001', type => 'attribute', metaclass => 'Typed');
 has maxFlux => (is => 'rw', isa => 'Num', printOrder => '0', default => '100', type => 'attribute', metaclass => 'Typed');
 has minFlux => (is => 'rw', isa => 'Num', printOrder => '0', default => '-100', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
+has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_link)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_compound {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compounds',$self->compound_uuid());
+  return $self->getLinkedObject('Biochemistry','compounds',$self->compound_link());
 }
 
 
@@ -40,8 +40,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'compound_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compound_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -70,7 +70,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {compound_uuid => 0, concentration => 1, maxFlux => 2, minFlux => 3};
+my $attribute_map = {compound_link => 0, concentration => 1, maxFlux => 2, minFlux => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -87,7 +87,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'compound_uuid',
+            'attribute' => 'compound_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_compound',
             'name' => 'compound',

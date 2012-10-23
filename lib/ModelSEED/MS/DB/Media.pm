@@ -17,17 +17,13 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has isDefined => (is => 'rw', isa => 'Bool', printOrder => '4', default => '0', type => 'attribute', metaclass => 'Typed');
 has isMinimal => (is => 'rw', isa => 'Bool', printOrder => '5', default => '0', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '6', default => 'unknown', type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -38,7 +34,6 @@ has mediacompounds => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 
 
@@ -49,8 +44,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -103,7 +98,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, isDefined => 2, isMinimal => 3, id => 4, name => 5, type => 6};
+my $attribute_map = {uid => 0, modDate => 1, isDefined => 2, isMinimal => 3, id => 4, name => 5, type => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

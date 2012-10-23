@@ -16,37 +16,37 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_r
 
 
 # ATTRIBUTES:
-has feature_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
-has ortholog_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
-has orthologGenome_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has feature_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has ortholog_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has orthologGenome_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has similarityScore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has distanceScore => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has role_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has feature => (is => 'rw', type => 'link(Annotation,features,feature_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
-has ortholog => (is => 'rw', type => 'link(Annotation,features,ortholog_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', clearer => 'clear_ortholog', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
-has orthologGenome => (is => 'rw', type => 'link(Annotation,genomes,orthogenome_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', clearer => 'clear_orthologGenome', isa => 'ModelSEED::MS::Genome', weak_ref => 1);
-has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
+has feature => (is => 'rw', type => 'link(Annotation,features,feature_link)', metaclass => 'Typed', lazy => 1, builder => '_build_feature', clearer => 'clear_feature', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has ortholog => (is => 'rw', type => 'link(Annotation,features,ortholog_link)', metaclass => 'Typed', lazy => 1, builder => '_build_ortholog', clearer => 'clear_ortholog', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has orthologGenome => (is => 'rw', type => 'link(Annotation,genomes,orthogenome_link)', metaclass => 'Typed', lazy => 1, builder => '_build_orthologGenome', clearer => 'clear_orthologGenome', isa => 'ModelSEED::MS::Genome', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_link)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_feature {
   my ($self) = @_;
-  return $self->getLinkedObject('Annotation','features',$self->feature_uuid());
+  return $self->getLinkedObject('Annotation','features',$self->feature_link());
 }
 sub _build_ortholog {
   my ($self) = @_;
-  return $self->getLinkedObject('Annotation','features',$self->ortholog_uuid());
+  return $self->getLinkedObject('Annotation','features',$self->ortholog_link());
 }
 sub _build_orthologGenome {
   my ($self) = @_;
-  return $self->getLinkedObject('Annotation','genomes',$self->orthogenome_uuid());
+  return $self->getLinkedObject('Annotation','genomes',$self->orthogenome_link());
 }
 sub _build_role {
   my ($self) = @_;
-  return $self->getLinkedObject('Mapping','roles',$self->role_uuid());
+  return $self->getLinkedObject('Mapping','roles',$self->role_link());
 }
 
 
@@ -57,22 +57,22 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'feature_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'feature_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'ortholog_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'ortholog_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'orthologGenome_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'orthologGenome_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -92,13 +92,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'role_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'role_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {feature_uuid => 0, ortholog_uuid => 1, orthologGenome_uuid => 2, similarityScore => 3, distanceScore => 4, role_uuid => 5};
+my $attribute_map = {feature_link => 0, ortholog_link => 1, orthologGenome_link => 2, similarityScore => 3, distanceScore => 4, role_link => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -115,7 +115,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'feature_uuid',
+            'attribute' => 'feature_link',
             'parent' => 'Annotation',
             'clearer' => 'clear_feature',
             'name' => 'feature',
@@ -123,7 +123,7 @@ my $links = [
             'method' => 'features'
           },
           {
-            'attribute' => 'ortholog_uuid',
+            'attribute' => 'ortholog_link',
             'parent' => 'Annotation',
             'clearer' => 'clear_ortholog',
             'name' => 'ortholog',
@@ -131,7 +131,7 @@ my $links = [
             'method' => 'features'
           },
           {
-            'attribute' => 'orthogenome_uuid',
+            'attribute' => 'orthogenome_link',
             'parent' => 'Annotation',
             'clearer' => 'clear_orthologGenome',
             'name' => 'orthologGenome',
@@ -139,7 +139,7 @@ my $links = [
             'method' => 'genomes'
           },
           {
-            'attribute' => 'role_uuid',
+            'attribute' => 'role_link',
             'parent' => 'Mapping',
             'clearer' => 'clear_role',
             'name' => 'role',

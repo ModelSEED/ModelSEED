@@ -16,18 +16,18 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenSolution', weak_ref => 1
 
 
 # ATTRIBUTES:
-has modelreaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelreaction_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
+has modelreaction => (is => 'rw', type => 'link(Model,modelreactions,modelreaction_link)', metaclass => 'Typed', lazy => 1, builder => '_build_modelreaction', clearer => 'clear_modelreaction', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelreaction {
   my ($self) = @_;
-  return $self->getLinkedObject('Model','modelreactions',$self->modelreaction_uuid());
+  return $self->getLinkedObject('Model','modelreactions',$self->modelreaction_link());
 }
 
 
@@ -38,8 +38,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'modelreaction_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'modelreaction_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -52,7 +52,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {modelreaction_uuid => 0, direction => 1};
+my $attribute_map = {modelreaction_link => 0, direction => 1};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -69,7 +69,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'modelreaction_uuid',
+            'attribute' => 'modelreaction_link',
             'parent' => 'Model',
             'clearer' => 'clear_modelreaction',
             'name' => 'modelreaction',

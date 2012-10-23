@@ -5,13 +5,13 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package ModelSEED::MS::DB::Annotation;
-use ModelSEED::MS::IndexedObject;
+use ModelSEED::MS::ProvenanceObject;
 use ModelSEED::MS::Genome;
 use ModelSEED::MS::Feature;
 use ModelSEED::MS::SubsystemState;
 use Moose;
 use namespace::autoclean;
-extends 'ModelSEED::MS::IndexedObject';
+extends 'ModelSEED::MS::ProvenanceObject';
 
 
 our $VERSION = 1;
@@ -20,16 +20,12 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'SEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '2', type => 'attribute', metaclass => 'Typed');
+has mapping_link => (is => 'rw', isa => 'ModelSEED::provenance_link', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -39,15 +35,14 @@ has subsystemStates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub {
 
 
 # LINKS:
-has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'ModelSEED::MS::Mapping');
+has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_link)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'ModelSEED::MS::Mapping');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_mapping {
   my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','Mapping',$self->mapping_uuid());
+  return $self->getLinkedObject('ModelSEED::Store','Mapping',$self->mapping_link());
 }
 
 
@@ -59,8 +54,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -89,8 +84,8 @@ my $attributes = [
           },
           {
             'printOrder' => 2,
-            'name' => 'mapping_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'mapping_link',
+            'type' => 'ModelSEED::provenance_link',
             'perm' => 'rw'
           },
           {
@@ -103,7 +98,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, name => 3, mapping_uuid => 4, forwardedLinks => 5};
+my $attribute_map = {uid => 0, defaultNameSpace => 1, modDate => 2, name => 3, mapping_link => 4, forwardedLinks => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -120,7 +115,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'mapping_uuid',
+            'attribute' => 'mapping_link',
             'weak' => 0,
             'parent' => 'ModelSEED::Store',
             'clearer' => 'clear_mapping',

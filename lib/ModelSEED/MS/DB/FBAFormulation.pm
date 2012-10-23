@@ -5,7 +5,7 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package ModelSEED::MS::DB::FBAFormulation;
-use ModelSEED::MS::IndexedObject;
+use ModelSEED::MS::ProvenanceObject;
 use ModelSEED::MS::FBAObjectiveTerm;
 use ModelSEED::MS::FBAConstraint;
 use ModelSEED::MS::FBAReactionBound;
@@ -14,7 +14,7 @@ use ModelSEED::MS::FBAResult;
 use ModelSEED::MS::FBAPhenotypeSimulation;
 use Moose;
 use namespace::autoclean;
-extends 'ModelSEED::MS::IndexedObject';
+extends 'ModelSEED::MS::ProvenanceObject';
 
 
 # PARENT:
@@ -22,18 +22,18 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has regulatorymodel_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has regulatorymodel_link => (is => 'rw', isa => 'ModelSEED::provenance_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has model_link => (is => 'rw', isa => 'ModelSEED::provenance_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has media_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has secondaryMedia_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
 has comboDeletions => (is => 'rw', isa => 'Int', printOrder => '11', default => '0', type => 'attribute', metaclass => 'Typed');
 has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
 has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
 has notes => (is => 'rw', isa => 'Str', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
-has expressionData_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has expressionData_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
 has allReversible => (is => 'rw', isa => 'Int', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
 has defaultMaxFlux => (is => 'rw', isa => 'Int', printOrder => '20', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
@@ -44,8 +44,8 @@ has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', d
 has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
-has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has geneKO_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has reactionKO_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has inputfiles => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has outputfiles => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
@@ -55,10 +55,6 @@ has simpleThermoConstraints => (is => 'rw', isa => 'Bool', printOrder => '15', d
 has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
 has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -71,35 +67,34 @@ has fbaPhenotypeSimulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
-has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
-has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
-has secondaryMedia => (is => 'rw', type => 'link(Biochemistry,media,secondaryMedia_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_secondaryMedia', clearer => 'clear_secondaryMedia', isa => 'ArrayRef');
+has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_link)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
+has media => (is => 'rw', type => 'link(Biochemistry,media,media_link)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_links)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
+has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_links)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
+has secondaryMedia => (is => 'rw', type => 'link(Biochemistry,media,secondaryMedia_links)', metaclass => 'Typed', lazy => 1, builder => '_build_secondaryMedia', clearer => 'clear_secondaryMedia', isa => 'ArrayRef');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_model {
   my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
+  return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_link());
 }
 sub _build_media {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','media',$self->media_uuid());
+  return $self->getLinkedObject('Biochemistry','media',$self->media_link());
 }
 sub _build_geneKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_uuids());
+  return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_links());
 }
 sub _build_reactionKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_links());
 }
 sub _build_secondaryMedia {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','media',$self->secondaryMedia_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','media',$self->secondaryMedia_links());
 }
 
 
@@ -110,8 +105,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -124,30 +119,30 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'regulatorymodel_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'regulatorymodel_link',
+            'type' => 'ModelSEED::provenance_link',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'model_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'model_link',
+            'type' => 'ModelSEED::provenance_link',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'media_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'media_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'secondaryMedia_uuids',
+            'name' => 'secondaryMedia_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
@@ -189,8 +184,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'expressionData_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'expressionData_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -281,17 +276,17 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'geneKO_uuids',
+            'name' => 'geneKO_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'reactionKO_uuids',
+            'name' => 'reactionKO_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
@@ -368,7 +363,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, inputfiles => 25, outputfiles => 26, uptakeLimits => 27, numberOfSolutions => 28, simpleThermoConstraints => 29, thermodynamicConstraints => 30, noErrorThermodynamicConstraints => 31, minimizeErrorThermodynamicConstraints => 32};
+my $attribute_map = {uid => 0, modDate => 1, regulatorymodel_link => 2, model_link => 3, media_link => 4, secondaryMedia_links => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_link => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_links => 22, reactionKO_links => 23, parameters => 24, inputfiles => 25, outputfiles => 26, uptakeLimits => 27, numberOfSolutions => 28, simpleThermoConstraints => 29, thermodynamicConstraints => 30, noErrorThermodynamicConstraints => 31, minimizeErrorThermodynamicConstraints => 32};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -385,7 +380,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'model_uuid',
+            'attribute' => 'model_link',
             'weak' => 0,
             'parent' => 'ModelSEED::Store',
             'clearer' => 'clear_model',
@@ -394,7 +389,7 @@ my $links = [
             'method' => 'Model'
           },
           {
-            'attribute' => 'media_uuid',
+            'attribute' => 'media_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_media',
             'name' => 'media',
@@ -403,7 +398,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'geneKO_uuids',
+            'attribute' => 'geneKO_links',
             'parent' => 'Annotation',
             'clearer' => 'clear_geneKOs',
             'name' => 'geneKOs',
@@ -412,7 +407,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'reactionKO_uuids',
+            'attribute' => 'reactionKO_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reactionKOs',
             'name' => 'reactionKOs',
@@ -421,7 +416,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'secondaryMedia_uuids',
+            'attribute' => 'secondaryMedia_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_secondaryMedia',
             'name' => 'secondaryMedia',

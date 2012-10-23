@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has biomass_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has biomass_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'Str', printOrder => '9', type => 'attribute', metaclass => 'Typed');
 has lowerBound => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', metaclass => 'Typed');
@@ -27,13 +27,13 @@ has value => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', 
 
 
 # LINKS:
-has biomass => (is => 'rw', type => 'link(Model,biomasses,biomass_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', clearer => 'clear_biomass', isa => 'ModelSEED::MS::Biomass', weak_ref => 1);
+has biomass => (is => 'rw', type => 'link(Model,biomasses,biomass_link)', metaclass => 'Typed', lazy => 1, builder => '_build_biomass', clearer => 'clear_biomass', isa => 'ModelSEED::MS::Biomass', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_biomass {
   my ($self) = @_;
-  return $self->getLinkedObject('Model','biomasses',$self->biomass_uuid());
+  return $self->getLinkedObject('Model','biomasses',$self->biomass_link());
 }
 
 
@@ -44,8 +44,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'biomass_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'biomass_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -105,7 +105,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {biomass_uuid => 0, variableType => 1, class => 2, lowerBound => 3, upperBound => 4, min => 5, max => 6, value => 7};
+my $attribute_map = {biomass_link => 0, variableType => 1, class => 2, lowerBound => 3, upperBound => 4, min => 5, max => 6, value => 7};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -122,7 +122,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'biomass_uuid',
+            'attribute' => 'biomass_link',
             'parent' => 'Model',
             'clearer' => 'clear_biomass',
             'name' => 'biomass',

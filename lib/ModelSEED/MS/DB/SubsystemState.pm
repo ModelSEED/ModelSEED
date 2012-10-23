@@ -16,15 +16,20 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Annotation', weak_ref => 1, ty
 
 
 # ATTRIBUTES:
-has roleset_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has roleset_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has variant => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
+has roleset => (is => 'rw', type => 'link(Mapping,rolesets,roleset_link)', metaclass => 'Typed', lazy => 1, builder => '_build_roleset', clearer => 'clear_roleset', isa => 'ModelSEED::MS::RoleSet', weak_ref => 1);
 
 
 # BUILDERS:
+sub _build_roleset {
+  my ($self) = @_;
+  return $self->getLinkedObject('Mapping','rolesets',$self->roleset_link());
+}
 
 
 # CONSTANTS:
@@ -34,8 +39,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'roleset_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'roleset_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -55,7 +60,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {roleset_uuid => 0, name => 1, variant => 2};
+my $attribute_map = {roleset_link => 0, name => 1, variant => 2};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -70,9 +75,18 @@ sub _attributes {
   }
 }
 
-my $links = [];
+my $links = [
+          {
+            'attribute' => 'roleset_link',
+            'parent' => 'Mapping',
+            'clearer' => 'clear_roleset',
+            'name' => 'roleset',
+            'class' => 'rolesets',
+            'method' => 'rolesets'
+          }
+        ];
 
-my $link_map = {};
+my $link_map = {roleset => 0};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

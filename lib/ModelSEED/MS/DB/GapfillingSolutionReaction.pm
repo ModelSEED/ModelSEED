@@ -16,25 +16,30 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingSolution', weak_ref 
 
 
 # ATTRIBUTES:
-has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has reaction_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compartment_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has direction => (is => 'rw', isa => 'Str', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has candidateFeature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has candidateFeature_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
-has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef');
+has reaction => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_link)', metaclass => 'Typed', lazy => 1, builder => '_build_reaction', clearer => 'clear_reaction', isa => 'ModelSEED::MS::Reaction', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_link)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
+has candidateFeatures => (is => 'rw', type => 'link(Annotation,features,candidateFeature_links)', metaclass => 'Typed', lazy => 1, builder => '_build_candidateFeatures', clearer => 'clear_candidateFeatures', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_reaction {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','reactions',$self->reaction_uuid());
+  return $self->getLinkedObject('Biochemistry','reactions',$self->reaction_link());
+}
+sub _build_compartment {
+  my ($self) = @_;
+  return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_link());
 }
 sub _build_candidateFeatures {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Annotation','features',$self->candidateFeature_uuids());
+  return $self->getLinkedObjectArray('Annotation','features',$self->candidateFeature_links());
 }
 
 
@@ -45,15 +50,15 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'reaction_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'reaction_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'compartment_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compartment_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -67,14 +72,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'candidateFeature_uuids',
+            'name' => 'candidateFeature_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {reaction_uuid => 0, compartment_uuid => 1, direction => 2, candidateFeature_uuids => 3};
+my $attribute_map = {reaction_link => 0, compartment_link => 1, direction => 2, candidateFeature_links => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -91,7 +96,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'reaction_uuid',
+            'attribute' => 'reaction_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reaction',
             'name' => 'reaction',
@@ -99,8 +104,16 @@ my $links = [
             'method' => 'reactions'
           },
           {
+            'attribute' => 'compartment_link',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_compartment',
+            'name' => 'compartment',
+            'class' => 'compartments',
+            'method' => 'compartments'
+          },
+          {
             'array' => 1,
-            'attribute' => 'candidateFeature_uuids',
+            'attribute' => 'candidateFeature_links',
             'parent' => 'Annotation',
             'clearer' => 'clear_candidateFeatures',
             'name' => 'candidateFeatures',
@@ -109,7 +122,7 @@ my $links = [
           }
         ];
 
-my $link_map = {reaction => 0, candidateFeatures => 1};
+my $link_map = {reaction => 0, compartment => 1, candidateFeatures => 2};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

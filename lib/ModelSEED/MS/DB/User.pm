@@ -17,7 +17,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has login => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has password => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has email => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
@@ -25,15 +25,10 @@ has firstname => (is => 'rw', isa => 'Str', printOrder => '0', default => '', ty
 has lastname => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
-
-
 # LINKS:
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 
 
 # CONSTANTS:
@@ -44,8 +39,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -88,7 +83,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, login => 1, password => 2, email => 3, firstname => 4, lastname => 5};
+my $attribute_map = {uid => 0, login => 1, password => 2, email => 3, firstname => 4, lastname => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

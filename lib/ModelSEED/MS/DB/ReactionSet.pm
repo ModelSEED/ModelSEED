@@ -16,29 +16,24 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has class => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'unclassified', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has reaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
+has reaction_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef');
+has reactions => (is => 'rw', type => 'link(Biochemistry,reactions,reaction_links)', metaclass => 'Typed', lazy => 1, builder => '_build_reactions', clearer => 'clear_reactions', isa => 'ArrayRef');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_reactions {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reaction_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reaction_links());
 }
 
 
@@ -49,8 +44,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -95,14 +90,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'reaction_uuids',
+            'name' => 'reaction_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, class => 4, type => 5, reaction_uuids => 6};
+my $attribute_map = {uid => 0, modDate => 1, id => 2, name => 3, class => 4, type => 5, reaction_links => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -120,7 +115,7 @@ sub _attributes {
 my $links = [
           {
             'array' => 1,
-            'attribute' => 'reaction_uuids',
+            'attribute' => 'reaction_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reactions',
             'name' => 'reactions',

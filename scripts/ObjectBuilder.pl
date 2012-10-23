@@ -26,7 +26,9 @@ foreach my $name (keys(%{$objects})) {
     push(@$output, "package ModelSEED::MS::DB::" . $name . ";");
     #Creating perl use statements
     my $baseObject = "BaseObject";
-    if ($object->{class} eq "indexed") {
+    if ($object->{class} eq "provenance") {
+        $baseObject = "ProvenanceObject";
+    } elsif ($object->{class} eq "indexed") {
         $baseObject = "IndexedObject";
     }
     push(@$output, "use ModelSEED::MS::" . $baseObject . ";");

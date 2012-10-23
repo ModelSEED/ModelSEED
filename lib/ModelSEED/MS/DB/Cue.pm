@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
@@ -29,23 +29,18 @@ has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute',
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has smallMolecule => (is => 'rw', isa => 'Bool', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has priority => (is => 'rw', isa => 'Int', printOrder => '9', type => 'attribute', metaclass => 'Typed');
-has structure_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
+has structure_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has structure => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', clearer => 'clear_structure', isa => 'ModelSEED::MS::Structure', weak_ref => 1);
+has structure => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_link)', metaclass => 'Typed', lazy => 1, builder => '_build_structure', clearer => 'clear_structure', isa => 'ModelSEED::MS::Structure', weak_ref => 1);
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_structure {
   my ($self) = @_;
-  return $self->getLinkedObject('BiochemistryStructures','structures',$self->structure_uuid());
+  return $self->getLinkedObject('BiochemistryStructures','structures',$self->structure_link());
 }
 
 
@@ -57,8 +52,8 @@ my $attributes = [
             'len' => 36,
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -153,13 +148,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'structure_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'structure_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, unchargedFormula => 5, formula => 6, mass => 7, defaultCharge => 8, deltaG => 9, deltaGErr => 10, smallMolecule => 11, priority => 12, structure_uuid => 13};
+my $attribute_map = {uid => 0, modDate => 1, name => 2, abbreviation => 3, cksum => 4, unchargedFormula => 5, formula => 6, mass => 7, defaultCharge => 8, deltaG => 9, deltaGErr => 10, smallMolecule => 11, priority => 12, structure_link => 13};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -176,7 +171,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'structure_uuid',
+            'attribute' => 'structure_link',
             'parent' => 'BiochemistryStructures',
             'clearer' => 'clear_structure',
             'name' => 'structure',

@@ -16,29 +16,29 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has minimalMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has essentialNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
-has optionalNutrient_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has minimalMedia_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has essentialNutrient_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has optionalNutrient_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has minimalMedia => (is => 'rw', type => 'link(Biochemistry,media,minimalMedia_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has essentialNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,essentialNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients', isa => 'ArrayRef');
-has optionalNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,optionalNutrient_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients', isa => 'ArrayRef');
+has minimalMedia => (is => 'rw', type => 'link(Biochemistry,media,minimalMedia_link)', metaclass => 'Typed', lazy => 1, builder => '_build_minimalMedia', clearer => 'clear_minimalMedia', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has essentialNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,essentialNutrient_links)', metaclass => 'Typed', lazy => 1, builder => '_build_essentialNutrients', clearer => 'clear_essentialNutrients', isa => 'ArrayRef');
+has optionalNutrients => (is => 'rw', type => 'link(Biochemistry,compounds,optionalNutrient_links)', metaclass => 'Typed', lazy => 1, builder => '_build_optionalNutrients', clearer => 'clear_optionalNutrients', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_minimalMedia {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','media',$self->minimalMedia_uuid());
+  return $self->getLinkedObject('Biochemistry','media',$self->minimalMedia_link());
 }
 sub _build_essentialNutrients {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->essentialNutrient_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->essentialNutrient_links());
 }
 sub _build_optionalNutrients {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->optionalNutrient_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->optionalNutrient_links());
 }
 
 
@@ -49,27 +49,27 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'minimalMedia_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'minimalMedia_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'essentialNutrient_uuids',
-            'type' => 'ArrayRef',
+            'name' => 'essentialNutrient_links',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'optionalNutrient_uuids',
-            'type' => 'ArrayRef',
+            'name' => 'optionalNutrient_links',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {minimalMedia_uuid => 0, essentialNutrient_uuids => 1, optionalNutrient_uuids => 2};
+my $attribute_map = {minimalMedia_link => 0, essentialNutrient_links => 1, optionalNutrient_links => 2};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -86,7 +86,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'minimalMedia_uuid',
+            'attribute' => 'minimalMedia_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_minimalMedia',
             'name' => 'minimalMedia',
@@ -95,7 +95,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'essentialNutrient_uuids',
+            'attribute' => 'essentialNutrient_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_essentialNutrients',
             'name' => 'essentialNutrients',
@@ -104,7 +104,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'optionalNutrient_uuids',
+            'attribute' => 'optionalNutrient_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_optionalNutrients',
             'name' => 'optionalNutrients',

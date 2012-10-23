@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAConstraint', weak_ref => 1,
 
 
 # ATTRIBUTES:
-has entity_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has entity_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has entityType => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has variableType => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has coefficient => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -36,8 +36,8 @@ my $attributes = [
             'len' => 1,
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'entity_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'entity_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -64,7 +64,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {entity_uuid => 0, entityType => 1, variableType => 2, coefficient => 3};
+my $attribute_map = {entity_link => 0, entityType => 1, variableType => 2, coefficient => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

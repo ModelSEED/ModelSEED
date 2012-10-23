@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapfillingFormulation', weak_r
 
 
 # ATTRIBUTES:
-has reactionset_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has reactionset_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has reactionsetType => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has multiplierType => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has description => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
@@ -24,13 +24,13 @@ has multiplier => (is => 'rw', isa => 'Num', printOrder => '-1', type => 'attrib
 
 
 # LINKS:
-has reactionset => (is => 'rw', type => 'link(Biochemistry,reactionSets,reactionset_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', clearer => 'clear_reactionset', isa => 'ModelSEED::MS::ReactionSet', weak_ref => 1);
+has reactionset => (is => 'rw', type => 'link(Biochemistry,reactionSets,reactionset_link)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionset', clearer => 'clear_reactionset', isa => 'ModelSEED::MS::ReactionSet', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_reactionset {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','reactionSets',$self->reactionset_uuid());
+  return $self->getLinkedObject('Biochemistry','reactionSets',$self->reactionset_link());
 }
 
 
@@ -41,8 +41,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'reactionset_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'reactionset_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -75,7 +75,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {reactionset_uuid => 0, reactionsetType => 1, multiplierType => 2, description => 3, multiplier => 4};
+my $attribute_map = {reactionset_link => 0, reactionsetType => 1, multiplierType => 2, description => 3, multiplier => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -92,7 +92,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'reactionset_uuid',
+            'attribute' => 'reactionset_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reactionset',
             'name' => 'reactionset',

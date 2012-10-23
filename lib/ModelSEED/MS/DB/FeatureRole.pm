@@ -16,20 +16,20 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Feature', weak_ref => 1, type 
 
 
 # ATTRIBUTES:
-has role_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has role_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has compartment => (is => 'rw', isa => 'Str', printOrder => '0', default => 'unknown', type => 'attribute', metaclass => 'Typed');
 has comment => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has delimiter => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has role => (is => 'rw', type => 'link(Mapping,roles,role_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
+has role => (is => 'rw', type => 'link(Mapping,roles,role_link)', metaclass => 'Typed', lazy => 1, builder => '_build_role', clearer => 'clear_role', isa => 'ModelSEED::MS::Role', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_role {
   my ($self) = @_;
-  return $self->getLinkedObject('Mapping','roles',$self->role_uuid());
+  return $self->getLinkedObject('Mapping','roles',$self->role_link());
 }
 
 
@@ -40,8 +40,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'role_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'role_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -67,7 +67,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {role_uuid => 0, compartment => 1, comment => 2, delimiter => 3};
+my $attribute_map = {role_link => 0, compartment => 1, comment => 2, delimiter => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -84,7 +84,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'role_uuid',
+            'attribute' => 'role_link',
             'parent' => 'Mapping',
             'clearer' => 'clear_role',
             'name' => 'role',

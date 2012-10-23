@@ -16,45 +16,40 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAFormulation', weak_ref => 1
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has label => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has pH => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has temperature => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has additionalCpd_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has additionalCpd_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has geneKO_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_links]', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has reactionKO_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_links]', printOrder => '-1', required => 1, default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has media_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has observedGrowthFraction => (is => 'rw', isa => 'Num', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 
 
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
-
-
 # LINKS:
-has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
-has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
-has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
-has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
+has media => (is => 'rw', type => 'link(Biochemistry,media,media_link)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
+has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_links)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
+has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_links)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
+has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_links)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_media {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','media',$self->media_uuid());
+  return $self->getLinkedObject('Biochemistry','media',$self->media_link());
 }
 sub _build_geneKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_uuids());
+  return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_links());
 }
 sub _build_reactionKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->reactionKO_links());
 }
 sub _build_additionalCpds {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->additionalCpd_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->additionalCpd_links());
 }
 
 
@@ -65,8 +60,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -93,32 +88,32 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'additionalCpd_uuids',
+            'name' => 'additionalCpd_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'geneKO_uuids',
+            'name' => 'geneKO_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_links]',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'reactionKO_uuids',
+            'name' => 'reactionKO_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_links]',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'media_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'media_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -130,7 +125,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, label => 1, pH => 2, temperature => 3, additionalCpd_uuids => 4, geneKO_uuids => 5, reactionKO_uuids => 6, media_uuid => 7, observedGrowthFraction => 8};
+my $attribute_map = {uid => 0, label => 1, pH => 2, temperature => 3, additionalCpd_links => 4, geneKO_links => 5, reactionKO_links => 6, media_link => 7, observedGrowthFraction => 8};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -147,7 +142,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'media_uuid',
+            'attribute' => 'media_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_media',
             'name' => 'media',
@@ -156,7 +151,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'geneKO_uuids',
+            'attribute' => 'geneKO_links',
             'parent' => 'Annotation',
             'clearer' => 'clear_geneKOs',
             'name' => 'geneKOs',
@@ -165,7 +160,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'reactionKO_uuids',
+            'attribute' => 'reactionKO_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reactionKOs',
             'name' => 'reactionKOs',
@@ -174,7 +169,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'additionalCpd_uuids',
+            'attribute' => 'additionalCpd_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_additionalCpds',
             'name' => 'additionalCpds',

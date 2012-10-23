@@ -23,17 +23,17 @@ has noGrowthCompounds => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', def
 has dependantReactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has dependantGenes => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fluxes => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
-has fbaPhenotypeSimulation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has fbaPhenotypeSimulation_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
+has fbaPhenotypeSimulation => (is => 'rw', type => 'link(FBAFormulation,fbaPhenotypeSimulations,fbaPhenotypeSimulation_link)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaPhenotypeSimulation', clearer => 'clear_fbaPhenotypeSimulation', isa => 'ModelSEED::MS::FBAPhenotypeSimulation', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_fbaPhenotypeSimulation {
   my ($self) = @_;
-  return $self->getLinkedObject('FBAFormulation','fbaPhenotypeSimulations',$self->fbaPhenotypeSimulation_uuid());
+  return $self->getLinkedObject('FBAFormulation','fbaPhenotypeSimulations',$self->fbaPhenotypeSimulation_link());
 }
 
 
@@ -98,13 +98,13 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'fbaPhenotypeSimulation_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'fbaPhenotypeSimulation_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {simulatedGrowthFraction => 0, simulatedGrowth => 1, class => 2, noGrowthCompounds => 3, dependantReactions => 4, dependantGenes => 5, fluxes => 6, fbaPhenotypeSimulation_uuid => 7};
+my $attribute_map = {simulatedGrowthFraction => 0, simulatedGrowth => 1, class => 2, noGrowthCompounds => 3, dependantReactions => 4, dependantGenes => 5, fluxes => 6, fbaPhenotypeSimulation_link => 7};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -121,7 +121,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'fbaPhenotypeSimulation_uuid',
+            'attribute' => 'fbaPhenotypeSimulation_link',
             'parent' => 'FBAFormulation',
             'clearer' => 'clear_fbaPhenotypeSimulation',
             'name' => 'fbaPhenotypeSimulation',

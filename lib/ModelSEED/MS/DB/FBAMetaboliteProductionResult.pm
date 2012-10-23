@@ -16,18 +16,18 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has modelCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has modelCompound_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has maximumProduction => (is => 'rw', isa => 'Num', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
+has modelCompound => (is => 'rw', type => 'link(Model,modelcompounds,modelCompound_link)', metaclass => 'Typed', lazy => 1, builder => '_build_modelCompound', clearer => 'clear_modelCompound', isa => 'ModelSEED::MS::ModelCompound', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_modelCompound {
   my ($self) = @_;
-  return $self->getLinkedObject('Model','modelcompounds',$self->modelCompound_uuid());
+  return $self->getLinkedObject('Model','modelcompounds',$self->modelCompound_link());
 }
 
 
@@ -38,8 +38,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'modelCompound_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'modelCompound_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -51,7 +51,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {modelCompound_uuid => 0, maximumProduction => 1};
+my $attribute_map = {modelCompound_link => 0, maximumProduction => 1};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -68,7 +68,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'modelCompound_uuid',
+            'attribute' => 'modelCompound_link',
             'parent' => 'Model',
             'clearer' => 'clear_modelCompound',
             'name' => 'modelCompound',

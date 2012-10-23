@@ -17,16 +17,12 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::GapgenFormulation', weak_ref =
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has solutionCost => (is => 'rw', isa => 'Num', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
-has biomassSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has mediaRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has additionalKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
+has biomassSupplement_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has mediaRemoval_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has additionalKO_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -34,25 +30,24 @@ has gapgenSolutionReactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', isa => 'ArrayRef');
-has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', isa => 'ArrayRef');
-has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', isa => 'ArrayRef');
+has biomassSupplements => (is => 'rw', type => 'link(Model,modelcompounds,biomassSupplement_links)', metaclass => 'Typed', lazy => 1, builder => '_build_biomassSupplements', clearer => 'clear_biomassSupplements', isa => 'ArrayRef');
+has mediaRemovals => (is => 'rw', type => 'link(Model,modelcompounds,mediaRemoval_links)', metaclass => 'Typed', lazy => 1, builder => '_build_mediaRemovals', clearer => 'clear_mediaRemovals', isa => 'ArrayRef');
+has additionalKOs => (is => 'rw', type => 'link(Model,modelreactions,additionalKO_links)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalKOs', clearer => 'clear_additionalKOs', isa => 'ArrayRef');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_biomassSupplements {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelcompounds',$self->biomassSupplement_uuids());
+  return $self->getLinkedObjectArray('Model','modelcompounds',$self->biomassSupplement_links());
 }
 sub _build_mediaRemovals {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelcompounds',$self->mediaRemoval_uuids());
+  return $self->getLinkedObjectArray('Model','modelcompounds',$self->mediaRemoval_links());
 }
 sub _build_additionalKOs {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Model','modelreactions',$self->additionalKO_uuids());
+  return $self->getLinkedObjectArray('Model','modelreactions',$self->additionalKO_links());
 }
 
 
@@ -63,8 +58,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -85,30 +80,30 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'biomassSupplement_uuids',
+            'name' => 'biomassSupplement_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'mediaRemoval_uuids',
+            'name' => 'mediaRemoval_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'additionalKO_uuids',
+            'name' => 'additionalKO_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, solutionCost => 2, biomassSupplement_uuids => 3, mediaRemoval_uuids => 4, additionalKO_uuids => 5};
+my $attribute_map = {uid => 0, modDate => 1, solutionCost => 2, biomassSupplement_links => 3, mediaRemoval_links => 4, additionalKO_links => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -126,7 +121,7 @@ sub _attributes {
 my $links = [
           {
             'array' => 1,
-            'attribute' => 'biomassSupplement_uuids',
+            'attribute' => 'biomassSupplement_links',
             'parent' => 'Model',
             'clearer' => 'clear_biomassSupplements',
             'name' => 'biomassSupplements',
@@ -135,7 +130,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'mediaRemoval_uuids',
+            'attribute' => 'mediaRemoval_links',
             'parent' => 'Model',
             'clearer' => 'clear_mediaRemovals',
             'name' => 'mediaRemovals',
@@ -144,7 +139,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'additionalKO_uuids',
+            'attribute' => 'additionalKO_links',
             'parent' => 'Model',
             'clearer' => 'clear_additionalKOs',
             'name' => 'additionalKOs',

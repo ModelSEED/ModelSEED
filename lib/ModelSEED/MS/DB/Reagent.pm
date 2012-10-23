@@ -16,25 +16,25 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Reaction', weak_ref => 1, type
 
 
 # ATTRIBUTES:
-has compound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
-has compartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compound_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has compartment_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has coefficient => (is => 'rw', isa => 'Num', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has isCofactor => (is => 'rw', isa => 'Bool', printOrder => '0', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
-has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
+has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_link)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound', weak_ref => 1);
+has compartment => (is => 'rw', type => 'link(Biochemistry,compartments,compartment_link)', metaclass => 'Typed', lazy => 1, builder => '_build_compartment', clearer => 'clear_compartment', isa => 'ModelSEED::MS::Compartment', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_compound {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compounds',$self->compound_uuid());
+  return $self->getLinkedObject('Biochemistry','compounds',$self->compound_link());
 }
 sub _build_compartment {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_uuid());
+  return $self->getLinkedObject('Biochemistry','compartments',$self->compartment_link());
 }
 
 
@@ -46,16 +46,16 @@ my $attributes = [
             'len' => 36,
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'compound_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compound_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
             'len' => 36,
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'compartment_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compartment_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -75,7 +75,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {compound_uuid => 0, compartment_uuid => 1, coefficient => 2, isCofactor => 3};
+my $attribute_map = {compound_link => 0, compartment_link => 1, coefficient => 2, isCofactor => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -92,7 +92,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'compound_uuid',
+            'attribute' => 'compound_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_compound',
             'name' => 'compound',
@@ -100,7 +100,7 @@ my $links = [
             'method' => 'compounds'
           },
           {
-            'attribute' => 'compartment_uuid',
+            'attribute' => 'compartment_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_compartment',
             'name' => 'compartment',

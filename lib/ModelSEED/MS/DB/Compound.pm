@@ -16,7 +16,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has isCofactor => (is => 'rw', isa => 'Bool', printOrder => '3', default => '0', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
@@ -28,39 +28,34 @@ has mass => (is => 'rw', isa => 'Num', printOrder => '4', type => 'attribute', m
 has defaultCharge => (is => 'rw', isa => 'Num', printOrder => '5', default => '0', type => 'attribute', metaclass => 'Typed');
 has deltaG => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has deltaGErr => (is => 'rw', isa => 'Num', printOrder => '7', type => 'attribute', metaclass => 'Typed');
-has abstractCompound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has comprisedOfCompound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has structure_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has abstractCompound_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has comprisedOfCompound_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has structure_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has cues => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkas => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has pkbs => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 
 
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
-
-
 # LINKS:
-has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
-has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', isa => 'ArrayRef');
-has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', isa => 'ArrayRef');
+has abstractCompound => (is => 'rw', type => 'link(Biochemistry,compounds,abstractCompound_link)', metaclass => 'Typed', lazy => 1, builder => '_build_abstractCompound', clearer => 'clear_abstractCompound', isa => 'Maybe[ModelSEED::MS::Compound]', weak_ref => 1);
+has comprisedOfCompounds => (is => 'rw', type => 'link(Biochemistry,compounds,comprisedOfCompound_links)', metaclass => 'Typed', lazy => 1, builder => '_build_comprisedOfCompounds', clearer => 'clear_comprisedOfCompounds', isa => 'ArrayRef');
+has structures => (is => 'rw', type => 'link(BiochemistryStructures,structures,structure_links)', metaclass => 'Typed', lazy => 1, builder => '_build_structures', clearer => 'clear_structures', isa => 'ArrayRef');
 has id => (is => 'rw', lazy => 1, builder => '_build_id', isa => 'Str', type => 'id', metaclass => 'Typed');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_abstractCompound {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compounds',$self->abstractCompound_uuid());
+  return $self->getLinkedObject('Biochemistry','compounds',$self->abstractCompound_link());
 }
 sub _build_comprisedOfCompounds {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_uuids());
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->comprisedOfCompound_links());
 }
 sub _build_structures {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('BiochemistryStructures','structures',$self->structure_uuids());
+  return $self->getLinkedObjectArray('BiochemistryStructures','structures',$self->structure_links());
 }
 
 
@@ -72,8 +67,8 @@ my $attributes = [
             'len' => 36,
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -171,25 +166,25 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'abstractCompound_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'abstractCompound_link',
+            'type' => 'ModelSEED::subobject_link',
             'description' => 'Reference to abstract compound of which this compound is a specific class.',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'comprisedOfCompound_uuids',
-            'type' => 'ArrayRef',
+            'name' => 'comprisedOfCompound_links',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'description' => 'Array of references to subcompounds that this compound is comprised of.',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'structure_uuids',
+            'name' => 'structure_links',
             'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'description' => 'Array of associated molecular structures',
             'perm' => 'rw'
           },
@@ -222,7 +217,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_uuid => 12, comprisedOfCompound_uuids => 13, structure_uuids => 14, cues => 15, pkas => 16, pkbs => 17};
+my $attribute_map = {uid => 0, isCofactor => 1, modDate => 2, name => 3, abbreviation => 4, cksum => 5, unchargedFormula => 6, formula => 7, mass => 8, defaultCharge => 9, deltaG => 10, deltaGErr => 11, abstractCompound_link => 12, comprisedOfCompound_links => 13, structure_links => 14, cues => 15, pkas => 16, pkbs => 17};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -239,7 +234,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'abstractCompound_uuid',
+            'attribute' => 'abstractCompound_link',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_abstractCompound',
             'name' => 'abstractCompound',
@@ -249,7 +244,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'comprisedOfCompound_uuids',
+            'attribute' => 'comprisedOfCompound_links',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_comprisedOfCompounds',
             'name' => 'comprisedOfCompounds',
@@ -258,7 +253,7 @@ my $links = [
           },
           {
             'array' => 1,
-            'attribute' => 'structure_uuids',
+            'attribute' => 'structure_links',
             'parent' => 'BiochemistryStructures',
             'clearer' => 'clear_structures',
             'name' => 'structures',

@@ -16,18 +16,18 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::FBAResult', weak_ref => 1, typ
 
 
 # ATTRIBUTES:
-has geneko_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has geneko_links => (is => 'rw', isa => 'ArrayRef[ModelSEED::subobject_link]', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has growthFraction => (is => 'rw', isa => 'Num', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
-has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', isa => 'ArrayRef');
+has genekos => (is => 'rw', type => 'link(Annotation,features,geneko_links)', metaclass => 'Typed', lazy => 1, builder => '_build_genekos', clearer => 'clear_genekos', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_genekos {
   my ($self) = @_;
-  return $self->getLinkedObjectArray('Annotation','features',$self->geneko_uuids());
+  return $self->getLinkedObjectArray('Annotation','features',$self->geneko_links());
 }
 
 
@@ -38,8 +38,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => -1,
-            'name' => 'geneko_uuids',
-            'type' => 'ArrayRef',
+            'name' => 'geneko_links',
+            'type' => 'ArrayRef[ModelSEED::subobject_link]',
             'perm' => 'rw'
           },
           {
@@ -51,7 +51,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {geneko_uuids => 0, growthFraction => 1};
+my $attribute_map = {geneko_links => 0, growthFraction => 1};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -69,7 +69,7 @@ sub _attributes {
 my $links = [
           {
             'array' => 1,
-            'attribute' => 'geneko_uuids',
+            'attribute' => 'geneko_links',
             'parent' => 'Annotation',
             'clearer' => 'clear_genekos',
             'name' => 'genekos',

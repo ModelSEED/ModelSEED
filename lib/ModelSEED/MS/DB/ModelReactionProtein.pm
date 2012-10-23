@@ -17,7 +17,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1,
 
 
 # ATTRIBUTES:
-has complex_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has complex_link => (is => 'rw', isa => 'ModelSEED::subobject_link', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has note => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
@@ -26,13 +26,13 @@ has modelReactionProteinSubunits => (is => 'rw', isa => 'ArrayRef[HashRef]', def
 
 
 # LINKS:
-has complex => (is => 'rw', type => 'link(Mapping,complexes,complex_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', isa => 'ModelSEED::MS::Complex', weak_ref => 1);
+has complex => (is => 'rw', type => 'link(Mapping,complexes,complex_link)', metaclass => 'Typed', lazy => 1, builder => '_build_complex', clearer => 'clear_complex', isa => 'ModelSEED::MS::Complex', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_complex {
   my ($self) = @_;
-  return $self->getLinkedObject('Mapping','complexes',$self->complex_uuid());
+  return $self->getLinkedObject('Mapping','complexes',$self->complex_link());
 }
 
 
@@ -43,8 +43,8 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 0,
-            'name' => 'complex_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'complex_link',
+            'type' => 'ModelSEED::subobject_link',
             'perm' => 'rw'
           },
           {
@@ -57,7 +57,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {complex_uuid => 0, note => 1};
+my $attribute_map = {complex_link => 0, note => 1};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -74,7 +74,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'complex_uuid',
+            'attribute' => 'complex_link',
             'parent' => 'Mapping',
             'clearer' => 'clear_complex',
             'name' => 'complex',

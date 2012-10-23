@@ -5,7 +5,7 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 ########################################################################
 package ModelSEED::MS::DB::Biochemistry;
-use ModelSEED::MS::IndexedObject;
+use ModelSEED::MS::ProvenanceObject;
 use ModelSEED::MS::Compartment;
 use ModelSEED::MS::Compound;
 use ModelSEED::MS::Reaction;
@@ -16,7 +16,7 @@ use ModelSEED::MS::AliasSet;
 use ModelSEED::MS::Cue;
 use Moose;
 use namespace::autoclean;
-extends 'ModelSEED::MS::IndexedObject';
+extends 'ModelSEED::MS::ProvenanceObject';
 
 
 our $VERSION = 2;
@@ -25,16 +25,12 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 
 
 # ATTRIBUTES:
-has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has uid => (is => 'rw', isa => 'ModelSEED::uid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has biochemistryStructures_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '1', type => 'attribute', metaclass => 'Typed');
+has biochemistryStructures_link => (is => 'rw', isa => 'ModelSEED::provenance_link', printOrder => '1', type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
-
-
-# ANCESTOR:
-has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
 
 
 # SUBOBJECTS:
@@ -49,15 +45,14 @@ has cues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return [];
 
 
 # LINKS:
-has biochemistrystructures => (is => 'rw', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures', isa => 'ModelSEED::MS::BiochemistryStructures');
+has biochemistrystructures => (is => 'rw', type => 'link(ModelSEED::Store,BiochemistryStructures,biochemistryStructures_link)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistrystructures', clearer => 'clear_biochemistrystructures', isa => 'ModelSEED::MS::BiochemistryStructures');
 
 
 # BUILDERS:
-sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_biochemistrystructures {
   my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','BiochemistryStructures',$self->biochemistryStructures_uuid());
+  return $self->getLinkedObject('ModelSEED::Store','BiochemistryStructures',$self->biochemistryStructures_link());
 }
 
 
@@ -69,8 +64,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 0,
-            'name' => 'uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'uid',
+            'type' => 'ModelSEED::uid',
             'perm' => 'rw'
           },
           {
@@ -101,8 +96,8 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => 1,
-            'name' => 'biochemistryStructures_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'biochemistryStructures_link',
+            'type' => 'ModelSEED::provenance_link',
             'perm' => 'rw'
           },
           {
@@ -115,7 +110,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, name => 3, biochemistryStructures_uuid => 4, forwardedLinks => 5};
+my $attribute_map = {uid => 0, defaultNameSpace => 1, modDate => 2, name => 3, biochemistryStructures_link => 4, forwardedLinks => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -132,7 +127,7 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'biochemistryStructures_uuid',
+            'attribute' => 'biochemistryStructures_link',
             'weak' => 0,
             'parent' => 'ModelSEED::Store',
             'clearer' => 'clear_biochemistrystructures',

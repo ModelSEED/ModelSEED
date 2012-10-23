@@ -6,7 +6,7 @@ my $objectDefinitions = {};
 
 $objectDefinitions->{FBAFormulation} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
@@ -1944,7 +1944,7 @@ $objectDefinitions->{User} = {
 
 $objectDefinitions->{BiochemistryStructures} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
@@ -2076,7 +2076,7 @@ $objectDefinitions->{AliasSet} = {
 
 $objectDefinitions->{Biochemistry} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
@@ -3055,7 +3055,7 @@ $objectDefinitions->{ReactionSet} = {
 
 $objectDefinitions->{Model} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
@@ -3787,7 +3787,7 @@ $objectDefinitions->{ModelReactionProteinSubunitGene} = {
 
 $objectDefinitions->{Annotation} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
@@ -4149,7 +4149,7 @@ $objectDefinitions->{SubsystemState} = {
 
 $objectDefinitions->{Mapping} = {
         parents    => ['ModelSEED::Store'],
-        class      => 'indexed',
+        class      => 'provenance',
         attributes => [
                 {
                         name       => 'uid',
