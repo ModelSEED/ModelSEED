@@ -78,16 +78,17 @@ The souce may currently be one of "SEED", "RAST", "KBASE".
 package ModelSEED::MS::Factories::Annotation;
 use common::sense;
 use Moose;
+use namespace::autoclean;
 use Class::Autouse qw(
     Bio::KBase::CDMI::Client
     ModelSEED::Auth::Factory
 	ModelSEED::MS::Mapping
 	ModelSEED::MS::Annotation
-	ModelSEED::utilities
-	ModelSEED::MS::Utilities::GlobalFunctions
     ModelSEED::Client::SAP
     ModelSEED::Client::MSSeedSupport
 );
+use ModelSEED::utilities qw( verbose args );
+use ModelSEED::MS::Utilities::GlobalFunctions;
 has auth => ( is => 'rw', does => 'ModelSEED::Auth', builder => '_build_auth' );
 has sapsvr => (
     is      => 'rw',

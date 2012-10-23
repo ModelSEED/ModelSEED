@@ -77,6 +77,7 @@ my $builder = $subclass->new(
         "App::Cmd" => 0,
         "autodie" => 0,
         "Bash::Completion" => 0,
+        "Bash::Completion::Plugin::Test" => 0,
         "Class::Autouse" => 0,
         "Clone" => 0,
         "Config::Tiny" => 0,

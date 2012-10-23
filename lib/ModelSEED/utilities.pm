@@ -74,10 +74,10 @@ verbose flag is set. Otherwise it returns undef.
 
 sub set_verbose {
     my $val = shift;
-    if(defined $val && $val == 1) {
-        $VERBOSE = \*STDERR;
-    } elsif(defined $val && ref $val eq 'GLOB') {
+    if(defined $val && ref $val eq 'GLOB') {
         $VERBOSE = $val;
+    } elsif(defined $val && $val eq 1) {
+        $VERBOSE = \*STDERR;
     } else {
         $VERBOSE = undef;
     }
