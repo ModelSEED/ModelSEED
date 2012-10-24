@@ -486,7 +486,7 @@ sub addReactionFromHash {
     # In case all the names were too long, use the id as the name
     push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
 
-    $args = ModelSEED::utilities::ARGS($args,["equation","id"],{
+    $args = args($args,["equation","id"],{
 	aliasType => $self->defaultNameSpace(),
 	names => [$args->{id}->[0]],
 	abbreviation => [$args->{id}->[0]],
@@ -494,7 +494,7 @@ sub addReactionFromHash {
 	deltag => [10000000],
 	deltagerr => [10000000],
 	enzymes => []
-				       });
+		 });
 
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});

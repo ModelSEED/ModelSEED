@@ -28,3 +28,4 @@ env_push PATH $SCRIPT_DIR
 export PERL5LIB
 export PATH;
 export MODEL_SEED_CORE=$DIR;
+. setup-bash-complete

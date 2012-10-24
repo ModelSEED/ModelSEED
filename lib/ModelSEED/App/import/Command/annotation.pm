@@ -59,15 +59,6 @@ sub execute {
     print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helper = ModelSEED::App::Helpers->new;
-    # Check that required arguments are present
-    my ($id, $alias) = @$args;
-    $self->usage_error("Must supply an id") unless(defined($id));
-    $self->usage_error("Must supply an alias") unless(defined($alias));
-    # Make sure the alias object is valid "username/alias_string"
-    $alias = $helper->process_ref_string(
-        $alias, "annotation", $auth->username
-    );
-    print "Will be saving to $alias...\n" if(defined($opts->{verbose}));
     # Initialize the store object
     my $store;
     if($opts->{store}) {

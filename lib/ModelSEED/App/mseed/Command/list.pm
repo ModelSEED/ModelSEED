@@ -14,6 +14,7 @@ use base 'App::Cmd::Command';
 
 
 sub abstract { return "List and retrive objects from workspace or datastore."; }
+sub usage_desc { return "ms list [options] ref" }
 sub opt_spec {
     return (
         ["verbose|v", "Print out additional information about the object, tab-delimited"],
@@ -22,6 +23,20 @@ sub opt_spec {
         ["query|q:s@", "Only list sub objects matching a query"],
         ["help|h|?", "Print this usage information"],
         ["no_ref", "Do not print the reference column (useful for 'with' option)"]
+    );
+}
+sub arg_spec {
+    return (
+        {
+            edges => [],
+            completions => [
+                { "prefix" => "", "options" => [ "biochemistry/", "mapping/", "model/", "annotation/" ] },
+                { "prefix" => "biochemistry/", "cmd" => 'ms list biochemistry' },
+                { "prefix" => "mapping/", "cmd" => 'ms list mapping' },
+                { "prefix" => "model/", "cmd" => 'ms list model' },
+                { "prefix" => "annotation/", "cmd" => 'ms list annotation' },
+            ]
+        }
     );
 }
 
