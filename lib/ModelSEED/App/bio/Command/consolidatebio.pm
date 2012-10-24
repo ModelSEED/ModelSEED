@@ -27,12 +27,8 @@ sub execute {
 
     $self->usage_error("Must specify a biochemistry to use") unless(defined($args->[0]));
 
-    $|=1;
-
-    if ($opts->{verbose}) {
-        set_verbose(1);
-    	delete $opts->{verbose};
-    }
+    #verbosity
+    set_verbose(1) if $opts->{verbose};
 
     if (!defined($opts->{saveas}) && !defined($opts->{saveover})){
 	verbose("Neither the saveas or saveover options were used\nThis run will therefore be a dry run and the biochemistry will not be saved\n");
