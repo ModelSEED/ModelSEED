@@ -486,7 +486,7 @@ sub addReactionFromHash {
     # In case all the names were too long, use the id as the name
     push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
 
-    $args = args($args,["equation","id"],{
+    $args = ModelSEED::utilities::ARGS($args,["equation","id"],{
 	aliasType => $self->defaultNameSpace(),
 	names => [$args->{id}->[0]],
 	abbreviation => [$args->{id}->[0]],
