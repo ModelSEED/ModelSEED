@@ -64,6 +64,7 @@ sub _buildroles {
 	}
 	return [];
 }
+
 sub _buildisTransport {
 	my ($self) = @_;
 	my $rgts = $self->reagents();
@@ -86,6 +87,28 @@ sub _buildisTransport {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
+=head3 hasReagent
+Definition:
+	boolean = ModelSEED::MS::Reaction->hasReagent(string(uuid));
+Description:
+	Checks to see if a reaction contains a reagent
+
+=cut
+
+sub hasReagent {
+    my ($self,$rgt_uuid) = @_;
+    my $rgts = $self->reagents();
+    if (!defined($rgts->[0])) {
+	return 0;	
+    }
+    for (my $i=0; $i < @{$rgts}; $i++) {
+	if ($rgts->[0]->compound_uuid() eq $rgt_uuid) {
+	    return 1;
+	}
+    }
+    return 0;
+}
 
 =head3 createEquation
 Definition:
