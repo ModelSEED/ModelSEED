@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
-use ModelSEED::utilities qw ( args );
+use ModelSEED::utilities qw ( args verbose );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -389,7 +389,7 @@ sub addCompoundFromHash {
 	# Checking for id uniqueness within scope of own aliasType
 	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
 	if (defined($cpd)) {
-	    ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+	    verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
 	    if(defined($mergeto) && !$cpd->getAlias($mergeto)){
 		$self->addAlias({ attribute => "compounds",
 				  aliasName => $mergeto,
@@ -403,7 +403,7 @@ sub addCompoundFromHash {
 	if($mergeto){
 	    $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$mergeto);
 	    if (defined($cpd)) {
-		ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
+		verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
 		#Alias needs to be created for original namespace if found in different namespace
 		$self->addAlias({
 		    attribute => "compounds",
@@ -499,7 +499,7 @@ sub addReactionFromHash {
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
 	if (defined($rxn)) {
-		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType}."\n");
+		verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType}."\n");
 		if(defined($mergeto) && !$rxn->getAlias($mergeto)){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $mergeto,
@@ -514,7 +514,7 @@ sub addReactionFromHash {
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
 	    if( defined($rxn) ){
-		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto."\n");
+		verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto."\n");
 		#Alias needs to be created for original namespace if found in different namespace
 		$self->addAlias({
 		    attribute => "reactions",
@@ -544,7 +544,7 @@ sub addReactionFromHash {
 					      });
 
     if(!$noduplicates){
-	ModelSEED::utilities::verbose("Reaction ".$args->{id}->[0]." was rejected on account of their being duplicates"."\n");
+	verbose("Reaction ".$args->{id}->[0]." was rejected on account of their being duplicates"."\n");
 	return undef;
     }
 
@@ -568,7 +568,7 @@ sub addReactionFromHash {
 		$aliasSetName="could not find ID";
 	    }
 	}
-	ModelSEED::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]."\n");
+	verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]."\n");
 	$self->addAlias({ attribute => "reactions",
 			  aliasName => $args->{aliasType},
 			  alias => $args->{id}->[0],
@@ -626,10 +626,10 @@ sub mergeBiochemistry {
 	        "cues",
 		"compartments",
 		"compounds",
-	#	"reactions",
-	#	"media",
-	#	"compoundSets",
-	#	"reactionSets",
+		"reactions",
+		"media",
+		"compoundSets",
+		"reactionSets",
     ];
     my $types = {
     	"cues" => "checkForDuplicateCue",
@@ -644,26 +644,35 @@ sub mergeBiochemistry {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
     	my $uuidTranslation = {};
-	ModelSEED::utilities::verbose("Merging ".scalar(@$objs)."\n");
+	verbose("Merging ".scalar(@$objs)." ".$type."\n");
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
+		    my $aliases={};
+		    if(!defined($opts->{noaliastransfer})){
+			foreach my $set ( grep { $_->attribute() eq $type } @{$self->aliasSets()} ){
+			    $aliases->{$set->name()}{$obj->getAlias($set->name())}=1 if $obj->getAlias($set->name());
+			}
+		    }
+		    my $objId = (defined($opts->{namespace}) && defined($aliases->{$opts->{namespace}})) ? (keys %{$aliases->{$opts->{namespace}}})[0] : $obj->id();
+
 		    if ($type eq "reactions") {
 				$obj->parent($self);
 		    }
+
 		    my $dupObj = $self->$func($obj,$opts);
-		    if (defined($dupObj)) {			
-				ModelSEED::utilities::verbose("Duplicate ".substr($type,0,-1)." found; ",$obj->id()," merged to ",$dupObj->id(),".\n");
-				if(!defined($opts->{noaliastransfer})){
-				    foreach my $set ( grep { $_->attribute() eq $type } @{$self->aliasSets()} ){
-					$self->addAlias({attribute=>$type,aliasName=>$set->name(),alias=>$obj->getAlias($set->name()),uuid=>$dupObj->uuid()});
+		    if (defined($dupObj)) {
+				verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObj->id()."\n");
+				foreach my $aliasName (keys %$aliases){
+				    foreach my $alias (keys %{$aliases->{$aliasName}}){
+					$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
 				    }
 				}
 				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
 				$obj->uuid($dupObj->uuid());
 		    } else {
-			if(!defined($opts->{noaliastransfer})){
-			    foreach my $set ( @{$self->aliasSets()} ){
-				$self->addAlias({attribute=>$type,aliasName=>$set->name(),alias=>$obj->getAlias($set->name()),uuid=>$obj->uuid()});
+			foreach my $aliasName (keys %$aliases){
+			    foreach my $alias (keys %{$aliases->{$aliasName}}){
+				$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
 			    }
 			}
 			$self->add($type,$obj);
@@ -671,6 +680,8 @@ sub mergeBiochemistry {
     	}
     	$bio->updateLinks($type,$uuidTranslation,1,1);
     	$bio->_clearIndex();
+    	$self->updateLinks($type,$uuidTranslation,1,1);
+    	$self->_clearIndex();
     }
 }
 
@@ -754,8 +765,10 @@ Description:
 sub checkForDuplicateCompound {
     my ($self,$obj,$opts) = @_;
     if(defined($opts->{namespace})){
+	return undef if !$obj->getAlias($opts->{mergevia});
 	return $self->getObjectByAlias("compounds",$obj->getAlias($opts->{mergevia}),$opts->{mergevia});
     }
+    return undef if !$obj->name();
     return $self->queryObject("compounds",{name => $obj->name()});
 }
 
