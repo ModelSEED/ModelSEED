@@ -185,6 +185,16 @@ sub serializeToDB {
     return $data;
 }
 
+sub cloneObject {
+	my ($self) = @_;
+	my $data = $self->serializeToDB();
+	my $class = "ModelSEED::MS::".$self->_type();
+	if (defined($data->{uuid})) {
+		delete $data->{uuid};
+	}
+	return $class->new($data);
+}
+
 sub toJSON {
     my $self = shift;
     my $args = args([],{pp => 0}, @_);
