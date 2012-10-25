@@ -74,7 +74,7 @@ sub execute {
 	    if($rxn->getAlias($set->name())){
 		my $tmp_alias=$rxn->getAlias($set->name());
 		if($set->name() eq $args->[3]){
-		    $tmp_alias.="_".$cpdOne->getAlias($set->name());
+		    $tmp_alias.="_".$cpdOne->getAlias($set->name())."x".$cpdTwo->getAlias($set->name());
 		}
 		$biochemistry->addAlias({attribute=>'reactions',aliasName=>$set->name(),alias=>$tmp_alias,uuid=>$tmp_rxn->uuid()});
 	    }
