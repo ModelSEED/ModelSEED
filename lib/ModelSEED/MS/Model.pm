@@ -1118,10 +1118,10 @@ sub printCytoSEED {
 		    }
 		}
 	    }
-	    my $direction = $reaction->direction();
-	    if ($direction ne "=") {
-		print STDERR "$msid direction: $direction\n";
-	    }
+#	    my $direction = $reaction->direction();
+#	    if ($direction ne "=") {
+#		print STDERR "$msid direction: $direction\n";
+#	    }
 	    my $equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
 
 	    my $reversibility = $reaction->thermoReversibility();
