@@ -201,7 +201,7 @@ sub toJSON {
     my $data = $self->serializeToDB();
     my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
-    return $JSON->encode($data)
+    return $JSON->encode($data);
 }
 
 ######################################################################
