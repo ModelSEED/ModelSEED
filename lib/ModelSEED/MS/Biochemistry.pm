@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
-use ModelSEED::utilities qw ( args );
+use ModelSEED::utilities qw ( args verbose );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -369,92 +369,79 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my ($self,$args,$mergeto) = @_;
-    $args = args(["names","id"],{
-		aliasType => $self->defaultNameSpace(),
+	my ($self,$arguments) = @_;
+    $arguments = args(["names","id"],{
+		namespace => $self->defaultNameSpace(),
+        matchbyname => 1,
+        mergeto => [],
+		abbreviation => undef,
 		formula => ["unknown"],
 		mass => [10000000],
 		charge => [10000000],
 		deltag => [10000000],
 		deltagerr => [10000000]
-	}, $args);
+	}, $arguments);
 	# Remove names that are too long
-	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
-    push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
-    $args->{abbreviation} = $args->{names}->[0] unless defined $args->{abbreviation};
+	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
+    push(@{$arguments->names}, $arguments->{id}->[0]) unless(@{$arguments->{names}});
+    $arguments->{abbreviation} = [$arguments->{names}->[0]] unless defined $arguments->{abbreviation};
 	# Checking for id uniqueness within scope of own aliasType
-	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
+	my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
 	if (defined($cpd)) {
-	    ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
-	    if(defined($mergeto) && !$cpd->getAlias($mergeto)){
-		$self->addAlias({ attribute => "compounds",
-				  aliasName => $mergeto,
-				  alias => $args->{id}->[0],
-				  uuid => $cpd->uuid()
-				});
-	    }
-	    return $cpd;
+	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
+		return $cpd;
 	}
 	# Checking for id uniqueness within scope of another aliasType, if passed
-	if($mergeto){
-	    $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$mergeto);
-	    if (defined($cpd)) {
-		ModelSEED::utilities::VERBOSEMSG("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
-		#Alias needs to be created for original namespace if found in different namespace
-		$self->addAlias({
-		    attribute => "compounds",
-		    aliasName => $args->{aliasType},
-		    alias => $args->{id}->[0],
-		    uuid => $cpd->uuid()
-				});
-		return $cpd;
-	    }
+	foreach my $aliasType (@{$arguments->{mergeto}}) {
+		$cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$aliasType);
+		if (defined($cpd)) {
+		    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+		    $self->addAlias({
+				attribute => "compounds",
+				aliasName => $arguments->{namespace},
+				alias => $arguments->{id}->[0],
+				uuid => $cpd->uuid()
+			});
+			return $cpd;
+		}
 	}
-	# Disabled, attempting to check names ahead of chemical structure is not recommended
-	# For metabolic models, every compound is assumed to be unique anyway
-	# Checking for name uniqueness
-	#foreach my $name (@{$args->{names}}) {
-	#	my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
-	#	$cpd = $self->queryObject("compounds",{searchnames => $name});
-	#	if (defined($cpd)) {
-	#		print STDERR "Compound added with matching name ".$name."!\n";
-	#		$self->addAlias({
-	#			attribute => "compounds",
-	#			aliasName => $args->{aliasType},
-	#			alias => $args->{id}->[0],
-	#			uuid => $cpd->uuid()
-	#		});
-	#		return $cpd;
-	#	}
-	#}
-
+	#Checking for match by name if requested
+	if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
+		foreach my $name (@{$arguments->{names}}) {
+			my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
+			$cpd = $self->queryObject("compounds",{searchnames => $name});
+			if (defined($cpd)) {
+				verbose("Compound matched based on name ".$name);
+				$self->addAlias({
+					attribute => "compounds",
+					aliasName => $arguments->{namespace},
+					alias => $arguments->{id}->[0],
+					uuid => $cpd->uuid()
+				});
+				return $cpd;
+			}
+		}
+	}
 	# Actually creating compound
+	verbose("Creating compound ".$arguments->{id}->[0]);
 	$cpd = $self->add("compounds",{
-		name => $args->{names}->[0],
-		abbreviation => $args->{abbreviation}->[0],
-		formula => $args->{formula}->[0],
-		mass => $args->{mass}->[0],
-		defaultCharge => $args->{charge}->[0],
-		deltaG => $args->{deltag}->[0],
-		deltaGErr => $args->{deltagerr}->[0]
+		name => $arguments->{names}->[0],
+		abbreviation => $arguments->{abbreviation}->[0],
+		formula => $arguments->{formula}->[0],
+		mass => $arguments->{mass}->[0],
+		defaultCharge => $arguments->{charge}->[0],
+		deltaG => $arguments->{deltag}->[0],
+		deltaGErr => $arguments->{deltagerr}->[0]
 	});
 	# Adding id as alias
 	$self->addAlias({
 		attribute => "compounds",
-		aliasName => $args->{aliasType},
-		alias => $args->{id}->[0],
+		aliasName => $arguments->{namespace},
+		alias => $arguments->{id}->[0],
 		uuid => $cpd->uuid()
 	});
-	if(defined($mergeto)){
-	    $self->addAlias({
-		attribute => "compounds",
-		aliasName => $mergeto,
-		alias => $args->{id}->[0],
-		uuid => $cpd->uuid()
-			    });
-	}
 	# Adding alternative names as aliases
-	foreach my $name (@{$args->{names}}) {
+	foreach my $name (@{$arguments->{names}}) {
 		$self->addAlias({
 			attribute => "compounds",
 			aliasName => "name",
@@ -477,7 +464,9 @@ Description:
 sub addReactionFromHash {
     my ($self,$args,$mergeto) = @_;
 	$args = args(["equation","id"], {
-		aliasType    => $self->defaultNameSpace(),
+		names => undef,
+		equationAliasType => $self->defaultNameSpace(),
+		reaciontIDaliasType    => $self->defaultNameSpace(),
 		direction => ["="],
 		deltag => [10000000],
 		deltagerr => [10000000],
@@ -488,9 +477,9 @@ sub addReactionFromHash {
 	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
 	push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
 	#Checking for id uniqueness
-	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
+	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{reaciontIDaliasType});
 	if (defined($rxn)) {
-		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
+		verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{reaciontIDaliasType});
 		if(defined($mergeto) && !$rxn->getAlias($mergeto)){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $mergeto,
@@ -504,15 +493,15 @@ sub addReactionFromHash {
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
 	    if( defined($rxn) ){
-		ModelSEED::utilities::VERBOSEMSG("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
-		#Alias needs to be created for original namespace if found in different namespace
-		$self->addAlias({
-		    attribute => "reactions",
-		    aliasName => $args->{aliasType},
-		    alias => $args->{id}->[0],
-		    uuid => $rxn->uuid()
-				});
-		return $rxn;
+			verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
+			#Alias needs to be created for original namespace if found in different namespace
+			$self->addAlias({
+			    attribute => "reactions",
+			    aliasName => $args->{reaciontIDaliasType},
+			    alias => $args->{id}->[0],
+			    uuid => $rxn->uuid()
+			});
+			return $rxn;
 	    }
 	}
 	# Creating reaction from equation
@@ -531,9 +520,9 @@ sub addReactionFromHash {
 	# a return of zero indicates that the reaction was rejected
 	if(!$rxn->loadFromEquation({
 	    equation => $args->{equation}->[0],
-	    aliasType => $args->{aliasType},
-				   })){
-	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$args->{id}->[0]." was rejected");
+	    aliasType => $args->{equationAliasType},
+	})) {
+	    verbose("Reaction ".$args->{id}->[0]." was rejected");
 	    return undef;
 	}
 	# Generate equation search string and check to see if reaction not already in database
@@ -541,8 +530,8 @@ sub addReactionFromHash {
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 	if (defined($searchRxn)) {
 	    # Check to see if searchRxn has alias from same namespace
-	    my $alias = $searchRxn->getAlias($args->{aliasType});
-	    my $aliasSetName=$args->{aliasType};
+	    my $alias = $searchRxn->getAlias($args->{reaciontIDaliasType});
+	    my $aliasSetName=$args->{reaciontIDaliasType};
 	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
 		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
@@ -556,9 +545,9 @@ sub addReactionFromHash {
 		    $aliasSetName="could not find ID";
 		}
 	    }
-	    ModelSEED::utilities::VERBOSEMSG("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
+	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
 	    $self->addAlias({ attribute => "reactions",
-			      aliasName => $args->{aliasType},
+			      aliasName => $args->{reaciontIDaliasType},
 			      alias => $args->{id}->[0],
 			      uuid => $searchRxn->uuid()
 			    });
@@ -568,7 +557,7 @@ sub addReactionFromHash {
 	$self->add("reactions", $rxn);
 	$self->addAlias({
 		attribute => "reactions",
-		aliasName => $args->{aliasType},
+		aliasName => $args->{reaciontIDaliasType},
 		alias => $args->{id}->[0],
 		uuid => $rxn->uuid()
 	});

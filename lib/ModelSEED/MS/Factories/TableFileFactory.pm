@@ -7,7 +7,7 @@
 ########################################################################
 package ModelSEED::MS::Factories::TableFileFactory;
 use common::sense;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities qw( args verbose );
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use Class::Autouse qw(
 	ModelSEED::MS::BiochemistryStructures
@@ -200,77 +200,73 @@ sub loadFtrTbl {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
-	$args->{biochemistry} = $args->{annotation}->mapping->biochemistry;
-    $args->{mapping} = $args->{annotation}->mapping;
-	# Retrieving model data
-    print "Getting model metadata...\n" if($args->{verbose});
-    my $id = $args->{id};
-	my $mdltbl = $self->modelTbl();
-	my $boftbl = $self->bofTbl();
-	my $rowMdl = $mdltbl->get_row({id => $id});
-	unless(defined($rowMdl)) {
-        die "Unable to find model with id ". $id."\n";
-    }
-	print "Loading linked objects...\n" if($args->{verbose});
+    my $args = args(["id","biochemistry" ], {}, @_);
+	my $bio = $args->{biochemistry};
+	my $filename = $self->filepath().$args->{id}.".mdl";
+	if (!-e $filename) {
+		ModelSEED::utilities::ERROR("File for model data not found!");
+	}
+	my $tbl = ModelSEED::Table->new({filename => $filename,rows_return_as => "ref"});
 	#Creating the model
 	my $model = ModelSEED::MS::Model->new({
-		locked => 0,
-		public => $rowMdl->public(),
 		id => $id,
-		name => $rowMdl->name(),
-		version => $rowMdl->version(),
+		name => $id,
+		version => 1,
 		type => "Singlegenome",
 		status => "Model loaded into new database",
-		reactions => $rowMdl->reactions(),
-		compounds => $rowMdl->compounds(),
-		annotations => $rowMdl->associatedGenes(),
-		growth => $rowMdl->growth(),
+		reactions => 0,
+		compounds => 0,
+		annotations => 0,
+		growth => 0,
 		current => 1,
-		mapping_uuid => $args->{mapping}->uuid(),
-		biochemistry_uuid => $args->{biochemistry}->uuid(),
-		annotation_uuid => $args->{annotation}->uuid(),
+		mapping_uuid => $map->uuid(),
+		biochemistry_uuid => $bio->uuid(),
+		annotation_uuid => $anno->uuid(),
 	});
-    my $biochemistry = $model->biochemistry;
-	my $biomassIndex = 1;
-	#Adding reactions
-    print "Getting model reactions...\n" if($args->{verbose});
-	my $rxntbl = ModelSEED::Table->new(filename => $self->filepath().$id.".tbl");
-	for (my $i=0; $i < @{$rxntbl->size()}; $i++) {
-		#Adding biomass reaction
-        my $old_rxn = $rxntbl->row($i);
-        my $id  = $old_rxn->REACTION();
-		if ($id =~ m/bio\d+/) {
-			my $bioobj = $model->add("biomasses",{
-				name => "bio0000".$biomassIndex
-			});
-			my $biorxn = $boftbl->get_row({id => $id});
-			if (defined($biorxn)) {
-				$bioobj->loadFromEquation({
-					equation => $biorxn->equation(),
-					aliasType => "ModelSEED"
-				});
-			}
-			$biomassIndex++;
+	for (my  $i=0; $i < $tbl->size(); $i++) {
+		my $row = $tbl->row($i);
+		my $rxn = $bio->getObjectByAlias("reactions",$row->id(),"ModelSEED");
+		if (!defined($rxn)) {
+			verbose("Reaction ".$row->LOAD()." not found!");
 		} else {
-			my $rxn = $biochemistry->getObjectByAlias("reactions",$id,"ModelSEED");
-            unless(defined($rxn)) {
-                print "Unable to find reaction $id, skipping...\n" if($args->{verbose});
-                next;
-            }
 			my $direction = "=";
-			if ($old_rxn->directionality() eq "=>") {
+			if ($row->DIRECTIONALITY() eq "=>") {
 				$direction = ">";
-			} elsif ($old_rxn->directionality() eq "<=") {
+			} elsif ($row->DIRECTIONALITY() eq "<=") {
 				$direction = "<";
 			}
-            $model->addReactionToModel({
-                reaction  => $rxn,
-                direction => $direction,
-                gpr       => $old_rxn->pegs()
-            });
+			$model->addReactionToModel({
+				reaction => $rxn,
+				direction => $direction,
+				gpr => $row->PEGS()
+			});
 		}
 	}
+	$filename = $self->filepath().$args->{id}.".bof";
+	if (!-e $filename) {
+		ModelSEED::utilities::ERROR("Biomass file for model not found!");
+	}
+	my $data = ModelSEED::utilities::LOADFILE($filename);
+	my $equation;
+	for (my $i=0; $i < @{$data};$i++) {
+		my $array = [split(/\t/,$data->[$i])];
+		if (defined($array->[1])) {
+			if ($array->[0] eq "EQUATION") {
+				$equation = $array->[0];
+			}
+		}
+	}
+	my $bioobj = $model->add("biomasses",{
+		name => "bio00001"
+	});
+	$bioobj->loadFromEquation({
+		equation => $equation,
+		aliasType => "ModelSEED"
+	});
+	my $modelreactions = $model->modelreactions();
+	my $modelcompounds = $model->modelcompounds();
+	$model->reactions(@{$modelreactions});
+	$model->compounds(@{$modelcompounds});
 	return $model;
 }
 
