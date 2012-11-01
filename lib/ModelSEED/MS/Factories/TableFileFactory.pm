@@ -200,49 +200,61 @@ sub loadFtrTbl {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id","biochemistry" ], {}, @_);
+    my $args = args(["id","biochemistry"], {}, @_);
 	my $bio = $args->{biochemistry};
-	my $filename = $self->filepath().$args->{id}.".mdl";
+	my $map = ModelSEED::MS::Mapping->new({
+		defaultNameSpace => "ModelSEED",
+		name => $args->{id},
+		biochemistry_uuid => $bio->uuid(),
+		biochemistry => $bio
+	});
+    my $anno = ModelSEED::MS::Annotation->new({
+		defaultNameSpace => "SEED",
+		name => $args->{id},
+		mapping_uuid => $map->uuid(),
+		mapping => $map
+	});
+	my $filename = $self->filepath()."/".$args->{id}.".mdl";
 	if (!-e $filename) {
-		ModelSEED::utilities::ERROR("File for model data not found!");
+		ModelSEED::utilities::ERROR("File for model data ".$filename." not found!");
 	}
 	my $tbl = ModelSEED::Table->new({filename => $filename,rows_return_as => "ref"});
 	#Creating the model
 	my $model = ModelSEED::MS::Model->new({
-		id => $id,
-		name => $id,
+		id => $args->{id},
+		name => $args->{id},
 		version => 1,
 		type => "Singlegenome",
 		status => "Model loaded into new database",
-		reactions => 0,
-		compounds => 0,
-		annotations => 0,
 		growth => 0,
 		current => 1,
 		mapping_uuid => $map->uuid(),
+		mapping => $map,
 		biochemistry_uuid => $bio->uuid(),
+		biochemistry => $bio,
 		annotation_uuid => $anno->uuid(),
+		annotation => $anno
 	});
 	for (my  $i=0; $i < $tbl->size(); $i++) {
 		my $row = $tbl->row($i);
 		my $rxn = $bio->getObjectByAlias("reactions",$row->id(),"ModelSEED");
 		if (!defined($rxn)) {
-			verbose("Reaction ".$row->LOAD()." not found!");
+			verbose("Reaction ".$row->id()." not found!");
 		} else {
 			my $direction = "=";
-			if ($row->DIRECTIONALITY() eq "=>") {
+			if ($row->direction() eq "=>") {
 				$direction = ">";
-			} elsif ($row->DIRECTIONALITY() eq "<=") {
+			} elsif ($row->direction() eq "<=") {
 				$direction = "<";
 			}
 			$model->addReactionToModel({
 				reaction => $rxn,
 				direction => $direction,
-				gpr => $row->PEGS()
+				gpr => $row->pegs()
 			});
 		}
 	}
-	$filename = $self->filepath().$args->{id}.".bof";
+	$filename = $self->filepath()."/".$args->{id}.".bof";
 	if (!-e $filename) {
 		ModelSEED::utilities::ERROR("Biomass file for model not found!");
 	}
@@ -252,7 +264,7 @@ sub createModel {
 		my $array = [split(/\t/,$data->[$i])];
 		if (defined($array->[1])) {
 			if ($array->[0] eq "EQUATION") {
-				$equation = $array->[0];
+				$equation = $array->[1];
 			}
 		}
 	}
@@ -263,10 +275,6 @@ sub createModel {
 		equation => $equation,
 		aliasType => "ModelSEED"
 	});
-	my $modelreactions = $model->modelreactions();
-	my $modelcompounds = $model->modelcompounds();
-	$model->reactions(@{$modelreactions});
-	$model->compounds(@{$modelcompounds});
 	return $model;
 }
 
