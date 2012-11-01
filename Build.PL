@@ -6,6 +6,15 @@ use Module::Build;
 my $subclass = Module::Build->subclass(
     class => 'Module::Build::ModelSEED',
     code => <<'END_OF_CODE',
+# kbase action : Equivilent to ./Build ; ./Build install
+# but does not install KBase client code.
+sub ACTION_kbase {
+    my ($self) = @_;
+    my $el = $self->build_elements;
+    $el = [ grep { $_ ne 'kbase' } @$el ];
+    $self->build_elements($el);
+    return $self->dispatch('install');
+}
 
 sub ACTION_test {
     my ($self) = @_;
@@ -117,6 +126,11 @@ my $builder = $subclass->new(
     add_to_cleanup      => [ 'ModelSEED-*' ],
     create_makefile_pl => 'traditional',
     script_files => [qw( bin/ms bin/mapping bin/genome bin/stores bin/model bin/bio )],
+    kbase_files => {qw(
+        kbase/Bio/KBase/CDMI/Client.pm      lib/Bio/KBase/CDMI/Client.pm
+        kbase/Bio/KBase/fbaModel/Data.pm    lib/Bio/KBase/fbaModel/Data.pm
+        kbase/Bio/KBase/workspaceService.pm lib/Bio/KBase/workspaceService.pm
+    )},
 );
-
+$builder->add_build_element('kbase');
 $builder->create_build_script();
