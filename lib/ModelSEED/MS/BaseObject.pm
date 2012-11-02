@@ -630,9 +630,10 @@ sub removeLinkArrayItem {
 			if ($data->[$i] eq $object->uuid()) {
 				verbose("Removing object from link array.");
 				if (@{$data} == 1) {
-					$data = [];
+					$self->$method([]);
 				} else {
 					splice(@{$data},$i,1);
+					$self->$method($data);
 				}
 				my $clearer = "clear_".$link;
 				$self->$clearer();
