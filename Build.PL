@@ -108,7 +108,7 @@ my $builder = $subclass->new(
         "YAML" => 0,
         "common::sense" => 0,
         "namespace::autoclean" => 0,
-        "XML::DOM::Parser" => 0,
+        "XML::DOM" => 0,
     },
     recommends => {
         MongoDB => 0,

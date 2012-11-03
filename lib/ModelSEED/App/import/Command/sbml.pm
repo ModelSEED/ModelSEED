@@ -2,6 +2,7 @@ package ModelSEED::App::import::Command::sbml;
 use strict;
 use common::sense;
 use base 'App::Cmd::Command';
+use ModelSEED::utilities qw( args verbose set_verbose );
 use Class::Autouse qw(
     ModelSEED::Store
     ModelSEED::Auth::Factory
@@ -21,7 +22,6 @@ END
 
 sub opt_spec {
     return (
-        ["annotation|a:s", "Annotation to use when importing the model"],
         ["namespace|n:s", "Namespace for IDs in SBML file"],
         ["verbose|v", "Print detailed output of import status"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
@@ -38,10 +38,9 @@ sub execute {
     	auth => $auth,
     	store => $store
     });
-    print($self->usage) && exit if $opts->{help};
-    if ($opts->{verbose}) {
-        set_verbose(1);
-    	delete $opts->{verbose};
+    if ($opts->{help}) {
+    	print($self->usage);
+    	return;
     }
     $self->usage_error("Filename of SBML file not specified!") unless(defined($args->[0]));
 	$self->usage_error("SBML file not found!") unless (-e $args->[0]);
@@ -55,32 +54,21 @@ sub execute {
 	if (defined($opts->{namespace})) {
 		$input->{namespace} = $opts->{namespace};
 	}
-	if (defined($opts->{annotation})) {
-		(my $annotation,my $ref) = $helper->get_object("annotation",$opts->{annotation},$store);
-		$self->usage_error("Specified annotation ".$opts->{annotation}." not found!") unless(defined($annotation));
-		$input->{annotation} = $annotation;
-	}
 	(my $biochemistry,my $model,my $anno,my $mapping) = $factory->parseSBML($input);
 	unless($opts->{dry}) {
-        if (defined($model)) {
+        if (defined($model) && defined($anno) && defined($mapping) && defined($biochemistry)) {
         	my $ref = $helper->process_ref_string($alias, "model", $auth->username);
         	$store->save_object($ref, $model);
-        	print "Saved model to ".$ref."!\n" if(defined($opts->{verbose}));
-        }
-        if (defined($anno)) {
-        	my $ref = $helper->process_ref_string($alias, "annotation", $auth->username);
+        	verbose("Saved model to ".$ref."!");
+       		$ref = $helper->process_ref_string($alias, "annotation", $auth->username);
         	$store->save_object($ref, $anno);
-        	print "Saved mapping to ".$ref."!\n" if(defined($opts->{verbose}));
-        }
-        if (defined($mapping)) {
-        	my $ref = $helper->process_ref_string($alias, "mapping", $auth->username);
+        	verbose("Saved mapping to ".$ref."!");
+        	$ref = $helper->process_ref_string($alias, "mapping", $auth->username);
         	$store->save_object($ref, $mapping);
-        	print "Saved mapping to ".$ref."!\n" if(defined($opts->{verbose}));
-        }
-        if (defined($biochemistry)) {
-        	my $ref = $helper->process_ref_string($alias, "biochemistry", $auth->username);
+        	verbose("Saved mapping to ".$ref."!");
+        	$ref = $helper->process_ref_string($alias, "biochemistry", $auth->username);
         	$store->save_object($ref, $biochemistry);
-        	print "Saved biochemistry to ".$ref."!\n" if(defined($opts->{verbose}));
+        	verbose("Saved biochemistry to ".$ref."!");
         }
     }
 }

@@ -12,33 +12,39 @@
 
 =head1 ModelSEED::MS::Factories::SBMLFactory
 
-A Factory that creates a model or biochemistry from an SBML file.
+A Factory that creates a model, mapping, annotation, and biochemistry from an SBML file.
 
 =head2 Methods
 
+=head3 new
+	
+	$sbmlfactory = ModelSEED::MS::Factories::SBMLFactory->new();
+	
+Creates new L<ModelSEED::MS::Factories::SBMLFactory> object. No arugments are accepted.
+
 =head3 createModel
 
-    $model = $fact->createModel(\%config);
+    ($biochemistry,$model,$anno,$mapping) = $fact->parseSBML(\%arguments);
 
-Construct a L<ModelSEED::MS::Model> object. Config is
-a hash ref that accepts the following:
+Construct L<ModelSEED::MS::Model>, L<ModelSEED::MS::Mapping>, L<ModelSEED::MS::Annotation>, and L<ModelSEED::MS::Biochemistry> objects.
+Arguments is a hash ref that accepts the following:
 
 =over 4
 
-=item id
+=item filename
 
 The filename of the SBML file to be imported. Required.
 
-=item annotation
+=item modelid
 
-A L<ModelSEED::MS::Annotation> object. Required.
+ID of the model being imported, used to reference aliases for model compounds and reactions. Optional.
 
 =back
 
 =cut
 
 package ModelSEED::MS::Factories::SBMLFactory;
-use ModelSEED::utilities qw ( args );
+use ModelSEED::utilities qw( args verbose set_verbose );
 use XML::DOM;
 use XML::Parser;
 use Class::Autouse qw(
@@ -53,16 +59,10 @@ use Try::Tiny;
 use Moose;
 use namespace::autoclean;
 
-has auth => ( is => 'ro', isa => "ModelSEED::Auth", required => 1);
-has store => ( is => 'ro', isa => "ModelSEED::Store", required => 1);
-has auth_config => ( is => 'ro', isa => 'HashRef', lazy => 1, builder => '_build_auth_config');
-
 sub parseSBML {
     my $self = shift;
     my $args = args(["filename"],{
-    	namespace => undef,
-       	annotation => undef,
-       	mapping => undef
+    	modelid => undef,
     }, @_);
 	#Opening and parsing file
 	my $doc = $self->openParseSBMLFile({
@@ -73,48 +73,38 @@ sub parseSBML {
     	document => $doc
     });
     #Building objects 
-    if (!defined($args->{namespace}) && defined($mdlData->{id})) {
-		$args->{namespace} = $mdlData->{id};
+    if (!defined($args->{modelid}) && defined($mdlData->{id})) {
+		$args->{modelid} = $mdlData->{id};
 	}
     my $bio = ModelSEED::MS::Biochemistry->new({
-    	defaultNameSpace => $args->{namespace},
+    	defaultNameSpace => $args->{modelid},
     	name => $mdlData->{name}
     });
-    my $newAnno;
-    my $newMap;
-    if (!defined($args->{annotation})) {
-    	if (!defined($args->{mapping})) {
-    		$args->{mapping} = ModelSEED::MS::Mapping->new({
-				defaultNameSpace => $args->{namespace},
-				name => $mdlData->{name},
-				biochemistry_uuid => $bio->uuid(),
-				biochemistry => $bio
-			});
-			$newMap = $args->{mapping};
-    	}
-    	$args->{annotation} = ModelSEED::MS::Annotation->new({
-			defaultNameSpace => $args->{namespace},
-			name => $mdlData->{name},
-			mapping_uuid => $args->{mapping}->uuid(),
-			mapping => $args->{mapping}
-		});
-		$args->{annotation}->add("genomes",{
-			id => $mdlData->{id},
-			name => $mdlData->{name},
-			source => "SBML"
-		});
-		$newAnno = $args->{annotation};
-    } elsif (!defined($args->{mapping})) {
-    	$args->{mapping} = $args->{annotation}->mapping();
-    }
-	my $mdl = ModelSEED::MS::Model->new({
-		defaultNameSpace => $args->{namespace},
+    my $map = ModelSEED::MS::Mapping->new({
+		defaultNameSpace => $args->{modelid},
 		name => $mdlData->{name},
-		id => $mdlData->{id},
+		biochemistry_uuid => $bio->uuid(),
+		biochemistry => $bio
+	});
+    my $anno = ModelSEED::MS::Annotation->new({
+		defaultNameSpace => $args->{modelid},
+		name => $mdlData->{name},
+		mapping_uuid => $map->uuid(),
+		mapping => $map
+	});
+	$anno->add("genomes",{
+		id => $args->{modelid},
+		name => $mdlData->{name},
+		source => "SBML"
+	});
+	my $mdl = ModelSEED::MS::Model->new({
+		defaultNameSpace => $args->{modelid},
+		name => $mdlData->{name},
+		id => $args->{modelid},
 		biochemistry_uuid => $bio->uuid(),
 		biochemistry => $bio,
-		annotation_uuid => $args->{annotation}->uuid(),
-		annotation => $args->{annotation}
+		annotation_uuid => $anno->uuid(),
+		annotation => $anno
 	});
     #Parsing compartments
     my ($bioCmpHash,$mdlCmpHash) = $self->parseCompartments({
@@ -133,7 +123,7 @@ sub parseSBML {
     #Parsing reactions
     my ($bioRxnHash,$mdlRxnHash) = $self->parseReactions({
     	document => $doc,
-    	annotation => $args->{annotation},
+    	annotation => $anno,
     	model => $mdl,
     	biochemistry => $bio,
     	biocmphash => $bioCmpHash,
@@ -189,6 +179,7 @@ sub parseModelName {
 sub parseCompartments {
     my $self = shift;
 	my $args = args(["document","biochemistry"],{"model" => undef}, @_);
+    my $trans = $self->compartmentTranslation();
     my $doc = $args->{document};
     my $bio = $args->{biochemistry};
     my $mdl = $args->{model};
@@ -201,9 +192,19 @@ sub parseCompartments {
     		my $name = $attr->getName();
     		my $value = $attr->getValue();
     		if ($name eq "id") {
-    			$data->{id} = $value;
+    			if (defined($trans->{$value})) {
+    				$data->{id} = $trans->{$value}->{id};
+    				$data->{name} = $trans->{$value}->{name};
+    			} else {
+    				$data->{id} = $value;
+    			}
     		} elsif ($name eq "name") {
-    			$data->{name} = $value;
+    			if (defined($trans->{$value})) {
+    				$data->{id} = $trans->{$value}->{id};
+    				$data->{name} = $trans->{$value}->{name};
+    			} else {
+    				$data->{name} = $value;
+    			}
     		}
     	}
     	if (!defined($data->{name})) {
@@ -230,6 +231,7 @@ sub parseCompounds {
 	my $args = args(["document","biochemistry","biocmphash","mdlcmphash"],{
 		"model" => undef
 	}, @_);
+	my $trans = $self->compartmentTranslation();
     my $doc = $args->{document};
     my $bio = $args->{biochemistry};
     my $mdl = $args->{model};
@@ -243,7 +245,7 @@ sub parseCompounds {
     	my $formula = "Unknown";
     	my $charge = "0";
     	my $sbmlid = "0";
-    	my $compartment = "Cytosol";
+    	my $compartment = "c";
     	my $id = undef;
     	my $name = "Unknown";
     	foreach my $attr ($cpd->getAttributes()->getValues()) {
@@ -269,6 +271,9 @@ sub parseCompounds {
     			}
     		} elsif ($nm eq "compartment") {
     			$compartment = $value;
+    			if (defined($trans->{$compartment})) {
+    				$compartment = $trans->{$compartment}->{id};
+    			}
     		} elsif ($nm eq "charge") {
     			$charge = $value;
     		} elsif ($nm eq "formula") {
@@ -337,7 +342,7 @@ sub parseReactions {
     	my $direction = "=";
     	my $protons = 0;
     	my $reactants = {};
-    	my $compartment = "Cytosol";
+    	my $compartment = "c";
     	my $fbaData = {};
     	my $enzymes = [];
     	my $gpr = [];
@@ -508,6 +513,29 @@ sub parseReactions {
     return ($bioRxnHash,$mdlRxnHash);
 }
 
+=head3 parseGPR
+
+Definition:
+	{}:Logic hash = ModelSEED::MS::Factories::SBMLFactory->parseGPR();
+Description:
+	Parses GPR string into a hash where each key is a node ID,
+	and each node ID points to a logical expression of genes or other
+	node IDs. 
+	
+	Logical expressions only have one form of logic, either "or" or "and".
+
+	Every hash returned has a root node called "root", and this is
+	where the gene protein reaction boolean rule starts.
+Example:
+	GPR string "(A and B) or (C and D)" is translated into:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	
+=cut
+
 sub parseGPR {
 	my $self = shift;
 	my $gpr = shift;
@@ -569,6 +597,40 @@ sub parseGPR {
 	return $gprHash;
 }
 
+=head3 translateGPRHash
+
+Definition:
+	[[[]]]:Protein subunit gene array = ModelSEED::MS::Factories::SBMLFactory->translateGPRHash({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a three level array ref.
+	The three level array ref represents the three levels of GPR rules in the ModelSEED.
+	The outermost array represents proteins (with 'or' logic).
+	The next level array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "or(and(or))" or "or(and)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	Is translated into the array:
+	[
+		[
+			["A"],
+			["B"]
+		],
+		[
+			["C"],
+			["D"]
+		]
+	]
+
+=cut
+
 sub translateGPRHash {
 	my $self = shift;
 	my $gprHash = shift;
@@ -600,6 +662,31 @@ sub translateGPRHash {
 	}
 	return $proteins;
 }
+
+=head3 parseSingleProtein
+
+Definition:
+	[[]]:Subunit gene array = ModelSEED::MS::Factories::SBMLFactory->parseSingleProtein({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a two level array ref.
+	The two level array ref represents the two levels of GPR rules in the ModelSEED.
+	The outermost array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "and(or)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "A+B",
+	}
+	Is translated into the array:
+	[
+		["A"],
+		["B"]
+	]
+
+=cut
 
 sub parseSingleProtein {
 	my $self = shift;
@@ -645,26 +732,19 @@ sub parseSingleProtein {
 	return $subunits;
 }
 
-sub _build_auth_config {
-    my ($self) = @_;
-    if($self->auth->isa("ModelSEED::Auth::Basic")) {
-        return { user => $self->auth->username,
-                 password => $self->auth->password,
-               };
-    } else {
-        return {};
-    }
-}
-
-sub _get_uuid_from_alias {
-    my ($self, $ref) = @_;
-    return unless(defined($ref));
-    my $alias_objects = $self->store->get_aliases($ref);
-    if(defined($alias_objects->[0])) {
-        return $alias_objects->[0]->{uuid};
-    } else {
-        return;
-    }
+sub compartmentTranslation {
+	my $self = shift;
+	my $trans = {
+		Extra_organism => {
+			name => "Extracellular",
+			id => "e"
+		},
+		Cytosol => {
+			name => "Cytosol",
+			id => "c"
+		},
+	};
+	return $trans;
 }
 
 1;
