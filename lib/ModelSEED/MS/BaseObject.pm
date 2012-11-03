@@ -185,13 +185,23 @@ sub serializeToDB {
     return $data;
 }
 
+sub cloneObject {
+	my ($self) = @_;
+	my $data = $self->serializeToDB();
+	my $class = "ModelSEED::MS::".$self->_type();
+	if (defined($data->{uuid})) {
+		delete $data->{uuid};
+	}
+	return $class->new($data);
+}
+
 sub toJSON {
     my $self = shift;
     my $args = args([],{pp => 0}, @_);
     my $data = $self->serializeToDB();
     my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
-    return $JSON->encode($data)
+    return $JSON->encode($data);
 }
 
 ######################################################################
