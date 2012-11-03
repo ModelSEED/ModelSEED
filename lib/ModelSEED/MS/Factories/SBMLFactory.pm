@@ -132,7 +132,7 @@ sub parseSBML {
     	biocpdcmphash => $bioCpdCmpHash,
     	mdlcpdhash => $mdlCpdHash
     });
-	return ($bio,$mdl,$newAnno,$newMap);
+	return ($bio,$mdl,$anno,$map);
 }
 
 sub openParseSBMLFile {
