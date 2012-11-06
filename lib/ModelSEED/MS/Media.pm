@@ -10,6 +10,7 @@ use ModelSEED::MS::DB::Media;
 package ModelSEED::MS::Media;
 use Moose;
 use namespace::autoclean;
+use ModelSEED::utilities qw( args verbose error );
 extends 'ModelSEED::MS::DB::Media';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -42,7 +43,56 @@ sub _buildcompoundListString {
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 export
 
+Definition:
+	string = ModelSEED::MS::Media->export({
+		format => readable/html/json/exchange
+	});
+Description:
+	Exports media data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "exchange") {
+		return $self->printExchange();
+	} elsif (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
+}
+
+=head3 printExchange
+
+Definition:
+	string:Exchange format = ModelSEED::MS::Model->printExchange();
+Description:
+	Returns a string with the media
+
+=cut
+
+sub printExchange {
+    my $self = shift;
+	my $output = "Media{\n";
+	$output .= "attributes(in\tname\tisDefined\tisMinimal\ttype){\n";
+	$output .= $self->id()."\t".$self->name()."\t".$self->isDefined()."\t".$self->isMinimal()."\t".$self->type()."\n";
+	$output .= "}\n";
+	$output .= "compounds(id\tminFlux\tmaxFlux\tconcentration){\n";
+	my $mediacpds = $self->mediacompounds();
+	foreach my $cpd (@{$mediacpds}) {
+		$output .= $cpd->compound()->id()."\t".$cpd->minFlux()."\t".$cpd->maxFlux()."\t".$cpd->concentration()."\n";
+	}
+	$output .= "}\n";
+	$output .= "}\n";
+	return $output;
+}
 
 __PACKAGE__->meta->make_immutable;
 1;

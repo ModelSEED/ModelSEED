@@ -810,28 +810,6 @@ sub labelBiomassCompounds {
 	}
 }
 
-=head3 parseSBML
-
-# TODO parseSBML() parse error with SIds and UUIDs
-currently the id field on objects COULD output a UUID if
-there is no alias in the prefered alias set. If this is then
-placed in the "id" attribute of a species or reaction, this
-violates the SBML SId restrictions. Need to replace '-' with '_'
-and prefix with "UUID_" since uuids may start with a number while
-SIds cannot.
-
-Definition:
-	void ModelSEED::MS::Model->parseSBML();
-Description:
-	Parse an input SBML file to generate the model
-
-=cut
-
-sub parseSBML {
-	my ($self,$args) = @_;
-	
-}
-
 =head3 printSBML
 
 Definition:
@@ -1054,6 +1032,77 @@ sub printSBML {
 	push(@{$output},'</sbml>');
 	return $output;
 }
+
+=head3 printExchange
+
+Definition:
+	string:Exchange format = ModelSEED::MS::Model->printExchange();
+Description:
+	Returns a string with the model in Exchange format
+
+=cut
+
+sub printExchange {
+    my $self = shift;
+	my $output = 
+	$output .= "Model{";
+	$output .= "attributes(id\tname\ttype\tstatus){\n";
+	$output .= $self->id()."\t".$self->name()."\t".$self->type()."\t".$self->status()."\n";
+	$output .= "}\n";
+	$output .= "compartments(id\tname\tph\tpotential){\n";
+	my $comps = $self->modelcompartments();
+	foreach my $comp (@{$comps}) {
+		$output .= $comp->id()."\t".$comp->name()."\t".$comp->pH()."\t".$comp->potential()."\n";	
+	}
+	$output .= "}\n";
+	$output .= "compounds(id\tname\tabbrev\tformula\tcharge){\n";
+	my $compounds = $self->modelcompounds();
+	foreach my $cpd (@{$compounds}) {
+		$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->abbreviation()."\t".$cpd->formula()."\t".$cpd->charge()."\n";
+	}
+	$output .= "}\n";
+	$output .= "reactions(id\tname\tabbrev\tequation){\n";
+	my $reactions = $self->modelreactions();
+	foreach my $rxn (@{$reactions}) {
+		$output .= $rxn->id()."\t".$rxn->name()."\t".$rxn->abbreviation()."\t".$rxn->equation()."\n";
+	}
+	$output .= "}\n";
+	$output .= "biomasses(id\tname\tequation){\n";
+	my $biomasses = $self->biomasses();
+	foreach my $bio (@{$biomasses}) {
+		$output .= $bio->id()."\t".$bio->name()."\t".$bio->modelequation()."\n";
+	}
+	$output .= "}\n";
+	$output .= "}\n";
+	return $output;
+}
+
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::Model->export();
+Description:
+	Exports model data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "sbml") {
+		return $self->printSBML();
+	} elsif (lc($args->{format}) eq "exchange") {
+		return $self->printExchange();
+	} elsif (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
+}
+
 #***********************************************************************************************************
 # ANALYSIS FUNCTIONS:
 #***********************************************************************************************************
