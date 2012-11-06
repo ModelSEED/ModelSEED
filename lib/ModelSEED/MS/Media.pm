@@ -81,8 +81,8 @@ Description:
 sub printExchange {
     my $self = shift;
 	my $output = "Media{\n";
-	$output .= "attributes(in\tname\tisDefined\tisMinimal\ttype){\n";
-	$output .= $self->id()."\t".$self->name()."\t".$self->isDefined()."\t".$self->isMinimal()."\t".$self->type()."\n";
+	$output .= "attributes(in\tname\tisDefined\tisMinimal\ttype\tbiochemistry){\n";
+	$output .= $self->id()."\t".$self->name()."\t".$self->isDefined()."\t".$self->isMinimal()."\t".$self->type()."\t".$self->parent()->uuid()."\n";
 	$output .= "}\n";
 	$output .= "compounds(id\tminFlux\tmaxFlux\tconcentration){\n";
 	my $mediacpds = $self->mediacompounds();

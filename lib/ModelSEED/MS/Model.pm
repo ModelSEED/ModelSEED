@@ -298,6 +298,7 @@ sub buildModelFromAnnotation {
 			my $cpxrole = $complexroles->[$j];
 			if (defined($roleFeatures->{$cpxrole->role_uuid()})) {
 				foreach my $compartment (keys(%{$roleFeatures->{$cpxrole->role_uuid()}})) {
+					my $origcomp = $compartment;
 					if ($compartment eq "u") {
 						$compartment = "c";
 					}
@@ -306,7 +307,7 @@ sub buildModelFromAnnotation {
 					}
 					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
 					$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-					foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
+					foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$origcomp}}) {
 						$compartments->{$compartment}->{subunits}->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
 					}
 				}
@@ -1044,10 +1045,9 @@ Description:
 
 sub printExchange {
     my $self = shift;
-	my $output = 
-	$output .= "Model{";
-	$output .= "attributes(id\tname\ttype\tstatus){\n";
-	$output .= $self->id()."\t".$self->name()."\t".$self->type()."\t".$self->status()."\n";
+	my $output = "Model{";
+	$output .= "attributes(id\tname\ttype\tannotation\tmapping\tbiochemistry){\n";
+	$output .= $self->id()."\t".$self->name()."\t".$self->type()."\t".$self->annotation_uuid()."\t".$self->mapping_uuid()."\t".$self->biochemistry_uuid()."\n";
 	$output .= "}\n";
 	$output .= "compartments(id\tname\tph\tpotential){\n";
 	my $comps = $self->modelcompartments();
@@ -1061,10 +1061,10 @@ sub printExchange {
 		$output .= $cpd->id()."\t".$cpd->name()."\t".$cpd->abbreviation()."\t".$cpd->formula()."\t".$cpd->charge()."\n";
 	}
 	$output .= "}\n";
-	$output .= "reactions(id\tname\tabbrev\tequation){\n";
+	$output .= "reactions(id\tname\tabbrev\tequation\tgpr){\n";
 	my $reactions = $self->modelreactions();
 	foreach my $rxn (@{$reactions}) {
-		$output .= $rxn->id()."\t".$rxn->name()."\t".$rxn->abbreviation()."\t".$rxn->equation()."\n";
+		$output .= $rxn->id()."\t".$rxn->name()."\t".$rxn->abbreviation()."\t".$rxn->equation()."\t".$rxn->exchangeGPRString()."\n";
 	}
 	$output .= "}\n";
 	$output .= "biomasses(id\tname\tequation){\n";
