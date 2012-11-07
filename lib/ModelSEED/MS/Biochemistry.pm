@@ -53,69 +53,57 @@ sub _buildreactionRoleHash {
 	return $hash;
 }
 
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
-
 =head3 printDBFiles
 
-Definition:
-	void ModelSEED::MS::Biochemistry->printDBFiles({
-		forceprint => 0
-	});
-Description:
-	Creates files with biochemistry data for use by the MFAToolkit
+	$biochemistry->printDBFiles(
+		forceprint => boolean,
+        directory  => string,
+	);
+
+Creates files with biochemistry data for use by the MFAToolkit.
+C<forceprint> is a boolean which, if true, will cause the function
+to always print the files, overwriting existing files if they exist.
+C<directory> is the directory to save the tables into.
 
 =cut
 
 sub printDBFiles {
     my $self = shift;
-    my $args = args([],{ forceprint => 0 }, @_);
-	my $path = $self->dataDirectory()."/fbafiles/";
-	if (!-d $path) {
-		File::Path::mkpath ($path);
-	}
-	if (-e $path.$self->uuid()."-compounds.tbl" && $args->{forceprint} eq "0") {
-		return;	
-	}
-	my $output = ["abbrev	charge	deltaG	deltaGErr	formula	id	mass	name"];
-	my $columns = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
-	my $cpds = $self->compounds();
-	for (my $i=0; $i < @{$cpds}; $i++) {
-		my $cpd = $cpds->[$i];
-		my $line = "";
-		foreach my $column (@{$columns}) {
-			if (length($line) > 0) {
-				$line .= "\t";
-			}
-			if (defined($cpd->$column())) {
-				$line .= $cpd->$column();
-			}
-		}
-		push(@{$output},$line);
-	}
-	ModelSEED::utilities::PRINTFILE($path.$self->uuid()."-compounds.tbl",$output);
-	$output = ["abbrev	deltaG	deltaGErr	equation	id	name	reversibility	status	thermoReversibility"];
-	$columns = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","thermoReversibility"];
-	my $rxns = $self->reactions();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		my $rxn = $rxns->[$i];
-		my $line = "";
-		foreach my $column (@{$columns}) {
-			if (length($line) > 0) {
-				$line .= "\t";
-			}
-			if (defined($rxn->$column())) {
-				$line .= $rxn->$column();
-			}
-		}
-		push(@{$output},$line);
-	}
-	ModelSEED::utilities::PRINTFILE($path.$self->uuid()."-reactions.tbl",$output);
+    my $args = args([],{
+        forceprint => 0,
+        directory  => $self->dataDirectory."/fbafiles/",
+    }, @_);
+    my $path = $args->{directory};
+    File::Path::mkpath($path) unless(-d $path);
+    my $print_table = sub {
+        my ($filename, $header, $attributes, $objects) = @_;
+        open(my $fh, ">", $filename) || die "Could not open $filename: $!";
+        print $fh join("\t", @$header) . "\n";
+        foreach my $object (@$objects) {
+            my @line;
+            foreach my $attr (@$attributes) {
+                my $value = $object->$attr();
+                $value = "" unless defined $value;
+                push(@line, $value);
+            }
+            print $fh join("\t", @line) . "\n";
+        }
+        close $fh;
+    };
+    my $compound_filename = $path.$self->uuid."-compounds.tbl";
+    if (!-e $compound_filename || $args->{forceprint}) {
+        my $header      = [ qw(abbrev charge deltaG deltaGErr formula id mass name) ];
+        my $attributes  = [ qw(abbreviation defaultCharge deltaG deltaGErr formula id mass name) ];
+        my $compounds   = $self->compounds;
+        $print_table->($compound_filename, $header, $attributes, $compounds);
+    }
+    my $reaction_filename = $path.$self->uuid."-reactions.tbl";
+    if (!-e $reaction_filename || $args->{forceprint}) {
+        my $header      = [ qw(abbrev deltaG deltaGErr equation id name reversibility status thermoReversibility) ];
+        my $attributes  = [ qw(abbreviation deltaG deltaGErr equation id name direction status thermoReversibility) ];
+        my $reactions   = $self->reactions;
+        $print_table->($reaction_filename, $header, $attributes, $reactions);
+    }
 }
 
 =head3 makeDBModel
