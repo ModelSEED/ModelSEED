@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ################################################################################
 #                                                                              # 
 #       dev-env.sh - Source this script for ModelSEED development              #
