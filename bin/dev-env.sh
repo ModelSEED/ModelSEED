@@ -24,6 +24,7 @@ env_push() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIR="$( cd $SCRIPT_DIR/../ && pwd)"
 env_push PERL5LIB $DIR/lib;
+env_push PERL5LIB $DIR/kbase
 env_push PATH $SCRIPT_DIR
 export PERL5LIB
 export PATH;
