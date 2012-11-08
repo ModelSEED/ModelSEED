@@ -6,32 +6,16 @@
 # Date of module creation: 2012-03-15T16:44:01
 ########################################################################
 use strict;
-use ModelSEED::utilities;
 use Data::Dumper;
 package ModelSEED::MS::Factories::ExchangeFormatFactory;
 use Moose;
 use namespace::autoclean;
+use ModelSEED::utilities qw( args error );
 use Class::Autouse qw(
 	ModelSEED::MS::FBAFormulation
     ModelSEED::MS::GapfillingFormulation
     ModelSEED::MS::GapgenFormulation
 );
-#***********************************************************************************************************
-# ATTRIBUTES:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# BUILDERS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
 
 =head3 buildFBAFormulation
 
@@ -55,7 +39,7 @@ sub buildFBAFormulation {
 		overrides => {}
 	}, @_);
 	my $model = $args->{model};
-	my $data = $self->parseExchangeFileArray($args);
+	my $data = $self->fromArgs($args);
 	#Setting default values for exchange format attributes
 	$data = args([],{
 		media => "Media/name/Complete",
@@ -160,7 +144,7 @@ sub buildGapfillingFormulation {
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
-	my $data = $self->parseExchangeFileArray($args);
+	my $data = $self->fromArgs($args);
 	#Setting default values for exchange format attributes
 	$data = args([],{
 		fbaFormulation => $fbaform,
@@ -289,7 +273,7 @@ sub buildGapgenFormulation {
 	my $model = $args->{model};
 	$args->{overrides}->{fbaFormulation}->{model} = $model;
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
-	my $data = $self->parseExchangeFileArray($args);
+	my $data = $self->fromArgs($args);
 	#Setting default values for exchange format attributes			
 	$data = args([],{
 		referenceMedia => "Media/name/".$fbaform->media()->name(),
@@ -344,34 +328,38 @@ sub stringToHash {
 	return $output;
 }
 
-=head3 parseExchangeFileArray
-Definition:
-	{} = ModelSEED::MS::Biochemistry->parseExchangeFileArray({
-		array => [string](undef),
-		text => string(undef),
-		filename => string(undef)
-	});
-Description:
-	Parses the exchange file array into a attribute and subobject hash
+=head3 fromFilename
+
+    \%data = $factory->fromFilename($filename);
+
+Returns a HashRef of exchange data from the parsed filename.
+
+=head3 fromStringArray
+
+    \%data = $factory->fromStringArray(\());
+
+Returns a HashRef of exchange data from the parsed ArrayRef of strings.
+
+=head3 fromString
+
+    \%data = $factory->fromString($string)
+
+Returns a HashRef of exchange data from the parsed string.
 
 =cut
 
-sub parseExchangeFileArray {
+sub fromFilename {
     my $self = shift;
-	my $args = args([],{
-		text => undef,
-		filename => undef,
-		array => [],
-		overrides => {}
-	}, @_);
-	if (defined($args->{filename}) && -e $args->{filename}) {
-		$args->{array} = ModelSEED::utilities::LOADFILE($args->{filename}); 
-		delete $args->{text};
-	}
-	if (defined($args->{text})) {
-		$args->{array} = [split(/\n/,$args->{text})];
-	}
-	my $array = $args->{array};
+    my $file = shift;
+    error("Could not find file $file") unless defined $file && -f $file;
+    my $arrayOfStrings = ModelSEED::utilities::LOADFILE($file);
+    return $self->fromStringArray($arrayOfStrings);
+}
+
+sub fromStringArray {
+    my $self  = shift;
+    my $array = shift;
+    $array    = [] unless defined $array && @$array;
 	my $data = {};
 	my $section = "none";
 	my $headings;
@@ -396,12 +384,45 @@ sub parseExchangeFileArray {
 			push(@{$data->{$section}},$subobjectData);
 		}
 	}
-	#Setting overrides
-	foreach my $key (%{$args->{overrides}}) {
-		$data->{$key} = $args->{overrides}->{$key};
-	}
-	return $data;
+    return $data;
 }
+
+sub fromString {
+    my ($self, $string) = @_;
+    my $stringArray = [ split /\n/, $string ];
+    return $self->fromStringArray($stringArray);
+}
+
+sub fromAny {
+    my $self = shift;
+    my $any  = shift;
+    if (ref $any eq 'HASH') {
+        return $any;
+    } elsif(ref $any eq 'ARRAY') {
+        return $self->fromStringArray($any);
+    } elsif(-f $any) {
+        return $self->fromFilename($any);
+    } elsif(length $any) {
+        return $self->fromString($any);
+    } else {
+        error "Unknown exchange format at fromAny!";
+    }
+}
+
+sub fromArgs {
+    my $self = shift;
+    my $args = args( [], {}, @_ );
+    if ( defined $args->{filename} ) {
+        return $self->fromFile($args->{filename});
+    } elsif ( defined $args->{text} ) {
+        return $self->fromString($args->{text});
+    } elsif ( defined $args->{array} ) {
+        return $self->fromStringArray($args->{array});
+    } else {
+        error "Unknown exchange format at fromArgs!";
+    }
+}
+
 
 =head3 buildObjectFromExchangeFileArray
 Definition:
@@ -421,7 +442,7 @@ sub buildObjectFromExchangeFileArray {
 		Model => undef,
 		Annotation => undef
 	}, @_);
-	my $data = $self->parseExchangeFileArray($args);
+	my $data = $self->fromArgs($args);
 	#The data object must have an ID, which is used to identify the type
 	if (!defined($data->{id})) {
 		ModelSEED::utilities::ERROR("Input exchange file must have ID!");
