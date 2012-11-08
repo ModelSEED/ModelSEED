@@ -15,10 +15,13 @@ extends 'ModelSEED::MS::DB::ModelReaction';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has definition => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has name => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
+has abbreviation => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildabbreviation' );
 has modelCompartmentLabel => ( is => 'rw', isa => 'Str',printOrder => '4', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmodelCompartmentLabel' );
 has gprString => ( is => 'rw', isa => 'Str',printOrder => '6', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgprString' );
+has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildexchangeGPRString' );
 has id => ( is => 'rw', isa => 'Str',printOrder => '1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildid' );
 has missingStructure => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmissingStructure' );
 has biomassTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassTransporter' );
@@ -35,14 +38,19 @@ sub _buildid {
 }
 sub _buildname {
 	my ($self) = @_;
-	return $self->reaction->name();
+	return $self->reaction->name()."_".$self->modelCompartmentLabel();
+}
+sub _buildabbreviation {
+	my ($self) = @_;
+	return $self->reaction->abbreviation()."_".$self->modelCompartmentLabel();
 }
 sub _builddefinition {
 	my ($self) = @_;
 	my $reactants = "";
 	my $products = "";
-	for (my $i=0; $i < @{$self->modelReactionReagents()}; $i++) {
-		my $rgt = $self->modelReactionReagents()->[$i];
+	my $rgts = $self->modelReactionReagents();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		my $rgt = $rgts->[$i];
 		if ($rgt->coefficient() < 0) {
 			my $coef = -1*$rgt->coefficient();
 			if (length($reactants) > 0) {
@@ -60,6 +68,36 @@ sub _builddefinition {
 				$products .= "(".$rgt->coefficient().")";
 			}
 			$products .= $rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
+		}
+		
+	}
+	$reactants .= " ".$self->translatedDirection()." ";
+	return $reactants.$products;
+}
+sub _buildequation {
+	my ($self) = @_;
+	my $reactants = "";
+	my $products = "";
+	my $rgts = $self->modelReactionReagents();
+	for (my $i=0; $i < @{$rgts}; $i++) {
+		my $rgt = $rgts->[$i];
+		if ($rgt->coefficient() < 0) {
+			my $coef = -1*$rgt->coefficient();
+			if (length($reactants) > 0) {
+				$reactants .= " + ";	
+			}
+			if ($coef ne "1") {
+				$reactants .= "(".$coef.")";
+			}
+			$reactants .= $rgt->modelcompound()->id();
+		} else {
+			if (length($products) > 0) {
+				$products .= " + ";	
+			}
+			if ($rgt->coefficient() ne "1") {
+				$products .= "(".$rgt->coefficient().")";
+			}
+			$products .= $rgt->modelcompound()->id();
 		}
 		
 	}
@@ -85,6 +123,18 @@ sub _buildgprString {
 	if (length($gpr) == 0) {
 		$gpr = "Unknown";
 	}
+	return $gpr;
+}
+sub _buildexchangeGPRString {
+	my ($self) = @_;
+	my $gpr = "MSGPR{";
+	foreach my $protein (@{$self->modelReactionProteins()}) {
+		if (length($gpr) > 6) {
+			$gpr .= "/";	
+		}
+		$gpr .= $protein->exchangeGPRString();
+	}
+	$gpr .= "}";
 	return $gpr;
 }
 sub _buildmissingStructure {

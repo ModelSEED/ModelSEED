@@ -192,6 +192,30 @@ sub makeDBModel {
 	return $mdl;
 }
 
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::Biochemistry->export({
+		format => optfluxmedia/readable/html/json
+	});
+Description:
+	Exports biochemistry data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
+}
+
 =head3 findCreateEquivalentCompartment
 Definition:
 	void ModelSEED::MS::Biochemistry->findCreateEquivalentCompartment({

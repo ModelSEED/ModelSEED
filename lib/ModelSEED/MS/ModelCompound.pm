@@ -15,6 +15,7 @@ extends 'ModelSEED::MS::DB::ModelCompound';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has name => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
+has abbreviation => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildabbreviation' );
 has id => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildid' );
 has modelCompartmentLabel => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmodelCompartmentLabel' );
 has isBiomassCompound  => ( is => 'rw', isa => 'Bool',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisBiomassCompound' );
@@ -31,6 +32,10 @@ sub _buildid {
 sub _buildname {
 	my ($self) = @_;
 	return $self->compound()->name()."_".$self->modelCompartmentLabel();
+}
+sub _buildabbreviation {
+	my ($self) = @_;
+	return $self->compound()->abbreviation()."_".$self->modelCompartmentLabel();
 }
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
