@@ -87,7 +87,6 @@ sub set_verbose {
 sub verbose {
     if ( defined $VERBOSE ) {
         print $VERBOSE @_ if @_;
-        print "\n";
         return 1;
     } else {
         return 0;
