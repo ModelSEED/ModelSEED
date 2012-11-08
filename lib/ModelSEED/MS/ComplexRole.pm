@@ -39,7 +39,7 @@ sub createProteinSubunit {
         optional   => $self->optional,
         triggering => $self->triggering,
         role_uuid  => $self->role_uuid,
-        modelReactionProteinSubunitGenes => 
+        modelReactionProteinSubunitGenes => $feature_uuids,
     };
     $hash->{note} = $args->{note} if defined $args->{note};
     return ModelSEED::MS::ModelReactionProteinSubunit->new($hash);

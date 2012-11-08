@@ -53,12 +53,9 @@ sub isActivatedWithRoles {
 }
 
 sub createModelReactionProtein {
-    my ($self, $args) = @_;
-    $args = ModelSEED::utilities::ARGS(
-        $args, [], { features => [], note => undef }
-    );
-    # Generate subunits for each complexRole (takes same args as this function)
-    my $subunits = [ map { $_->createProteinSubunit($args) } @{$self->complexroles} ];
+    my $self = shift;
+    my $args = args([], { subunits => [], note => undef }, @_);
+    my $subunits = $args->{subunits};
     my $hash = {
         modelReactionProteinSubunits => $subunits,
         complex_uuid => $self->uuid,
