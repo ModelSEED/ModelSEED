@@ -22,6 +22,7 @@ my $graphConfig = {
     Model                 => [1000, [qw(FBAFormulation GapfillingFormulation)] ],
     GapfillingFormulation => [1000],
     FBAFormulation        => [1000],
+    Annotation            => [1000],
 };
 foreach my $graph (keys %$graphConfig) {
     my $depth = $graphConfig->{$graph}->[0] || 0;
@@ -41,6 +42,7 @@ foreach my $object (sort keys %$defs) {
 my @order = qw(
   Biochemistry Compound Compartment Media MediaCompound Reaction Reagent AliasSet {Biochemistry}
   Mapping Role Complex {Mapping}
+  Annotation {Annotation}
   FBAFormulation {FBAFormulation}
   GapfillingFormulation {GapfillingFormulation}
   Model {Model}
