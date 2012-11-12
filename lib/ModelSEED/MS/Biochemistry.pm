@@ -536,7 +536,6 @@ sub addReactionFromHash {
 	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
         $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
         $arguments->{abbreviation} = [$arguments->{id}->[0]] unless defined $arguments->{abbreviation};
-
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reaciontIDaliasType});
 	if (defined($rxn)) {
