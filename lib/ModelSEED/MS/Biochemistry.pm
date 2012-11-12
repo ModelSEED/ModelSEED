@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
-use ModelSEED::utilities qw ( args );
+use ModelSEED::utilities qw ( args verbose );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -53,69 +53,57 @@ sub _buildreactionRoleHash {
 	return $hash;
 }
 
-#***********************************************************************************************************
-# CONSTANTS:
-#***********************************************************************************************************
-
-#***********************************************************************************************************
-# FUNCTIONS:
-#***********************************************************************************************************
-
 =head3 printDBFiles
 
-Definition:
-	void ModelSEED::MS::Biochemistry->printDBFiles({
-		forceprint => 0
-	});
-Description:
-	Creates files with biochemistry data for use by the MFAToolkit
+	$biochemistry->printDBFiles(
+		forceprint => boolean,
+        directory  => string,
+	);
+
+Creates files with biochemistry data for use by the MFAToolkit.
+C<forceprint> is a boolean which, if true, will cause the function
+to always print the files, overwriting existing files if they exist.
+C<directory> is the directory to save the tables into.
 
 =cut
 
 sub printDBFiles {
     my $self = shift;
-    my $args = args([],{ forceprint => 0 }, @_);
-	my $path = $self->dataDirectory()."/fbafiles/";
-	if (!-d $path) {
-		File::Path::mkpath ($path);
-	}
-	if (-e $path.$self->uuid()."-compounds.tbl" && $args->{forceprint} eq "0") {
-		return;	
-	}
-	my $output = ["abbrev	charge	deltaG	deltaGErr	formula	id	mass	name"];
-	my $columns = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
-	my $cpds = $self->compounds();
-	for (my $i=0; $i < @{$cpds}; $i++) {
-		my $cpd = $cpds->[$i];
-		my $line = "";
-		foreach my $column (@{$columns}) {
-			if (length($line) > 0) {
-				$line .= "\t";
-			}
-			if (defined($cpd->$column())) {
-				$line .= $cpd->$column();
-			}
-		}
-		push(@{$output},$line);
-	}
-	ModelSEED::utilities::PRINTFILE($path.$self->uuid()."-compounds.tbl",$output);
-	$output = ["abbrev	deltaG	deltaGErr	equation	id	name	reversibility	status	thermoReversibility"];
-	$columns = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","thermoReversibility"];
-	my $rxns = $self->reactions();
-	for (my $i=0; $i < @{$rxns}; $i++) {
-		my $rxn = $rxns->[$i];
-		my $line = "";
-		foreach my $column (@{$columns}) {
-			if (length($line) > 0) {
-				$line .= "\t";
-			}
-			if (defined($rxn->$column())) {
-				$line .= $rxn->$column();
-			}
-		}
-		push(@{$output},$line);
-	}
-	ModelSEED::utilities::PRINTFILE($path.$self->uuid()."-reactions.tbl",$output);
+    my $args = args([],{
+        forceprint => 0,
+        directory  => $self->dataDirectory."/fbafiles/",
+    }, @_);
+    my $path = $args->{directory};
+    File::Path::mkpath($path) unless(-d $path);
+    my $print_table = sub {
+        my ($filename, $header, $attributes, $objects) = @_;
+        open(my $fh, ">", $filename) || die "Could not open $filename: $!";
+        print $fh join("\t", @$header) . "\n";
+        foreach my $object (@$objects) {
+            my @line;
+            foreach my $attr (@$attributes) {
+                my $value = $object->$attr();
+                $value = "" unless defined $value;
+                push(@line, $value);
+            }
+            print $fh join("\t", @line) . "\n";
+        }
+        close $fh;
+    };
+    my $compound_filename = $path.$self->uuid."-compounds.tbl";
+    if (!-e $compound_filename || $args->{forceprint}) {
+        my $header      = [ qw(abbrev charge deltaG deltaGErr formula id mass name) ];
+        my $attributes  = [ qw(abbreviation defaultCharge deltaG deltaGErr formula id mass name) ];
+        my $compounds   = $self->compounds;
+        $print_table->($compound_filename, $header, $attributes, $compounds);
+    }
+    my $reaction_filename = $path.$self->uuid."-reactions.tbl";
+    if (!-e $reaction_filename || $args->{forceprint}) {
+        my $header      = [ qw(abbrev deltaG deltaGErr equation id name reversibility status thermoReversibility) ];
+        my $attributes  = [ qw(abbreviation deltaG deltaGErr equation id name direction status thermoReversibility) ];
+        my $reactions   = $self->reactions;
+        $print_table->($reaction_filename, $header, $attributes, $reactions);
+    }
 }
 
 =head3 makeDBModel
@@ -202,6 +190,30 @@ sub makeDBModel {
 		}
 	}
 	return $mdl;
+}
+
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::Biochemistry->export({
+		format => optfluxmedia/readable/html/json
+	});
+Description:
+	Exports biochemistry data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
 }
 
 =head3 findCreateEquivalentCompartment
@@ -369,96 +381,79 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-    my ($self,$args,$mergeto) = @_;
-
-    # Remove names that are too long
-    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
-    # In case all the names were too long, use the id as the name
-    push(@{$args->names}, $args->{id}->[0]) unless(@{$args->{names}});
-
-    $args = ModelSEED::utilities::ARGS($args,["names","id"],{
-	aliasType => $self->defaultNameSpace(),
-	abbreviation => [$args->{names}->[0]],
-	formula => ["unknown"],
-	mass => [10000000],
-	charge => [10000000],
-	deltag => [10000000],
-	deltagerr => [10000000]
-				       });
-
+	my ($self,$arguments) = @_;
+    $arguments = args(["names","id"],{
+		namespace => $self->defaultNameSpace(),
+        matchbyname => 1,
+        mergeto => [],
+		abbreviation => undef,
+		formula => ["unknown"],
+		mass => [10000000],
+		charge => [10000000],
+		deltag => [10000000],
+		deltagerr => [10000000]
+	}, $arguments);
+	# Remove names that are too long
+	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
+    push(@{$arguments->names}, $arguments->{id}->[0]) unless(@{$arguments->{names}});
+    $arguments->{abbreviation} = [$arguments->{names}->[0]] unless defined $arguments->{abbreviation};
 	# Checking for id uniqueness within scope of own aliasType
-	my $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$args->{aliasType});
+	my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
 	if (defined($cpd)) {
-	    ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType});
-	    if(defined($mergeto) && !$cpd->getAlias($mergeto)){
-		$self->addAlias({ attribute => "compounds",
-				  aliasName => $mergeto,
-				  alias => $args->{id}->[0],
-				  uuid => $cpd->uuid()
-				});
-	    }
-	    return $cpd;
+	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
+		return $cpd;
 	}
 	# Checking for id uniqueness within scope of another aliasType, if passed
-	if($mergeto){
-	    $cpd = $self->getObjectByAlias("compounds",$args->{id}->[0],$mergeto);
-	    if (defined($cpd)) {
-		ModelSEED::utilities::verbose("Compound found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
-		#Alias needs to be created for original namespace if found in different namespace
-		$self->addAlias({
-		    attribute => "compounds",
-		    aliasName => $args->{aliasType},
-		    alias => $args->{id}->[0],
-		    uuid => $cpd->uuid()
-				});
-		return $cpd;
-	    }
+	foreach my $aliasType (@{$arguments->{mergeto}}) {
+		$cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$aliasType);
+		if (defined($cpd)) {
+		    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+		    $self->addAlias({
+				attribute => "compounds",
+				aliasName => $arguments->{namespace},
+				alias => $arguments->{id}->[0],
+				uuid => $cpd->uuid()
+			});
+			return $cpd;
+		}
 	}
-	# Disabled, attempting to check names ahead of chemical structure is not recommended
-	# For metabolic models, every compound is assumed to be unique anyway
-	# Checking for name uniqueness
-	#foreach my $name (@{$args->{names}}) {
-	#	my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
-	#	$cpd = $self->queryObject("compounds",{searchnames => $name});
-	#	if (defined($cpd)) {
-	#		print STDERR "Compound added with matching name ".$name."!\n";
-	#		$self->addAlias({
-	#			attribute => "compounds",
-	#			aliasName => $args->{aliasType},
-	#			alias => $args->{id}->[0],
-	#			uuid => $cpd->uuid()
-	#		});
-	#		return $cpd;
-	#	}
-	#}
-
+	#Checking for match by name if requested
+	if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
+		foreach my $name (@{$arguments->{names}}) {
+			my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
+			$cpd = $self->queryObject("compounds",{searchnames => $name});
+			if (defined($cpd)) {
+				verbose("Compound matched based on name ".$name);
+				$self->addAlias({
+					attribute => "compounds",
+					aliasName => $arguments->{namespace},
+					alias => $arguments->{id}->[0],
+					uuid => $cpd->uuid()
+				});
+				return $cpd;
+			}
+		}
+	}
 	# Actually creating compound
+	verbose("Creating compound ".$arguments->{id}->[0]);
 	$cpd = $self->add("compounds",{
-		name => $args->{names}->[0],
-		abbreviation => $args->{abbreviation}->[0],
-		formula => $args->{formula}->[0],
-		mass => $args->{mass}->[0],
-		defaultCharge => $args->{charge}->[0],
-		deltaG => $args->{deltag}->[0],
-		deltaGErr => $args->{deltagerr}->[0]
+		name => $arguments->{names}->[0],
+		abbreviation => $arguments->{abbreviation}->[0],
+		formula => $arguments->{formula}->[0],
+		mass => $arguments->{mass}->[0],
+		defaultCharge => $arguments->{charge}->[0],
+		deltaG => $arguments->{deltag}->[0],
+		deltaGErr => $arguments->{deltagerr}->[0]
 	});
 	# Adding id as alias
 	$self->addAlias({
 		attribute => "compounds",
-		aliasName => $args->{aliasType},
-		alias => $args->{id}->[0],
+		aliasName => $arguments->{namespace},
+		alias => $arguments->{id}->[0],
 		uuid => $cpd->uuid()
 	});
-	if(defined($mergeto)){
-	    $self->addAlias({
-		attribute => "compounds",
-		aliasName => $mergeto,
-		alias => $args->{id}->[0],
-		uuid => $cpd->uuid()
-			    });
-	}
 	# Adding alternative names as aliases
-	foreach my $name (@{$args->{names}}) {
+	foreach my $name (@{$arguments->{names}}) {
 		$self->addAlias({
 			attribute => "compounds",
 			aliasName => "name",
@@ -480,26 +475,23 @@ Description:
 
 sub addReactionFromHash {
     my ($self,$args,$mergeto) = @_;
-
-    # Remove names that are too long
-    $args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
-    # In case all the names were too long, use the id as the name
-    push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
-
-    $args = ModelSEED::utilities::ARGS($args,["equation","id"],{
-	aliasType => $self->defaultNameSpace(),
-	names => [$args->{id}->[0]],
-	abbreviation => [$args->{id}->[0]],
-	direction => ["="],
-	deltag => [10000000],
-	deltagerr => [10000000],
-	enzymes => []
-				       });
-
+	$args = args(["equation","id"], {
+		names => undef,
+		equationAliasType => $self->defaultNameSpace(),
+		reaciontIDaliasType    => $self->defaultNameSpace(),
+		direction => ["="],
+		deltag => [10000000],
+		deltagerr => [10000000],
+		enzymes => []
+	}, $args);
+    $args->{names} = [$args->{id}->[0]] unless defined $args->{names};
+    $args->{abbreviation} = [$args->{id}->[0]] unless defined $args->{abbreviation};
+	$args->{names} = [ grep { length($_) < 255 } @{$args->{names}} ];
+	push(@{$args->{names}}, $args->{id}->[0]) unless @{$args->{names}};
 	#Checking for id uniqueness
-	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{aliasType});
+	my $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$args->{reaciontIDaliasType});
 	if (defined($rxn)) {
-		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{aliasType}."\n");
+		verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$args->{reaciontIDaliasType});
 		if(defined($mergeto) && !$rxn->getAlias($mergeto)){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $mergeto,
@@ -514,15 +506,15 @@ sub addReactionFromHash {
 	if($mergeto){
 	    $rxn = $self->getObjectByAlias("reactions",$args->{id}->[0],$mergeto);
 	    if( defined($rxn) ){
-		ModelSEED::utilities::verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto."\n");
-		#Alias needs to be created for original namespace if found in different namespace
-		$self->addAlias({
-		    attribute => "reactions",
-		    aliasName => $args->{aliasType},
-		    alias => $args->{id}->[0],
-		    uuid => $rxn->uuid()
-				});
-		return $rxn;
+			verbose("Reaction found with matching id ".$args->{id}->[0]." for namespace ".$mergeto);
+			#Alias needs to be created for original namespace if found in different namespace
+			$self->addAlias({
+			    attribute => "reactions",
+			    aliasName => $args->{reaciontIDaliasType},
+			    alias => $args->{id}->[0],
+			    uuid => $rxn->uuid()
+			});
+			return $rxn;
 	    }
 	}
 	# Creating reaction from equation
@@ -539,34 +531,33 @@ sub addReactionFromHash {
 	$rxn->parent($self);
 
 	# Parse the equation string to finish defining the reaction object
-    my $noduplicates = $rxn->loadFromEquation({equation => $args->{equation}->[0],
-					       aliasType => $args->{aliasType},
-					      });
-
-    if(!$noduplicates){
-	ModelSEED::utilities::verbose("Reaction ".$args->{id}->[0]." was rejected on account of their being duplicates"."\n");
-	return undef;
-    }
-
-    # Generate equation search string and check to see if reaction not already in database
-    my $searchRxn = $self->checkForDuplicateReaction($rxn);
-    if (defined($searchRxn)){
-
-	# Check to see if searchRxn has alias from same namespace
-	my $alias = $searchRxn->getAlias($args->{aliasType});
-	my $aliasSetName=$args->{aliasType};
-	# If not, need to find any alias to use (avoiding names for now)
-	if(!$alias){
-	    foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
-		$aliasSetName=$set->name();
-		$alias=$searchRxn->getAlias($aliasSetName);
-		last if $alias;
-	    }
-	    # Fall back onto name
+	# a return of zero indicates that the reaction was rejected
+	if(!$rxn->loadFromEquation({
+	    equation => $args->{equation}->[0],
+	    aliasType => $args->{equationAliasType},
+	})) {
+	    verbose("Reaction ".$args->{id}->[0]." was rejected");
+	    return undef;
+	}
+	# Generate equation search string and check to see if reaction not already in database
+	my $code = $rxn->equationCode();
+	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
+	if (defined($searchRxn)) {
+	    # Check to see if searchRxn has alias from same namespace
+	    my $alias = $searchRxn->getAlias($args->{reaciontIDaliasType});
+	    my $aliasSetName=$args->{reaciontIDaliasType};
+	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
 		$alias=$searchRxn->name();
 		$aliasSetName="could not find ID";
 	    }
+	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]);
+	    $self->addAlias({ attribute => "reactions",
+			      aliasName => $args->{reaciontIDaliasType},
+			      alias => $args->{id}->[0],
+			      uuid => $searchRxn->uuid()
+			    });
+	    return $searchRxn;
 	}
 	ModelSEED::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$args->{id}->[0]."\n");
 	$self->addAlias({ attribute => "reactions",
@@ -581,7 +572,7 @@ sub addReactionFromHash {
 	$self->add("reactions", $rxn);
 	$self->addAlias({
 		attribute => "reactions",
-		aliasName => $args->{aliasType},
+		aliasName => $args->{reaciontIDaliasType},
 		alias => $args->{id}->[0],
 		uuid => $rxn->uuid()
 	});

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ################################################################################
 #                                                                              # 
 #       dev-env.sh - Source this script for ModelSEED development              #
@@ -24,7 +24,9 @@ env_push() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIR="$( cd $SCRIPT_DIR/../ && pwd)"
 env_push PERL5LIB $DIR/lib;
+env_push PERL5LIB $DIR/kbase
 env_push PATH $SCRIPT_DIR
 export PERL5LIB
 export PATH;
 export MODEL_SEED_CORE=$DIR;
+. setup-bash-complete

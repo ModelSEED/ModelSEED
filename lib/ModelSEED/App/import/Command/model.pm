@@ -38,7 +38,7 @@ END
 
 sub opt_spec {
     return (
-        ["list:s", "List models that are available to import from a source"], 
+        ["list|l", "List models that are available to import from a source"], 
         ["source:s", "Source to import from, default is 'model-seed'"],
         ["annotation|a=s", "Annotation to use when importing the model"],
         ["store|s:s", "Identify which store to save the model to"],
@@ -65,10 +65,6 @@ sub execute {
     } else {
         $store = ModelSEED::Store->new(auth => $auth);
     }
-    # If we're doing a listing, take the source from that 
-    if(defined($opts->{list})) {
-        $opts->{source} = $opts->{list};
-    }
     # Set source to 'model-seed' if it isn't defined
     $opts->{source} = 'model-seed' unless defined $opts->{source};
     my ($factory);
@@ -77,35 +73,16 @@ sub execute {
             auth => $auth,
             store => $store
         );
-    } elsif($opts->{source} eq 'local') {
-	die "Error: Cannot import from local database in new system";
-        # my $figmodel = ModelSEED::FIGMODEL->new();
-        # if($auth->isa("ModelSEED::Auth::Basic")) {
-        #     $figmodel->authenticate({
-        #         username => $auth->username,
-        #         password => $auth->password
-        #     });
-        # }
-        # $factory = ModelSEED::MS::Factories::PPOFactory->new(
-        #     figmodel => $figmodel,
-        #     namespace => $auth->username,
-        # );
     } else {
-        die "Unknown source: " . $opts->{source} . "\n";
+        die "Unknown source: " . $opts->{source} . "\n" .
+        "Available sources: 'model-seed'\n";
     }
     # If we just want the list, print and exit
-    if($opts->{list}) {
-        if($opts->{source} eq 'model-seed') {
-            my $ids = $factory->listAvailableModels();
-            print join("\n", @$ids);
-            print "\n" if(@$ids);
-            return;
-        } elsif($opts->{source} eq 'local') {
-            my $mdls = $factory->figmodel->database->get_objects("model");
-            print join("\n", map { $_->id() } @$mdls );
-            print "\n" if(@$mdls);
-            return;
-        }
+    if($opts->{list} && $opts->{source} eq 'model-seed') {
+        my $ids = $factory->listAvailableModels();
+        print join("\n", @$ids);
+        print "\n" if(@$ids);
+        return;
     }
     # Now actual import stuff
     my ($id, $model_alias) = @$args;

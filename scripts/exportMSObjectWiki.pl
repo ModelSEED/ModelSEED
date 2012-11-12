@@ -9,7 +9,8 @@ use Data::Dumper;
 my $usage = <<HEREDOC;
 exportMSObjectWiki export/directory
 
-Generates documentation for MS objects.
+Generates documentation for MS objects. export/directory
+is the path to the ModelSEED-wiki.git repository.
 HEREDOC
 my $dest   = shift @ARGV;
 die $usage unless(defined($dest) && -d $dest);
@@ -37,7 +38,7 @@ foreach my $object (sort keys %$defs) {
 }
 # Now format the document, proceeding in a specific order and including
 # a top-level section that we explicitly define here. Note that for @order,
-# The string {Type} implies all the remaining subobjects of Type
+# the string {Type} implies all the remaining subobjects of Type
 my @order = qw(
   Biochemistry Compound Compartment Media MediaCompound Reaction Reagent AliasSet {Biochemistry}
   Mapping Role Complex {Mapping}
@@ -45,6 +46,8 @@ my @order = qw(
   GapfillingFormulation {GapfillingFormulation}
   Model {Model}
 );
+
+# This is the top of the document, so we put some general stuff up here
 my $markdown = <<HEAD;
 Object Definitions
 ==================
@@ -110,6 +113,9 @@ fetch and save a provenence object with it's associated sub-objects.
 
 
 HEAD
+
+# Now proceed through each section, checking for the {Section} tag
+# and build the section, with the remaining children if we have to
 my $done_sections = {};
 foreach my $type (@order) {
     if ($type =~ /{(.*)}/) {
@@ -124,6 +130,9 @@ foreach my $type (@order) {
     }
 }
 
+# Given the $type, object definitions and the done sections,
+# a hash of type => bool, return the remaining children of
+# the object $type
 sub _remainingChildren {
     my ($type, $defs, $done_sections) = @_;
     my @remaining;
@@ -138,6 +147,10 @@ sub _remainingChildren {
     return @remaining;
 }
 
+# Build the section for the object of type $type
+# graphConfig is a hash of $type => stuff and for
+# the purposes of this function simply indicates that we
+# need to add a graph PNG image to this section.
 sub buildSection {
     my ($defs, $type, $graphConfig) = @_;
     my $graphPlaceholder = "";
@@ -162,6 +175,8 @@ open(my $fh, ">", "$dest/Object-Definitions.md");
 print $fh $markdown;
 close($fh);
 
+# Constructs a table for the object of $type_name using
+# the definitions
 sub _build_table_and_description {
     my ($defs, $type_name) = @_;
     my $type = $defs->{$type_name};
@@ -202,6 +217,7 @@ sub _build_table_and_description {
     return $description . "\n" . $table;
 }
 
+# Given a ModelSEED::Table object, generate an HTML table for it...
 sub generate_html_table {
     my ($table) = @_;
     my $tableHeader = "<tr>". join("", map { "<th>".$_."</th>" } @{$table->columns}) . "</tr>";
@@ -258,8 +274,10 @@ sub _get_linked_object_type {
 #
 #  - buildGraph("Biochemistry", 10, [])
 #    This function constructs the graph for $targetObject.
-#    $depth is the maximum depth.
-#    $exclude is a list of objects to ignore.
+#    $depth is the maximum depth to traverse away from the $targetObject.
+#    $exclude is a list of objects to ignore and not traverse, where each
+#    object is just the string name of the class, e.g. Biochemistry for
+#    ModelSEED::MS::Biochemistry
 sub buildGraph {
     my ($defs, $dest, $targetObject, $depth, $exclude) = @_;
     my $graph = _build_subgraph($defs, $targetObject, $depth, $exclude);
@@ -273,18 +291,34 @@ sub buildGraph {
 }
 #  - _build_subgraph $defs, $object, $depth, $exclude
 #    Recursivly build and return the graph object.
+#    A graph object has the following structure:
+#    {
+#       "Biochemistry" => [
+#           { v => "Compound", d => "Subobject" },
+#           { v => "Reaction", d => "Subobject" },
+#       ],
+#       "Compound" => [ ... ]
+#    }
+#    Essentially each node is a top-level key-string with
+#    an array of edges to other nodes, 'v' attribute. Each
+#    edge has a type, the 'd' attribute.
 sub _build_subgraph {
     my ($defs, $object, $depth, $exclude) = @_;
     $exclude = [] unless defined $exclude;
     $exclude = { map { $_ => 1 } @$exclude };
     $depth = 0 unless defined $depth;
     my $graph = {};
+    # First add all of the links to the graph for this
+    # object. Links are labeld with d => "link"
     foreach my $link (@{$defs->{$object}->{links}}) {
         my $class = _get_linked_object_type($defs, $link);
         next unless defined $class;
         next if defined $exclude->{$class};
         push(@{$graph->{$object}}, { v => $class, d => "link" });
     }
+    # Now add an edge between this object and each subobject;
+    # and recurse into the subobject, constructing the subgraph and
+    # merging it with this one.
     foreach my $subo (@{$defs->{$object}->{subobjects}}) {
         my $class = $subo->{class};
         next unless defined $class;
@@ -317,6 +351,7 @@ sub _build_dotstring {
     $nodes = join("\n", @$nodes);
     return "digraph G {\n$nodes\n}\n";
 }
+# Merges a graph hash structure { k => [] }
 sub _merge_hash {
     my ($a, $b) = @_;
     foreach my $k (keys %$b) {

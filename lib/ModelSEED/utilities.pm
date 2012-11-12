@@ -7,7 +7,7 @@ use File::Temp qw(tempfile);
 use File::Path;
 use File::Copy::Recursive;
 use parent qw( Exporter );
-our @EXPORT_OK = qw( args usage error verbose set_verbose);
+our @EXPORT_OK = qw( args usage error verbose set_verbose translateArrayOptions );
 our $VERBOSE = undef; # A GLOB Reference to print verbose() calls to, or undef.
 
 =head1 ModelSEED::utilities
@@ -74,10 +74,10 @@ verbose flag is set. Otherwise it returns undef.
 
 sub set_verbose {
     my $val = shift;
-    if(defined $val && $val == 1) {
-        $VERBOSE = \*STDERR;
-    } elsif(defined $val && ref $val eq 'GLOB') {
+    if(defined $val && ref $val eq 'GLOB') {
         $VERBOSE = $val;
+    } elsif(defined $val && $val eq 1) {
+        $VERBOSE = \*STDERR;
     } else {
         $VERBOSE = undef;
     }
@@ -492,6 +492,38 @@ sub parseArrayString {
 	my $delim = $args->{delimiter};
 	if ($args->{string} ne "none") {
 		$output = [split(/$delim/,$args->{string})];
+	}
+	return $output;
+}
+
+=head3 translateArrayOptions
+
+Definition:
+	string = ModelSEED::utilities::translateArrayOptions({
+		option => string|[],
+		delimiter => string:|
+	});
+Description:
+	Parses argument options into array
+Example:
+
+=cut
+
+sub translateArrayOptions {
+	my ($args) = @_;
+	$args = ModelSEED::utilities::ARGS($args,["option"],{
+		delimiter => "|"
+	});
+	if ($args->{delimiter} eq "|") {
+		$args->{delimiter} = "\\|";
+	}
+	my $output = [];
+	if (ref($args->{option}) eq "ARRAY") {
+		foreach my $item (@{$args->{option}}) {
+			push(@{$output},[split($args->{delimiter},$item)]);
+		}
+	} else {
+		$output = [split($args->{delimiter},$args->{option})];
 	}
 	return $output;
 }

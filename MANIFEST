@@ -1,4 +1,6 @@
-lib/Bio/KBase/CDMI/Client.pm
+kbase/Bio/KBase/CDMI/Client.pm
+kbase/Bio/KBase/fbaModel/Data.pm
+lib/Bash/Completion/Plugins/ModelSEED.pm
 lib/ModelSEED/App/bio.pm
 lib/ModelSEED/App/bio/Command/addcpd.pm
 lib/ModelSEED/App/bio/Command/addcpdtable.pm
@@ -33,6 +35,7 @@ lib/ModelSEED/App/model/Command/calcdistances.pm
 lib/ModelSEED/App/model/Command/gapfill.pm
 lib/ModelSEED/App/model/Command/gapgen.pm
 lib/ModelSEED/App/model/Command/genome.pm
+lib/ModelSEED/App/model/Command/managesol.pm
 lib/ModelSEED/App/model/Command/readable.pm
 lib/ModelSEED/App/model/Command/runfba.pm
 lib/ModelSEED/App/model/Command/sbml.pm
@@ -68,6 +71,7 @@ lib/ModelSEED/Auth.pm
 lib/ModelSEED/Auth/Basic.pm
 lib/ModelSEED/Auth/Factory.pm
 lib/ModelSEED/Auth/Public.pm
+lib/ModelSEED/Bash/Completion/Rules.pm
 lib/ModelSEED/Client/FBAMODEL.pm
 lib/ModelSEED/Client/MSAccountManagement.pm
 lib/ModelSEED/Client/MSSeedSupport.pm
@@ -167,7 +171,6 @@ lib/ModelSEED/MS/DB/SubsystemState.pm
 lib/ModelSEED/MS/DB/UniversalReaction.pm
 lib/ModelSEED/MS/DB/User.pm
 lib/ModelSEED/MS/DB/Variable.pm
-lib/ModelSEED/MS/Environment.pm
 lib/ModelSEED/MS/Factories/Annotation.pm
 lib/ModelSEED/MS/Factories/ExchangeFormatFactory.pm
 lib/ModelSEED/MS/Factories/FBAMODELFactory.pm
@@ -239,6 +242,7 @@ lib/ModelSEED/Solver/FBA/Cluster.pm
 lib/ModelSEED/Solver/FBA/Inline.pm
 lib/ModelSEED/Store.pm
 lib/ModelSEED/Table.pm
+lib/ModelSEED/Test.pm
 lib/ModelSEED/utilities.pm
 lib/ModelSEED/Version.pm
 lib/myRAST/ClientThing.pm
@@ -251,6 +255,7 @@ scripts/delete-old-files.pl
 scripts/diffDirectories.pl
 scripts/exportMSObjectWiki.pl
 scripts/exportPodWiki.pl
+scripts/generateBashCompletionRules.pl
 scripts/generateTablesForKbase.pl
 scripts/ms-create-wiki-docs.pl
 scripts/QuickConvert.pm
@@ -259,6 +264,7 @@ scripts/SetCofactors.pl
 t/Auth/Basic.t
 t/Auth/Factory.t
 t/Auth/Public.t
+t/bash-completion.t
 t/Configuration.t
 t/database/Composite.t
 t/database/FileDB.t

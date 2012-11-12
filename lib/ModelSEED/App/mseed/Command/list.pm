@@ -14,14 +14,28 @@ use base 'App::Cmd::Command';
 
 
 sub abstract { return "List and retrive objects from workspace or datastore."; }
+sub usage_desc { return "ms list [options] ref" }
 sub opt_spec {
     return (
-        ["verbose|v", "Print out additional information about the object, tab-delimited"],
         ["mine", "Only list items that I own"],
         ["with|w:s@", "Append a tab-delimited column with this attribute"],
         ["query|q:s@", "Only list sub objects matching a query"],
         ["help|h|?", "Print this usage information"],
         ["no_ref", "Do not print the reference column (useful for 'with' option)"]
+    );
+}
+sub arg_spec {
+    return (
+        {
+            edges => [],
+            completions => [
+                { "prefix" => "", "options" => [ "biochemistry/", "mapping/", "model/", "annotation/" ] },
+                { "prefix" => "biochemistry/", "cmd" => 'ms list biochemistry' },
+                { "prefix" => "mapping/", "cmd" => 'ms list mapping' },
+                { "prefix" => "model/", "cmd" => 'ms list model' },
+                { "prefix" => "annotation/", "cmd" => 'ms list annotation' },
+            ]
+        }
     );
 }
 
@@ -56,7 +70,7 @@ sub execute {
             $self->printForReferences($refs, $opts, $store);
         } elsif($ref->type eq 'collection' && @{$ref->parent_collections}) {
             # Subobject listing. want a list of ids under subobject
-            my $need_object = (defined($opts->{with}) || defined($opts->{verbose}));
+            my $need_object = defined $opts->{with};
             my $refs;
             if ($need_object) {
                 my $base_object = $store->get_object($ref->parent_objects->[0]);
@@ -121,7 +135,7 @@ sub execute {
 
 sub printForReferences {
     my ($self, $refs, $opts, $store) = @_;
-    my $need_object = (defined($opts->{with}) || defined($opts->{verbose}));
+    my $need_object = defined $opts->{with};
     my $columns = $self->determineColumns($refs->[0], $opts);
     print join("\t", @$columns) . "\n" if (@$columns > 1);
     foreach my $ref (@$refs) {
@@ -150,14 +164,6 @@ sub determineColumns {
     my $with = [ "Reference" ];
     my %with = map { $_ => 1 } @$with;
     push(@$with, split(/,/,join(",",@{$opts->{with} || []})));
-    if ( $opts->{verbose} ) {
-        # If we asked for verbose, print out some default attributes
-        my $additional_with = $self->verboseRules($type);
-        foreach my $attr (@$additional_with) {
-            # Append attributes unless we've already specified them
-            push(@$with, $attr) unless defined $with{$attr};
-        }
-    }
     return $with;
 }
 
