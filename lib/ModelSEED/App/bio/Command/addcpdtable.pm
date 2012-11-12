@@ -26,8 +26,10 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
+
+    $self->usage_error("Must specify a biochemistry to use") unless $args->[0];
     my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
-    $self->usage_error("Must specify a biochemistry to use") unless(defined($biochemistry));
+    $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
     $self->usage_error("Must specify a valid filename for compound table") unless(defined($args->[1]) && -e $args->[1]);
     #verbosity
     set_verbose(1) if $opts->{verbose};
@@ -46,6 +48,24 @@ sub execute {
 	    	delimiter => ","
 	    });
 	}
+
+    #creating namespaces if they don't exist
+    if(!$biochemistry->queryObject("aliasSets",{name => $opts->{namespace},attribute=>"compounds"})){
+	$biochemistry->add("aliasSets",{
+	    name => $opts->{namespace},
+	    source => $opts->{namespace},
+	    attribute => "compounds",
+	    class => "Compound"});
+    }
+    foreach my $merge (@$mergeto){
+	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"compounds"});
+	$biochemistry->add("aliasSets",{
+	    name => $merge,
+	    source => $merge,
+	    attribute => "compounds",
+	    class => "Compound"});
+    }
+
     my $headingTranslation = {
     	name => "names"
     };
