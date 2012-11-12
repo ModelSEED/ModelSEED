@@ -13,10 +13,12 @@ sub usage_desc { return "bio addrxntable [< biochemistry | biochemistry] [filena
 sub opt_spec {
     return (
         ["saveas|a:s", "New alias for altered biochemistry"],
-        ["namespace|n:s", "Name space for aliases added"],
+        ["rxnnamespace|r:s", "Name space for reaction IDs"],
+        ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
         ["autoadd|a","Automatically add any missing compounds to DB"],
         ["mergeto|m:s", "Name space of identifiers used for merging compounds"],
-        ["verbose|v", "Print verbose status information"]
+        ["verbose|v", "Print verbose status information"],
+        ["dry|d", "Perform a dry run; that is, do everything but saving"],
     );
 }
 
@@ -36,13 +38,13 @@ sub execute {
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
 
     #set namespace
-    if (!defined($opts->{namespace})) {
-    $opts->{namespace} = $args->[0];
-    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
+    if (!defined($opts->{rxnnamespace})) {
+    $opts->{rxnnamespace} = $args->[0];
+    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
     } 
 
     #creating namespaces if they don't exist
-    if(!$biochemistry->queryObject("aliasSets",{name => $opts->{namespace},attribute=>"reactions"})){
+    if(!$biochemistry->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
     $biochemistry->add("aliasSets",{
         name => $opts->{namespace},
         source => $opts->{namespace},
@@ -56,17 +58,19 @@ sub execute {
         attribute => "reactions",
         class => "Reaction"});
     }
-
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
-        my $rxnData = {aliasType => $opts->{namespace}};
+        my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}};
+        if (defined($opts->{cpdnamespace})) {
+        	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
+        }
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
             if ($heading =~ /names?/ || $heading =~ /enzymes?/) {
-            $heading="names" if $heading eq "name";
-            $heading="enzymes" if $heading eq "enzyme";
-            $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+	            $heading="names" if $heading eq "name";
+	            $heading="enzymes" if $heading eq "enzyme";
+	            $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
             } else {
-            $rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+           		$rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
             }
         }
         my $rxn = $biochemistry->addReactionFromHash($rxnData,$opts->{mergeto});
@@ -75,8 +79,8 @@ sub execute {
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
         verbose "Saving biochemistry with new reactions as ".$ref."...\n";
-    $store->save_object($ref,$biochemistry);
-    } else {
+    	$store->save_object($ref,$biochemistry);
+    } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
         verbose "Saving over original biochemistry with new reactions...\n";
         $store->save_object($ref,$biochemistry);
     }

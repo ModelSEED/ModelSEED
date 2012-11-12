@@ -201,7 +201,7 @@ sub toJSON {
     my $data = $self->serializeToDB();
     my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
-    return $JSON->encode($data)
+    return $JSON->encode($data);
 }
 
 ######################################################################
@@ -640,9 +640,10 @@ sub removeLinkArrayItem {
 			if ($data->[$i] eq $object->uuid()) {
 				verbose("Removing object from link array.");
 				if (@{$data} == 1) {
-					$data = [];
+					$self->$method([]);
 				} else {
 					splice(@{$data},$i,1);
+					$self->$method($data);
 				}
 				my $clearer = "clear_".$link;
 				$self->$clearer();

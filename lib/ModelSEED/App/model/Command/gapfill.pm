@@ -19,6 +19,7 @@ sub opt_spec {
         ["media:s","Media formulation to be used for the FBA simulation"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
         ["objective:s","String describing the objective of the FBA problem"],
+        ["numsolutions|n:s","Number of solutions desired"],
         ["nomediahyp","Set this flag to turn off media hypothesis"],
         ["nobiomasshyp","Set this flag to turn off biomass hypothesis"],
         ["nogprhyp","Set this flag to turn off GPR hypothesis"],
@@ -78,12 +79,13 @@ sub execute {
         notes            => "notes",
         objfraction      => "objectiveConstraintFraction",
         objective        => "objectiveString",
-        rxnko            => "geneKO",
-        geneko           => "reactionKO",
+        geneko           => "geneKO",
+        rxnko            => "reactionKO",
         uptakelim        => "uptakeLimits",
         defaultmaxflux   => "defaultMaxFlux",
         defaultmaxuptake => "defaultMaxDrainFlux",
-        defaultminuptake => "defaultMinDrainFlux"
+        defaultminuptake => "defaultMinDrainFlux",
+        numsolutions	 => "numberOfSolutions"
     };
     my $overrideList = {
         nomediahyp      => "!mediaHypothesis",

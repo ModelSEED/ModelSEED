@@ -233,7 +233,7 @@ around BUILDARGS => sub {
                 }
             }
         }
-        if (!defined($ref) ** defined($args->{type})) {
+        if (!defined($ref) && defined($args->{type})) {
             $ref .= $args->{type} . $delimiter;
             if (defined($args->{uuid})) {
                  $ref .= $args->{uuid};
