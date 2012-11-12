@@ -42,6 +42,7 @@ use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biomass';
 has definition => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_definition' );
+has modelequation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_modelequation' );
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equation' );
 has equationCode => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equationcode' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_mapped_uuid' );
@@ -65,6 +66,8 @@ sub _equation_builder {
         if ($args->{format} eq "name" || $args->{format} eq "id") {
             my $function = $args->{format};
             $id = $cpds->[$i]->modelcompound()->compound()->$function();
+        } elsif ($args->{format} eq "modelid") {
+        	$id = $cpds->[$i]->modelcompound()->id();
         } elsif ($args->{format} ne "uuid") {
             $id = $cpds->[$i]->modelcompound()->compound()->getAlias($args->{format});
         }
@@ -81,7 +84,7 @@ sub _equation_builder {
         my $indecies = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
         for (my $j=0; $j < @{$indecies}; $j++) {
             my $compartment = "";
-            if ($indecies->[$j] ne "c0") {
+            if ($indecies->[$j] ne "c0" && $args->{format} ne "modelid") {
                 $compartment = "[".$indecies->[$j]."]";
             }
             if ($rgtHash->{$sortedCpd->[$i]}->{$indecies->[$j]} < 0) {
@@ -227,6 +230,11 @@ sub _build_definition {
 sub _build_equation {
     my ($self) = @_;
     return $self->_equation_builder({format=>"id",hashed=>0});
+}
+
+sub _build_modelequation {
+    my ($self) = @_;
+    return $self->_equation_builder({format=>"modelid",hashed=>0});
 }
 
 sub _build_equationcode {

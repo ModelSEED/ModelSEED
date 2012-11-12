@@ -19,7 +19,7 @@ sub opt_spec {
         ["gapfillonly|f","Only show gapfilling solutions"],
         ["gapfgenonly|g","Only show gapgeneration solutions"],
         ["solution|s=s", "Solution to be integrated"],
-        ["deletesol|d=s", "Formulation or solution to be deleted"],
+        ["deletesol|e=s", "Formulation or solution to be deleted"],
         ["cleargapgen", "Clear all unintegrated gapgen formulations"],
         ["cleargapfill", "Clear all unintegrated gapfilling formulations"],
         ["saveas|a:s", "New name the model should be saved to"],

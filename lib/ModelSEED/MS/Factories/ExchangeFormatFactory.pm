@@ -6,9 +6,9 @@
 # Date of module creation: 2012-03-15T16:44:01
 ########################################################################
 use strict;
-use ModelSEED::utilities;
 use Data::Dumper;
 package ModelSEED::MS::Factories::ExchangeFormatFactory;
+use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use Moose;
 use namespace::autoclean;
 use Class::Autouse qw(
