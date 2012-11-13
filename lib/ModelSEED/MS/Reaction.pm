@@ -64,6 +64,7 @@ sub _buildroles {
 	}
 	return [];
 }
+
 sub _buildisTransport {
 	my ($self) = @_;
 	my $rgts = $self->reagents();
@@ -86,6 +87,28 @@ sub _buildisTransport {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
+=head3 hasReagent
+Definition:
+	boolean = ModelSEED::MS::Reaction->hasReagent(string(uuid));
+Description:
+	Checks to see if a reaction contains a reagent
+
+=cut
+
+sub hasReagent {
+    my ($self,$rgt_uuid) = @_;
+    my $rgts = $self->reagents();
+    if (!defined($rgts->[0])) {
+	return 0;	
+    }
+    for (my $i=0; $i < @{$rgts}; $i++) {
+	if ($rgts->[0]->compound_uuid() eq $rgt_uuid) {
+	    return 1;
+	}
+    }
+    return 0;
+}
 
 =head3 createEquation
 Definition:
@@ -373,6 +396,20 @@ sub checkReactionMassChargeBalance {
 	}
 	$self->status($status);
 	return $results;
+}
+
+sub checkForDuplicateReagents{
+    my $self=shift;
+    my %cpdCmpCount=();
+    foreach my $rgt (@{$self->reagents()}){
+	$cpdCmpCount{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+    }
+
+    if(scalar( grep { $cpdCmpCount{$_} >1 } keys %cpdCmpCount)>0){
+	return 1;
+    }else{
+	return 0;
+    }
 }
 
 __PACKAGE__->meta->make_immutable;

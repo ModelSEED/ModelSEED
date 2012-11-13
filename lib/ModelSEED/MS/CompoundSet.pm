@@ -11,10 +11,36 @@ package ModelSEED::MS::CompoundSet;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::CompoundSet';
+#***********************************************************************************************************
+# ADDITIONAL ATTRIBUTES:
+#***********************************************************************************************************
+has compoundListString => ( is => 'rw', isa => 'Str',printOrder => '1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompoundListString' );
+
+#***********************************************************************************************************
+# BUILDERS:
+#***********************************************************************************************************
+sub _buildcompoundListString {
+	my ($self) = @_;
+	my $compoundListString = "";
+	my $cpds = $self->compounds();
+	for (my $i=0; $i < @{$cpds}; $i++) {
+		if (length($compoundListString) > 0) {
+			$compoundListString .= ";"	
+		}
+		my $cpd = $cpds->[$i];
+		$compoundListString .= $cpd->compound()->name();
+	}
+	return $compoundListString;
+}
+
+
+#***********************************************************************************************************
 # CONSTANTS:
-#TODO
+#***********************************************************************************************************
+
+#***********************************************************************************************************
 # FUNCTIONS:
-#TODO
+#***********************************************************************************************************
 
 
 __PACKAGE__->meta->make_immutable;
