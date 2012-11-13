@@ -663,6 +663,192 @@ sub addReactionFromHash {
 	return $rxn;
 }
 
+=head3 mergeBiochemistry
+Definition:
+	void mergeBiochemistry(ModelSEED::MS::Biochemistry,{});
+Description:
+	This command merges the input biochemistry into the current biochemistry
+
+=cut
+
+sub mergeBiochemistry {
+    my ($self,$bio,$opts) = @_;
+    my $typelist = [
+	        "cues",
+		"compartments",
+		"compounds",
+		"reactions",
+		"media",
+		"compoundSets",
+		"reactionSets",
+    ];
+    my $types = {
+    	"cues" => "checkForDuplicateCue",
+    	"compartments" => "checkForDuplicateCompartment",
+    	"compounds" => "checkForDuplicateCompound",
+    	"reactions" => "checkForDuplicateReaction",
+    	"media" => "checkForDuplicateMedia",
+    	"compoundSets" => "checkForDuplicateCompoundSet",
+    	"reactionSets" => "checkForDuplicateReactionSet"
+    };
+    foreach my $type (@{$typelist}) {
+    	my $func = $types->{$type};
+    	my $objs = $bio->$type();
+    	my $uuidTranslation = {};
+	verbose("Merging ".scalar(@$objs)." ".$type."\n");
+    	for (my $j=0; $j < @{$objs}; $j++) {
+		    my $obj = $objs->[$j];
+		    my $aliases={};
+		    if(!defined($opts->{noaliastransfer})){
+			foreach my $set ( grep { $_->attribute() eq $type } @{$self->aliasSets()} ){
+			    $aliases->{$set->name()}{$obj->getAlias($set->name())}=1 if $obj->getAlias($set->name());
+			}
+		    }
+		    my $objId = (defined($opts->{namespace}) && defined($aliases->{$opts->{namespace}})) ? (keys %{$aliases->{$opts->{namespace}}})[0] : $obj->id();
+
+		    if ($type eq "reactions") {
+				$obj->parent($self);
+		    }
+
+		    my $dupObj = $self->$func($obj,$opts);
+		    if (defined($dupObj)) {
+				verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObj->id()."\n");
+				foreach my $aliasName (keys %$aliases){
+				    foreach my $alias (keys %{$aliases->{$aliasName}}){
+					$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
+				    }
+				}
+				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
+				$obj->uuid($dupObj->uuid());
+		    } else {
+			foreach my $aliasName (keys %$aliases){
+			    foreach my $alias (keys %{$aliases->{$aliasName}}){
+				$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
+			    }
+			}
+			$self->add($type,$obj);
+		    }
+    	}
+    	$bio->updateLinks($type,$uuidTranslation,1,1);
+    	$bio->_clearIndex();
+    	$self->updateLinks($type,$uuidTranslation,1,1);
+    	$self->_clearIndex();
+    }
+}
+
+=head3 checkForDuplicateAliasSet
+Definition:
+	void checkForDuplicateAliasSet(ModelSEED::MS::AliasSet);
+Description:
+	This command checks if the input aliasSet is a duplicate for an existing aliasSet
+
+=cut
+
+sub checkForDuplicateAliasSet {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("aliasSets",{
+    	name => $obj->name(),
+    	class => $obj->class(),
+    	attribute => $obj->attribute()
+    });
+}
+
+=head3 checkForDuplicateReactionSet
+Definition:
+	void checkForDuplicateReactionSet(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateReactionSet {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("reactionSets",{reactionCodeList => $obj->reactionCodeList()});
+}
+
+=head3 checkForDuplicateCompoundSet
+Definition:
+	void checkForDuplicateCompoundSet(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateCompoundSet {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("compoundSets",{compoundListString => $obj->compoundListString()});
+}
+
+=head3 checkForDuplicateMedia
+Definition:
+	void checkForDuplicateMedia(ModelSEED::MS::Media);
+Description:
+	This command checks if the input media is a duplicate for an existing media
+
+=cut
+
+sub checkForDuplicateMedia {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("media",{compoundListString => $obj->compoundListString()});
+}
+
+=head3 checkForDuplicateReaction
+Definition:
+	void checkForDuplicateReaction(ModelSEED::MS::Reaction);
+Description:
+	This command checks if the input reaction is a duplicate for an existing reaction
+
+=cut
+
+sub checkForDuplicateReaction {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("reactions",{equationCode => $obj->equationCode()});
+}
+
+=head3 checkForDuplicateCompound
+Definition:
+	void checkForDuplicateCompound(ModelSEED::MS::Compound);
+Description:
+	This command checks if the input compound is a duplicate for an existing compound
+
+=cut
+
+sub checkForDuplicateCompound {
+    my ($self,$obj,$opts) = @_;
+    if(defined($opts->{namespace})){
+	return undef if !$obj->getAlias($opts->{mergevia});
+	return $self->getObjectByAlias("compounds",$obj->getAlias($opts->{mergevia}),$opts->{mergevia});
+    }
+    return undef if !$obj->name();
+    return $self->queryObject("compounds",{name => $obj->name()});
+}
+
+=head3 checkForDuplicateCompartment
+Definition:
+	void checkForDuplicateCompartment(ModelSEED::MS::Cue);
+Description:
+	This command checks if the input compartment is a duplicate for an existing compartment
+
+=cut
+
+sub checkForDuplicateCompartment {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("compartments",{name => $obj->name()});
+}
+
+=head3 checkForDuplicateCue
+Definition:
+	void checkForDuplicateCue(ModelSEED::MS::Cue);
+Description:
+	This command checks if the input cue is a duplicate for an existing cue
+
+=cut
+
+sub checkForDuplicateCue {
+    my ($self,$obj,$opts) = @_;
+    return $self->queryObject("cues",{name => $obj->name()});
+}
+
 sub __upgrade__ {
 	my ($class,$version) = @_;
 	if ($version == 1) {
