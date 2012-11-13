@@ -13,7 +13,7 @@ sub usage_desc { return "bio addcpdtable [< biochemistry | biochemistry] [filena
 sub opt_spec {
     return (
         ["saveas|a:s", "New alias for altered biochemistry"],
-        ["namespace|n:s", "Name space for aliases added"],
+        ["namespace|c:s", "Name space for aliases added"],
         ["mergeto|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
         ["matchbyname|a", "Use search names to match compounds"],
         ["verbose|v", "Print verbose status information"],

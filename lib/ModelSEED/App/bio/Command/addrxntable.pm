@@ -1,7 +1,7 @@
 package ModelSEED::App::bio::Command::addrxntable;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( args verbose set_verbose );
+use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -79,7 +79,9 @@ sub execute {
         my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}, mergeto => $mergeto};
         if (defined($opts->{cpdnamespace})) {
         	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
-        }
+        }else{
+	    $rxnData->{equationAliasType} = $opts->{rxnnamespace};
+	}
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
             if (defined($headingTranslation->{$heading})) {
