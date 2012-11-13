@@ -420,7 +420,7 @@ sub addCompoundFromHash {
 	# Checking for id uniqueness within scope of own aliasType
 	my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
 	if (defined($cpd)) {
-	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
+	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace}."\n");
 	    foreach my $aliasType (@{$arguments->{mergeto}}){
 		$self->addAlias({ attribute => "compounds",
 				  aliasName => $aliasType,
@@ -434,7 +434,7 @@ sub addCompoundFromHash {
 	foreach my $aliasType (@{$arguments->{mergeto}}) {
 		$cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$aliasType);
 		if (defined($cpd)) {
-		    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+		    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType."\n");
 		    $self->addAlias({ attribute => "compounds",
 				      aliasName => $arguments->{namespace},
 				      alias => $arguments->{id}->[0],
@@ -457,7 +457,7 @@ sub addCompoundFromHash {
 			my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
 			$cpd = $self->queryObject("compounds",{searchnames => $name});
 			if (defined($cpd)) {
-				verbose("Compound matched based on name ".$name);
+				verbose("Compound matched based on name ".$name."\n");
 				$self->addAlias({
 					attribute => "compounds",
 					aliasName => $arguments->{namespace},
@@ -476,7 +476,7 @@ sub addCompoundFromHash {
 		}
 	}
 	# Actually creating compound
-	verbose("Creating compound ".$arguments->{id}->[0]);
+	verbose("Creating compound ".$arguments->{id}->[0]."\n");
 	$cpd = $self->add("compounds",{
 		name => $arguments->{names}->[0],
 		abbreviation => $arguments->{abbreviation}->[0],
@@ -539,7 +539,7 @@ sub addReactionFromHash {
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reaciontIDaliasType});
 	if (defined($rxn)) {
-		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reaciontIDaliasType});
+		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reaciontIDaliasType}."\n");
 		foreach my $aliasType (@{$arguments->{mergeto}}){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $aliasType,
@@ -553,7 +553,7 @@ sub addReactionFromHash {
         foreach my $aliasType (@{$arguments->{mergeto}}){
 	    $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$aliasType);
 	    if( defined($rxn) ){
-			verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+			verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType."\n");
 			#Alias needs to be created for original namespace if found in different namespace
 			$self->addAlias({
 			    attribute => "reactions",
@@ -572,7 +572,6 @@ sub addReactionFromHash {
 			return $rxn;
 	    }
 	}
-    verbose($arguments->{id}->[0],"\t",$arguments->{names}->[0],"\n");
 	# Creating reaction from equation
 	$rxn = ModelSEED::MS::Reaction->new({
 		name => $arguments->{names}->[0],
@@ -591,7 +590,7 @@ sub addReactionFromHash {
 	    equation => $arguments->{equation}->[0],
 	    aliasType => $arguments->{equationAliasType},
 	})) {
-	    verbose("Reaction ".$arguments->{id}->[0]." was rejected");
+	    verbose("Reaction ".$arguments->{id}->[0]." was rejected\n");
 	    return undef;
 	}
 	# Generate equation search string and check to see if reaction not already in database
@@ -614,7 +613,7 @@ sub addReactionFromHash {
 		    $aliasSetName="could not find ID";
 		}
 	    }
-	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]);
+	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]."\n");
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $arguments->{reaciontIDaliasType},
 			      alias => $arguments->{id}->[0],
