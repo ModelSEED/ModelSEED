@@ -82,6 +82,8 @@ sub execute {
         }else{
 	    $rxnData->{equationAliasType} = $opts->{rxnnamespace};
 	}
+	$rxnData->{autoadd} = 1 if $opts->{autoadd};
+
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
             if (defined($headingTranslation->{$heading})) {

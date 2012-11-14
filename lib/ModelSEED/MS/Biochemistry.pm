@@ -529,7 +529,8 @@ sub addReactionFromHash {
 		direction => ["="],
 		deltag => [10000000],
 		deltagerr => [10000000],
-		enzymes => []
+		enzymes => [],
+		autoadd => 0
 	}, $arguments);
 
 	# Remove names that are too long
@@ -589,6 +590,8 @@ sub addReactionFromHash {
 	if(!$rxn->loadFromEquation({
 	    equation => $arguments->{equation}->[0],
 	    aliasType => $arguments->{equationAliasType},
+	    autoadd => $arguments->{autoadd},
+	    rxnId => $arguments->{id}->[0]
 	})) {
 	    verbose("Reaction ".$arguments->{id}->[0]." was rejected\n");
 	    return undef;

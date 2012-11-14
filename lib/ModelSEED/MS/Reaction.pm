@@ -246,12 +246,21 @@ sub loadFromEquation {
 				$cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
 			}
 			if (!defined($cpd)) {
-				ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction!");
-				$cpd = $bio->add("compounds",{
-					locked => "0",
-					name => $NewRow->{compound},
-					abbreviation => $NewRow->{compound}
-				});
+				ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
+				if(defined($args->{autoadd}) && $args->{autoadd}==1){
+				    ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
+				    $cpd = $bio->add("compounds",{ locked => "0",
+								   name => $NewRow->{compound},
+								   abbreviation => $NewRow->{compound}
+						     });
+				    $bio->addAlias({ attribute => "compounds",
+						     aliasName => $args->{aliasType},
+						     alias => $NewRow->{compound},
+						     uuid => $cpd->uuid()
+						   });
+				}else{
+				    return 0;
+				}
 			}
 			$NewRow->{compound} = $cpd;
 			if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
