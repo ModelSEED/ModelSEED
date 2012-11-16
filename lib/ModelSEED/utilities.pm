@@ -53,11 +53,11 @@ messages: C<verbose> and C<set_verbose>.
 
 =head3 verbose
 
-    $rtv = verbose("string one", "string two");
+    $fh = verbose("string one", "string two");
 
 Call with a list of strings to print a message if the verbose flag has been
-set. If the list of strings is empty, nothing is printed. Returns true if
-the verbose flag is set. Otherwise returns undef.
+set. If the list of strings is empty, nothing is printed. Returns the filehandle
+that the verbose flag is set to. If the verbose flag is unset, returns undef.
 
 =head3 set_verbose
 
@@ -87,9 +87,9 @@ sub set_verbose {
 sub verbose {
     if ( defined $VERBOSE ) {
         print $VERBOSE @_ if @_;
-        return 1;
+        return $VERBOSE;
     } else {
-        return 0;
+        return;
     }
 }
 
