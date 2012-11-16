@@ -36,8 +36,8 @@ my $test_count = 1;
 # Test verbose function
 {
     # Test caller and setter when not set
-    is verbose("foo"), 0;     
-    is verbose("bar", "bin"), 0;
+    is verbose("foo"), undef;     
+    is verbose("bar", "bin"), undef;
     is set_verbose(), undef;
     is set_verbose({}), undef;
     is set_verbose([]), undef;
@@ -51,16 +51,16 @@ my $test_count = 1;
         local *STDERR;
         open(STDERR, ">", \$stderr);
         is set_verbose(1), \*STDERR;
-        is verbose("foo"), 1;
-        is verbose("bar", "bin"), 1;
-        is verbose(), 1;
+        is verbose("foo"), \*STDERR;
+        is verbose("bar", "bin"), \*STDERR;
+        is verbose(), \*STDERR;
         is $stderr, "foobarbin";
         $test_count += 5;
         close(STDERR);
     }
     # Now test unsetting
     is set_verbose(undef), undef;
-    is verbose(), 0;
+    is verbose(), undef;
     $test_count += 2; 
 }
 
