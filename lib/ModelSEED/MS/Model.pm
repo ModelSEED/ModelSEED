@@ -1308,9 +1308,8 @@ sub printCytoSEED {
 	    };
 	}
 
-	$result->{"reaction_classifications"} = { $modelid => [] }; # FIX
-
 	my $fba_results = [];
+	my $reaction_classifications = {};
 
 	foreach my $fbaFormulation (@{$model->fbaFormulations()}) {
 	    if ($fbaFormulation->maximizeObjective()) {
@@ -1336,13 +1335,57 @@ sub printCytoSEED {
 		    $flux->{"reaction"} = $reaction->id();
 		    $flux->{"flux"} = $rVar->value();
 		    push @$fluxes, $flux;
+		    if ($fbaFormulation->fva()) {
+			my $class = $rVar->{"class"};
+			my $min = $rVar->{"min"};
+			my $max = $rVar->{"max"};
+			my $dir;
+			if ($class eq "Positive") {
+			    $class = "essential";
+			    $dir = "=>";
+			}
+			elsif ($class eq "Negative") {
+			    $class = "essential";
+			    $dir = "<=";
+			}
+			elsif ($class eq "Positive variable") {
+			    $class = "active";
+			    $dir = "=>";
+			}
+			elsif ($class eq "Negative variable") {
+			    $class = "active";
+			    $dir = "<=";
+			}
+			elsif ($class eq "Variable") {
+			    $class = "active";
+			    $dir = "<=>";
+			}
+			elsif ($class eq "Blocked") {
+			    $class = "dead";
+			    $dir = "NA";
+			}
+			else {
+			    print STDERR "For reaction ", $reaction->id(), ", class is ", $class, "\n";
+			    $class = "dead";
+			    $dir = "NA";
+			}
+			push @{$reaction_classifications->{$reaction->id()}->{"class"}}, $class;
+			push @{$reaction_classifications->{$reaction->id()}->{"class_directionality"}}, $dir;
+			push @{$reaction_classifications->{$reaction->id()}->{"max_flux"}}, $max;
+			push @{$reaction_classifications->{$reaction->id()}->{"min_flux"}}, $min;
+			push @{$reaction_classifications->{$reaction->id()}->{"media"}}, $fbaFormulation->media()->name();
+			push @{$reaction_classifications->{$reaction->id()}->{"reaction"}}, $reaction->id();
+		    }
 		}
 
-		push @{$fba_results}, $fba;
+		if (! $fbaFormulation->fva()) {
+		    push @{$fba_results}, $fba;
+		}
 	    }    
 	}
 
 	$result->{"fba_results"} = { $modelid => $fba_results };
+	$result->{"reaction_classifications"}->{$modelid} = [values %$reaction_classifications];
 
 	return [YAML::XS::Dump $result];
 }
