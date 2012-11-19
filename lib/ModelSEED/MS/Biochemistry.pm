@@ -14,12 +14,40 @@ use ModelSEED::utilities qw ( args verbose );
 use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
-#***********************************************************************************************************
-# ADDITIONAL ATTRIBUTES:
-#***********************************************************************************************************
-has definition => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
-has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
-has reactionRoleHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactionRoleHash' );
+
+has definition => (
+    is         => 'rw',
+    isa        => 'Str',
+    printOrder => '-1',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_builddefinition'
+);
+has dataDirectory => (
+    is         => 'rw',
+    isa        => 'Str',
+    printOrder => '-1',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_builddataDirectory'
+);
+has reactionRoleHash => (
+    is         => 'rw',
+    isa        => 'HashRef',
+    printOrder => '-1',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_buildreactionRoleHash'
+);
+has proton => (
+    is         => 'rw',
+    isa        => 'Maybe[ModelSEED::MS::Compound]',
+    lazy       => 1,
+    builder    => '_build_proton',
+);
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -52,6 +80,19 @@ sub _buildreactionRoleHash {
 		}
 	}
 	return $hash;
+}
+sub _build_proton {
+    my $self = shift;
+    my $compounds = $self->compounds;
+    my $proton;
+    # Find proton based on formula eq 'H'
+    foreach my $cpd (@$compounds) {
+        if ($cpd->formula eq 'H') {
+            $proton = $cpd;
+            last;
+        }
+    }
+    return $proton;
 }
 
 =head3 printDBFiles
