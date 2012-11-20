@@ -15,6 +15,7 @@ extends 'ModelSEED::MS::DB::ModelReactionProtein';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has gprString => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildgprString' );
+has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildexchangeGPRString' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -37,6 +38,26 @@ sub _buildgprString {
 	if (@{$self->modelReactionProteinSubunits()} > 1) {
 		$gpr = "(".$gpr.")";	
 	}
+	return $gpr;
+}
+sub _buildexchangeGPRString {
+	my ($self) = @_;
+	my $gpr = "";
+	if (!defined($self->complex_uuid()) || $self->complex_uuid() =~ m/^[0\-]+$/) {
+		$gpr .= "unknown{";
+	} else {
+		$gpr .= $self->complex()->name()."{";
+	}
+	my $sus = $self->modelReactionProteinSubunits();
+	my $sugpr = "";
+	foreach my $su (@{$sus}) {
+		if (length($sugpr) > 0) {
+			$sugpr .= "+";
+		}
+		$sugpr .= $su->exchangeGPRString();
+	}
+	$gpr .= $sugpr;
+	$gpr .= "}";
 	return $gpr;
 }
 

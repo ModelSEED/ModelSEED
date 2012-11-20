@@ -6,6 +6,7 @@ use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
 use JSON::XS;
+use ModelSEED::utilities qw( verbose set_verbose );
 use Class::Autouse qw(
     ModelSEED::MS::Mapping
     ModelSEED::Store
@@ -50,6 +51,7 @@ sub opt_spec {
 
 sub execute {
     my ($self, $opts, $args) = @_;
+    set_verbose 1 if $opts->{verbose};
     print($self->usage) && return if $opts->{help};
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $helpers = ModelSEED::App::Helpers->new;
@@ -72,29 +74,29 @@ sub execute {
     $alias = $helpers->process_ref_string(
         $alias, "mapping", $auth->username
     );
-    print "Will be saving to $alias...\n" if($opts->{verbose});
+    verbose "Will be saving to $alias...\n";
+    # Getting biochemistry if that was provided
+    my ($biochemistry, $bio_ref);
+    if ($opts->{biochemistry}) {
+        $bio_ref = $helpers->process_ref_string(
+            $opts->{biochemistry}, "biochemistry", $auth->username
+        );
+        $biochemistry = $store->get_object($bio_ref);
+        verbose "Using $bio_ref biochemistry while importing mapping\n";
+    }
     my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $map;
     if (!defined($opts->{namespace})) {
     	$opts->{namespace} = "ModelSEED";
     }
 	if($opts->{filepath}) {
-        my $bio_ref = $opts->{biochemistry};
-        $bio_ref = $helpers->process_ref_string(
-            $bio_ref, "biochemistry", $auth->username
-        );
-        if(!defined($bio_ref)) {
-            $bio_ref = ModelSEED::Configuration->instance->config->{'biochemistry'};
-        }
-        my $bio = $store->get_object($bio_ref);
-        warn "Using $bio_ref biochemistry while importing mapping\n" if($opts->{verbose});
         my $factory = ModelSEED::MS::Factories::TableFileFactory->new({
              filepath => $opts->{filepath},
              namespace => $opts->{namespace},
         });
 		$map = $factory->createMapping({
 			name => $alias,
-			biochemistry => $bio,
+			biochemistry => $biochemistry,
 			verbose => $opts->{verbose},
         });
     } else {
@@ -106,14 +108,13 @@ sub execute {
             my ($fh2, $uncompressed_filename) = tempfile();
             close($fh1);
             close($fh2);
-            print "Fetching mapping from web...\n" if($opts->{verbose});
+            verbose "Fetching mapping from web...\n";
             my $status = getstore($url, $compressed_filename);
             # This should probably be >= 200 <= 400? does getstore handle redirects?
             die "Unable to fetch from model_seed\n" unless($status == 200);
-            print "Extracting...\n" if($opts->{verbose});
+            verbose "Extracting...\n";
             gunzip $compressed_filename => $uncompressed_filename
                 or die "Extract failed: $GunzipError\n";
-
             my $string;
             {
                 local $/;
@@ -122,13 +123,15 @@ sub execute {
             }
             $data = JSON::XS->new->utf8->decode($string);
         }
-        print "Validating fetched mapping...\n" if($opts->{verbose});
+        verbose "Validating fetched mapping...\n";
         $map = ModelSEED::MS::Mapping->new($data);
+        $map->biochemistry_uuid($biochemistry->uuid);
+        $map->biochemistry($biochemistry);
     }
     unless($opts->{dry}) {
         $store->save_object($alias_ref, $map);
+        verbose "Saved mapping to $alias!\n";
     }
-    print "Saved mapping to $alias!\n" if($opts->{verbose});
 }
 
 1;

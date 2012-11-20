@@ -158,11 +158,11 @@ sub add {
 					$self->$method()->[$i] = $obj_info->{object};
 				}
 			}
-			$self->clearIndex({attribute=>$attribute});
+			$self->_clearIndex({attribute=>$attribute});
 			return $obj_info->{object};
 		}
 	}
-	#Updating the indecies
+	#Updating the indices
 	if (defined($self->indices->{$attribute})) {
 		my $indices = $self->indices->{$attribute};
 		foreach my $attribute (keys(%{$indices})) {

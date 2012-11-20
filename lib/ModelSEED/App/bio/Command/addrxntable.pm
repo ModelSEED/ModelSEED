@@ -1,7 +1,7 @@
 package ModelSEED::App::bio::Command::addrxntable;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( args verbose set_verbose );
+use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -16,7 +16,7 @@ sub opt_spec {
         ["rxnnamespace|r:s", "Name space for reaction IDs"],
         ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
         ["autoadd|a","Automatically add any missing compounds to DB"],
-        ["mergeto|m:s", "Name space of identifiers used for merging compounds"],
+        ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
         ["verbose|v", "Print verbose status information"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
     );
@@ -27,8 +27,10 @@ sub execute {
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
     my $helper = ModelSEED::App::Helpers->new();
+
+    $self->usage_error("Must specify a biochemistry to use") unless $args->[0];
     my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
-    $self->usage_error("Must specify an biochemistry to use") unless(defined($biochemistry));
+    $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
     $self->usage_error("Must specify a valid filename for reaction table") unless(defined($args->[1]) && -e $args->[1]);
 
     #verbosity
@@ -39,41 +41,59 @@ sub execute {
 
     #set namespace
     if (!defined($opts->{rxnnamespace})) {
-    $opts->{rxnnamespace} = $args->[0];
-    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
+	$opts->{rxnnamespace} = $args->[0];
+	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
     } 
+	#processing table
+	my $mergeto = [];
+	if (defined($opts->{mergeto})) {
+	    my $mergeto = translateArrayOptions({
+	    	option => $opts->{mergeto},
+	    	delimiter => ","
+	    });
+	}
 
     #creating namespaces if they don't exist
     if(!$biochemistry->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
-    $biochemistry->add("aliasSets",{
-        name => $opts->{namespace},
-        source => $opts->{namespace},
-        attribute => "reactions",
-        class => "Reaction"});
+	$biochemistry->add("aliasSets",{
+	    name => $opts->{rxnnamespace},
+	    source => $opts->{rxnnamespace},
+	    attribute => "reactions",
+	    class => "Reaction"});
     }
-    if(defined($opts->{mergeto}) && !$biochemistry->queryObject("aliasSets",{name => $opts->{mergeto},attribute=>"reactions"})){
-    $biochemistry->add("aliasSets",{
-        name => $opts->{mergeto},
-        source => $opts->{mergeto},
-        attribute => "reactions",
-        class => "Reaction"});
+
+    foreach my $merge (@$mergeto){
+	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"reactions"});
+	$biochemistry->add("aliasSets",{
+	    name => $merge,
+	    source => $merge,
+	    attribute => "reactions",
+	    class => "Reaction"});
     }
+
+    my $headingTranslation = {
+    	name => "names",
+	enzyme => "enzymes"
+    };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
-        my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}};
+        my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}, mergeto => $mergeto};
         if (defined($opts->{cpdnamespace})) {
         	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
-        }
+        }else{
+	    $rxnData->{equationAliasType} = $opts->{rxnnamespace};
+	}
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
-            if ($heading =~ /names?/ || $heading =~ /enzymes?/) {
-	            $heading="names" if $heading eq "name";
-	            $heading="enzymes" if $heading eq "enzyme";
+            if (defined($headingTranslation->{$heading})) {
+            	$heading = $headingTranslation->{$heading};
+            }
+            if ($heading eq "names" || $heading eq "enzymes") {
 	            $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
             } else {
-           		$rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+		    $rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
             }
         }
-        my $rxn = $biochemistry->addReactionFromHash($rxnData,$opts->{mergeto});
+        my $rxn = $biochemistry->addReactionFromHash($rxnData);
     }
 
     if (defined($opts->{saveas})) {
