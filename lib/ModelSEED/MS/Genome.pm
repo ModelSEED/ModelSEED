@@ -11,10 +11,6 @@ package ModelSEED::MS::Genome;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Genome';
-# CONSTANTS:
-#TODO
-# FUNCTIONS:
-#TODO
 
 
 __PACKAGE__->meta->make_immutable;
