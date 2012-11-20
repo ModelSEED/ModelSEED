@@ -165,5 +165,10 @@ sub createStandardFBAModel {
 	return $mdl;
 }
 
+sub classifyGenomeFromAnnotation {
+    my $self = shift;
+	return "Gram negative";
+}
+
 __PACKAGE__->meta->make_immutable;
 1;
