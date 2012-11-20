@@ -4221,7 +4221,9 @@ $objectDefinitions->{Classifier} = {
 			method    => "Mapping",
 			weak      => 0
 		},
-	]
+	],
+	reference_id_types => [qw(uuid)],
+	version            => 1.0,
 };
 
 $objectDefinitions->{ClassifierClassification} = {
