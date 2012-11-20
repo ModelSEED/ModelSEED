@@ -78,7 +78,7 @@ sub classifyAnnotation {
 			$largestClass = $class;
 		}
 	}
-	return $class;
+	return $largestClass;
 }
 
 __PACKAGE__->meta->make_immutable;
