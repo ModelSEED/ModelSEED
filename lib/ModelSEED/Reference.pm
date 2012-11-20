@@ -354,7 +354,7 @@ sub _build_schema_recursive {
     my ($name, $definitions) = @_;
     my $class = "ModelSEED::MS::".$name;
     my $id_types = $definitions->{$name}->{reference_id_types};
-    unless(@$id_types) {
+    unless(defined $id_types && @$id_types) {
         $id_types = [ 'uuid' ];
     }
     my $children = {};
