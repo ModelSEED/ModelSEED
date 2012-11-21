@@ -26,6 +26,11 @@ DIR="$( cd $SCRIPT_DIR/../ && pwd)"
 env_push PERL5LIB $DIR/lib;
 env_push PERL5LIB $DIR/kbase
 env_push PATH $SCRIPT_DIR
+# Case where user installed with carton
+if [[ -d $DIR/local ]] ; then
+    env_push PERL5LIB $DIR/local/lib/perl5
+    env_push PATH $DIR/local/bin
+fi
 export PERL5LIB
 export PATH;
 export MODEL_SEED_CORE=$DIR;

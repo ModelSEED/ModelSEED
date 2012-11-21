@@ -217,19 +217,32 @@ sub getObjectByAlias {
 
 sub getObjectsByAlias {
 	my ($self,$attribute,$alias,$aliasName) = @_;
-	my $aliasSet = $self->queryObject("aliasSets",{
-		name => $aliasName,
-		attribute => $attribute
-	});
-	if (!defined($aliasSet)) {
-		ModelSEED::utilities::USEWARNING("Alias set '".$aliasName."' not found in database!");
-		return [];
+	my $objects = [];
+	if (!defined($aliasName)) {
+		my $uuidhash = {};
+		my $sets = $self->aliasSets();
+		foreach my $set (@{$sets}) {
+			if (defined($set->aliases()->{$alias})) {
+				foreach my $uuid (@{$set->aliases()->{$alias}}) {
+					$uuidhash->{$uuid} = 1;
+				}
+			}
+		}
+		$objects = $self->getObjects($attribute,[keys(%{$uuidhash})]);
+	} else {
+		my $aliasSet = $self->queryObject("aliasSets",{
+			name => $aliasName,
+			attribute => $attribute
+		});
+		if (!defined($aliasSet)) {
+			ModelSEED::utilities::USEWARNING("Alias set '".$aliasName."' not found in database!");
+			return [];
+		}
+		if (defined($aliasSet->aliases()->{$alias})) {
+			return $self->getObjects($attribute,$aliasSet->aliases()->{$alias});
+		}
 	}
-	if (defined($aliasSet->aliases()->{$alias})) {
-		my $array = $aliasSet->aliases()->{$alias};
-		return $self->getObjects($attribute,$aliasSet->aliases()->{$alias});
-	}
-	return [];
+	return $objects;
 }
 
 ######################################################################

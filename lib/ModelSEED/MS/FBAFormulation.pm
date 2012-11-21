@@ -11,6 +11,7 @@ package ModelSEED::MS::FBAFormulation;
 use Moose;
 use ModelSEED::Exceptions;
 use ModelSEED::utilities qw( args );
+use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';
 #***********************************************************************************************************
@@ -822,6 +823,30 @@ sub parseGeneKOList {
 	$args->{data} = "uuid";
 	$args->{type} = "Feature";
 	$self->geneKO_uuids($self->parseReferenceList($args));
+}
+
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::FBAFormulation->export({
+		format => readable/html/json
+	});
+Description:
+	Exports media data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
 }
 
 __PACKAGE__->meta->make_immutable;

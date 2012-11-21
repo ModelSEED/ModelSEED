@@ -24,7 +24,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'SEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
-has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '2', type => 'attribute', metaclass => 'Typed');
+has mapping_uuid => (is => 'rw', isa => 'Str', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
@@ -90,7 +90,7 @@ my $attributes = [
           {
             'printOrder' => 2,
             'name' => 'mapping_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {

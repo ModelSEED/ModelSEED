@@ -11,6 +11,7 @@ use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
 use ModelSEED::utilities qw ( args verbose );
+use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -660,6 +661,26 @@ sub addReactionFromHash {
 		});
 	}
 	return $rxn;
+}
+
+=head3 searchForCompound
+Definition:
+	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->searchForCompound(string);
+Description:
+	This command adds a single reaction from an input hash
+
+=cut
+
+sub searchForCompound {
+	my ($self,$compound) = @_;
+	#First search by exact alias match
+	my $cpdobj = $self->getObjectByAlias("compounds",$compound);
+	#Next, search by name
+	if (!defined($cpdobj)) {
+		my $searchname = ModelSEED::MS::Compound->nameToSearchname($compound);
+		$cpdobj = $self->queryObject("compounds",{searchnames => $searchname});
+	}
+	return $cpdobj;
 }
 
 =head3 mergeBiochemistry

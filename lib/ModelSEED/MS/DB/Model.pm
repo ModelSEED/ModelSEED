@@ -31,9 +31,9 @@ has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'Singlegeno
 has status => (is => 'rw', isa => 'Str', printOrder => '7', type => 'attribute', metaclass => 'Typed');
 has growth => (is => 'rw', isa => 'Num', printOrder => '6', type => 'attribute', metaclass => 'Typed');
 has current => (is => 'rw', isa => 'Int', printOrder => '4', default => '1', type => 'attribute', metaclass => 'Typed');
-has mapping_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '8', type => 'attribute', metaclass => 'Typed');
-has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
-has annotation_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has mapping_uuid => (is => 'rw', isa => 'Str', printOrder => '8', type => 'attribute', metaclass => 'Typed');
+has biochemistry_uuid => (is => 'rw', isa => 'Str', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
+has annotation_uuid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has fbaFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapfillingSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -190,21 +190,21 @@ my $attributes = [
             'req' => 0,
             'printOrder' => 8,
             'name' => 'mapping_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => 9,
             'name' => 'biochemistry_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 0,
             'printOrder' => 10,
             'name' => 'annotation_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
