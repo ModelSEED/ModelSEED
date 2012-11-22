@@ -383,7 +383,7 @@ $objectDefinitions->{FBAConstraint} = {
 			type       => "encompassed"
 		},
 	],
-	primarykeys => [qw(atom)],
+	primarykeys => [qw(name)],
 	links       => []
 };
 
@@ -3332,6 +3332,14 @@ $objectDefinitions->{Biomass} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
+		},
+		{
+			name       => 'id',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
 		},
 		{
 			name       => 'name',

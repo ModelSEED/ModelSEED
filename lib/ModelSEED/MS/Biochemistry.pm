@@ -667,7 +667,7 @@ sub addReactionFromHash {
 Definition:
 	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->searchForCompound(string);
 Description:
-	This command adds a single reaction from an input hash
+	Searches for a compound by ID, name, or alias.
 
 =cut
 
@@ -681,6 +681,25 @@ sub searchForCompound {
 		$cpdobj = $self->queryObject("compounds",{searchnames => $searchname});
 	}
 	return $cpdobj;
+}
+
+=head3 searchForReaction
+Definition:
+	ModelSEED::MS::Reaction = ModelSEED::MS::Biochemistry->searchForReaction(string);
+Description:
+	Searches for a reaction by ID, name, or alias.
+
+=cut
+
+sub searchForReaction {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $rxnobj = $self->getObjectByAlias("reactions",$id);
+	#Next, search by name
+	if (!defined($rxnobj)) {
+		$rxnobj = $self->queryObject("reactions",{name => $id});
+	}
+	return $rxnobj;
 }
 
 =head3 mergeBiochemistry
