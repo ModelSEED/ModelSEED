@@ -52,7 +52,7 @@ sub execute {
 		$store->save_object($ref,$biochemistry);
     } else {
     	print STDERR "Saving over original biochemistry with new media...\n" if($opts->{verbose});
-    	$store->save_object("biochemistry/".$biochemistry->uuid(),$biochemistry,{schema_update => 1});
+    	$store->save_object($ref,$biochemistry);
     }
 }
 

@@ -401,8 +401,10 @@ sub createStandardFBABiomass {
 	my $anno = $args->{annotation};
 	my $mapping = $args->{mapping};
 	my $biochem = $mapping->biochemistry();
+	my $count = @{$self->biomasses()};
 	my $bio = $self->add("biomasses",{
-		name => $self->name()." auto biomass"
+		name => $self->name()." auto biomass",
+		id => "bio".($count+1)
 	});
 	my $template = $mapping->queryObject("biomassTemplates",{class => $anno->genomes()->[0]->class()});
 	if (!defined($template)) {
@@ -1781,6 +1783,94 @@ sub computeNetworkDistances {
 		}
 	}
 	return $tbl;
+}
+
+=head3 searchForCompound
+
+Definition:
+	ModelSEED::MS::ModelCompound ModelSEED::MS::Model->searchForCompound(string:id);
+Description:
+	Search for compound in model
+	
+=cut
+
+sub searchForCompound {
+    my $self = shift;
+    my $id = shift;
+    my $compartment = "c0";
+    if ($id =~ m/(.+)\[(.+)\]/) {
+    	$id = $1;
+    	$compartment = $2;
+    	if ($compartment !~ m/[a-z]\d+$/) {
+    		$compartment .= "0";
+    	}
+    	
+    }
+    my $cpd = $self->biochemistry()->searchForCompound($id);
+    if (!defined($cpd)) {
+    	return undef;
+    }
+    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment});
+    if (!defined($mdlcmp)) {
+    	return undef;
+    }
+    return $self->queryObject("modelcompounds",{
+    	modelcompartment_uuid => $mdlcmp->uuid(),
+    	compound_uuid => $cpd->uuid()
+    });
+}
+
+=head3 searchForBiomass
+
+Definition:
+	ModelSEED::MS::Biomass ModelSEED::MS::Model->searchForBiomass(string:id);
+Description:
+	Search for biomass in model
+	
+=cut
+
+sub searchForBiomass {
+    my $self = shift;
+    my $id = shift;
+    my $obj = $self->queryObject("biomasses",{id => $id});
+    if (!defined($obj)) {
+    	$obj = $self->queryObject("biomasses",{name => $id});
+    }
+    return $obj;
+}
+
+=head3 searchForReaction
+
+Definition:
+	ModelSEED::MS::Biomass ModelSEED::MS::Model->searchForReaction(string:id);
+Description:
+	Search for reaction in model
+	
+=cut
+
+sub searchForReaction {
+    my $self = shift;
+    my $id = shift;
+    my $compartment = "c0";
+    if ($id =~ m/(.+)\[(.+)\]/) {
+    	$id = $1;
+    	$compartment = $2;
+    	if ($compartment !~ m/[a-z]\d+$/) {
+    		$compartment .= "0";
+    	}
+    }
+    my $reaction = $self->biochemistry()->searchForReaction($id);
+    if (!defined($reaction)) {
+    	return undef;
+    }
+    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment});
+    if (!defined($mdlcmp)) {
+    	return undef;
+    }
+    return $self->queryObject("modelreactions",{
+    	modelcompartment_uuid => $mdlcmp->uuid(),
+    	reaction_uuid => $reaction->uuid()
+    });
 }
 
 sub __upgrade__ {
