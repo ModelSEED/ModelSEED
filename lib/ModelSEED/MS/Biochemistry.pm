@@ -91,14 +91,16 @@ sub printDBFiles {
         }
         close $fh;
     };
-    my $compound_filename = $path.$self->uuid."-compounds.tbl";
+    my $name = $self->uuid();
+    $name =~ s/\//_/g;
+    my $compound_filename = $path.$name."-compounds.tbl";
     if (!-e $compound_filename || $args->{forceprint}) {
         my $header      = [ qw(abbrev charge deltaG deltaGErr formula id mass name) ];
         my $attributes  = [ qw(abbreviation defaultCharge deltaG deltaGErr formula id mass name) ];
         my $compounds   = $self->compounds;
         $print_table->($compound_filename, $header, $attributes, $compounds);
     }
-    my $reaction_filename = $path.$self->uuid."-reactions.tbl";
+    my $reaction_filename = $path.$name."-reactions.tbl";
     if (!-e $reaction_filename || $args->{forceprint}) {
         my $header      = [ qw(abbrev deltaG deltaGErr equation id name reversibility status thermoReversibility) ];
         my $attributes  = [ qw(abbreviation deltaG deltaGErr equation id name direction status thermoReversibility) ];
