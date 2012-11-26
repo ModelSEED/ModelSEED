@@ -522,6 +522,7 @@ sub createJobDirectory {
 	my $mfatkdir = $self->mfatoolkitDirectory();
 	my $dataDir = $self->dataDirectory();
 	my $biochemid = $model->biochemistry()->uuid();
+    $biochemid =~ s/\//_/g;
 	my $stringdb = [
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
 		"compound\tid\tSINGLEFILE\t\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
@@ -823,6 +824,29 @@ sub parseGeneKOList {
 	$args->{data} = "uuid";
 	$args->{type} = "Feature";
 	$self->geneKO_uuids($self->parseReferenceList($args));
+}
+
+=head3 mediaUUIDs
+
+Definition:
+	[string] mediaUUIDs();
+Description:
+	Returns a list of media uuids used by this FBAFormulation
+=cut
+
+sub mediaUUIDs {
+	my ($self) = @_;
+	my $mediauuids = {
+		$self->media_uuid() => 1,
+	};
+	foreach my $media (@{$self->secondaryMedia_uuids()}) {
+		$mediauuids->{$media} = 1;
+	}
+	my $phenotypes = $self->fbaPhenotypeSimulations();
+	foreach my $pheno (@{$phenotypes}) {
+		$mediauuids->{$pheno->media_uuid()} = 1;
+	}
+	return [keys(%{$mediauuids})];
 }
 
 =head3 export

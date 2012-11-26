@@ -28,6 +28,7 @@ has biomassTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type =
 has isTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildisTransporter' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has translatedDirection  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtranslatedDirection' );
+has featureIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureIDs' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -192,6 +193,18 @@ sub _buildtranslatedDirection {
 		return "<=";
 	}
 	return $self->direction();
+}
+sub _buildfeatureIDs {
+	my ($self) = @_;
+	my $featureHash = {};
+	foreach my $protein (@{$self->modelReactionProteins()}) {
+		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+				$featureHash->{$gene->feature()->id()} = 1;
+			}
+		}
+	}
+	return [keys(%{$featureHash})];
 }
 
 #***********************************************************************************************************
