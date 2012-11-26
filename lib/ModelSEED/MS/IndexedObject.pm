@@ -271,6 +271,7 @@ sub getObjects {
     }
     my $index = $self->indices->{$attribute}->{uuid};
     foreach my $obj_uuid (@$uuids) { 
+	next if ! defined $obj_uuid;
         my $obj_info = $index->{$obj_uuid}->[0];
         if (defined($obj_info)) {
             push(@$results, $self->_build_object($attribute, $obj_info));
