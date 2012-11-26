@@ -26,14 +26,14 @@ $objectDefinitions->{FBAFormulation} = {
 			name       => 'regulatorymodel_uuid',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
 			name       => 'model_uuid',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 1
 		},
 		{
@@ -91,7 +91,7 @@ $objectDefinitions->{FBAFormulation} = {
 			name       => 'expressionData_uuid',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
@@ -383,7 +383,7 @@ $objectDefinitions->{FBAConstraint} = {
 			type       => "encompassed"
 		},
 	],
-	primarykeys => [qw(atom)],
+	primarykeys => [qw(name)],
 	links       => []
 };
 
@@ -1196,14 +1196,14 @@ $objectDefinitions->{GapgenFormulation} = {
 			name       => 'fbaFormulation_uuid',
 			printOrder => 0,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
 			name       => 'model_uuid',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 1
 		},
 		{
@@ -1420,14 +1420,14 @@ $objectDefinitions->{GapfillingFormulation} = {
 			name       => 'fbaFormulation_uuid',
 			printOrder => 1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
 			name       => 'model_uuid',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 1
 		},
 		{
@@ -2136,7 +2136,7 @@ $objectDefinitions->{Biochemistry} = {
 			name       => 'biochemistryStructures_uuid',
 			printOrder => 1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0,
 		},
 		{
@@ -3151,21 +3151,21 @@ $objectDefinitions->{Model} = {
 			name       => 'mapping_uuid',
 			printOrder => 8,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
 			name       => 'biochemistry_uuid',
 			printOrder => 9,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 1
 		},
 		{
 			name       => 'annotation_uuid',
 			printOrder => 10,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
@@ -3332,6 +3332,14 @@ $objectDefinitions->{Biomass} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
+		},
+		{
+			name       => 'id',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+			default    => ""
 		},
 		{
 			name       => 'name',
@@ -3845,7 +3853,7 @@ $objectDefinitions->{Annotation} = {
 			name       => 'mapping_uuid',
 			printOrder => 2,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid'
+			type       => 'Str'
 		},
 		{
 			name       => 'forwardedLinks',
@@ -4165,6 +4173,145 @@ $objectDefinitions->{SubsystemState} = {
 	reference_id_types => [qw(uuid)],
 };
 
+$objectDefinitions->{Classifier} = {
+	parents    => ['ModelSEED::Store'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'type',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'mapping_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+	],
+	subobjects  => [
+		{
+			name       => "classifierRoles",
+			printOrder => 0,
+			class      => "ClassifierRole",
+			type       => "child"
+		},
+		{
+			name       => "classifierClassifications",
+			printOrder => 0,
+			class      => "ClassifierClassification",
+			type       => "child"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "Mapping",
+			attribute => "mapping_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Mapping",
+			weak      => 0
+		},
+	],
+	reference_id_types => [qw(uuid)],
+	version            => 1.0,
+};
+
+$objectDefinitions->{ClassifierClassification} = {
+	parents    => ['Classifier'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0,
+		},
+		{
+			name       => 'name',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1,
+		},
+		{
+			name       => 'populationProbability',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1,
+		}
+	],
+	subobjects  => [],
+	primarykeys => [qw(uuid)],
+	links       => []
+};
+
+$objectDefinitions->{ClassifierRole} = {
+	parents    => ['Classifier'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'classification_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'classificationProbabilities',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'role_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+	],
+	subobjects  => [],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "role",
+			attribute => "role_uuid",
+			parent    => "Mapping",
+			method    => "roles"
+		},
+		{
+			name      => "classifications",
+			attribute => "classification_uuids",
+			parent    => "Classifier",
+			method    => "classifierClassifications",
+			array => 1
+		},
+	]
+};
+
 $objectDefinitions->{Mapping} = {
 	parents    => ['ModelSEED::Store'],
 	class      => 'indexed',
@@ -4204,7 +4351,7 @@ $objectDefinitions->{Mapping} = {
 			name       => 'biochemistry_uuid',
 			printOrder => 3,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'Str',
 			req        => 0
 		},
 		{
@@ -4242,6 +4389,12 @@ $objectDefinitions->{Mapping} = {
 			class      => "Complex",
 			type       => "child"
 		},
+		{
+			name       => "mappingClassifiers",
+			printOrder => 5,
+			class      => "MappingClassifier",
+			type       => "child"
+		},
 		{ name => "aliasSets", class => "AliasSet", type => "child" },
 	],
 	primarykeys => [qw(uuid)],
@@ -4256,6 +4409,45 @@ $objectDefinitions->{Mapping} = {
 	],
 	reference_id_types => [qw(uuid alias)],
 	version            => 2.0,
+};
+
+$objectDefinitions->{MappingClassifier} = {
+	parents    => ['Mapping'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'name',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'type',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'classifer_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+	],
+	subobjects  => [],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "classifier",
+			attribute => "classifer_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Classifer",
+			weak      => 0
+		},
+	]
 };
 
 $objectDefinitions->{UniversalReaction} = {

@@ -11,6 +11,7 @@ use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
 use ModelSEED::utilities qw ( args verbose );
+use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
 #***********************************************************************************************************
@@ -90,14 +91,16 @@ sub printDBFiles {
         }
         close $fh;
     };
-    my $compound_filename = $path.$self->uuid."-compounds.tbl";
+    my $name = $self->uuid();
+    $name =~ s/\//_/g;
+    my $compound_filename = $path.$name."-compounds.tbl";
     if (!-e $compound_filename || $args->{forceprint}) {
         my $header      = [ qw(abbrev charge deltaG deltaGErr formula id mass name) ];
         my $attributes  = [ qw(abbreviation defaultCharge deltaG deltaGErr formula id mass name) ];
         my $compounds   = $self->compounds;
         $print_table->($compound_filename, $header, $attributes, $compounds);
     }
-    my $reaction_filename = $path.$self->uuid."-reactions.tbl";
+    my $reaction_filename = $path.$name."-reactions.tbl";
     if (!-e $reaction_filename || $args->{forceprint}) {
         my $header      = [ qw(abbrev deltaG deltaGErr equation id name reversibility status thermoReversibility) ];
         my $attributes  = [ qw(abbreviation deltaG deltaGErr equation id name direction status thermoReversibility) ];
@@ -663,6 +666,45 @@ sub addReactionFromHash {
 		});
 	}
 	return $rxn;
+}
+
+=head3 searchForCompound
+Definition:
+	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->searchForCompound(string);
+Description:
+	Searches for a compound by ID, name, or alias.
+
+=cut
+
+sub searchForCompound {
+	my ($self,$compound) = @_;
+	#First search by exact alias match
+	my $cpdobj = $self->getObjectByAlias("compounds",$compound);
+	#Next, search by name
+	if (!defined($cpdobj)) {
+		my $searchname = ModelSEED::MS::Compound->nameToSearchname($compound);
+		$cpdobj = $self->queryObject("compounds",{searchnames => $searchname});
+	}
+	return $cpdobj;
+}
+
+=head3 searchForReaction
+Definition:
+	ModelSEED::MS::Reaction = ModelSEED::MS::Biochemistry->searchForReaction(string);
+Description:
+	Searches for a reaction by ID, name, or alias.
+
+=cut
+
+sub searchForReaction {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $rxnobj = $self->getObjectByAlias("reactions",$id);
+	#Next, search by name
+	if (!defined($rxnobj)) {
+		$rxnobj = $self->queryObject("reactions",{name => $id});
+	}
+	return $rxnobj;
 }
 
 =head3 mergeBiochemistry

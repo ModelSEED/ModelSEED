@@ -11,6 +11,7 @@ package ModelSEED::MS::FBAFormulation;
 use Moose;
 use ModelSEED::Exceptions;
 use ModelSEED::utilities qw( args );
+use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';
 #***********************************************************************************************************
@@ -521,6 +522,7 @@ sub createJobDirectory {
 	my $mfatkdir = $self->mfatoolkitDirectory();
 	my $dataDir = $self->dataDirectory();
 	my $biochemid = $model->biochemistry()->uuid();
+    $biochemid =~ s/\//_/g;
 	my $stringdb = [
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
 		"compound\tid\tSINGLEFILE\t\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
@@ -822,6 +824,53 @@ sub parseGeneKOList {
 	$args->{data} = "uuid";
 	$args->{type} = "Feature";
 	$self->geneKO_uuids($self->parseReferenceList($args));
+}
+
+=head3 mediaUUIDs
+
+Definition:
+	[string] mediaUUIDs();
+Description:
+	Returns a list of media uuids used by this FBAFormulation
+=cut
+
+sub mediaUUIDs {
+	my ($self) = @_;
+	my $mediauuids = {
+		$self->media_uuid() => 1,
+	};
+	foreach my $media (@{$self->secondaryMedia_uuids()}) {
+		$mediauuids->{$media} = 1;
+	}
+	my $phenotypes = $self->fbaPhenotypeSimulations();
+	foreach my $pheno (@{$phenotypes}) {
+		$mediauuids->{$pheno->media_uuid()} = 1;
+	}
+	return [keys(%{$mediauuids})];
+}
+
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::FBAFormulation->export({
+		format => readable/html/json
+	});
+Description:
+	Exports media data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -33,6 +33,65 @@ use Class::Autouse qw(
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 buildClassifier
+
+Definition:
+	ModelSEED::MS::Classifier = buildClassifier({
+		filename => string,
+		type => string,
+		name => string
+	});
+Description:
+	Parses the bayesian classifier file into a classifier object
+
+=cut
+
+sub buildClassifier {
+    my $self = shift;
+	my $args = args(["filename","name","mapping"],{}, @_);
+	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
+	my $headings = [split(/\t/,$data->[0])];
+	my $popprob = [split(/\t/,$data->[1])];
+	my $classifier = ModelSEED::MS::Classifier->new({
+		name => $args->{name},
+		type => $headings->[0],
+		mapping_uuid => $args->{mapping}->uuid(),
+		mapping => $args->{mapping}
+	});
+	my $cfHash = {};
+	for (my $i=1; $i < @{$headings}; $i++) {
+		$cfHash->{$headings->[$i]} = $classifier->add("classifierClassifications",{
+			name => $headings->[$i],
+			populationProbability => $popprob->[$i]
+		});
+	}
+	my $cfRoleHash = {};
+	for (my $i=2;$i < @{$data}; $i++) {
+		my $row = split(/\t/,$data->[$i]);
+		my $objData = {
+			classifications => [],
+			classification_uuids => [],
+			classificationProbabilities => {},
+			role_uuid => undef
+		};
+		for (my $j=1; $j < @{$headings}; $j++) {
+			my $cf = $cfHash->{$headings->[$j]};
+			push(@{$objData->{classification_uuids}},$cf->uuid());
+			push(@{$objData->{classifications}},$cf);
+			$objData->{classificationProbabilities}->{$cf->uuid()} = $row->[$j];
+		}
+		my $role = $args->{mapping}->queryObject("roles",{name => $row->[0]});
+		if (!defined($role)) {
+			$role = $args->{mapping}->add("roles",{
+				name => $row->[0]
+			});
+		}
+		$objData->{role_uuid} = $role->uuid();
+		$cfRoleHash->{$row->[0]} = $classifier->add("classifierRoles",$objData);
+	}
+	return ($classifier,$mapping);
+}
+
 =head3 buildFBAFormulation
 
 Definition:

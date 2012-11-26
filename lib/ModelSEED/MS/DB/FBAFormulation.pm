@@ -24,8 +24,8 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
-has regulatorymodel_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
-has model_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has regulatorymodel_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has model_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has fva => (is => 'rw', isa => 'Bool', printOrder => '10', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -33,7 +33,7 @@ has comboDeletions => (is => 'rw', isa => 'Int', printOrder => '11', default => 
 has fluxMinimization => (is => 'rw', isa => 'Bool', printOrder => '12', default => '0', type => 'attribute', metaclass => 'Typed');
 has findMinimalMedia => (is => 'rw', isa => 'Bool', printOrder => '13', default => '0', type => 'attribute', metaclass => 'Typed');
 has notes => (is => 'rw', isa => 'Str', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
-has expressionData_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has expressionData_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has objectiveConstraintFraction => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => 'none', type => 'attribute', metaclass => 'Typed');
 has allReversible => (is => 'rw', isa => 'Int', printOrder => '14', default => '0', type => 'attribute', metaclass => 'Typed');
 has defaultMaxFlux => (is => 'rw', isa => 'Int', printOrder => '20', required => 1, default => '1000', type => 'attribute', metaclass => 'Typed');
@@ -125,14 +125,14 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'regulatorymodel_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => -1,
             'name' => 'model_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -190,7 +190,7 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'expressionData_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {

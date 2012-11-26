@@ -45,12 +45,12 @@ sub execute {
     my $auth = ModelSEED::Auth::Factory->new->from_config();
     my $store  = ModelSEED::Store->new(auth => $auth);
     my $helpers = ModelSEED::App::Helpers->new;
-
     my $arg = shift @$args;
     my $ref;
-    try {
+    
+	try {
         $ref = ModelSEED::Reference->new(ref => $arg);
-    };
+	};
     if(defined($ref)) {
         if($ref->type eq 'collection' && 0 == @{$ref->parent_collections}) {
             # Base level collection ( want a list of aliases )

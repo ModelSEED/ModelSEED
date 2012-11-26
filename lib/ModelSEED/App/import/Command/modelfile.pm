@@ -15,7 +15,7 @@ use Class::Autouse qw(
 
 sub abstract { return "Import an existing model from file"; }
 
-sub usage_desc { return "ms import model [id] [alias] [biochemistry] [options]"; }
+sub usage_desc { return "ms import modelfile [id] [alias] [biochemistry] [options]"; }
 sub description { return "Imports model from file"; }
 
 sub opt_spec {

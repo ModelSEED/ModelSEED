@@ -11,6 +11,7 @@ use ModelSEED::MS::BiomassTemplate;
 use ModelSEED::MS::Role;
 use ModelSEED::MS::RoleSet;
 use ModelSEED::MS::Complex;
+use ModelSEED::MS::MappingClassifier;
 use ModelSEED::MS::AliasSet;
 use Moose;
 use namespace::autoclean;
@@ -27,7 +28,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '2', default => 'SEED', type => 'attribute', metaclass => 'Typed');
-has biochemistry_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '3', type => 'attribute', metaclass => 'Typed');
+has biochemistry_uuid => (is => 'rw', isa => 'Str', printOrder => '3', type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
 
@@ -41,6 +42,7 @@ has biomassTemplates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub 
 has roles => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Role)', metaclass => 'Typed', reader => '_roles', printOrder => '2');
 has rolesets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(RoleSet)', metaclass => 'Typed', reader => '_rolesets', printOrder => '3');
 has complexes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Complex)', metaclass => 'Typed', reader => '_complexes', printOrder => '4');
+has mappingClassifiers => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(MappingClassifier)', metaclass => 'Typed', reader => '_mappingClassifiers', printOrder => '5');
 has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(AliasSet)', metaclass => 'Typed', reader => '_aliasSets', printOrder => '-1');
 
 
@@ -97,7 +99,7 @@ my $attributes = [
             'req' => 0,
             'printOrder' => 3,
             'name' => 'biochemistry_uuid',
-            'type' => 'ModelSEED::uuid',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -184,6 +186,12 @@ my $subobjects = [
             'class' => 'Complex'
           },
           {
+            'printOrder' => 5,
+            'name' => 'mappingClassifiers',
+            'type' => 'child',
+            'class' => 'MappingClassifier'
+          },
+          {
             'printOrder' => -1,
             'name' => 'aliasSets',
             'type' => 'child',
@@ -191,7 +199,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {universalReactions => 0, biomassTemplates => 1, roles => 2, rolesets => 3, complexes => 4, aliasSets => 5};
+my $subobject_map = {universalReactions => 0, biomassTemplates => 1, roles => 2, rolesets => 3, complexes => 4, mappingClassifiers => 5, aliasSets => 6};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -227,6 +235,10 @@ around 'rolesets' => sub {
 around 'complexes' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('complexes');
+};
+around 'mappingClassifiers' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('mappingClassifiers');
 };
 around 'aliasSets' => sub {
   my ($orig, $self) = @_;
