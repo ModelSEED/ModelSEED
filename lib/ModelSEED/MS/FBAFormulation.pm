@@ -28,6 +28,7 @@ has cplexLicense => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msda
 has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
+has promBounds => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildpromBounds' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -160,6 +161,53 @@ sub _buildknockouts {
 		return $string.", ".$rxnstr;
 	}
 	return $string.$rxnstr;
+}
+sub _buildpromBounds {
+	my ($self) = @_;
+	my $bounds = {};
+	my $clone = $self->cloneObject();
+	$clone->promModel_uuid("");
+	$clone->fva(1);
+	my $results = $clone->runFBA();
+	my $fluxes = $results->fbaReactionVariables();
+	for (my $i=0; $i < @{$fluxes}; $i++) {
+		my $flux = $fluxes->[$i];
+		$bounds->{$flux->modelreaction()->id()}->[0] = $flux->min();
+		$bounds->{$flux->modelreaction()->id()}->[1] = $flux->max();
+	}
+	my $mdlrxns = $self->model()->modelreactions();
+	my $geneReactions = {};
+	foreach my $mdlrxn (@{$mdlrxns}) {
+		foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
+			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
+				foreach my $feature (@{$subunit->modelReactionProteinSubunitGenes()}) {
+					$geneReactions->{$feature->feature()->id()}->{$mdlrxn->id()} = 1;
+				}
+			}				
+		} 
+	}
+	my $promModel = $self->promModel();
+	my $genekos = $self->geneKOs();
+	foreach my $gene (@{$genekos}) {
+		my $tfmap = $promModel->queryObject("transcriptionFactorMaps",{
+			transcriptFactor_uuid => $gene->uuid()
+		});
+		if (defined($tfmap)) {
+			my $targets = $tfmap->transcriptionFactorMapTargets();
+			foreach my $target (@{$targets}) {
+				my $offProb = $target->tfOffProbability();
+				my $onProb = $target->tfOnProbability();
+				my $targetRxns = [keys(%{$geneReactions->{$target->target()->id()}})];
+				foreach my $rxn (@{$targetRxns}) {
+					my $bounds = $bounds->{$rxn};
+					$bounds->[0] = "?";
+					$bounds->[1] = "?";
+				}
+			}
+		}
+	}
+	
+	return $bounds;
 }
 
 #***********************************************************************************************************
@@ -424,6 +472,14 @@ sub createJobDirectory {
 		"database root output directory" => $self->jobPath()."/",
 		"database root input directory" => $self->jobDirectory()."/",
 	};
+	if (defined($self->promModel_uuid()) && length($self->promModel_uuid()) > 0) {
+		my $softConst = $self->PROMKappa();
+		my $bounds = $self->promBounds();
+		foreach my $key (keys(%{$bounds})) {
+			$softConst .= ";".$key.":".$bounds->{$key}->[0].":".$bounds->{$key}->[1];
+		}
+		$parameters->{"Soft Constraint"} = $softConst;
+	}
 	if ($solver eq "SCIP") {
 		$parameters->{"use simple variable and constraint names"} = 1;
 	}

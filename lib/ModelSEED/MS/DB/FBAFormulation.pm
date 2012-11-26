@@ -25,6 +25,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclas
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has regulatorymodel_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has promModel_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 has model_uuid => (is => 'rw', isa => 'Str', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has media_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has secondaryMedia_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
@@ -55,6 +56,7 @@ has simpleThermoConstraints => (is => 'rw', isa => 'Bool', printOrder => '15', d
 has thermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '16', default => '1', type => 'attribute', metaclass => 'Typed');
 has noErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '17', default => '1', type => 'attribute', metaclass => 'Typed');
 has minimizeErrorThermodynamicConstraints => (is => 'rw', isa => 'Bool', printOrder => '18', default => '1', type => 'attribute', metaclass => 'Typed');
+has PROMKappa => (is => 'rw', isa => 'Num', printOrder => '19', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -72,6 +74,7 @@ has fbaPhenotypeSimulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 # LINKS:
 has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
+has promModel => (is => 'rw', type => 'link(ModelSEED::Store,PROMModel,promModel_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_promModel', clearer => 'clear_promModel', isa => 'ModelSEED::MS::PROMModel');
 has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
 has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
@@ -84,6 +87,10 @@ sub _build_modDate { return DateTime->now()->datetime(); }
 sub _build_model {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Model',$self->model_uuid());
+}
+sub _build_promModel {
+  my ($self) = @_;
+  return $self->getLinkedObject('ModelSEED::Store','PROMModel',$self->promModel_uuid());
 }
 sub _build_media {
   my ($self) = @_;
@@ -125,6 +132,13 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'regulatorymodel_uuid',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'promModel_uuid',
             'type' => 'Str',
             'perm' => 'rw'
           },
@@ -365,10 +379,18 @@ my $attributes = [
             'default' => 1,
             'type' => 'Bool',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 19,
+            'name' => 'PROMKappa',
+            'default' => 1,
+            'type' => 'Num',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, inputfiles => 25, outputfiles => 26, uptakeLimits => 27, numberOfSolutions => 28, simpleThermoConstraints => 29, thermodynamicConstraints => 30, noErrorThermodynamicConstraints => 31, minimizeErrorThermodynamicConstraints => 32};
+my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, promModel_uuid => 3, model_uuid => 4, media_uuid => 5, secondaryMedia_uuids => 6, fva => 7, comboDeletions => 8, fluxMinimization => 9, findMinimalMedia => 10, notes => 11, expressionData_uuid => 12, objectiveConstraintFraction => 13, allReversible => 14, defaultMaxFlux => 15, defaultMaxDrainFlux => 16, defaultMinDrainFlux => 17, maximizeObjective => 18, decomposeReversibleFlux => 19, decomposeReversibleDrainFlux => 20, fluxUseVariables => 21, drainfluxUseVariables => 22, geneKO_uuids => 23, reactionKO_uuids => 24, parameters => 25, inputfiles => 26, outputfiles => 27, uptakeLimits => 28, numberOfSolutions => 29, simpleThermoConstraints => 30, thermodynamicConstraints => 31, noErrorThermodynamicConstraints => 32, minimizeErrorThermodynamicConstraints => 33, PROMKappa => 34};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -392,6 +414,15 @@ my $links = [
             'name' => 'model',
             'class' => 'Model',
             'method' => 'Model'
+          },
+          {
+            'attribute' => 'promModel_uuid',
+            'weak' => 0,
+            'parent' => 'ModelSEED::Store',
+            'clearer' => 'clear_promModel',
+            'name' => 'promModel',
+            'class' => 'PROMModel',
+            'method' => 'PROMModel'
           },
           {
             'attribute' => 'media_uuid',
@@ -430,7 +461,7 @@ my $links = [
           }
         ];
 
-my $link_map = {model => 0, media => 1, geneKOs => 2, reactionKOs => 3, secondaryMedia => 4};
+my $link_map = {model => 0, promModel => 1, media => 2, geneKOs => 3, reactionKOs => 4, secondaryMedia => 5};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

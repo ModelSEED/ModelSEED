@@ -30,6 +30,13 @@ $objectDefinitions->{FBAFormulation} = {
 			req        => 0
 		},
 		{
+			name       => 'promModel_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
 			name       => 'model_uuid',
 			printOrder => -1,
 			perm       => 'rw',
@@ -267,6 +274,14 @@ $objectDefinitions->{FBAFormulation} = {
 			req        => 0,
 			default    => 1
 		},
+		{
+			name       => 'PROMKappa',
+			printOrder => 19,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => 1
+		},
 	],
 	subobjects => [
 		{
@@ -313,6 +328,13 @@ $objectDefinitions->{FBAFormulation} = {
 			attribute => "model_uuid",
 			parent    => "ModelSEED::Store",
 			method    => "Model",
+			weak      => 0
+		},
+		{
+			name      => "promModel",
+			attribute => "promModel_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "PROMModel",
 			weak      => 0
 		},
 		{
@@ -3062,6 +3084,165 @@ $objectDefinitions->{ReactionSet} = {
 		}
 	],
 	reference_id_types => [qw(uuid)],
+};
+
+$objectDefinitions->{PROMModel} = {
+	parents    => ['ModelSEED::Store'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'name',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'annotation_uuid',
+			printOrder => 8,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
+	],
+	subobjects => [
+		{
+			name       => "transcriptionFactorMaps",
+			printOrder => 0,
+			class      => "TranscriptionFactorMap",
+			type       => "child"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "annotation",
+			attribute => "annotation_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Annotation",
+			weak      => 0
+		}
+	],
+	reference_id_types => [qw(uuid alias)],
+	version            => 2.0,
+};
+
+$objectDefinitions->{TranscriptionFactorMap} = {
+	parents    => ['PROMModel'],
+	class      => 'child',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'transcriptFactor_uuid',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1,
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'name',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0,
+			default    => ""
+		},
+	],
+	subobjects => [
+		{
+			name       => "transcriptionFactorMapTargets",
+			printOrder => 0,
+			class      => "TranscriptionFactorMapTarget",
+			type       => "encompassed"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "transcriptFactor",
+			attribute => "transcriptFactor_uuid",
+			parent    => "Annotation",
+			method    => "features"
+		}
+	],
+	reference_id_types => [qw(uuid)],
+};
+
+$objectDefinitions->{TranscriptionFactorMapTarget} = {
+	parents    => ['TranscriptionFactorMap'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'target_uuid',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1,
+		},
+		{
+			name       => 'tfOffProbability',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1,
+		},
+		{
+			name       => 'tfOnProbability',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1,
+		},
+	],
+	subobjects => [],
+	primarykeys => [qw(target_uuid)],
+	links       => [
+		{
+			name      => "target",
+			attribute => "target_uuid",
+			parent    => "Annotation",
+			method    => "features"
+		}
+	],
+	reference_id_types => [qw(target_uuid)],
 };
 
 $objectDefinitions->{Model} = {
