@@ -71,6 +71,14 @@ sub execute {
 	    class => "Reaction"});
     }
 
+    if(!$biochemistry->queryObject("aliasSets",{name => "name", attribute=>"reactions"})){
+	$biochemistry->add("aliasSets",{
+	    name => "name",
+	    source => "name",
+	    attribute => "reactions",
+	    class => "Reaction"});
+    }
+
     my $headingTranslation = {
     	name => "names",
 	enzyme => "enzymes"

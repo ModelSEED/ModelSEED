@@ -75,39 +75,26 @@ sub execute {
 	}
     }
 
-    my $new_name=$args->[0];
-    $new_name = $opts->{saveas} if defined($opts->{saveas});
-    my $new_biochemistry=$store->create("Biochemistry",{name => $new_name});
-
-    #Add empty aliasSets
-    if(!defined($opts->{noaliastransfer})){
-	foreach my $set (@{$biochemistry->aliasSets()}){
-	    my $new_set=ModelSEED::MS::AliasSet->new({name=>$set->name(),source=>$set->source(),attribute=>$set->attribute(),class=>$set->class()});
-	    $new_biochemistry->add("aliasSets",$new_set);
-	}
-    }
-
-    $new_biochemistry->mergeBiochemistry($biochemistry,$opts);
-
     #Add empty aliasSets
     if(!defined($opts->{noaliastransfer})){
 	foreach my $set (@{$other_biochemistry->aliasSets()}){
-	    if(!$new_biochemistry->queryObject('aliasSets',{name=>$set->name(),attribute=>$set->attribute()})){
+	    if(!$biochemistry->queryObject('aliasSets',{name=>$set->name(),attribute=>$set->attribute()})){
 		my $new_set=ModelSEED::MS::AliasSet->new({name=>$set->name(),source=>$set->source(),attribute=>$set->attribute(),class=>$set->class()});
-		$new_biochemistry->add("aliasSets",$new_set);
+		$biochemistry->add("aliasSets",$new_set);
 	    }
 	}
     }
 
-    $new_biochemistry->mergeBiochemistry($other_biochemistry,$opts);
+    $biochemistry->mergeBiochemistry($other_biochemistry,$opts);
 
     if (defined($opts->{saveas})) {
 	my $new_ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
 	verbose("Saving biochemistry with merged compounds as ".$new_ref."...\n");
-	$store->save_object($new_ref,$new_biochemistry);
+	$biochemistry->name($opts->{saveas});
+	$store->save_object($new_ref,$biochemistry);
     }elsif (defined($opts->{saveover})) {
 	verbose("Saving over first biochemistry with merged biochmistry...\n");
-	$store->save_object($ref,$new_biochemistry);
+	$store->save_object($ref,$biochemistry);
     }
 }
 

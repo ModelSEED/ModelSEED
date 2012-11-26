@@ -67,6 +67,15 @@ sub execute {
 	    class => "Compound"});
     }
 
+    foreach my $common ("name","searchname"){
+	next if $biochemistry->queryObject("aliasSets",{name => $common, attribute=>"compounds"});
+	$biochemistry->add("aliasSets",{
+	    name => $common,
+	    source => $common,
+	    attribute => "compounds",
+	    class => "Compound"});
+    }
+
     my $headingTranslation = {
     	name => "names"
     };

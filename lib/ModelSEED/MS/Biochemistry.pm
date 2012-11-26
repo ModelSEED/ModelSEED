@@ -503,7 +503,8 @@ sub addCompoundFromHash {
 			      uuid => $cpd->uuid()
 			    });
 	}
-	# Adding alternative names as aliases
+	#Adding alternative names as aliases
+	#Adding searchnames as *unique* aliases
 	foreach my $name (@{$arguments->{names}}) {
 		$self->addAlias({
 			attribute => "compounds",
@@ -511,6 +512,15 @@ sub addCompoundFromHash {
 			alias => $name,
 			uuid => $cpd->uuid()
 		});
+		my $searchname = $cpd->nameToSearchname($name);
+		if(!$self->getObjectByAlias("compounds",$searchname,"searchname")){
+		    $self->addAlias({
+			attribute => "compounds",
+			aliasName => "name",
+			alias => $searchname,
+			uuid => $cpd->uuid()
+		    });
+		}
 	}
 	return $cpd;
 }
