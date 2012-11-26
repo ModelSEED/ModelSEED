@@ -126,9 +126,14 @@ sub createEquation {
     my $args = args([], { format => "uuid", hashed => 0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
-	my $rxnCompID = $self->compartment()->id();
+        my $rxnCompID = $self->compartment()->id();
+        my $hcpd = $self->biochemistry()->checkForProton();
+ 	if (!defined($hcpd)) {
+	    error("Could not find proton in biochemistry!");
+	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
 		my $id = $rgt->[$i]->compound_uuid();
+		next if $id eq $hcpd->uuid() && $args->{hashed}==1;
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
 			my $function = $args->{format};
 			$id = $rgt->[$i]->compound()->$function();
@@ -140,20 +145,17 @@ sub createEquation {
 		}
 		$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} += $rgt->[$i]->coefficient();
 	}
-	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0 && !$args->{hashed}) {
-		my $hcpd = $self->biochemistry()->queryObject("compounds",{name => "H+"});
-		if (!defined($hcpd)) {
-			error("Could not find proton in biochemistry!");
-		}
-		my $id = $hcpd->uuid();
-		if ($args->{format} eq "name" || $args->{format} eq "id") {
-			my $function = $args->{format};
-			$id = $hcpd->$function();
-		} elsif ($args->{format} ne "uuid") {
-			$id = $hcpd->getAlias($args->{format});
-		}
-		$rgtHash->{$id}->{$rxnCompID} += $self->defaultProtons();
-	}
+#Deliberately commented out for the time being, as protons are being added to the reagents list a priori
+#	if (defined($self->defaultProtons()) && $self->defaultProtons() != 0 && !$args->{hashed}) {
+#		my $id = $hcpd->uuid();
+#		if ($args->{format} eq "name" || $args->{format} eq "id") {
+#			my $function = $args->{format};
+#			$id = $hcpd->$function();
+#		} elsif ($args->{format} ne "uuid") {
+#			$id = $hcpd->getAlias($args->{format});
+#		}
+#		$rgtHash->{$id}->{$rxnCompID} += $self->defaultProtons();
+#	}
 	my $reactcode = "";
 	my $productcode = "";
 	my $sign = " <=> ";
