@@ -18,7 +18,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::PROMModel', weak_ref => 1, typ
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
-has transcriptFactor_uuid => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
+has transcriptionFactor_uuid => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
 
@@ -32,15 +32,15 @@ has transcriptionFactorMapTargets => (is => 'rw', isa => 'ArrayRef[HashRef]', de
 
 
 # LINKS:
-has transcriptFactor => (is => 'rw', type => 'link(Annotation,features,transcriptFactor_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_transcriptFactor', clearer => 'clear_transcriptFactor', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
+has transcriptionFactor => (is => 'rw', type => 'link(Annotation,features,transcriptionFactor_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_transcriptionFactor', clearer => 'clear_transcriptionFactor', isa => 'ModelSEED::MS::Feature', weak_ref => 1);
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
-sub _build_transcriptFactor {
+sub _build_transcriptionFactor {
   my ($self) = @_;
-  return $self->getLinkedObject('Annotation','features',$self->transcriptFactor_uuid());
+  return $self->getLinkedObject('Annotation','features',$self->transcriptionFactor_uuid());
 }
 
 
@@ -58,7 +58,7 @@ my $attributes = [
           {
             'req' => 1,
             'printOrder' => 1,
-            'name' => 'transcriptFactor_uuid',
+            'name' => 'transcriptionFactor_uuid',
             'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
           },
@@ -80,7 +80,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, transcriptFactor_uuid => 1, modDate => 2, name => 3};
+my $attribute_map = {uuid => 0, transcriptionFactor_uuid => 1, modDate => 2, name => 3};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -97,16 +97,16 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'transcriptFactor_uuid',
+            'attribute' => 'transcriptionFactor_uuid',
             'parent' => 'Annotation',
-            'clearer' => 'clear_transcriptFactor',
-            'name' => 'transcriptFactor',
+            'clearer' => 'clear_transcriptionFactor',
+            'name' => 'transcriptionFactor',
             'class' => 'features',
             'method' => 'features'
           }
         ];
 
-my $link_map = {transcriptFactor => 0};
+my $link_map = {transcriptionFactor => 0};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

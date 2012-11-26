@@ -17,8 +17,8 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::TranscriptionFactorMap', weak_
 
 # ATTRIBUTES:
 has target_uuid => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
-has tfOffProbability => (is => 'rw', isa => 'Num', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
-has tfOnProbability => (is => 'rw', isa => 'Num', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
+has tfOffProbability => (is => 'rw', isa => 'Num', printOrder => '2', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
+has tfOnProbability => (is => 'rw', isa => 'Num', printOrder => '3', required => 1, default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -47,6 +47,7 @@ my $attributes = [
             'req' => 1,
             'printOrder' => 2,
             'name' => 'tfOffProbability',
+            'default' => 1,
             'type' => 'Num',
             'perm' => 'rw'
           },
@@ -54,6 +55,7 @@ my $attributes = [
             'req' => 1,
             'printOrder' => 3,
             'name' => 'tfOnProbability',
+            'default' => 1,
             'type' => 'Num',
             'perm' => 'rw'
           }

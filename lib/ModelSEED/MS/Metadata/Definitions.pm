@@ -3163,7 +3163,7 @@ $objectDefinitions->{TranscriptionFactorMap} = {
 			req        => 0
 		},
 		{
-			name       => 'transcriptFactor_uuid',
+			name       => 'transcriptionFactor_uuid',
 			printOrder => 1,
 			perm       => 'rw',
 			type       => 'ModelSEED::varchar',
@@ -3197,8 +3197,8 @@ $objectDefinitions->{TranscriptionFactorMap} = {
 	primarykeys => [qw(uuid)],
 	links       => [
 		{
-			name      => "transcriptFactor",
-			attribute => "transcriptFactor_uuid",
+			name      => "transcriptionFactor",
+			attribute => "transcriptionFactor_uuid",
 			parent    => "Annotation",
 			method    => "features"
 		}
@@ -3223,6 +3223,7 @@ $objectDefinitions->{TranscriptionFactorMapTarget} = {
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 1,
+			default    => 1
 		},
 		{
 			name       => 'tfOnProbability',
@@ -3230,6 +3231,7 @@ $objectDefinitions->{TranscriptionFactorMapTarget} = {
 			perm       => 'rw',
 			type       => 'Num',
 			req        => 1,
+			default    => 1
 		},
 	],
 	subobjects => [],
