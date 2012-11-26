@@ -697,16 +697,22 @@ sub mergeBiochemistry {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
     	my $uuidTranslation = {};
-	verbose("Merging ".scalar(@$objs)." ".$type."\n");
+	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name()."\n");
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
 		    my $aliases={};
 		    if(!defined($opts->{noaliastransfer})){
-			foreach my $set ( grep { $_->attribute() eq $type } @{$self->aliasSets()} ){
+			foreach my $set ( grep { $_->attribute() eq $type } @{$bio->aliasSets()} ){
 			    $aliases->{$set->name()}{$obj->getAlias($set->name())}=1 if $obj->getAlias($set->name());
 			}
 		    }
-		    my $objId = (defined($opts->{namespace}) && defined($aliases->{$opts->{namespace}})) ? (keys %{$aliases->{$opts->{namespace}}})[0] : $obj->id();
+		    my $objId=$obj->id();
+		    foreach my $idNamespace (@{$opts->{namespace}}){
+			if(exists($aliases->{$idNamespace})){
+			    $objId=(keys %{$aliases->{$idNamespace}})[0];
+			    last;
+			}
+		    }
 
 		    if ($type eq "reactions") {
 				$obj->parent($self);
@@ -817,9 +823,16 @@ Description:
 
 sub checkForDuplicateCompound {
     my ($self,$obj,$opts) = @_;
-    if(defined($opts->{namespace})){
-	return undef if !$obj->getAlias($opts->{mergevia});
-	return $self->getObjectByAlias("compounds",$obj->getAlias($opts->{mergevia}),$opts->{mergevia});
+    if(defined($opts->{mergevia})){
+	foreach my $mergeNamespace (@{$opts->{mergevia}}){
+	    next if !$obj->getAlias($mergeNamespace);
+	    my $dupObj = $self->getObjectByAlias("compounds",$obj->getAlias($mergeNamespace),$mergeNamespace);
+	    if($dupObj){
+		verbose("Duplicate compound found using ".$mergeNamespace."\n");
+		return $dupObj;
+	    }
+	}
+	return undef;
     }
     return undef if !$obj->name();
     return $self->queryObject("compounds",{name => $obj->name()});
@@ -849,6 +862,18 @@ Description:
 sub checkForDuplicateCue {
     my ($self,$obj,$opts) = @_;
     return $self->queryObject("cues",{name => $obj->name()});
+}
+
+sub checkForProton {
+    my ($self) = @_;
+    
+    if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
+	return $self->getObjectByAlias("compounds","C00080","KEGG");
+    }
+    if($self->queryObject("aliasSets",{name => "MetaCyc", attribute=>"compounds"})){
+	return $self->getObjectByAlias("compounds","PROTON","MetaCyc");
+    }
+    return $self->queryObject("compounds",{name => "H+"});
 }
 
 sub __upgrade__ {
