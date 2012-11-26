@@ -40,14 +40,14 @@ sub execute {
 	    $opts->{namespace} = $args->[0];
 	    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
     }
-	#processing table
-	my $mergeto = [];
-	if (defined($opts->{mergeto})) {
-	    my $mergeto = translateArrayOptions({
-	    	option => $opts->{mergeto},
-	    	delimiter => ","
-	    });
-	}
+
+    #processing table
+    my $mergeto = [];
+    if (defined($opts->{mergeto})) {
+	$mergeto = translateArrayOptions({
+	    option => $opts->{mergeto},
+	    delimiter => ","});
+    }
 
     #creating namespaces if they don't exist
     if(!$biochemistry->queryObject("aliasSets",{name => $opts->{namespace},attribute=>"compounds"})){
@@ -57,6 +57,7 @@ sub execute {
 	    attribute => "compounds",
 	    class => "Compound"});
     }
+
     foreach my $merge (@$mergeto){
 	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"compounds"});
 	$biochemistry->add("aliasSets",{
@@ -92,6 +93,7 @@ sub execute {
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
         verbose "Saving biochemistry with new compounds as ".$ref."...\n";
+	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);
     } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
         verbose "Saving over original biochemistry with new compounds...\n";

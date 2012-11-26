@@ -7,12 +7,12 @@ use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::App::Helpers
 );
-use ModelSEED::utilities qw( verbose set_verbose );
+use ModelSEED::utilities qw( verbose set_verbose translateArrayOptions );
 sub abstract { return "Consolidates a single biochemistry into a nonredundant set" }
 sub usage_desc { return "bio consolidatebio [ < biochemistry | biochemistry ]"; }
 sub opt_spec {
     return (
-	["mergevia|m:s", "Name of aliases used to merge compounds"],
+	["mergevia|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
 	["namespace|n:s", "Default namespace for printing identifiers"],
     	["noaliastransfer|t", "Do not transfer aliases to merged compound"],
     	["verbose|v", "Print messages with progress"],
@@ -34,14 +34,31 @@ sub execute {
 	verbose("Neither the saveas or saveover options were used\nThis run will therefore be a dry run and the biochemistry will not be saved\n");
     }
 
+    if(!defined($opts->{mergevia})){
+	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+    }
+
+    #processing table
+    my $mergevia = [];
+    if (defined($opts->{mergevia})) {
+	$mergevia = translateArrayOptions({
+	    option => $opts->{mergevia},
+	    delimiter => ","});
+    }
+
     if(!defined($opts->{namespace})){
-	verbose("A namespace was not passed, and therefore compounds will be compared directly based on their names\n");
+	verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
+	$opts->{namespace}=[$args->[0]];
+    }else{
+	#need arrayref if using mergeBiochemistry()
+	#only need one namespace if using consolidatebio
+	$opts->{namespace}=[$opts->{namespace}];
     }
 
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);
 
-    my $new_name="Test";
+    my $new_name="Temp";
     $new_name = $opts->{saveas} if defined($opts->{saveas});
     my $new_biochemistry=$store->create("Biochemistry",{name => $new_name});
 
@@ -49,7 +66,7 @@ sub execute {
     my ($biochemistry,$ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
 
-    print "Using: ",$biochemistry->name(),"\n";
+    verbose("Using: ",$biochemistry->name(),"\n");
 
     #Add empty aliasSets
     if(!defined($opts->{noaliastransfer})){
@@ -58,21 +75,22 @@ sub execute {
 	foreach my $set (@{$biochemistry->aliasSets()}){
 	    my $new_set=ModelSEED::MS::AliasSet->new({name=>$set->name(),source=>$set->source(),attribute=>$set->attribute(),class=>$set->class()});
 	    $new_biochemistry->add("aliasSets",$new_set);
-	    if($set->name() eq $opts->{namespace}){
+	    if($set->name() eq $opts->{namespace}->[0]){
 		$has_namespace=1;
 	    }
 	}
-	$self->usage_error("Namespace ".$opts->{namespace}." not found") unless $has_namespace;
+	$self->usage_error("Namespace ".$opts->{namespace}->[0]." not found") unless $has_namespace;
     }
 
-    $biochemistry->defaultNameSpace($opts->{namespace}) if defined($opts->{namespace});
-    $new_biochemistry->defaultNameSpace($opts->{namespace}) if defined($opts->{namespace});
+    $biochemistry->defaultNameSpace($opts->{namespace}->[0]);
+    $new_biochemistry->defaultNameSpace($opts->{namespace}->[0]);
 
     $new_biochemistry->mergeBiochemistry($biochemistry,$opts);
 
     if (defined($opts->{saveas})) {
 	my $new_ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
 	verbose("Saving biochemistry with merged compounds as ".$new_ref."...\n");
+	$biochemistry->name($opts->{saveas});
 	$store->save_object($new_ref,$new_biochemistry);
     }elsif (defined($opts->{saveover})) {
 	verbose("Saving over original biochemistry with merged biochmistry...\n");
