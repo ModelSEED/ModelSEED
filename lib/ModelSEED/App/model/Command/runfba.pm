@@ -58,7 +58,6 @@ sub execute {
     my ($model, $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
     my ($pmodel, $pref) = $helper->get_object("pROMModel", [$opts->{prom}], $store) if (defined $opts->{prom});
-    warn $pmodel;
     my $out_fh;
     if ($opts->{fileout}) {
         my $filename = $opts->{fileout};
