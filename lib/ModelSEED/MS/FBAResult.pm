@@ -236,6 +236,7 @@ sub loadMFAToolkitResults {
 	$self->parseMinimalMediaResults();
 	$self->parseCombinatorialDeletionResults();
 	$self->parseFVAResults();
+	$self->parsePROMResult();
 	$self->parseOutputFiles();
 }
 
@@ -797,6 +798,37 @@ sub parseFVAResults {
 		}
 	}
 }
+
+=head3 parsePROMResult
+
+Definition:
+	void parsePROMResult();
+Description:
+	Parses PROM result file.
+
+=cut
+
+sub parsePROMResult {
+	my ($self) = @_;
+	my $directory = $self->parent()->jobDirectory();
+	if (-e $directory."/PROMResult.txt") {
+		#Loading file results into a hash
+		my $data = ModelSEED::utilities::LOADFILE($directory."/PROMResult.txt");
+		if (@{$data} < 3) {
+			return ModelSEED::utilities::ERROR("output file did not contain necessary data");
+		}
+		my $promOutputHash;
+		foreach my $row (@{$data}) {
+		    my @line = split /\t/, $row;
+		    $promOutputHash->{$line[0]} = $line[1] if ($line[0] =~ /alpha|beta|objectFraction/);
+		}		
+		$self->add("fbaPromResults",$promOutputHash);			       
+		return 1;
+	}
+	return 0;
+}
+
+
 
 =head3 parseOutputFiles
 

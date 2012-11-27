@@ -751,6 +751,12 @@ $objectDefinitions->{FBAResult} = {
 			type       => "encompassed"
 		},
 		{
+			name       => "fbaPromResults",
+			printOrder => 7,
+			class      => "FBAPromResult",
+			type       => "encompassed"
+		},
+		{
 			name       => "fbaDeletionResults",
 			printOrder => 4,
 			class      => "FBADeletionResult",
@@ -1086,6 +1092,37 @@ $objectDefinitions->{FBAPhenotypeSimultationResult} = {
 			method    => "fbaPhenotypeSimulations"
 		},
 	]
+};
+
+$objectDefinitions->{FBAPromResult} = {
+	parents    => ['FBAResult'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'objectFraction',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1
+		},
+		{
+			name       => 'alpha',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1
+		},
+		{
+			name       => 'beta',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 1,
+		},
+	],
+	subobjects  => [],
+	primarykeys => [],
+	links       => []
 };
 
 $objectDefinitions->{FBADeletionResult} = {
