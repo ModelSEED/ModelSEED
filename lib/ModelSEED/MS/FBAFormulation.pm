@@ -165,6 +165,7 @@ sub _buildknockouts {
 sub _buildpromBounds {
 	my ($self) = @_;
 	my $bounds = {};
+	my $final_bounds = {};
 	my $clone = $self->cloneObject();
 	$clone->parent($self->parent());
 	$clone->promModel_uuid("");
@@ -173,8 +174,8 @@ sub _buildpromBounds {
 	my $fluxes = $results->fbaReactionVariables();
 	for (my $i=0; $i < @{$fluxes}; $i++) {
 		my $flux = $fluxes->[$i];
-		$bounds->{$flux->modelreaction()->id()}->[0] = $flux->min();
-		$bounds->{$flux->modelreaction()->id()}->[1] = $flux->max();
+		$bounds->{$flux->modelreaction()->reaction()->id()}->[0] = $flux->min();
+		$bounds->{$flux->modelreaction()->reaction()->id()}->[1] = $flux->max();
 	}
 	my $mdlrxns = $self->model()->modelreactions();
 	my $geneReactions = {};
@@ -182,7 +183,7 @@ sub _buildpromBounds {
 		foreach my $prot (@{$mdlrxn->modelReactionProteins()}) {
 			foreach my $subunit (@{$prot->modelReactionProteinSubunits()}) {
 				foreach my $feature (@{$subunit->modelReactionProteinSubunitGenes()}) {
-					$geneReactions->{$feature->feature()->id()}->{$mdlrxn->id()} = 1;
+					$geneReactions->{$feature->feature()->id()}->{$mdlrxn->reaction()->id()} = 1;
 				}
 			}				
 		} 
@@ -201,15 +202,16 @@ sub _buildpromBounds {
 				my $targetRxns = [keys(%{$geneReactions->{$target->target()->id()}})];
 				foreach my $rxn (@{$targetRxns}) {
 					my $bounds = $bounds->{$rxn};
-					print STDERR "offProb is $offProb\n";
 					$bounds->[0] *= $offProb;
 					$bounds->[1] *= $offProb;
+					$final_bounds->{$rxn}->[0] = $bounds->[0];
+					$final_bounds->{$rxn}->[1] = $bounds->[1];
 				}
 			}
 		}
-	}
-	
-	return $bounds;
+	}	
+
+	return $final_bounds;
 }
 
 #***********************************************************************************************************
