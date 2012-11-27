@@ -102,8 +102,18 @@ foreach (@{$data}) {
     push @$tfMaps, {"transcriptionFactor_uuid" => $geneid2featureid{$tf}, "transcriptionFactorMapTargets" => $tfMapTargets };
 }
 
-my $pmodel = ModelSEED::MS::PROMModel->new("annotation" => $annotation, "transcriptionFactorMaps" => $tfMaps);
+my $pmodel = ModelSEED::MS::PROMModel->new("annotation" => $annotation, "transcriptionFactorMaps" => $tfMaps, "id" => "pm_$genomeid");
 
 
-# TEMPORARILY SAVING IT IN THE MODEL SPACE UNTIL WE HAVE A PROM-MODEL SPACE
-$store->save_object("model/$username/pm_$genomeid", $pmodel);
+print "Saving\n";
+use Try::Tiny;
+try {
+$store->save_object("pROMModel/$username/pm_$genomeid", $pmodel);
+print "Saved\n";
+my $pm = $store->get_object("pROMModel/$username/pm_$genomeid");
+print "Here it is: ", $pm, "\n";
+print Dumper($pm);
+}
+catch {
+    print Dumper($_);
+};
