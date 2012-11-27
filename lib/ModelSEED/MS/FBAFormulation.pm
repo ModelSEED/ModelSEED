@@ -166,6 +166,7 @@ sub _buildpromBounds {
 	my ($self) = @_;
 	my $bounds = {};
 	my $clone = $self->cloneObject();
+	$clone->parent($self->parent());
 	$clone->promModel_uuid("");
 	$clone->fva(1);
 	my $results = $clone->runFBA();
@@ -190,7 +191,7 @@ sub _buildpromBounds {
 	my $genekos = $self->geneKOs();
 	foreach my $gene (@{$genekos}) {
 		my $tfmap = $promModel->queryObject("transcriptionFactorMaps",{
-			transcriptFactor_uuid => $gene->uuid()
+			transcriptionFactor_uuid => $gene->uuid()
 		});
 		if (defined($tfmap)) {
 			my $targets = $tfmap->transcriptionFactorMapTargets();
@@ -200,8 +201,9 @@ sub _buildpromBounds {
 				my $targetRxns = [keys(%{$geneReactions->{$target->target()->id()}})];
 				foreach my $rxn (@{$targetRxns}) {
 					my $bounds = $bounds->{$rxn};
-					$bounds->[0] = "?";
-					$bounds->[1] = "?";
+					print STDERR "offProb is $offProb\n";
+					$bounds->[0] *= $offProb;
+					$bounds->[1] *= $offProb;
 				}
 			}
 		}
@@ -860,7 +862,7 @@ Description:
 sub parseReactionKOList {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
-	$args->{type} = "Reaction";
+	$args->{class} = "Reaction";
 	$self->reactionKO_uuids($self->parseReferenceList($args));
 }
 
@@ -878,7 +880,7 @@ Description:
 sub parseGeneKOList {
 	my ($self,$args) = @_;
 	$args->{data} = "uuid";
-	$args->{type} = "Feature";
+	$args->{class} = "Feature";
 	$self->geneKO_uuids($self->parseReferenceList($args));
 }
 

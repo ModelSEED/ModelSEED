@@ -114,6 +114,7 @@ sub buildFBAFormulation {
 		overrides => {}
 	}, @_);
 	my $model = $args->{model};
+        my $pmodel = $args->{promModel};
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
 	$data = args([],{
@@ -150,7 +151,8 @@ sub buildFBAFormulation {
 			id => "Biomass/id/bio00001",
 			coefficient => 1
 		}],
-		fbaPhenotypeSimulations => []
+		fbaPhenotypeSimulations => [],
+		promModel => ""
 	}, $data);
 	# Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{media},"Media");
@@ -159,6 +161,8 @@ sub buildFBAFormulation {
 	}
 	# Creating objects and populating with provenance objects
 	my $form = ModelSEED::MS::FBAFormulation->new({
+		promModel_uuid => (defined $pmodel) ?  $pmodel->uuid() : "",
+		PROMModel => $pmodel,
 		parent => $model->parent(),
 		model_uuid => $model->uuid(),
 		model => $model,
@@ -480,7 +484,7 @@ sub buildObjectFromExchangeFileArray {
 		Model => undef,
 		Annotation => undef
 	}, @_);
-	my $data = $self->parseExchangeFileArray($args);
+    my $data = $self->parseExchangeFileArray($args);
 	#The data object must have an ID, which is used to identify the type
 	if (!defined($data->{id})) {
 		ModelSEED::utilities::ERROR("Input exchange file must have ID!");

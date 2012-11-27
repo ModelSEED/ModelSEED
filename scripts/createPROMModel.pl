@@ -102,7 +102,7 @@ foreach (@{$data}) {
     push @$tfMaps, {"transcriptionFactor_uuid" => $geneid2featureid{$tf}, "transcriptionFactorMapTargets" => $tfMapTargets };
 }
 
-my $pmodel = ModelSEED::MS::PROMModel->new("annotation" => $annotation, "transcriptionFactorMaps" => $tfMaps, "id" => "pm_$genomeid");
+my $pmodel = ModelSEED::MS::PROMModel->new("annotation_uuid" => $annotation->uuid(), "transcriptionFactorMaps" => $tfMaps, "id" => "pm_$genomeid");
 
 
 print "Saving\n";
