@@ -1102,6 +1102,8 @@ sub export {
 		return $self->createHTML();
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
+	} elsif (lc($args->{format}) eq "cytoseed") {
+		return $self->printCytoSEED();
 	}
 	error("Unrecognized type for export: ".$args->{format});
 }
