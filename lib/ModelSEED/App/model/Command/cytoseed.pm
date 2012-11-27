@@ -26,7 +26,7 @@ sub execute {
     my $helper = ModelSEED::App::Helpers->new();
     my ($model, $ref) = $helper->get_object("model", $args, $store);
     $self->usage_error("Must specify a model to use") unless(defined($model));
-    print join("\n", @{$model->printCytoSEED()});
+    print $model->printCytoSEED();
 }
 
 1;

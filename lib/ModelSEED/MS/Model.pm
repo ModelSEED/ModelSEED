@@ -1034,7 +1034,7 @@ sub printSBML {
 	push(@{$output},'</listOfReactions>');
 	push(@{$output},'</model>');
 	push(@{$output},'</sbml>');
-	return $output;
+	return join("\n",@{$output});
 }
 
 =head3 printExchange
@@ -1391,7 +1391,7 @@ sub printCytoSEED {
 	$result->{"fba_results"} = { $modelid => $fba_results };
 	$result->{"reaction_classifications"}->{$modelid} = [values %$reaction_classifications];
 
-	return [YAML::XS::Dump $result];
+	return YAML::XS::Dump $result;
 }
 
 #***********************************************************************************************************
