@@ -1,8 +1,6 @@
 use ModelSEED::Store;
 use ModelSEED::Auth::Factory;
-use ModelSEED::MS::DB::PROMModel;
-use ModelSEED::MS::DB::TranscriptionFactorMap;
-use ModelSEED::MS::DB::TranscriptionFactorMapTarget;
+use ModelSEED::MS::PROMModel;
 use strict;
 use Data::Dumper;
 
@@ -104,7 +102,8 @@ foreach (@{$data}) {
     push @$tfMaps, {"transcriptionFactor_uuid" => $geneid2featureid{$tf}, "transcriptionFactorMapTargets" => $tfMapTargets };
 }
 
-my $pmodel = ModelSEED::MS::DB::PROMModel->new("annotation" => $annotation, "transcriptionFactorMaps" => $tfMaps);
+my $pmodel = ModelSEED::MS::PROMModel->new("annotation" => $annotation, "transcriptionFactorMaps" => $tfMaps);
 
 
-$store->save_object("promModel/$username/pm_$genomeid", $pmodel);
+# TEMPORARILY SAVING IT IN THE MODEL SPACE UNTIL WE HAVE A PROM-MODEL SPACE
+$store->save_object("model/$username/pm_$genomeid", $pmodel);

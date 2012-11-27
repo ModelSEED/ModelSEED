@@ -89,7 +89,7 @@ sub buildClassifier {
 		$objData->{role_uuid} = $role->uuid();
 		$cfRoleHash->{$row->[0]} = $classifier->add("classifierRoles",$objData);
 	}
-	return ($classifier,$mapping);
+	return ($classifier);   #,$mapping); THIS VARIABLE IS UNDEFINED
 }
 
 =head3 buildFBAFormulation
