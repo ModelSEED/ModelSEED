@@ -80,7 +80,13 @@ sub _check_server {
     #$self->_poll_prefix($prefix);
     my $kbid;
     if ( defined $msid ) {
-        $kbid = $self->kbid_from_msid($msid);
+        my ($hash) = $self->idServer->external_ids_to_kbase_ids("ModelSEED", [$msid]);
+        #$kbid = $self->kbid_from_msid($msid);
+        $kbid = $hash->{$msid};
+    }
+    if( defined $kbid && defined $msid ) {
+        $self->_kbid_to_msid->{$kbid} = $msid;
+        $self->_msid_to_kbid->{$msid} = $kbid;
     }
     if( defined $kbid && defined $uuid ) {
         $self->_kbid_to_uuid->{$kbid} = $uuid;
@@ -170,7 +176,7 @@ sub _load_from_file {
         $self->_msid_to_kbid->{$msid} = $kbid;
     }
 }
-sub _build_idServer { return Bio::KBase::IDServer::Client->new("http://localhost:5000"); }
+sub _build_idServer { return Bio::KBase::IDServer::Client->new("http://bio-data-1.mcs.anl.gov/services/idserver"); }
 1;
 
 use strict;
@@ -577,8 +583,8 @@ sub doBiochemistryAndMapping {
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         my $rxnrules = [];
         foreach my $cpx (@{$mappingObj->complexes}) {
-            foreach my $rule (@{$cpx->complexreactions}) {
-                push(@$rxnrules, { 'complex_uuid' => $cpx->uuid, 'reaction_uuid' => $rule->reaction_uuid });
+            foreach my $rxn (@{$cpx->reaction_uuids}) {
+                push(@$rxnrules, { 'complex_uuid' => $cpx->uuid, 'reaction_uuid' => $rxn });
             }
         }
         buildTable("$directory/hasStep.dtx", \%columns, $rxnrules);
@@ -604,7 +610,7 @@ sub doBiochemistryAndMapping {
         foreach my $reaction (@$reactions) {
             my $reagents = $reaction->reagents;
             foreach my $reagent (@$reagents) {
-                my $cmp_uuid = $reagent->destinationCompartment_uuid;
+                my $cmp_uuid = $reagent->compartment_uuid;
                 my $localized_compound = $reagent->compound_uuid . $cmp_uuid;
                 next if defined $seen->{$localized_compound};
                 my $cmp_kbid = $kbIdRegister->kbid_from_uuid($cmp_uuid);
@@ -652,7 +658,7 @@ sub doBiochemistryAndMapping {
         my $reactions = $biochemObj->reactions;
         foreach my $reaction (@$reactions) {
             foreach my $reagent (@{$reaction->reagents}) {
-                my $cmp_id = $reagent->destinationCompartment_uuid;
+                my $cmp_id = $reagent->compartment_uuid;
                 my $hash = {
                     reaction_uuid => $reaction->uuid,
                     localized_compound => $reagent->compound_uuid . $cmp_id,
@@ -725,7 +731,7 @@ sub doBiochemistryAndMapping {
         my $seen = {};
         foreach my $rxn (@{$biochemObj->reactions}) {
             foreach my $reagent (@{$rxn->reagents}) {
-                my $cmp   = $reagent->destinationCompartment_uuid;
+                my $cmp   = $reagent->compartment_uuid;
                 my $local = $reagent->compound_uuid . $cmp;
                 next if defined($seen->{$local});
                 my $at = {
@@ -764,6 +770,7 @@ sub doModel {
     $append //= {};
     ## Summary
     ## - Main Model Tables
+    ## - Linker Tables ( to genome )
     ## - Linker Tables ( within the Model )
     ## - Linker Tables ( Model Parts to Base Objects )
     ## - Linker Tables ( Model to Model Parts )
@@ -929,6 +936,27 @@ sub doModel {
         };
         tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
         buildTable("$directory/IsComprisedOf.dtx", \%columns, $bios_cpds, $append);
+    }
+    ## Linker TABLES - To Genome
+    ##     - IsModeledBy ( Genome <> Model )
+    
+    ## IsModeledBy ( Genome <> Model ) 
+    {
+        my $anno    = $model->annotation;
+        my $genomes = $anno->genomes;
+        my $model_genomes = [];
+        foreach my $genome (@$genomes) {
+            push(@$model_genomes, {
+                genome_id => $genome->id,
+                model_id  => $model_kbid,
+            });
+        }
+        my $a = {
+            'from-link' => 'genome_id',
+            'to-link'   => 'model_id',
+        };
+        tie my %columns, 'Tie::Hash::Sorted', 'Hash' => $a;
+        buildTable("$directory/IsModeledBy.dtx", \%columns, $model_genomes, $append);
     }
     ## Linker TABLES - Within Model Parts
     ##
