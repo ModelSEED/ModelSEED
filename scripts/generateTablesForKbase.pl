@@ -244,7 +244,7 @@ if(defined($mapping) && defined($biochem)) {
 
 if(@models > 0) {
     my $model_names = \@models;
-    doModels($model_names, $store, $kbIdRegister);
+    doModels($model_names, $store, $kbIdRegister, $bio, $map);
 }
 $kbIdRegister->saveToFile("$directory/KBaseIdRegistry.json");
 
@@ -755,17 +755,48 @@ sub doBiochemistryAndMapping {
 }
 
 sub doModels {
-    my ($models, $store) = @_;
+    my ($models, $store, $kbIdRegister, $bio, $map) = @_;
     my $append = {};
     foreach my $model (@$models) {
         my $obj = $store->get_object($model);
+        fix_links({ model => $obj, biochemistry => $bio, mapping => $map, annotation => $obj->annotation });
         die "Could not find model $model\n" unless(defined($obj));
-        doModel($obj, $append);
+        doModel($obj, $append, $kbIdRegister);
+    }
+}
+
+sub fix_links {
+    my $objs = shift;
+    my ($bio, $map, $anno, $model);
+    if (defined $obj->{biochemistry}) {
+        $bio = $obj->{biochemistry};
+    }
+    if (defined $obj->{mapping} && defined $bio) {
+        $map = $obj->{mapping};
+        $map->biochemistry_uuid($bio->uuid);
+        $map->biochemistry($bio);
+    }
+    if (defined $obj->{annotation} && defined $map) {
+        $anno = $obj->{annotation};
+        $anno->mapping_uuid($map->uuid);
+        $anno->mapping($map);
+    }
+    if (defined $obj->{model}) {
+        $model = $obj->{model};
+
+        $model->biochemistry_uuid($bio->uuid) if defined $bio;
+        $model->biochemistry($bio) if defined $bio;
+
+        $model->mapping_uuid($map->uuid) if defined $map;
+        $model->mapping($map) if defined $map;
+
+        $model->annotation_uuid($anno->uuid) if defined $anno;
+        $model->annotation($anno) if defined $anno;
     }
 }
 
 sub doModel {
-    my ($model, $append) = @_;
+    my ($model, $append, $kbIdRegister) = @_;
     my $model_kbid;
     $append //= {};
     ## Summary
