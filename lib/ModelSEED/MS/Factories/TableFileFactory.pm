@@ -298,24 +298,25 @@ sub createBiochemistry {
 	});
 	#Adding compartments to biochemistry
     my $comps = [
-        { id => "e", name => "Extracellular",         hierarchy => 0 },
-        { id => "w", name => "Cell Wall",             hierarchy => 1 },
-        { id => "p", name => "Periplasm",             hierarchy => 2 },
-        { id => "c", name => "Cytosol",               hierarchy => 3 },
-        { id => "g", name => "Golgi",                 hierarchy => 4 },
-        { id => "r", name => "Endoplasmic Reticulum", hierarchy => 4 },
-        { id => "l", name => "Lysosome",              hierarchy => 4 },
-        { id => "n", name => "Nucleus",               hierarchy => 4 },
-        { id => "h", name => "Chloroplast",           hierarchy => 4 },
-        { id => "m", name => "Mitochondria",          hierarchy => 4 },
-        { id => "x", name => "Peroxisome",            hierarchy => 4 },
-        { id => "v", name => "Vacuole",               hierarchy => 4 },
-        { id => "d", name => "Plastid",               hierarchy => 4 }
+        { id => "e", name => "Extracellular",         hierarchy => 0, uuid => "0A33AC94-D74E-11E1-8F32-85923D9902C7" },
+        { id => "w", name => "Cell Wall",             hierarchy => 1, uuid => "0A33BA9A-D74E-11E1-8F32-85923D9902C7" },
+        { id => "p", name => "Periplasm",             hierarchy => 2, uuid => "0A33C2CE-D74E-11E1-8F32-85923D9902C7" },
+        { id => "c", name => "Cytosol",               hierarchy => 3, uuid => "0A33CBC0-D74E-11E1-8F32-85923D9902C7" },
+        { id => "g", name => "Golgi",                 hierarchy => 4, uuid => "0A33D494-D74E-11E1-8F32-85923D9902C7" },
+        { id => "r", name => "Endoplasmic Reticulum", hierarchy => 4, uuid => "0A33DD4A-D74E-11E1-8F32-85923D9902C7" },
+        { id => "l", name => "Lysosome",              hierarchy => 4, uuid => "0A33E632-D74E-11E1-8F32-85923D9902C7" },
+        { id => "n", name => "Nucleus",               hierarchy => 4, uuid => "0A33EEA2-D74E-11E1-8F32-85923D9902C7" },
+        { id => "h", name => "Chloroplast",           hierarchy => 4, uuid => "0A33F776-D74E-11E1-8F32-85923D9902C7" },
+        { id => "m", name => "Mitochondria",          hierarchy => 4, uuid => "0A34007C-D74E-11E1-8F32-85923D9902C7" },
+        { id => "x", name => "Peroxisome",            hierarchy => 4, uuid => "0A3409A0-D74E-11E1-8F32-85923D9902C7" },
+        { id => "v", name => "Vacuole",               hierarchy => 4, uuid => "0A34135A-D74E-11E1-8F32-85923D9902C7" },
+        { id => "d", name => "Plastid",               hierarchy => 4, uuid => "0A341C38-D74E-11E1-8F32-85923D9902C7" }
     ];
     my $uuidhash = $self->uuidHash();
 	for (my $i=0; $i < @{$comps}; $i++) {
 		my $data = {
 			locked => "0",
+			uuid => $comps->[$i]->{uuid},
 			id => $comps->[$i]->{id},
 			name => $comps->[$i]->{name},
 			hierarchy => $comps->[$i]->{hierarchy}
@@ -473,12 +474,16 @@ sub createBiochemistry {
 		if ($mediaRow->id() =~ m/LB/ || $mediaRow->id() =~ m/BHI/) {
 			$defined = "0";
 		}
+		my $minimal = 0;
+		if ($mediaRow->id() =~ m/^Carbon/ || $mediaRow->id() =~ m/^Nitrogen/ || $mediaRow->id() =~ m/^Phosphate/ || $mediaRow->id() =~ m/^Sulfate/) {
+			$minimal = "1";
+		}
 		my $media = $biochemistry->add("media",{
 			locked => "0",
 			id => $mediaRow->id(),
 			name => $mediaRow->id(),
 			isDefined => $defined,
-			isMinimal => 0,
+			isMinimal => $minimal,
 			type => $type,
 		});
 		if (defined($rowHash->{$mediaRow->id()})) {
