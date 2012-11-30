@@ -1263,7 +1263,6 @@ sub printCytoSEED {
 	    $result->{"reaction_details"}->{$msid} = $rdref;
 	}
 
-	print STDERR "getting abstract reactions\n";
 	$result->{"abstract_reaction_details"} = {};
 	foreach my $abstract_rxn (keys %abstract_reactions) {
 	    my $a_rxn = $bc->getObjectByAlias("reactions", $abstract_rxn, "ModelSEED");
@@ -1272,7 +1271,6 @@ sub printCytoSEED {
 	    $result->{"abstract_reaction_details"}->{$msid} = $rdref;
 	}
 
-	print STDERR "getting biomass\n";
 	my $biomasses = $model->biomasses();
 
 	if (@$biomasses == 0) {
