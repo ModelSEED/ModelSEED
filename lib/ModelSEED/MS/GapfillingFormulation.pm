@@ -348,7 +348,7 @@ sub prepareFBAFormulation {
 	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
 	if ($self->biomassHypothesis() == 1) {
 		$form->parameters()->{"Biomass modification hypothesis"} = 1;
-		$self->printBiomassComponentReactions();
+		$self->addBiomassComponentReactions();
 	}
 	if ($self->mediaHypothesis() == 1) {
 		
@@ -368,10 +368,10 @@ Description:
 
 =cut
 
-sub printBiomassComponentReactions {
+sub addBiomassComponentReactions {
 	my ($self,$args) = @_;
 	my $form = $self->fbaFormulation();
-	my $filename = $form->jobDirectory()."/BiomassHypothesisEquations.txt";
+	my $filename = $form->jobDirectory()."/";
 	my $output = ["id\tequation\tname"];
 	my $bio = $self->model()->biomasses()->[0];
 	my $biocpds = $bio->biomasscompounds();
@@ -392,7 +392,7 @@ sub printBiomassComponentReactions {
 			push(@{$output},$cpd->modelcompound()->compound()->id()."DrnRxn\t".$equation."\t".$cpd->modelcompound()->compound()->id()."DrnRxn");
 		}
 	}
-	ModelSEED::utilities::PRINTFILE($filename,$output);	
+	$form->inputfiles()->{"BiomassHypothesisEquations.txt"} = $output;
 }
 
 =head3 runGapFilling
@@ -458,7 +458,7 @@ sub createSolutionsFromArray {
 	my $count = 0;
 	my $rxnHash;
 	for (my $i=0; $i < @{$data}; $i++) {
-		if ($data->[$i] =~ m/^bio00001/) {
+		if ($data->[$i] =~ m/^bio1/) {
 			my $gfsolution = $self->add("gapfillingSolutions",{});
 			my $array = [split(/\t/,$data->[$i])];
 			if (defined($array->[1])) {
@@ -475,8 +475,8 @@ sub createSolutionsFromArray {
 							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
 								$bio->remove("biomasscompounds",$biocpd);
 								$found = 1;
-								push(@{$self->biomassRemovals()},$biocpd->modelcompound());
-								push(@{$self->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
 							}
 						}
 						if ($found == 0) {

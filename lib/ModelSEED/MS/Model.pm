@@ -6,6 +6,7 @@
 # Date of module creation: 2012-03-26T23:22:35
 ########################################################################
 use strict;
+use YAML::XS;
 use XML::LibXML;
 use ModelSEED::MS::DB::Model;
 package ModelSEED::MS::Model;
@@ -1033,7 +1034,7 @@ sub printSBML {
 	push(@{$output},'</listOfReactions>');
 	push(@{$output},'</model>');
 	push(@{$output},'</sbml>');
-	return $output;
+	return join("\n",@{$output});
 }
 
 =head3 printExchange
@@ -1101,8 +1102,300 @@ sub export {
 		return $self->createHTML();
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
+	} elsif (lc($args->{format}) eq "cytoseed") {
+		return $self->printCytoSEED();
 	}
 	error("Unrecognized type for export: ".$args->{format});
+}
+
+
+=head3 printCytoSEED
+
+Definition:
+	void ModelSEED::MS::Model->printCytoSEED();
+Description:
+	Prints the model in CytoSEED format
+
+=cut
+
+sub printCytoSEED {
+	my ($self,$args) = @_;
+
+	sub compound_to_results {
+	    my ($compound, $abstract_compounds, $modelid) = @_;
+	   	my $abstractCpd;
+	    if (defined($compound->abstractCompound_uuid) && $compound->abstractCompound_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    	$abstractCpd = $compound->abstractCompound();
+	    }
+	    $abstract_compounds->{$abstractCpd->id()} = 1 if defined $abstractCpd;
+	    my $keggids = $compound->getAliases("KEGG");
+	    # make a copy to keep YAML happy
+	    my @keggids = $keggids ? @$keggids : ();
+	    my $msid = $compound->id();
+	    return ($msid, { "ABBREV" => [$compound->abbreviation()],
+			     "NAME" => [$compound->name()],
+			     "DATABASE" => [$msid],
+			     "FORMULA" => [$compound->formula()],
+			     "GROUPING" => [], # FIX
+			     "KEGGID" => \@keggids },
+		    (defined $abstractCpd) ? [ $abstractCpd->id() ] : []);
+	}
+
+	sub reaction_to_results {
+	    my ($reaction, $modelreaction, $abstract_reactions, $modelid) = @_;
+	    my $abstractRxn;
+	    if (defined($reaction->abstractReaction_uuid) && $reaction->abstractReaction_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    	$abstractRxn = $reaction->abstractReaction();
+	    }
+	    $abstract_reactions->{$abstractRxn->id()} = 1 if defined $abstractRxn;
+	    my $keggids = $reaction->getAliases("KEGG");
+	    # make a copy to keep YAML happy
+	    my @keggids = $keggids ? @$keggids : ();
+	    my $ecs = $reaction->getAliases("Enzyme Class");
+	    my $msid = $reaction->id();
+	    my (@substrates, @products);
+	    foreach my $reagent (@{$reaction->reagents()}) {
+		my $compound = $reagent->compound();
+		my $coeff = $reagent->coefficient();
+		my $compartment = $reagent->compartment;
+		my $cmsid = $compound->id();
+		$cmsid = $cmsid."[".$compartment->id()."]" if $compartment->id() ne "c";
+		if ($coeff < 0) {
+		    if ($coeff == -1) {
+			push @substrates, $cmsid;
+		    }
+		    else {
+			push @substrates, "(".(abs $coeff).") ".$cmsid;
+		    }
+		}
+		else {
+		    if ($coeff == 1) {
+			push @products, $cmsid;
+		    }
+		    else {
+			push @products, "(".(abs $coeff).") ".$cmsid;
+		    }
+		}
+	    }
+#	    my $direction = $reaction->direction();
+#	    if ($direction ne "=") {
+#		print STDERR "$msid direction: $direction\n";
+#	    }
+	    my $equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
+
+	    my $reversibility = $reaction->thermoReversibility();
+
+	    if (! defined $reversibility) {
+		print STDERR "No reversibility for $msid\n";
+		$reversibility = "=";
+	    }
+
+	    $reversibility = "<=>" if $reversibility eq "=";
+	    my $rdref = { "DATABASE" => [$msid],
+			  "NAME" => [$reaction->name()],
+			  "EQUATION" => [$equation],
+			  "REVERSIBILITY" => [$reversibility],
+			  "ENZYME" => $ecs,
+			  "KEGG MAPS" => [], #FIX
+			  "KEGGID" => \@keggids };
+
+	    if (defined $modelreaction) {
+		my %pegs;
+		my %notes;
+		foreach my $protein (@{$modelreaction->modelReactionProteins()}) {
+		    $notes{$protein->note()} = 1 if defined $protein->note();
+		    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+			$notes{$subunit->note()} = 1 if defined $protein->note();
+			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+			    my $feature = $gene->feature();
+			    $pegs{$feature->id()} = 1 if defined $feature->id();
+			}
+		    }
+		}
+		my @pegs = keys %pegs;
+		my @notes = keys %notes;
+		# $modelid is a global variable
+		$rdref->{$modelid} = { "SUBSYSTEM" => [],
+				       "ASSOCIATED PEG" => \@pegs,
+				       "NOTES" => \@notes };
+	    }
+	    
+	    return ($msid, $rdref, (defined $abstractRxn) ? [ $abstractRxn->id() ] : []);
+	}
+
+	my $model = $self;
+	my $modelid = $model->id();
+	my (%abstract_compounds, %abstract_reactions);
+	my $result = {};
+	my $bc = $model->biochemistry();
+	my $annotation = $model->annotation();
+	my $genome = $annotation->genomes()->[0];
+
+	$result->{"model_data"} = {"Genome" => "ID:".$genome->id(), 
+				   "Id" => $modelid, 
+				   "Name" => $genome->name(), 
+				   "Media" => "Complete", # FIX
+				   "Source" => $genome->source()};
+
+	my $compounds = $model->modelcompounds();
+	my $reactions = $model->modelreactions();
+
+	foreach my $modelcompound (@$compounds) {
+	    my $compound = $modelcompound->compound();
+	    my ($msid, $cdref, $extra) = compound_to_results($compound, \%abstract_compounds, $modelid);
+	    $cdref->{"ABSTRACT COMPOUND"} = $extra;
+	    $result->{"compound_details"}->{$msid} = $cdref;
+	}
+
+# now the abstract compounds are loaded into the hash
+	$result->{"abstract_compound_details"} = {};
+	foreach my $abstract_cpd (keys %abstract_compounds) {
+	    my $a_cpd = $bc->getObjectByAlias("compounds", $abstract_cpd, "ModelSEED");
+	    my ($msid, $cdref) = compound_to_results($a_cpd, \%abstract_compounds, $modelid);
+	    $cdref->{"GROUPING"} = []; # FIX
+	    $result->{"abstract_compound_details"}->{$msid} = $cdref;
+	}
+
+	foreach my $modelreaction (@$reactions) {
+	    my $reaction = $modelreaction->reaction();
+	    my ($msid, $rdref, $extra) = reaction_to_results($reaction, $modelreaction, \%abstract_reactions, $modelid);
+	    $rdref->{"ABSTRACT REACTION"} = $extra;
+	    $result->{"reaction_details"}->{$msid} = $rdref;
+	}
+
+	$result->{"abstract_reaction_details"} = {};
+	foreach my $abstract_rxn (keys %abstract_reactions) {
+	    my $a_rxn = $bc->getObjectByAlias("reactions", $abstract_rxn, "ModelSEED");
+	    my ($msid, $rdref) = reaction_to_results($a_rxn, undef, \%abstract_reactions, $modelid);
+	    $rdref->{"GROUPING"} = []; # FIX
+	    $result->{"abstract_reaction_details"}->{$msid} = $rdref;
+	}
+
+	my $biomasses = $model->biomasses();
+
+	if (@$biomasses == 0) {
+	    print STDERR "No biomass\n";
+	    $result->{"biomass_reaction_details"} = {};
+	}
+	else {
+	    my $biomass = $biomasses->[0];
+	    if (@$biomasses != 1) {
+		print STDERR "Multiple biomasses, using the first one\n";
+	    }
+
+	    my (@substrates, @products);
+	    foreach my $bmcpd (@{$biomass->biomasscompounds()}) {
+		my $modelcompound = $bmcpd->modelcompound();
+		my $coeff = $bmcpd->coefficient();
+		my $compound = $modelcompound->compound();
+		my $cmsid = $compound->id();
+		if ($coeff < 0) {
+		    if ($coeff == -1) {
+			push @substrates, $cmsid;
+		    }
+		    else {
+			push @substrates, "(".(abs $coeff).") ".$cmsid;
+		    }
+		}
+		else {
+		    if ($coeff == 1) {
+			push @products, $cmsid;
+		    }
+		    else {
+			push @products, "(".(abs $coeff).") ".$cmsid;
+		    }
+		}
+	    }
+	    my $equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
+
+	    $result->{"biomass_reaction_details"} = { 
+		$modelid => {
+		    "DATABASE" => ["bio00000"], # FIX
+		    "EQUATION" => [$equation] 
+		}
+	    };
+	}
+
+	my $fba_results = [];
+	my $reaction_classifications = {};
+
+	foreach my $fbaFormulation (@{$model->fbaFormulations()}) {
+	    if ($fbaFormulation->maximizeObjective()) {
+		my @fbaFormulationResults = @{$fbaFormulation->fbaResults()};
+		if (@fbaFormulationResults != 1) {
+		    print STDERR "Expected 1 fbaResult, got: ", scalar @fbaFormulationResults, "\n";
+		    next;
+		}
+		my $fbaResult = $fbaFormulationResults[0];
+		my $fba = {};
+		my $fluxes = [];
+		$fba->{"fluxes"} = $fluxes;
+		$fba->{"media"} = $fbaFormulation->media()->name();
+		$fba->{"time"} = $fbaFormulation->modDate();
+		$fba->{"growth"} = $fbaResult->objectiveValue();
+		my @reactionVariables = @{$fbaResult->fbaReactionVariables()};
+		next if @reactionVariables == 0; # FBA failed
+
+		foreach my $rVar (@reactionVariables) {
+		    my $flux = {};
+		    my $modelreaction = $rVar->modelreaction();
+		    my $reaction = $modelreaction->reaction();
+		    $flux->{"reaction"} = $reaction->id();
+		    $flux->{"flux"} = $rVar->value();
+		    push @$fluxes, $flux;
+		    if ($fbaFormulation->fva()) {
+			my $class = $rVar->{"class"};
+			my $min = $rVar->{"min"};
+			my $max = $rVar->{"max"};
+			my $dir;
+			if ($class eq "Positive") {
+			    $class = "essential";
+			    $dir = "=>";
+			}
+			elsif ($class eq "Negative") {
+			    $class = "essential";
+			    $dir = "<=";
+			}
+			elsif ($class eq "Positive variable") {
+			    $class = "active";
+			    $dir = "=>";
+			}
+			elsif ($class eq "Negative variable") {
+			    $class = "active";
+			    $dir = "<=";
+			}
+			elsif ($class eq "Variable") {
+			    $class = "active";
+			    $dir = "<=>";
+			}
+			elsif ($class eq "Blocked") {
+			    $class = "dead";
+			    $dir = "NA";
+			}
+			else {
+			    print STDERR "For reaction ", $reaction->id(), ", class is ", $class, "\n";
+			    $class = "dead";
+			    $dir = "NA";
+			}
+			push @{$reaction_classifications->{$reaction->id()}->{"class"}}, $class;
+			push @{$reaction_classifications->{$reaction->id()}->{"class_directionality"}}, $dir;
+			push @{$reaction_classifications->{$reaction->id()}->{"max_flux"}}, $max;
+			push @{$reaction_classifications->{$reaction->id()}->{"min_flux"}}, $min;
+			push @{$reaction_classifications->{$reaction->id()}->{"media"}}, $fbaFormulation->media()->name();
+			push @{$reaction_classifications->{$reaction->id()}->{"reaction"}}, $reaction->id();
+		    }
+		}
+
+		if (! $fbaFormulation->fva()) {
+		    push @{$fba_results}, $fba;
+		}
+	    }    
+	}
+
+	$result->{"fba_results"} = { $modelid => $fba_results };
+	$result->{"reaction_classifications"}->{$modelid} = [values %$reaction_classifications];
+
+	return YAML::XS::Dump $result;
 }
 
 #***********************************************************************************************************

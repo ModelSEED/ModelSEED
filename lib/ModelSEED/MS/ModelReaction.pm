@@ -100,7 +100,6 @@ sub _buildequation {
 			}
 			$products .= $rgt->modelcompound()->id();
 		}
-		
 	}
 	$reactants .= " ".$self->translatedDirection()." ";
 	return $reactants.$products;
