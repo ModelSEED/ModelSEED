@@ -609,6 +609,7 @@ sub getLinkedObject {
         }
         $object = $sourceObj->getObject($attribute,$uuid);
         return $object if defined $object;
+        error("Could not find UUID ".$uuid."!");
 #        ModelSEED::Exception::BadObjectLink->throw(
 #            searchSource     => $self,
 #            searchBaseObject => $sourceObj,

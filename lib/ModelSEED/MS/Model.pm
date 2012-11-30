@@ -1123,7 +1123,10 @@ sub printCytoSEED {
 
 	sub compound_to_results {
 	    my ($compound, $abstract_compounds, $modelid) = @_;
-	    my $abstractCpd = $compound->abstractCompound();
+	   	my $abstractCpd;
+	    if (defined($compound->abstractCompound_uuid) && $compound->abstractCompound_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    	$abstractCpd = $compound->abstractCompound();
+	    }
 	    $abstract_compounds->{$abstractCpd->id()} = 1 if defined $abstractCpd;
 	    my $keggids = $compound->getAliases("KEGG");
 	    # make a copy to keep YAML happy
@@ -1140,7 +1143,10 @@ sub printCytoSEED {
 
 	sub reaction_to_results {
 	    my ($reaction, $modelreaction, $abstract_reactions, $modelid) = @_;
-	    my $abstractRxn = $reaction->abstractReaction();
+	    my $abstractRxn;
+	    if (defined($reaction->abstractReaction_uuid) && $reaction->abstractReaction_uuid =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
+	    	$abstractRxn = $reaction->abstractReaction();
+	    }
 	    $abstract_reactions->{$abstractRxn->id()} = 1 if defined $abstractRxn;
 	    my $keggids = $reaction->getAliases("KEGG");
 	    # make a copy to keep YAML happy
