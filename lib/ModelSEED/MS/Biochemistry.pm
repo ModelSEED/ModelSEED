@@ -516,7 +516,7 @@ sub addCompoundFromHash {
 		if(!$self->getObjectByAlias("compounds",$searchname,"searchname")){
 		    $self->addAlias({
 			attribute => "compounds",
-			aliasName => "name",
+			aliasName => "searchname",
 			alias => $searchname,
 			uuid => $cpd->uuid()
 		    });
@@ -781,6 +781,7 @@ sub mergeBiochemistry {
 				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
 				$obj->uuid($dupObj->uuid());
 		    } else {
+			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
