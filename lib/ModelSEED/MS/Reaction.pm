@@ -18,6 +18,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has compartment  => ( is => 'rw', isa => 'ModelSEED::MS::Compartment',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompartment' );
@@ -36,9 +37,15 @@ sub _buildequation {
 	return $self->createEquation({format=>"id",hashed=>0});
 }
 sub _buildequationcode {
-	my ($self,$args) = @_;
+	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
+
+sub _buildequationformula {
+    my ($self) = @_;
+    return $self->createEquation({format=>"formula",hashed=>0});
+}
+
 sub _buildbalanced {
 	my ($self,$args) = @_;
 	my $result = $self->checkReactionMassChargeBalance({rebalanceProtons => 0});
@@ -138,7 +145,9 @@ sub createEquation {
 			my $function = $args->{format};
 			$id = $rgt->[$i]->compound()->$function();
 		} elsif ($args->{format} ne "uuid") {
+		    if($args->{format} ne "formula"){
 			$id = $rgt->[$i]->compound()->getAlias($args->{format});
+		    }
 		}
 		if (!defined($rgtHash->{$id}->{$rgt->[$i]->compartment()->id()})) {
 			$rgtHash->{$id}->{$rgt->[$i]->compartment()->id()} = 0;
@@ -161,6 +170,10 @@ sub createEquation {
 	my $sign = " <=> ";
 	my $sortedCpd = [sort(keys(%{$rgtHash}))];
 	for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	    my $printId=$sortedCpd->[$i];
+	    if($args->{format} eq "formula"){
+		$printId=$self->biochemistry()->getObject("compounds",$sortedCpd->[$i])->formula();
+	    }
 		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 		for (my $j=0; $j < @{$comps}; $j++) {
 			my $compartment = "[".$comps->[$j]."]";
@@ -169,12 +182,12 @@ sub createEquation {
 				if (length($reactcode) > 0) {
 					$reactcode .= " + ";	
 				}
-				$reactcode .= "(".$coef.") ".$sortedCpd->[$i].$compartment;
+				$reactcode .= "(".$coef.") ".$printId.$compartment;
 			} elsif ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} > 0) {
 				if (length($productcode) > 0) {
 					$productcode .= " + ";	
 				}
-				$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$sortedCpd->[$i].$compartment;
+				$productcode .= "(".$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]}.") ".$printId.$compartment;
 			} 
 		}
 	}
@@ -332,10 +345,26 @@ sub checkReactionMassChargeBalance {
     my $args = args([], {rebalanceProtons => 0}, @_);
 	my $atomHash;
 	my $netCharge = 0;
+
 	#Adding up atoms and charge from all reagents
 	my $rgts = $self->reagents();
+    
+    #Need to remember whether reaction has proton reagent
+    my $protonRgtHash=();
+    my $hcpd=$self->biochemistry()->checkForProton();
+
+    #Need to remember compartments
+    my $compHash=();
+
 	for (my $i=0; $i < @{$rgts};$i++) {
 		my $rgt = $rgts->[$i];
+
+		#Check for protons
+		$protonRgtHash->{$rgt->uuid()}=$rgt if $rgt->compound_uuid() eq $hcpd->uuid();
+
+		#compartments
+		$compHash->{$rgt->compartment_uuid}=$rgt->compartment();
+
 		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
 		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
 		my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
@@ -354,11 +383,15 @@ sub checkReactionMassChargeBalance {
 		}
 	}
 	#Adding protons
-	$netCharge += $self->defaultProtons()*1;
+        #use of defaultProtons() discontinued for time being
+	#$netCharge += $self->defaultProtons()*1;
+
 	if (!defined($atomHash->{H})) {
 		$atomHash->{H} = 0;
 	}
-	$atomHash->{H} += $self->defaultProtons();
+
+	#$atomHash->{H} += $self->defaultProtons();
+
 	#Checking if charge or atoms are unbalanced
 	my $results = {
 		balanced => 1
@@ -376,9 +409,31 @@ sub checkReactionMassChargeBalance {
 	}
 	if ($HImbalance != 0 && $onlyH == 1 && $HImbalance == $netCharge) {
 		print "Adjusting ".$self->id()." protons by ".$HImbalance."\n";
-		my $currentProtons = $self->defaultProtons();
-		$currentProtons += -1*$HImbalance;
-		$self->defaultProtons($currentProtons);
+
+		if(scalar(keys %$protonRgtHash)==0){
+		    #must create proton reagent
+		    #either reaction compartment or, if transporter, defaults to cytosol
+		    my $comp = (keys %$compHash)[0];
+		    if(scalar(keys %$compHash)>1){
+			my $hierarchy=1;
+			foreach my $tmpComp (keys %$compHash){
+			    if($compHash->{$tmpComp}->hierarchy()>$hierarchy){
+				$comp=$tmpComp;
+				$hierarchy=$compHash->{$tmpComp}->hierarchy();
+			    }
+			}
+		    }
+		    
+		    $self->add("reagents", {compound_uuid => $hcpd->uuid(),
+					    compartment_uuid => $comp,
+					    coefficient => -1*$HImbalance,
+					    isCofactor => 0});
+		}
+
+		#my $currentProtons = $self->defaultProtons();
+		#$currentProtons += -1*$HImbalance;
+		#$self->defaultProtons($currentProtons);
+
 		$netCharge = 0;
 		$atomHash->{H} = 0;
 	}
