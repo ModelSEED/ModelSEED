@@ -8,7 +8,7 @@
 use strict;
 use ModelSEED::MS::DB::Reaction;
 package ModelSEED::MS::Reaction;
-use ModelSEED::utilities qw( args error );
+use ModelSEED::utilities qw( args error verbose );
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Reaction';
@@ -304,7 +304,6 @@ sub loadFromEquation {
 	    foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
 	        # Do not include reagents with zero coefficients
 	        next if $cpdCmpHash->{$cpduuid}->{$cmpuuid} == 0;
-	        # Do not include Hydrogen in reagents
 	        $self->add("reagents", {
 	            compound_uuid               => $cpduuid,
 	            compartment_uuid            => $cmpuuid,
@@ -343,27 +342,23 @@ Description:
 sub checkReactionMassChargeBalance {
     my $self = shift;
     my $args = args([], {rebalanceProtons => 0}, @_);
-	my $atomHash;
-	my $netCharge = 0;
-
-	#Adding up atoms and charge from all reagents
-	my $rgts = $self->reagents();
+    my $atomHash;
+    my $netCharge = 0;
     
-    #Need to remember whether reaction has proton reagent
-    my $protonRgtHash=();
-    my $hcpd=$self->biochemistry()->checkForProton();
-
-    #Need to remember compartments
+    #Adding up atoms and charge from all reagents
+    my $rgts = $self->reagents();
+    
+    #Need to remember whether reaction has proton reagent in which compartment
+    my $protonCompHash=();
     my $compHash=();
+    my $hcpd=$self->biochemistry()->checkForProton();
 
 	for (my $i=0; $i < @{$rgts};$i++) {
 		my $rgt = $rgts->[$i];
 
 		#Check for protons
-		$protonRgtHash->{$rgt->uuid()}=$rgt if $rgt->compound_uuid() eq $hcpd->uuid();
-
-		#compartments
-		$compHash->{$rgt->compartment_uuid}=$rgt->compartment();
+		$protonCompHash->{$rgt->compartment_uuid()}=$rgt if $rgt->compound_uuid() eq $hcpd->uuid();
+		$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
 
 		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
 		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
@@ -408,26 +403,48 @@ sub checkReactionMassChargeBalance {
 		}
 	}
 	if ($HImbalance != 0 && $onlyH == 1 && $HImbalance == $netCharge) {
-		print "Adjusting ".$self->id()." protons by ".$HImbalance."\n";
+		verbose("Adjusting ".$self->id()." protons by ".$HImbalance."\n");
 
-		if(scalar(keys %$protonRgtHash)==0){
+		if(scalar(keys %$protonCompHash)==0){
 		    #must create proton reagent
-		    #either reaction compartment or, if transporter, defaults to cytosol
-		    my $comp = (keys %$compHash)[0];
+		    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
+		    my $compUuid = (keys %$compHash)[0];
 		    if(scalar(keys %$compHash)>1){
 			my $hierarchy=1;
-			foreach my $tmpComp (keys %$compHash){
-			    if($compHash->{$tmpComp}->hierarchy()>$hierarchy){
-				$comp=$tmpComp;
-				$hierarchy=$compHash->{$tmpComp}->hierarchy();
+			foreach my $tmpCompUuid (keys %$compHash){
+			    if($compHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+				$compUuid=$tmpCompUuid;
+				$hierarchy=$compHash->{$tmpCompUuid}->hierarchy();
 			    }
 			}
 		    }
 		    
 		    $self->add("reagents", {compound_uuid => $hcpd->uuid(),
-					    compartment_uuid => $comp,
+					    compartment_uuid => $compUuid,
 					    coefficient => -1*$HImbalance,
 					    isCofactor => 0});
+
+		}elsif(scalar(keys %$protonCompHash)>0){
+		    #must choose proton reagent
+		    #defaults to compartment with highest number in hierarchy
+		    
+		    my $compUuid = (keys %$protonCompHash)[0];
+		    my $hierarchy=1;
+		    foreach my $tmpCompUuid ( grep { $_ ne $compUuid } keys %$protonCompHash){
+			if($protonCompHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+				$compUuid=$tmpCompUuid;
+				$hierarchy=$protonCompHash->{$tmpCompUuid}->hierarchy();
+			}
+		    }
+
+		    my $rgts = $self->reagents();
+		    for(my $i=0;$i<scalar(@$rgts);$i++){
+			if($rgts->[$i]->compound_uuid() eq $hcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
+			    my $coeff=$rgts->[$i]->coefficient();
+			    $rgts->[$i]->coefficient($coeff+(-1*$HImbalance));
+			}
+		    }
+		    $self->reagents($rgts);
 		}
 
 		#my $currentProtons = $self->defaultProtons();
@@ -437,6 +454,7 @@ sub checkReactionMassChargeBalance {
 		$netCharge = 0;
 		$atomHash->{H} = 0;
 	}
+
 	my $status = "OK";
 	foreach my $atom (keys(%{$atomHash})) { 
 		if ($atomHash->{$atom} > 0.00000001 || $atomHash->{$atom} < -0.00000001) {
@@ -450,6 +468,7 @@ sub checkReactionMassChargeBalance {
 			$status .= $atom.":".$atomHash->{$atom};
 		}
 	}
+
 	if ($netCharge != 0) {
 		if ($status eq "OK") {
 			$status = "CI:".$netCharge;	
@@ -460,6 +479,7 @@ sub checkReactionMassChargeBalance {
 		$results->{imbalancedCharge} = $netCharge;
 		
 	}
+
 	$self->status($status);
 	return $results;
 }

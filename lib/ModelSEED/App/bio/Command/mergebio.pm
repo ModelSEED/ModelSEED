@@ -30,7 +30,6 @@ sub execute {
 
     #verbosity
     set_verbose(1) if $opts->{verbose};
-    $|=1;
 
     if (!defined($opts->{saveas}) && !defined($opts->{saveover})){
 	verbose("Neither the saveas or saveover options were used\nThis run will therefore be a dry run and the biochemistry will not be saved\n");
