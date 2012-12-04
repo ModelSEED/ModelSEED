@@ -393,6 +393,31 @@ sub findReactionsWithReagent {
     return $found_reactions;
 }
 
+=head3 addCompartmentFromHash
+Definition:
+	ModelSEED::MS::Compartment = ModelSEED::MS::Biochemistry->addCompartmentFromHash({[]});
+Description:
+	This command adds a single compartment from an input hash
+=cut
+
+sub addCompartmentFromHash {
+    my ($self,$arguments) = @_;
+    $arguments = args(["name","id"],{ hierarchy=>3 }, $arguments);
+
+    #check to see if compartment doesn't already exist
+    my $cpt = $self->queryObject("compartments",{name => $arguments->{name}});
+    if (defined($cpt)) {
+	verbose("Compartment found with matching name ".$arguments->{name}."\n");
+	return $cpt;
+    }
+
+    verbose("Creating compartment ".$arguments->{name}." with id: ".$arguments->{id}."\n");
+    $cpt = $self->add("compartments",{
+	id => $arguments->{id},
+	name => $arguments->{name},
+	hierarchy => $arguments->{hierarchy}});
+}
+
 =head3 addCompoundFromHash
 Definition:
 	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->addCompoundFromHash({[]});
