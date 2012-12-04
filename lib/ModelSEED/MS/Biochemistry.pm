@@ -479,6 +479,29 @@ sub addCompoundFromHash {
 		    return $cpd;
 		}
 	}
+	#Special case of checking for protons
+	if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}->[0] eq "cpd00067") ||
+	   ($arguments->{namespace} eq "KEGG" && $arguments->{id}->[0] eq "C00080") ||
+	   ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}->[0] eq "PROTON") ||
+	   (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
+	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}})."\n");
+	    $cpd=$self->checkForProton();
+	    if(defined($cpd)){
+		$self->addAlias({ attribute => "compounds",
+				  aliasName => $arguments->{namespace},
+				  alias => $arguments->{id}->[0],
+				  uuid => $cpd->uuid()
+				});
+		foreach my $aliasType (@{$arguments->{mergeto}}){
+		    $self->addAlias({ attribute => "compounds",
+				      aliasName => $aliasType,
+				      alias => $arguments->{id}->[0],
+				      uuid => $cpd->uuid()
+				    });
+		}
+		return $cpd;
+	    }
+	}
 	#Checking for match by name if requested
 	if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
 		foreach my $name (@{$arguments->{names}}) {
@@ -945,6 +968,9 @@ sub checkForDuplicateCue {
 sub checkForProton {
     my ($self) = @_;
     
+    if($self->queryObject("aliasSets",{name => "ModelSEED", attribute=>"compounds"})){
+	return $self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+    }    
     if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
 	return $self->getObjectByAlias("compounds","C00080","KEGG");
     }
