@@ -13,6 +13,7 @@ use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
 
 
+our $VERSION = 1;
 # PARENT:
 has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
 
@@ -46,6 +47,7 @@ sub _build_Mapping {
 
 
 # CONSTANTS:
+sub __version__ { return $VERSION; }
 sub _type { return 'Classifier'; }
 
 my $attributes = [

@@ -116,6 +116,7 @@ my $builder = $subclass->new(
         "XML::LibXML" => 0,
         "XML::SAX::Base" => 0,
         "YAML" => 0,
+        "YAML::XS" => 0,
         "common::sense" => 0,
         "namespace::autoclean" => 0,
         "XML::DOM" => 0,

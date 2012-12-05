@@ -43,7 +43,7 @@ sub loadFromData {
 	my $model = $args->{model};
 	$self->solutionCost($args->{objective});
 	for (my $m=0; $m < @{$args->{reactions}}; $m++) {
-		if ($args->{reactions}->[$m] =~ m/([\-\+])(rxn\d\d\d\d\d)/) {
+		if ($args->{reactions}->[$m] =~ m/([\-\+])(.+)/) {
 			my $rxnid = $2;
 			my $sign = $1;
 			my $rxn = $model->biochemistry()->queryObject("reactions",{id => $rxnid});
