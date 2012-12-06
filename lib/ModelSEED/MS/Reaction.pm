@@ -210,13 +210,11 @@ Description:
 
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation","aliasType"], {}, @_);
+    my $args = args(["equation","aliasType"], {compartment=>"c"}, @_);
 	my $bio = $self->parent();
 	my @TempArray = split(/\s+/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
 	my $Coefficient = 1;
-	my $rxnComp;
-	my $currCompScore;
 	my $parts = [];
 	my $cpdCmpHash;
 	my $compHash;
@@ -226,79 +224,68 @@ sub loadFromEquation {
 	for (my $i = 0; $i < @TempArray; $i++) {
 	    #some identifiers may include '=' sign, need to skip actual '+' in equation
 	    next if $TempArray[$i] eq "+";
-		if ($TempArray[$i] =~ m/^\(([\.\d]+)\)$/ || $TempArray[$i] =~ m/^([\.\d]+)$/) {
-			$Coefficient = $1;
-		} elsif ($TempArray[$i] =~ m/(^[\w\-+]+)/) {
-			$Coefficient *= -1 if ($CurrentlyOnReactants);
-			my $NewRow = {
-				compound => $1,
-				compartment => "c",
-				coefficient => $Coefficient
-			};
-			if ($TempArray[$i] =~ m/^[\w\-+]+\[([a-zA-Z]+)\]/) {
-				$NewRow->{compartment} = lc($1);
-			}
-            my $comp = $compHash->{$NewRow->{compartment}};
-            unless(defined($comp)) {
-                $comp = $bio->queryObject("compartments", {id => $NewRow->{compartment} });
-            }
-            unless(defined($comp)) {
-		ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction!");
-		$comp = $bio->add("compartments",{
-		    locked => "0",
-		    id => $NewRow->{compartment},
-		    name => $NewRow->{compartment},
-		    hierarchy => 3
-				  });
-	    }
-			$compUUIDHash->{$comp->uuid()} = $comp;
-			$compHash->{$comp->id()} = $comp;
-			$NewRow->{compartment} = $comp;
-			my $cpd;
-			if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
-				$cpd = $bio->queryObject("compounds",{$args->{aliasType} => $NewRow->{compound}});
-			} else {
-				$cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
-			}
-			if (!defined($cpd)) {
-				ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
-				if(defined($args->{autoadd}) && $args->{autoadd}==1){
-				    ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
-				    $cpd = $bio->add("compounds",{ locked => "0",
-								   name => $NewRow->{compound},
-								   abbreviation => $NewRow->{compound}
-						     });
-				    $bio->addAlias({ attribute => "compounds",
-						     aliasName => $args->{aliasType},
-						     alias => $NewRow->{compound},
-						     uuid => $cpd->uuid()
-						   });
-				}else{
-				    return 0;
-				}
-			}
-			$NewRow->{compound} = $cpd;
-			if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
-				$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
-			}
-			$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
-			$cpdHash->{$cpd->uuid()} = $cpd;
-			$cpdCmpCount->{$cpd->uuid()."_".$comp->uuid()}++;
-			if ($comp->id() eq "c") {
-				$currCompScore = 100;
-				$rxnComp = $comp;
-			} elsif (!defined($rxnComp) || $comp->hierarchy() > $currCompScore) {
-				$currCompScore = $comp->hierarchy();
-            	$rxnComp = $comp;
-			}
-			push(@$parts, $NewRow);
-			$Coefficient = 1;
-		} elsif ($TempArray[$i] =~ m/=/) {
-			$CurrentlyOnReactants = 0;
+	    if( $TempArray[$i] =~ m/=/ || $TempArray[$i] =~ m/-->/ || $TempArray[$i] =~ m/<--/) {
+		$CurrentlyOnReactants = 0;
+	    } elsif ($TempArray[$i] =~ m/^\(([eE\-\.\d]+)\)$/ || $TempArray[$i] =~ m/^([eE\-\.\d]+)$/) {
+		$Coefficient = $1;
+	    } elsif ($TempArray[$i] =~ m/(^[\w,'#\-+\(\)]+)/){
+		$Coefficient *= -1 if ($CurrentlyOnReactants);
+		my $NewRow = {
+		    compound => $1,
+		    compartment => $args->{compartment},
+		    coefficient => $Coefficient
+		};
+		if ($TempArray[$i] =~ m/^[\w,\-+]+\[([a-zA-Z]+)\]/) {
+		    $NewRow->{compartment} = lc($1);
 		}
-	}
-	if (!defined($rxnComp)) {
-		$rxnComp = $bio->queryObject("compartments",{id => "c"});
+		my $comp = $compHash->{$NewRow->{compartment}};
+		unless(defined($comp)) {
+		    $comp = $bio->queryObject("compartments", { id => $NewRow->{compartment} });
+		}
+		unless(defined($comp)) {
+		    ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction ".$args->{rxnId});
+		    $comp = $bio->add("compartments",{
+			locked => "0",
+			id => $NewRow->{compartment},
+			name => $NewRow->{compartment},
+			hierarchy => 3});
+		}
+		$compUUIDHash->{$comp->uuid()} = $comp;
+		$compHash->{$comp->id()} = $comp;
+		$NewRow->{compartment} = $comp;
+		my $cpd;
+		if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
+		    $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $NewRow->{compound}});
+		} else {
+		    $cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
+		}
+		if (!defined($cpd)) {
+		    ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
+		    if(defined($args->{autoadd}) && $args->{autoadd}==1){
+			ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
+			$cpd = $bio->add("compounds",{ locked => "0",
+						       name => $NewRow->{compound},
+						       abbreviation => $NewRow->{compound}
+					 });
+			$bio->addAlias({ attribute => "compounds",
+					 aliasName => $args->{aliasType},
+					 alias => $NewRow->{compound},
+					 uuid => $cpd->uuid()
+				       });
+		    }else{
+			return 0;
+		    }
+		}
+		$NewRow->{compound} = $cpd;
+		if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
+		    $cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
+		}
+		$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
+		$cpdHash->{$cpd->uuid()} = $cpd;
+		$cpdCmpCount->{$cpd->uuid()."_".$comp->uuid()}++;
+		push(@$parts, $NewRow);
+		$Coefficient = 1;
+	    }
 	}
 	foreach my $cpduuid (keys(%{$cpdCmpHash})) {
 	    foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
