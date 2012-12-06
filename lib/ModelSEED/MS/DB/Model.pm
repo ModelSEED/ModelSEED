@@ -39,6 +39,7 @@ has integratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => 
 has integratedGapfillingSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has unintegratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has integratedGapgenSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
 has unintegratedGapgen_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
@@ -250,6 +251,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'integratedGapgenSolutions',
+            'default' => 'sub{return {};}',
+            'type' => 'HashRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'unintegratedGapgen_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -265,7 +274,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, unintegratedGapgen_uuids => 18, forwardedLinks => 19};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, integratedGapgenSolutions => 18, unintegratedGapgen_uuids => 19, forwardedLinks => 20};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

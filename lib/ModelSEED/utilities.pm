@@ -86,7 +86,7 @@ sub set_verbose {
 
 sub verbose {
     if ( defined $VERBOSE ) {
-        print $VERBOSE @_ if @_;
+        print $VERBOSE join("\n",@_)."\n" if @_;
         return 1;
     } else {
         return 0;
