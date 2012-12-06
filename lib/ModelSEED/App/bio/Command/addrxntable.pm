@@ -18,6 +18,7 @@ sub opt_spec {
         ["autoadd|a","Automatically add any missing compounds to DB"],
         ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
         ["verbose|v", "Print verbose status information"],
+	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
     );
 }
@@ -38,6 +39,16 @@ sub execute {
 
     #load table
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
+
+    #load table
+    my $separator="\\\t";
+    $separator = $opts->{separator}  if exists $opts->{separator};
+    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
+
+    if(scalar(@{$tbl->{data}->[0]})<2){
+#	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+	$self->usage_error("Not enough columns in table, consider using a different separator");
+    }
 
     #set namespace
     if (!defined($opts->{rxnnamespace})) {
@@ -81,7 +92,8 @@ sub execute {
 
     my $headingTranslation = {
     	name => "names",
-	enzyme => "enzymes"
+	enzyme => "enzymes",
+	database => "id"
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
         my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}, mergeto => $mergeto};
@@ -98,9 +110,14 @@ sub execute {
             	$heading = $headingTranslation->{$heading};
             }
             if ($heading eq "names" || $heading eq "enzymes") {
-	            $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+	            $rxnData->{$heading} = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } split(/\|/,$tbl->{data}->[$i]->[$j])];
             } else {
-		    $rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+		my $data = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } $tbl->{data}->[$i]->[$j] ];
+		if($heading eq "compartment"){
+		    $data->[0] =~ s/^\[//;
+		    $data->[0] =~ s/\]$//;
+		}
+		$rxnData->{$heading} = $data;
             }
         }
         my $rxn = $biochemistry->addReactionFromHash($rxnData);
