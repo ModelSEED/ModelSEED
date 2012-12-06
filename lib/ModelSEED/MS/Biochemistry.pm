@@ -427,28 +427,69 @@ Description:
 =cut
 
 sub addCompoundFromHash {
-	my ($self,$arguments) = @_;
-    $arguments = args(["names","id"],{
-		namespace => $self->defaultNameSpace(),
-		matchbyname => 1,
-		mergeto => [],
-		abbreviation => undef,
-		formula => ["unknown"],
-		mass => [10000000],
-		charge => [10000000],
-		deltag => [10000000],
-		deltagerr => [10000000]
-	}, $arguments);
+    my ($self,$arguments) = @_;
+    $arguments = args(["names","id"],{namespace => $self->defaultNameSpace(),
+				      matchbyname => 1,
+				      mergeto => [],
+				      abbreviation => undef,
+				      formula => ["unknown"],
+				      mass => [10000000],
+				      charge => [10000000],
+				      deltag => [10000000],
+				      deltagerr => [10000000]}, $arguments);
 
-	# Remove names that are too long
-	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
-        $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
-	$arguments->{abbreviation} = [$arguments->{names}->[0]] unless defined $arguments->{abbreviation};
-
-	# Checking for id uniqueness within scope of own aliasType
-	my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
+    # Remove names that are too long
+    $arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
+    $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
+    $arguments->{abbreviation} = [$arguments->{names}->[0]] unless defined $arguments->{abbreviation};
+    
+    # Checking for id uniqueness within scope of own aliasType
+    my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
+    if (defined($cpd)) {
+	verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace}."\n");
+	foreach my $aliasType (@{$arguments->{mergeto}}){
+	    $self->addAlias({ attribute => "compounds",
+			      aliasName => $aliasType,
+			      alias => $arguments->{id}->[0],
+			      uuid => $cpd->uuid()
+			    });
+	}
+	return $cpd;
+    }
+    # Checking for id uniqueness within scope of another aliasType, if passed
+    foreach my $aliasType (@{$arguments->{mergeto}}) {
+	$cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$aliasType);
 	if (defined($cpd)) {
-	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace}."\n");
+	    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType."\n");
+	    $self->addAlias({ attribute => "compounds",
+			      aliasName => $arguments->{namespace},
+			      alias => $arguments->{id}->[0],
+			      uuid => $cpd->uuid()
+			    });
+	    foreach my $otherAliasType (@{$arguments->{mergeto}}){
+		next if $otherAliasType eq $aliasType;
+		$self->addAlias({ attribute => "compounds",
+				  aliasName => $otherAliasType,
+				  alias => $arguments->{id}->[0],
+				  uuid => $cpd->uuid()
+				});
+	    }
+	    return $cpd;
+	}
+    }
+    #Special case of checking for protons
+    if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}->[0] eq "cpd00067") ||
+       ($arguments->{namespace} eq "KEGG" && $arguments->{id}->[0] eq "C00080") ||
+       ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}->[0] eq "PROTON") ||
+       (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
+	$cpd=$self->checkForProton();
+	if(defined($cpd)){
+	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}})."\n");
+	    $self->addAlias({ attribute => "compounds",
+			      aliasName => $arguments->{namespace},
+			      alias => $arguments->{id}->[0],
+			      uuid => $cpd->uuid()
+			    });
 	    foreach my $aliasType (@{$arguments->{mergeto}}){
 		$self->addAlias({ attribute => "compounds",
 				  aliasName => $aliasType,
@@ -458,39 +499,19 @@ sub addCompoundFromHash {
 	    }
 	    return $cpd;
 	}
-	# Checking for id uniqueness within scope of another aliasType, if passed
-	foreach my $aliasType (@{$arguments->{mergeto}}) {
-		$cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$aliasType);
-		if (defined($cpd)) {
-		    verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType."\n");
-		    $self->addAlias({ attribute => "compounds",
-				      aliasName => $arguments->{namespace},
-				      alias => $arguments->{id}->[0],
-				      uuid => $cpd->uuid()
-				    });
-		    foreach my $otherAliasType (@{$arguments->{mergeto}}){
-			next if $otherAliasType eq $aliasType;
-			$self->addAlias({ attribute => "compounds",
-					  aliasName => $otherAliasType,
-					  alias => $arguments->{id}->[0],
-					  uuid => $cpd->uuid()
-					});
-		    }
-		    return $cpd;
-		}
-	}
-	#Special case of checking for protons
-	if(($arguments->{namespace} eq "ModelSEED" && $arguments->{id}->[0] eq "cpd00067") ||
-	   ($arguments->{namespace} eq "KEGG" && $arguments->{id}->[0] eq "C00080") ||
-	   ($arguments->{namespace} =~ /Cyc$/ && $arguments->{id}->[0] eq "PROTON") ||
-	   (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
-	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}})."\n");
-	    $cpd=$self->checkForProton();
-	    if(defined($cpd)){
-		$self->addAlias({ attribute => "compounds",
-				  aliasName => $arguments->{namespace},
-				  alias => $arguments->{id}->[0],
-				  uuid => $cpd->uuid()
+    }
+    #Checking for match by name if requested
+    if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
+	foreach my $name (@{$arguments->{names}}) {
+	    my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
+	    $cpd = $self->queryObject("compounds",{searchnames => $name});
+	    if (defined($cpd)) {
+		verbose("Compound matched based on name ".$name."\n");
+		$self->addAlias({
+		    attribute => "compounds",
+		    aliasName => $arguments->{namespace},
+		    alias => $arguments->{id}->[0],
+		    uuid => $cpd->uuid()
 				});
 		foreach my $aliasType (@{$arguments->{mergeto}}){
 		    $self->addAlias({ attribute => "compounds",
@@ -502,75 +523,53 @@ sub addCompoundFromHash {
 		return $cpd;
 	    }
 	}
-	#Checking for match by name if requested
-	if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
-		foreach my $name (@{$arguments->{names}}) {
-			my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
-			$cpd = $self->queryObject("compounds",{searchnames => $name});
-			if (defined($cpd)) {
-				verbose("Compound matched based on name ".$name."\n");
-				$self->addAlias({
-					attribute => "compounds",
-					aliasName => $arguments->{namespace},
-					alias => $arguments->{id}->[0],
-					uuid => $cpd->uuid()
-				});
-				foreach my $aliasType (@{$arguments->{mergeto}}){
-				    $self->addAlias({ attribute => "compounds",
-						      aliasName => $aliasType,
-						      alias => $arguments->{id}->[0],
-						      uuid => $cpd->uuid()
-						    });
-				}
-				return $cpd;
-			}
-		}
-	}
-	# Actually creating compound
-	verbose("Creating compound ".$arguments->{id}->[0]."\n");
-	$cpd = $self->add("compounds",{
-		name => $arguments->{names}->[0],
-		abbreviation => $arguments->{abbreviation}->[0],
-		formula => $arguments->{formula}->[0],
-		mass => $arguments->{mass}->[0],
-		defaultCharge => $arguments->{charge}->[0],
-		deltaG => $arguments->{deltag}->[0],
-		deltaGErr => $arguments->{deltagerr}->[0]
-	});
-	# Adding id as alias
+    }
+
+    # Actually creating compound
+    verbose("Creating compound ".$arguments->{id}->[0]."\n");
+
+    $cpd = $self->add("compounds",{
+	name => $arguments->{names}->[0],
+	abbreviation => $arguments->{abbreviation}->[0],
+	formula => $arguments->{formula}->[0],
+	mass => $arguments->{mass}->[0],
+	defaultCharge => $arguments->{charge}->[0],
+	deltaG => $arguments->{deltag}->[0],
+	deltaGErr => $arguments->{deltagerr}->[0]});
+
+    # Adding id as alias
+    $self->addAlias({
+	attribute => "compounds",
+	aliasName => $arguments->{namespace},
+	alias => $arguments->{id}->[0],
+	uuid => $cpd->uuid()});
+
+    foreach my $aliasType (@{$arguments->{mergeto}}){
+	$self->addAlias({ attribute => "compounds",
+			  aliasName => $aliasType,
+			  alias => $arguments->{id}->[0],
+			  uuid => $cpd->uuid()});
+    }
+    #Adding alternative names as aliases
+    #Adding searchnames as *unique* aliases
+    foreach my $name (@{$arguments->{names}}) {
 	$self->addAlias({
+	    attribute => "compounds",
+	    aliasName => "name",
+	    alias => $name,
+	    uuid => $cpd->uuid()
+			});
+	my $searchname = $cpd->nameToSearchname($name);
+	if(!$self->getObjectByAlias("compounds",$searchname,"searchname")){
+	    $self->addAlias({
 		attribute => "compounds",
-		aliasName => $arguments->{namespace},
-		alias => $arguments->{id}->[0],
+		aliasName => "searchname",
+		alias => $searchname,
 		uuid => $cpd->uuid()
-	});
-	foreach my $aliasType (@{$arguments->{mergeto}}){
-	    $self->addAlias({ attribute => "compounds",
-			      aliasName => $aliasType,
-			      alias => $arguments->{id}->[0],
-			      uuid => $cpd->uuid()
 			    });
 	}
-	#Adding alternative names as aliases
-	#Adding searchnames as *unique* aliases
-	foreach my $name (@{$arguments->{names}}) {
-		$self->addAlias({
-			attribute => "compounds",
-			aliasName => "name",
-			alias => $name,
-			uuid => $cpd->uuid()
-		});
-		my $searchname = $cpd->nameToSearchname($name);
-		if(!$self->getObjectByAlias("compounds",$searchname,"searchname")){
-		    $self->addAlias({
-			attribute => "compounds",
-			aliasName => "searchname",
-			alias => $searchname,
-			uuid => $cpd->uuid()
-		    });
-		}
-	}
-	return $cpd;
+    }
+    return $cpd;
 }
 
 =head3 addReactionFromHash
@@ -652,7 +651,8 @@ sub addReactionFromHash {
 	    equation => $arguments->{equation}->[0],
 	    aliasType => $arguments->{equationAliasType},
 	    autoadd => $arguments->{autoadd},
-	    rxnId => $arguments->{id}->[0]
+	    rxnId => $arguments->{id}->[0],
+	    compartment => $arguments->{compartment}->[0]
 	})) {
 	    verbose("Reaction ".$arguments->{id}->[0]." was rejected\n");
 	    return undef;
