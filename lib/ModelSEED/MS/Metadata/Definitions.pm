@@ -3209,6 +3209,14 @@ $objectDefinitions->{Model} = {
 			default    => "sub{return [];}"
 		},
 		{
+			name       => 'integratedGapgenSolutions',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
 			name       => 'unintegratedGapgen_uuids',
 			printOrder => -1,
 			perm       => 'rw',
