@@ -132,7 +132,8 @@ sub args {
     }
     foreach my $arg (keys %$optional) {
 	#unusual cases of empty strings/arrays not being assigned default argument
-	#can't use the '!' operator normally because sometimes zero is correct
+	#these arise if input data simply has empty fields
+	#can't use the '!' operator normally because an actual zero is correct
 	if( ((ref($args->{$arg}) eq "" || ref($args->{$arg}) eq "SCALAR") && (!defined($args->{$arg}) ||  $args->{$arg} eq "")) ||
 	    (ref($args->{$arg}) eq "ARRAY" && scalar(@{$args->{$arg}})==1 && (!defined($args->{$arg}->[0]) || $args->{$arg}->[0] eq ""))){
 	    delete $args->{$arg};
