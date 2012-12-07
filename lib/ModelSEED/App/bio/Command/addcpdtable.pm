@@ -15,10 +15,11 @@ sub opt_spec {
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["namespace|c:s", "Name space for aliases added"],
         ["mergeto|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
-        ["matchbyname|a", "Use search names to match compounds"],
+        ["matchbyname|n", "Use search names to match compounds"],
         ["verbose|v", "Print verbose status information"],
 	["separator|t:s", "Column separator for file. Default is tab"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"]
+        ["dry|d", "Perform a dry run; that is, do everything but saving"],
+	["addmergealias|g", "Add identifiers to merging namespace."]
     );
 }
 
@@ -32,6 +33,7 @@ sub execute {
     my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
     $self->usage_error("Must specify a valid filename for compound table") unless(defined($args->[1]) && -e $args->[1]);
+
     #verbosity
     set_verbose(1) if $opts->{verbose};
 
@@ -41,8 +43,8 @@ sub execute {
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
 
     if(scalar(@{$tbl->{data}->[0]})<2){
-#	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
-	$self->usage_error("Not enough columns in table, consider using a different separator");
+	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+#	$self->usage_error("Not enough columns in table, consider using a different separator");
     }
 
     #set namespace
@@ -94,7 +96,8 @@ sub execute {
         my $cpdData = {
         	namespace => $opts->{namespace},
         	matchbyname => $opts->{matchbyname},
-        	mergeto => $mergeto
+        	mergeto => $mergeto,
+		addmergealias => $opts->{addmergealias}
         };
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);

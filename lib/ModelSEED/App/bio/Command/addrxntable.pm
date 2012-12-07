@@ -46,8 +46,8 @@ sub execute {
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
 
     if(scalar(@{$tbl->{data}->[0]})<2){
-#	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
-	$self->usage_error("Not enough columns in table, consider using a different separator");
+	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+#	$self->usage_error("Not enough columns in table, consider using a different separator");
     }
 
     #set namespace
@@ -96,7 +96,11 @@ sub execute {
 	database => "id"
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
-        my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}, mergeto => $mergeto};
+        my $rxnData = {
+	    reaciontIDaliasType => $opts->{rxnnamespace},
+	    mergeto => $mergeto,
+	    addmergealias => $opts->{addmergealias}
+	};
         if (defined($opts->{cpdnamespace})) {
         	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
         }else{

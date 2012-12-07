@@ -228,7 +228,7 @@ sub loadFromEquation {
 		$CurrentlyOnReactants = 0;
 	    } elsif ($TempArray[$i] =~ m/^\(([eE\-\.\d]+)\)$/ || $TempArray[$i] =~ m/^([eE\-\.\d]+)$/) {
 		$Coefficient = $1;
-	    } elsif ($TempArray[$i] =~ m/(^[\w,'#\-+\(\)]+)/){
+	    } elsif ($TempArray[$i] =~ m/(^[\w,'#:\{\}\-+\(\)]+)/){
 		$Coefficient *= -1 if ($CurrentlyOnReactants);
 		my $NewRow = {
 		    compound => $1,
