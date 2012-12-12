@@ -85,6 +85,10 @@ sub execute {
     $biochemistry->defaultNameSpace($opts->{namespace}->[0]);
     $new_biochemistry->defaultNameSpace($opts->{namespace}->[0]);
 
+    #automatically set consolidate option
+    #this allows mergeBiochemistry to repeat matches with the same object
+    $opts->{consolidate}=1;
+
     $new_biochemistry->mergeBiochemistry($biochemistry,$opts);
 
     if (defined($opts->{saveas})) {
