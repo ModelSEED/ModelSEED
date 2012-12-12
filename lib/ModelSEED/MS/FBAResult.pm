@@ -11,6 +11,7 @@ package ModelSEED::MS::FBAResult;
 use Moose;
 use ModelSEED::utilities qw( args );
 use namespace::autoclean;
+use Data::Dumper;
 extends 'ModelSEED::MS::DB::FBAResult';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:

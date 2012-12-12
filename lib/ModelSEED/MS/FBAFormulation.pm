@@ -64,13 +64,15 @@ sub _buildmfatoolkitBinary {
 	if (defined($config->user_options()->{MFATK_BIN})) {
 		$bin = $config->user_options()->{MFATK_BIN};
 	} else {
-            if ($^O =~ m/^MSWin/) {
-		$bin = ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
-                $bin .= ".exe";
-            } else {
-                $bin = `which mfatoolkit 2>/dev/null`;
-                chomp $bin;
-            }
+		if ($^O =~ m/^MSWin/) {
+			$bin = ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
+			$bin .= ".exe";
+		} elsif (-e "/bin/mfatoolkit") {
+			$bin = "/bin/mfatoolkit";
+		} else {
+			$bin = `which mfatoolkit 2>/dev/null`;
+			chomp $bin;
+		}
 	}
 	if (!-e $bin) {
         ModelSEED::Exception::MissingConfig->throw(
