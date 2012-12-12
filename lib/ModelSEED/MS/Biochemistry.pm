@@ -515,8 +515,16 @@ sub addCompoundFromHash {
     #Checking for match by name if requested
     if (defined($arguments->{matchbyname}) && $arguments->{matchbyname} == 1) {
 	foreach my $name (@{$arguments->{names}}) {
+	    #Rule is only one unique searchname allowed, and to look for it in aliasSet
 	    my $searchname = ModelSEED::MS::Compound::nameToSearchname($name);
-	    $cpd = $self->queryObject("compounds",{searchnames => $searchname});
+	    if($self->queryObject("aliasSets",{name=>"searchname"})){
+		$cpd = $self->getObjectByAlias("compounds",$searchname,"searchname");
+	    }
+
+	    #if not found, try the MS::Compound::searchnames() function
+	    if(!$cpd){
+		$cpd = $self->queryObject("compounds",{searchnames => $searchname});
+	    }
 
 	    if (defined($cpd)) {
 		verbose("Compound matched based on name ".$name."\n");
@@ -602,7 +610,7 @@ sub addReactionFromHash {
 	$arguments = args(["equation","id"], {
 	    names => undef,
 	    equationAliasType => $self->defaultNameSpace(),
-	    reaciontIDaliasType => $self->defaultNameSpace(),
+	    reactionIDaliasType => $self->defaultNameSpace(),
 	    direction => ["="],
 	    deltag => [10000000],
 	    deltagerr => [10000000],
@@ -615,9 +623,9 @@ sub addReactionFromHash {
         $arguments->{names} = [$arguments->{id}->[0]] unless defined $arguments->{names}->[0];
         $arguments->{abbreviation} = [$arguments->{id}->[0]] unless defined $arguments->{abbreviation};
 	#Checking for id uniqueness
-	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reaciontIDaliasType});
+	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reactionIDaliasType});
 	if (defined($rxn)) {
-		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reaciontIDaliasType}."\n");
+		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType}."\n");
 		if($arguments->{addmergealias}){
 		    foreach my $aliasType (@{$arguments->{mergeto}}){
 			$self->addAlias({ attribute => "reactions",
@@ -637,7 +645,7 @@ sub addReactionFromHash {
 			#Alias needs to be created for original namespace if found in different namespace
 			$self->addAlias({
 			    attribute => "reactions",
-			    aliasName => $arguments->{reaciontIDaliasType},
+			    aliasName => $arguments->{reactionIDaliasType},
 			    alias => $arguments->{id}->[0],
 			    uuid => $rxn->uuid()
 			});
@@ -684,8 +692,8 @@ sub addReactionFromHash {
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 	if (defined($searchRxn)) {
 	    # Check to see if searchRxn has alias from same namespace
-	    my $alias = $searchRxn->getAlias($arguments->{reaciontIDaliasType});
-	    my $aliasSetName=$arguments->{reaciontIDaliasType};
+	    my $alias = $searchRxn->getAlias($arguments->{reactionIDaliasType});
+	    my $aliasSetName=$arguments->{reactionIDaliasType};
 	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
 		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
@@ -701,7 +709,7 @@ sub addReactionFromHash {
 	    }
 	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]."\n");
 	    $self->addAlias({ attribute => "reactions",
-			      aliasName => $arguments->{reaciontIDaliasType},
+			      aliasName => $arguments->{reactionIDaliasType},
 			      alias => $arguments->{id}->[0],
 			      uuid => $searchRxn->uuid()
 			    });
@@ -720,7 +728,7 @@ sub addReactionFromHash {
 	$self->add("reactions", $rxn);
 	$self->addAlias({
 		attribute => "reactions",
-		aliasName => $arguments->{reaciontIDaliasType},
+		aliasName => $arguments->{reactionIDaliasType},
 		alias => $arguments->{id}->[0],
 		uuid => $rxn->uuid()
 	});
@@ -823,13 +831,16 @@ sub mergeBiochemistry {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
     	my $uuidTranslation = {};
+    	my $revUuidTranslation = {};
 	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name()."\n");
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
 		    my $aliases={};
 		    if(!defined($opts->{noaliastransfer})){
 			foreach my $set ( grep { $_->attribute() eq $type } @{$bio->aliasSets()} ){
-			    $aliases->{$set->name()}{$obj->getAlias($set->name())}=1 if $obj->getAlias($set->name());
+			    foreach my $alias ( @{$obj->getAliases($set->name())} ){
+				$aliases->{$set->name()}{$alias}=1;
+			    }
 			}
 		    }
 		    my $objId=$obj->id();
@@ -845,14 +856,20 @@ sub mergeBiochemistry {
 		    }
 
 		    my $dupObj = $self->$func($obj,$opts);
-		    if (defined($dupObj)) {
+		    if ( defined($dupObj) && ( !exists($revUuidTranslation->{$dupObj->uuid()}) || defined($opts->{consolidate} ) )){
 				verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObj->id()."\n");
 				foreach my $aliasName (keys %$aliases){
 				    foreach my $alias (keys %{$aliases->{$aliasName}}){
-					$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
+					if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
+					    verbose("Skipping searchname ".$alias." as its already present\n");
+					}else{
+					    verbose("Adding alias ".$alias." from ".$aliasName." for ".$dupObj->uuid()."\n"); 
+					    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
+					}
 				    }
 				}
 				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
+				$revUuidTranslation->{$dupObj->uuid()}{$obj->uuid()}=1;
 				$obj->uuid($dupObj->uuid());
 		    } else {
 			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
