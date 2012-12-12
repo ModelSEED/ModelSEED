@@ -97,7 +97,7 @@ sub execute {
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
         my $rxnData = {
-	    reaciontIDaliasType => $opts->{rxnnamespace},
+	    reactionIDaliasType => $opts->{rxnnamespace},
 	    mergeto => $mergeto,
 	    addmergealias => $opts->{addmergealias}
 	};
