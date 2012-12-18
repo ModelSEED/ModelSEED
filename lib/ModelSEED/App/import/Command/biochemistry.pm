@@ -54,7 +54,7 @@ sub execute {
         my $ms = ModelSEED::Configuration->new();
         my $config = $ms->config();
         my $store_config;
-        foreach my $store (${$config->{stores}}) {
+        foreach my $store (@{$config->{stores}}) {
         	if ($store->{name} eq $store_name) {
         		$store_config = $store;
         	}
