@@ -200,20 +200,29 @@ sub loadFtrTbl {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id","biochemistry"], {}, @_);
+    my $args = args(["id","biochemistry"], {
+    	annotation => undef,
+    }, @_);
 	my $bio = $args->{biochemistry};
-	my $map = ModelSEED::MS::Mapping->new({
-		defaultNameSpace => "ModelSEED",
-		name => $args->{id},
-		biochemistry_uuid => $bio->uuid(),
-		biochemistry => $bio
-	});
-    my $anno = ModelSEED::MS::Annotation->new({
-		defaultNameSpace => "SEED",
-		name => $args->{id},
-		mapping_uuid => $map->uuid(),
-		mapping => $map
-	});
+	my $anno = $args->{annotation};
+	my $map;
+	if (defined($anno)) {
+		$map = $anno->mapping();
+	}
+	if (!defined($anno)) {
+		$map = ModelSEED::MS::Mapping->new({
+			defaultNameSpace => "ModelSEED",
+			name => $args->{id},
+			biochemistry_uuid => $bio->uuid(),
+			biochemistry => $bio
+		});
+		$anno = ModelSEED::MS::Annotation->new({
+			defaultNameSpace => "SEED",
+			name => $args->{id},
+			mapping_uuid => $map->uuid(),
+			mapping => $map
+		});
+	}
 	my $filename = $self->filepath()."/".$args->{id}.".mdl";
 	if (!-e $filename) {
 		ModelSEED::utilities::ERROR("File for model data ".$filename." not found!");
@@ -247,11 +256,42 @@ sub createModel {
 			} elsif ($row->direction() eq "<=") {
 				$direction = "<";
 			}
-			$model->addReactionToModel({
+			my $mdlrxn = $model->addReactionToModel({
 				reaction => $rxn,
-				direction => $direction,
-				gpr => $row->pegs()
+				direction => $direction
 			});
+			my $gpr = $self->translateGPRHash($self->parseGPR($row->pegs()));
+			for (my $m=0; $m < @{$gpr}; $m++) {
+				my $protObj = $mdlrxn->add("modelReactionProteins",{
+					complex_uuid => "00000000-0000-0000-0000-000000000000",
+					note => "Imported from SBML"
+				});
+				for (my $j=0; $j < @{$gpr->[$m]}; $j++) {
+					my $subObj = $protObj->add("modelReactionProteinSubunits",{
+						role_uuid => "00000000-0000-0000-0000-000000000000",
+						note => "Imported from SBML"
+					});
+					for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
+						my $ftrID = $gpr->[$m]->[$j]->[$k];
+						my $ftrObj = $anno->getObjectByAlias("features",$ftrID,"SEED");
+						if (!defined($ftrObj)) {
+							$ftrObj = $anno->queryObject("features",{
+								id => $ftrID
+							});
+						}
+						if (!defined($ftrObj)) {
+							print "Unable to find feature for:".$ftrID."\n";
+							$ftrObj = $anno->add("features",{
+								id => $ftrID,
+								genome_uuid => $anno->genomes()->[0]->uuid(),
+							});
+						}
+						my $ftr = $subObj->add("modelReactionProteinSubunitGenes",{
+							feature_uuid => $ftrObj->uuid()
+						});
+					}
+				}
+			}
 		}
 	}
 	$filename = $self->filepath()."/".$args->{id}.".bof";
@@ -269,13 +309,233 @@ sub createModel {
 		}
 	}
 	my $bioobj = $model->add("biomasses",{
-		name => "bio00001"
+		id => "bio1",
+		name => "bio1"
 	});
 	$bioobj->loadFromEquation({
 		equation => $equation,
 		aliasType => "ModelSEED"
 	});
 	return $model;
+}
+
+=head3 parseGPR
+
+Definition:
+	{}:Logic hash = ModelSEED::MS::Factories::SBMLFactory->parseGPR();
+Description:
+	Parses GPR string into a hash where each key is a node ID,
+	and each node ID points to a logical expression of genes or other
+	node IDs. 
+	
+	Logical expressions only have one form of logic, either "or" or "and".
+
+	Every hash returned has a root node called "root", and this is
+	where the gene protein reaction boolean rule starts.
+Example:
+	GPR string "(A and B) or (C and D)" is translated into:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	
+=cut
+
+sub parseGPR {
+	my $self = shift;
+	my $gpr = shift;
+	$gpr =~ s/\s+and\s+/;/g;
+	$gpr =~ s/\s+or\s+/:/g;
+	$gpr =~ s/\s+\)/)/g;
+	$gpr =~ s/\)\s+/)/g;
+	$gpr =~ s/\s+\(/(/g;
+	$gpr =~ s/\(\s+/(/g;
+	my $index = 1;
+	my $gprHash = {_baseGPR => $gpr};
+	while ($gpr =~ m/\(([^\)^\(]+)\)/) {
+		my $node = $1;
+		my $text = "\\(".$node."\\)";
+		if ($node !~ m/;/ && $node !~ m/:/) {
+			$gpr =~ s/$text/$node/g;
+		} else {
+			my $nodeid = "node".$index;
+			$index++;
+			$gpr =~ s/$text/$nodeid/g;
+			$gprHash->{$nodeid} = $node;
+		}
+	}
+	$gprHash->{root} = $gpr;
+	$index = 0;
+	my $nodelist = ["root"];
+	while (defined($nodelist->[$index])) {
+		my $currentNode = $nodelist->[$index];
+		my $data = $gprHash->{$currentNode};
+		my $delim = "";
+		if ($data =~ m/;/) {
+			$delim = ";";
+		} elsif ($data =~ m/:/) {
+			$delim = ":";
+		}
+		if (length($delim) > 0) {
+			my $split = [split(/$delim/,$data)];
+			foreach my $item (@{$split}) {
+				if (defined($gprHash->{$item})) {
+					my $newdata = $gprHash->{$item};
+					if ($newdata =~ m/$delim/) {
+						$gprHash->{$currentNode} =~ s/$item/$newdata/g;
+						delete $gprHash->{$item};
+						$index--;
+					} else {
+						push(@{$nodelist},$item);
+					}
+				}
+			}
+		} elsif (defined($gprHash->{$data})) {
+			push(@{$nodelist},$data);
+		}
+		$index++;
+	}
+	foreach my $item (keys(%{$gprHash})) {
+		$gprHash->{$item} =~ s/;/+/g;
+		$gprHash->{$item} =~ s/:/|/g;
+	}
+	return $gprHash;
+}
+
+=head3 translateGPRHash
+
+Definition:
+	[[[]]]:Protein subunit gene array = ModelSEED::MS::Factories::SBMLFactory->translateGPRHash({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a three level array ref.
+	The three level array ref represents the three levels of GPR rules in the ModelSEED.
+	The outermost array represents proteins (with 'or' logic).
+	The next level array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "or(and(or))" or "or(and)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "node1|node2",
+		node1 => "A+B",
+		node2 => "C+D"
+	}
+	Is translated into the array:
+	[
+		[
+			["A"],
+			["B"]
+		],
+		[
+			["C"],
+			["D"]
+		]
+	]
+
+=cut
+
+sub translateGPRHash {
+	my $self = shift;
+	my $gprHash = shift;
+	my $root = $gprHash->{root};
+	my $proteins = [];
+	if ($root =~ m/\|/) {
+		my $proteinItems = [split(/\|/,$root)];
+		my $found = 0;
+		foreach my $item (@{$proteinItems}) {
+			if (defined($gprHash->{$item})) {
+				$found = 1;
+				last;
+			}
+		}
+		if ($found == 0) {
+			$proteins->[0]->[0] = $proteinItems
+		} else {
+			foreach my $item (@{$proteinItems}) {
+				push(@{$proteins},$self->parseSingleProtein($item,$gprHash));
+			}
+		}
+	} elsif ($root =~ m/\+/) {
+		$proteins->[0] = $self->parseSingleProtein($root,$gprHash);
+	} elsif (defined($gprHash->{$root})) {
+		$gprHash->{root} = $gprHash->{$root};
+		return $self->translateGPRHash($gprHash);
+	} else {
+		$proteins->[0]->[0]->[0] = $root;
+	}
+	return $proteins;
+}
+
+=head3 parseSingleProtein
+
+Definition:
+	[[]]:Subunit gene array = ModelSEED::MS::Factories::SBMLFactory->parseSingleProtein({}:GPR hash);
+Description:
+	Translates the GPR hash generated by "parseGPR" into a two level array ref.
+	The two level array ref represents the two levels of GPR rules in the ModelSEED.
+	The outermost array represents subunits (with 'and' logic).
+	The innermost array represents gene homologs (with 'or' logic).
+	In order to be parsed into this form, the input GPR hash must include logic
+	of the forms: "and(or)" or "and" or "or"
+	
+Example:
+	GPR hash:
+	{
+		root => "A+B",
+	}
+	Is translated into the array:
+	[
+		["A"],
+		["B"]
+	]
+
+=cut
+
+sub parseSingleProtein {
+	my $self = shift;
+	my $node = shift;
+	my $gprHash = shift;
+	my $subunits = [];
+	if ($node =~ m/\+/) {
+		my $items = [split(/\+/,$node)];
+		my $index = 0;
+		foreach my $item (@{$items}) {
+			if (defined($gprHash->{$item})) {
+				my $subunitNode = $gprHash->{$item};
+				if ($subunitNode =~ m/\|/) {
+					my $suitems = [split(/\|/,$subunitNode)];
+					my $found = 0;
+					foreach my $suitem (@{$suitems}) {
+						if (defined($gprHash->{$item})) {
+							$found = 1;
+						}
+					}
+					if ($found == 0) {
+						$subunits->[$index] = $suitems;
+						$index++;
+					} else {
+						print "Incompatible GPR:".$gprHash->{_baseGPR}."\n";
+					}
+				} elsif ($subunitNode =~ m/\+/) {
+					print "Incompatible GPR:".$gprHash->{_baseGPR}."\n";
+				} else {
+					$subunits->[$index]->[0] = $subunitNode;
+					$index++;
+				}
+			} else {
+				$subunits->[$index]->[0] = $item;
+				$index++;
+			}
+		}
+	} elsif (defined($gprHash->{$node})) {
+		return $self->parseSingleProtein($gprHash->{$node},$gprHash)
+	} else {
+		$subunits->[0]->[0] = $node;
+	}
+	return $subunits;
 }
 
 sub createBiochemistry {
@@ -897,12 +1157,29 @@ sub createAnnotation {
 		my $gene = $anno->add("features",{
 			genome_uuid => $genome->uuid(),
 			id => $row->id(),
+			name => $row->name(),
 			start => $row->start(),
 			stop => $row->stop(),
 			contig => $row->contig(),
 			direction => $row->direction(),
 			type => $row->type(),
 		});
+		if (defined($row->Locus()) && length($row->Locus()) > 0) {
+			$anno->addAlias({
+				attribute => "features",
+				aliasName => "Locus",
+				alias => $row->Locus(),
+				uuid => $gene->uuid()
+			});
+		}
+		if (defined($row->SEED()) && length($row->SEED()) > 0) {
+			$anno->addAlias({
+				attribute => "features",
+				aliasName => "SEED",
+				alias => $row->SEED(),
+				uuid => $gene->uuid()
+			});
+		}
 		my $roles = [split(/\|/,$row->roles())];
 		for (my $j=0; $j < @{$roles}; $j++) {
 			my $role = $args->{mapping}->queryObject("roles",{

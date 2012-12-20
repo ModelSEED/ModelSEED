@@ -3891,6 +3891,7 @@ $objectDefinitions->{Annotation} = {
 			class      => "SubsystemState",
 			type       => "child"
 		},
+		{ name => "aliasSets",    class => "AliasSet",    type => "child" }
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
@@ -4025,6 +4026,13 @@ $objectDefinitions->{Feature} = {
 			type       => 'Str',
 			len        => 32,
 			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0
 		},
 		{
 			name       => 'cksum',

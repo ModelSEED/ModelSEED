@@ -838,8 +838,9 @@ sub printSBML {
     #clean names
     my $stringToString = sub {
 		my ($name,$value) = @_;
-		#SNames cannot contain angle brackets
-		return $name.'="'.$value.'"';
+		$value =~ s/[\[\]\(\)\+]//g;
+		$value =~ s/[\s:,]/_/g;
+		return $name.'="'.XML::LibXML::Document->new('1.0', 'UTF-8')->createTextNode($value)->toString .'"';
     };
 	#Printing header to SBML file
 	my $ModelName = $idToSId->($self->id());

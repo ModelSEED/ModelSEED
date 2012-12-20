@@ -68,8 +68,9 @@ sub execute {
     	biochemistry => $bio
     };
     #Retrieving annotation object
+    my $annoref;
     if(defined($opts->{annotation})) {
-    	my $annoref = $helpers->process_ref_string($opts->{annotation}, "annotation",$auth->username);
+    	$annoref = $helpers->process_ref_string($opts->{annotation}, "annotation",$auth->username);
     	$config->{annotation} = $store->get_object($annoref);
     }
 	#Building model object from file
@@ -86,6 +87,10 @@ sub execute {
 	my $model = $factory->createModel($config);
 	#Saving model in database
     unless($opts->{dry}) {
+    	if (defined($config->{annotation})) {
+    		my $uuid = $store->save_object($annoref, $config->{annotation});
+    		$model->annotation_uuid($uuid);
+    	}
         $store->save_object($modelref, $model);
         verbose("Saved model to $modelref!");
     }
