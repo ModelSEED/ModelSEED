@@ -240,7 +240,7 @@ sub prepareFBAFormulation {
 			maximizeObjective => 1,
 			fbaObjectiveTerms => [{
 				variableType => "biomassflux",
-				id => "Biomass/id/bio00001",
+				id => "Biomass/id/bio1",
 				coefficient => 1
 			}]
 		}});
@@ -344,6 +344,9 @@ sub prepareFBAFormulation {
 				push(@{$form->inputfiles()->{"InactiveModelReactions.txt"}},$obj->id());
 			}
 		}
+	}
+	if (@{$form->inputfiles()->{"InactiveModelReactions.txt"}} == 0) {
+		$form->inputfiles()->{"InactiveModelReactions.txt"}->[0] = "bio1";
 	}
 	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
 	if ($self->biomassHypothesis() == 1) {
