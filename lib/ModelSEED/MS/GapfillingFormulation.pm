@@ -458,68 +458,72 @@ sub createSolutionsFromArray {
 	my $data = $args->{data};
 	my $mdl = $args->{model};
 	my $bio = $mdl->biochemistry();
-	my $count = 0;
-	my $rxnHash;
 	for (my $i=0; $i < @{$data}; $i++) {
-		if ($data->[$i] =~ m/^bio1/) {
-			my $gfsolution = $self->add("gapfillingSolutions",{});
+		if ($data->[$i] =~ m/^bio/) {
 			my $array = [split(/\t/,$data->[$i])];
 			if (defined($array->[1])) {
-				my $subarray = [split(/;/,$array->[1])];
-				for (my $j=0; $j < @{$subarray}; $j++) {
-					if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
-						my $cpdid = $2;
-						my $sign = $1;
-						my $bio = $mdl->biomasses()->[0];
-						my $biocpds = $bio->biomasscompounds();
-						my $found = 0;
-						for (my $i=0; $i < @{$biocpds}; $i++) {
-							my $biocpd = $biocpds->[$i];
-							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
-								$bio->remove("biomasscompounds",$biocpd);
-								$found = 1;
-								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
-								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+				my $solutionsArray = [split(/\|/,$array->[1])];
+				for (my $k=0; $k < @{$solutionsArray}; $k++) {
+					if (length($solutionsArray->[$k]) > 0) {
+						my $count = 0;
+						my $rxnHash;
+						my $gfsolution = $self->add("gapfillingSolutions",{});
+						my $subarray = [split(/,/,$solutionsArray->[$k])];
+						for (my $j=0; $j < @{$subarray}; $j++) {
+							if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
+								my $cpdid = $2;
+								my $sign = $1;
+								my $bio = $mdl->biomasses()->[0];
+								my $biocpds = $bio->biomasscompounds();
+								my $found = 0;
+								for (my $m=0; $m < @{$biocpds}; $m++) {
+									my $biocpd = $biocpds->[$m];
+									if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+										$found = 1;
+										push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+										push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
+									}
+								}
+								if ($found == 0) {
+									ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+								}
+								$count += 5;
+							} elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+								my $comp = "c";
+								my $rxnid = $2;
+								my $sign = $1;
+								if ($sign eq "+") {
+									$sign = ">";
+								} else {
+									$sign = "<";
+								}
+								my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+								if (!defined($rxn)) {
+									ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+								}
+								my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+								if (!defined($rxn)) {
+									ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+								}
+								if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
+									$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
+								} else {
+									$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
+								}
+								$count++;
 							}
 						}
-						if ($found == 0) {
-							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+						$gfsolution->solutionCost($count);
+						foreach my $ruuid (keys(%{$rxnHash})) {
+							foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
+								$gfsolution->add("gapfillingSolutionReactions",{
+									reaction_uuid => $ruuid,
+									compartment_uuid => $cuuid,
+									direction => $rxnHash->{$ruuid}->{$cuuid}
+								});
+							}
 						}
-						$count += 5;
-					} elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
-						my $comp = "c";
-						my $rxnid = $2;
-						my $sign = $1;
-						if ($sign eq "+") {
-							$sign = ">";
-						} else {
-							$sign = "<";
-						}
-						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-						}
-						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
-						if (!defined($rxn)) {
-							ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
-						}
-						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
-						} else {
-							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
-						}
-						$count++;
 					}
-				}
-			}
-			$gfsolution->solutionCost($count);
-			foreach my $ruuid (keys(%{$rxnHash})) {
-				foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
-					$gfsolution->add("gapfillingSolutionReactions",{
-						reaction_uuid => $ruuid,
-						compartment_uuid => $cuuid,
-						direction => $rxnHash->{$ruuid}->{$cuuid}
-					});
 				}
 			}
 		}

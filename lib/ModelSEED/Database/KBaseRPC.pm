@@ -140,8 +140,8 @@ sub _build_rpc {
     # don't have a Bio::KBase::fbaModel::Data
     # TODO : Implement exception for ModelSEED::Database::KBaseRPC
     # if Bio::KBase::fbaModel::Data client lib is missing
-    load Bio::KBase::fbaModel::Data;
-    return Bio::KBase::fbaModel::Data->new($self->url);
+    load Bio::KBase::fbaModelData::Client;
+    return Bio::KBase::fbaModelData::Client->new($self->url);
 }
 
 sub _unpack_one {
