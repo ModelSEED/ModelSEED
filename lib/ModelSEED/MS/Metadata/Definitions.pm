@@ -180,6 +180,14 @@ $objectDefinitions->{FBAFormulation} = {
 			default    => 0
 		},
 		{
+			name       => 'additionalCpd_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
 			name       => 'geneKO_uuids',
 			printOrder => -1,
 			perm       => 'rw',
@@ -326,6 +334,13 @@ $objectDefinitions->{FBAFormulation} = {
 			attribute => "geneKO_uuids",
 			parent    => "Annotation",
 			method    => "features",
+			array     => 1
+		},
+		{
+			name      => "additionalCpds",
+			attribute => "additionalCpd_uuids",
+			parent    => "Biochemistry",
+			method    => "compounds",
 			array     => 1
 		},
 		{
