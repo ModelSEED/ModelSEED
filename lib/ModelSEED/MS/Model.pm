@@ -406,8 +406,10 @@ sub createStandardFBABiomass {
 		name => $self->name()." auto biomass",
 		id => "bio".($count+1)
 	});
-	my $template = $mapping->queryObject("biomassTemplates",{class => $anno->genomes()->[0]->class()});
+	my $gramtype = $anno->classifyGenomeFromAnnotation();
+	my $template = $mapping->queryObject("biomassTemplates",{class => $gramtype});
 	if (!defined($template)) {
+		print "Could not find biomass template for type:".$gramtype."\n";
 		$template = $mapping->queryObject("biomassTemplates",{class => "Unknown"});
 	}
 	my $list = ["dna","rna","protein","lipid","cellwall","cofactor","energy"];

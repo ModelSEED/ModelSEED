@@ -299,7 +299,7 @@ sub _parse {
                 $owner = shift @parts;
                 $type = 'collection';
             } else {
-               return;
+            	return;
             }
         }
     }

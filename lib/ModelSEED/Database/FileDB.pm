@@ -145,9 +145,7 @@ sub save_data {
             $self->kvstore->set_metadata($parent_uuid, "", $parent_meta);
         }
     }
-
     $self->kvstore->set_metadata($object->{uuid}, "", $meta);
-
     if($update_alias) {
         # update alias to new uuid
         my $rtv = $self->update_alias($ref, $object->{uuid}, $auth);

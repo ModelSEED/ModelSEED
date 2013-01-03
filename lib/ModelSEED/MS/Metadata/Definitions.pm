@@ -4261,7 +4261,7 @@ $objectDefinitions->{Classifier} = {
 			weak      => 0
 		},
 	],
-	reference_id_types => [qw(uuid)],
+	reference_id_types => [qw(uuid alias)],
 	version            => 1.0,
 };
 
@@ -4436,7 +4436,7 @@ $objectDefinitions->{Mapping} = {
 			parent    => "ModelSEED::Store",
 			method    => "Biochemistry",
 			weak      => 0
-		},
+		}
 	],
 	reference_id_types => [qw(uuid alias)],
 	version            => 2.0,
