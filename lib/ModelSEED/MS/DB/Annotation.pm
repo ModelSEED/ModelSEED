@@ -9,6 +9,7 @@ use ModelSEED::MS::IndexedObject;
 use ModelSEED::MS::Genome;
 use ModelSEED::MS::Feature;
 use ModelSEED::MS::SubsystemState;
+use ModelSEED::MS::AliasSet;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::IndexedObject';
@@ -36,6 +37,7 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 has genomes => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Genome)', metaclass => 'Typed', reader => '_genomes', printOrder => '0');
 has features => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Feature)', metaclass => 'Typed', reader => '_features', printOrder => '1');
 has subsystemStates => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(SubsystemState)', metaclass => 'Typed', reader => '_subsystemStates', printOrder => '2');
+has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(AliasSet)', metaclass => 'Typed', reader => '_aliasSets', printOrder => '-1');
 
 
 # LINKS:
@@ -163,10 +165,16 @@ my $subobjects = [
             'name' => 'subsystemStates',
             'type' => 'child',
             'class' => 'SubsystemState'
+          },
+          {
+            'printOrder' => -1,
+            'name' => 'aliasSets',
+            'type' => 'child',
+            'class' => 'AliasSet'
           }
         ];
 
-my $subobject_map = {genomes => 0, features => 1, subsystemStates => 2};
+my $subobject_map = {genomes => 0, features => 1, subsystemStates => 2, aliasSets => 3};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -194,6 +202,10 @@ around 'features' => sub {
 around 'subsystemStates' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('subsystemStates');
+};
+around 'aliasSets' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('aliasSets');
 };
 
 

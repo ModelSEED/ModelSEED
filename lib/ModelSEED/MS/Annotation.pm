@@ -72,7 +72,7 @@ TODO: This is not implemented yet and only returns "Gram negative"
 =cut
 
 use ModelSEED::MS::Model;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities qw( args verbose );
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';
@@ -167,7 +167,11 @@ sub createStandardFBAModel {
 
 sub classifyGenomeFromAnnotation {
     my $self = shift;
-	return "Gram negative";
+	my $map = $self->mapping();
+	my $classifier = $map->typeClassifier();
+	my $class = $classifier->classifyAnnotation({annotation => $self});
+	verbose("Classifier used to classify genome as ".$class->name()."!");
+	return $class->name();
 }
 
 __PACKAGE__->meta->make_immutable;

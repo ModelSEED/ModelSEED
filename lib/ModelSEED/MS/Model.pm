@@ -406,8 +406,10 @@ sub createStandardFBABiomass {
 		name => $self->name()." auto biomass",
 		id => "bio".($count+1)
 	});
-	my $template = $mapping->queryObject("biomassTemplates",{class => $anno->genomes()->[0]->class()});
+	my $gramtype = $anno->classifyGenomeFromAnnotation();
+	my $template = $mapping->queryObject("biomassTemplates",{class => $gramtype});
 	if (!defined($template)) {
+		print "Could not find biomass template for type:".$gramtype."\n";
 		$template = $mapping->queryObject("biomassTemplates",{class => "Unknown"});
 	}
 	my $list = ["dna","rna","protein","lipid","cellwall","cofactor","energy"];
@@ -838,8 +840,9 @@ sub printSBML {
     #clean names
     my $stringToString = sub {
 		my ($name,$value) = @_;
-		#SNames cannot contain angle brackets
-		return $name.'="'.$value.'"';
+		$value =~ s/[\[\]\(\)\+]//g;
+		$value =~ s/[\s:,]/_/g;
+		return $name.'="'.XML::LibXML::Document->new('1.0', 'UTF-8')->createTextNode($value)->toString .'"';
     };
 	#Printing header to SBML file
 	my $ModelName = $idToSId->($self->id());

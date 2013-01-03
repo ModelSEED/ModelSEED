@@ -298,6 +298,26 @@ sub createJobDirectory {
 			$self->defaultMaxDrainFlux($self->defaultMaxFlux());
 		}
 	}
+	my $addnlCpds = $self->additionalCpds();
+	if (@{$addnlCpds} > 0) {
+		my $newPrimMedia = $primMedia->cloneObject();
+		$newPrimMedia->parent($primMedia->parent());
+		$newPrimMedia->name("TempPrimaryMedia");
+		$newPrimMedia->id("TempPrimaryMedia");
+		my $mediaCpds = $newPrimMedia->mediacompounds();
+		for (my $i=0; $i < @{$addnlCpds}; $i++) {
+			my $found = 0;
+			for (my $j=0; $j < @{$mediaCpds}; $j++) {
+				if ($mediaCpds->[$j]->compound_uuid() eq $addnlCpds->[$i]->uuid()) {
+					$mediaCpds->[$j]->maxFlux() = 100;
+				}
+			}
+			if ($found == 0) {
+				$newPrimMedia->add("mediacompounds",{compound_uuid => $addnlCpds->[$i]->uuid()});
+			}
+		}
+		$primMedia = $newPrimMedia;
+	}
 	#Selecting the solver based on whether the problem is MILP
 	my $solver = "GLPK";
 	if ($self->fluxUseVariables() == 1 || $self->drainfluxUseVariables() == 1 || $self->findMinimalMedia()) {
@@ -397,7 +417,7 @@ sub createJobDirectory {
 		"Default max drain flux" => $self->defaultMaxDrainFlux(),
 		"Max flux" => $self->defaultMaxFlux(),
 		"Min flux" => -1*$self->defaultMaxFlux(),
-		"user bounds filename" => $self->media()->name(),
+		"user bounds filename" => $primMedia->name(),
 		"create file on completion" => "FBAComplete.txt",
 		"Reactions to knockout" => $rxnKO,
 		"Genes to knockout" => $geneKO,

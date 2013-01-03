@@ -180,6 +180,14 @@ $objectDefinitions->{FBAFormulation} = {
 			default    => 0
 		},
 		{
+			name       => 'additionalCpd_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
 			name       => 'geneKO_uuids',
 			printOrder => -1,
 			perm       => 'rw',
@@ -326,6 +334,13 @@ $objectDefinitions->{FBAFormulation} = {
 			attribute => "geneKO_uuids",
 			parent    => "Annotation",
 			method    => "features",
+			array     => 1
+		},
+		{
+			name      => "additionalCpds",
+			attribute => "additionalCpd_uuids",
+			parent    => "Biochemistry",
+			method    => "compounds",
 			array     => 1
 		},
 		{
@@ -3891,6 +3906,7 @@ $objectDefinitions->{Annotation} = {
 			class      => "SubsystemState",
 			type       => "child"
 		},
+		{ name => "aliasSets",    class => "AliasSet",    type => "child" }
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
@@ -4025,6 +4041,13 @@ $objectDefinitions->{Feature} = {
 			type       => 'Str',
 			len        => 32,
 			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0
 		},
 		{
 			name       => 'cksum',
@@ -4238,7 +4261,7 @@ $objectDefinitions->{Classifier} = {
 			weak      => 0
 		},
 	],
-	reference_id_types => [qw(uuid)],
+	reference_id_types => [qw(uuid alias)],
 	version            => 1.0,
 };
 
@@ -4413,7 +4436,7 @@ $objectDefinitions->{Mapping} = {
 			parent    => "ModelSEED::Store",
 			method    => "Biochemistry",
 			weak      => 0
-		},
+		}
 	],
 	reference_id_types => [qw(uuid alias)],
 	version            => 2.0,
