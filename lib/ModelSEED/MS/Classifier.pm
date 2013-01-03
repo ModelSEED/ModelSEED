@@ -10,6 +10,7 @@ use ModelSEED::MS::DB::Classifier;
 package ModelSEED::MS::Classifier;
 use Moose;
 use namespace::autoclean;
+use ModelSEED::utilities qw( args verbose error );
 extends 'ModelSEED::MS::DB::Classifier';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -55,9 +56,9 @@ sub classifyAnnotation {
 	}
 	for (my $i=0; $i < @{$features}; $i++) {
 		my $feature = $features->[$i];
-		my $roles = $features->featureroles();
+		my $roles = $feature->featureroles();
 		foreach my $role (@{$roles}) {
-			my $classrole = $self->queryObject("classifierRoles",{role_uuid => $role->uuid()});
+			my $classrole = $self->queryObject("classifierRoles",{role_uuid => $role->role()->uuid()});
 			if (defined($classrole)) {
 				my $roleclasses = $classrole->classifications();
 				foreach my $roleclass (@{$roleclasses}) {
@@ -73,11 +74,12 @@ sub classifyAnnotation {
 		if (!defined($largest)) {
 			$largest = $scores->{$class->uuid()};
 			$largestClass = $class;
-		} elsif ($largest < $scores->{$class->uuid()}) {
+		} elsif ($largest > $scores->{$class->uuid()}) {
 			$largest = $scores->{$class->uuid()};
 			$largestClass = $class;
 		}
 	}
+	print "Class:".$largestClass->name()."\n";
 	return $largestClass;
 }
 

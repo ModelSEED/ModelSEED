@@ -6,6 +6,9 @@
 # Date of module creation: 2012-03-26T23:22:35
 ########################################################################
 use strict;
+use LWP::Simple qw(getstore);
+use File::Temp qw(tempfile);
+use ModelSEED::MS::Classifier;
 use ModelSEED::MS::DB::Mapping;
 package ModelSEED::MS::Mapping;
 use Class::Autouse qw(
@@ -20,6 +23,7 @@ extends 'ModelSEED::MS::DB::Mapping';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has roleReactionHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleReactionHash' );
+has typeClassifier => ( is => 'rw', isa => 'ModelSEED::MS::Classifier',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtypeClassifier' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -40,6 +44,27 @@ sub _buildroleReactionHash {
 		}
 	}
 	return $roleReactionHash;
+}
+sub _buildtypeClassifier {
+    my ($self) = @_;
+    my $class = $self->queryObject("mappingClassifiers",{
+		name => "GramStain",
+		type => "Bayesian"
+	});
+	if (defined($class)) {
+		return $class->classifier();
+	}
+    my ($fh1, $classifierFile) = File::Temp::tempfile();
+    close($fh1);
+    my $status = LWP::Simple::getstore("http://bioseed.mcs.anl.gov/~chenry/ModelSEED/classifier.txt", $classifierFile);
+    die "Unable to fetch from model_seed\n" unless($status == 200);        
+	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
+	my ($classifier,$mapping) = $exchange_factory->buildClassifier({
+		filename => $classifierFile,
+		name => "GramStrain",
+		mapping => $self
+	});
+	return $classifier;
 }
 
 #***********************************************************************************************************

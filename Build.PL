@@ -120,6 +120,7 @@ my $builder = $subclass->new(
         "common::sense" => 0,
         "namespace::autoclean" => 0,
         "XML::DOM" => 0,
+        "Params::Util" => 0
     },
     recommends => {
         MongoDB => 0,

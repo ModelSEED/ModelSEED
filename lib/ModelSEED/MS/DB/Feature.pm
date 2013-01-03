@@ -20,6 +20,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Annotation', weak_ref => 1, ty
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'Str', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
+has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', type => 'attribute', metaclass => 'Typed');
 has cksum => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '-1', default => '', type => 'attribute', metaclass => 'Typed');
 has genome_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
 has start => (is => 'rw', isa => 'Int', printOrder => '3', type => 'attribute', metaclass => 'Typed');
@@ -75,6 +76,13 @@ my $attributes = [
             'printOrder' => 1,
             'name' => 'id',
             'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 1,
+            'name' => 'name',
+            'type' => 'ModelSEED::varchar',
             'perm' => 'rw'
           },
           {
@@ -136,7 +144,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, id => 2, cksum => 3, genome_uuid => 4, start => 5, stop => 6, contig => 7, direction => 8, sequence => 9, type => 10};
+my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, cksum => 4, genome_uuid => 5, start => 6, stop => 7, contig => 8, direction => 9, sequence => 10, type => 11};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -44,6 +44,7 @@ has decomposeReversibleFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', d
 has decomposeReversibleDrainFlux => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has fluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
 has drainfluxUseVariables => (is => 'rw', isa => 'Bool', printOrder => '-1', default => '0', type => 'attribute', metaclass => 'Typed');
+has additionalCpd_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has geneKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has reactionKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has parameters => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -74,6 +75,7 @@ has fbaPhenotypeSimulations => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
 has media => (is => 'rw', type => 'link(Biochemistry,media,media_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_media', clearer => 'clear_media', isa => 'ModelSEED::MS::Media', weak_ref => 1);
 has geneKOs => (is => 'rw', type => 'link(Annotation,features,geneKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_geneKOs', clearer => 'clear_geneKOs', isa => 'ArrayRef');
+has additionalCpds => (is => 'rw', type => 'link(Biochemistry,compounds,additionalCpd_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_additionalCpds', clearer => 'clear_additionalCpds', isa => 'ArrayRef');
 has reactionKOs => (is => 'rw', type => 'link(Biochemistry,reactions,reactionKO_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_reactionKOs', clearer => 'clear_reactionKOs', isa => 'ArrayRef');
 has secondaryMedia => (is => 'rw', type => 'link(Biochemistry,media,secondaryMedia_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_secondaryMedia', clearer => 'clear_secondaryMedia', isa => 'ArrayRef');
 
@@ -92,6 +94,10 @@ sub _build_media {
 sub _build_geneKOs {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->geneKO_uuids());
+}
+sub _build_additionalCpds {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->additionalCpd_uuids());
 }
 sub _build_reactionKOs {
   my ($self) = @_;
@@ -281,6 +287,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'additionalCpd_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'geneKO_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -368,7 +382,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, geneKO_uuids => 22, reactionKO_uuids => 23, parameters => 24, inputfiles => 25, outputfiles => 26, uptakeLimits => 27, numberOfSolutions => 28, simpleThermoConstraints => 29, thermodynamicConstraints => 30, noErrorThermodynamicConstraints => 31, minimizeErrorThermodynamicConstraints => 32};
+my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, model_uuid => 3, media_uuid => 4, secondaryMedia_uuids => 5, fva => 6, comboDeletions => 7, fluxMinimization => 8, findMinimalMedia => 9, notes => 10, expressionData_uuid => 11, objectiveConstraintFraction => 12, allReversible => 13, defaultMaxFlux => 14, defaultMaxDrainFlux => 15, defaultMinDrainFlux => 16, maximizeObjective => 17, decomposeReversibleFlux => 18, decomposeReversibleDrainFlux => 19, fluxUseVariables => 20, drainfluxUseVariables => 21, additionalCpd_uuids => 22, geneKO_uuids => 23, reactionKO_uuids => 24, parameters => 25, inputfiles => 26, outputfiles => 27, uptakeLimits => 28, numberOfSolutions => 29, simpleThermoConstraints => 30, thermodynamicConstraints => 31, noErrorThermodynamicConstraints => 32, minimizeErrorThermodynamicConstraints => 33};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -412,6 +426,15 @@ my $links = [
           },
           {
             'array' => 1,
+            'attribute' => 'additionalCpd_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_additionalCpds',
+            'name' => 'additionalCpds',
+            'class' => 'compounds',
+            'method' => 'compounds'
+          },
+          {
+            'array' => 1,
             'attribute' => 'reactionKO_uuids',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_reactionKOs',
@@ -430,7 +453,7 @@ my $links = [
           }
         ];
 
-my $link_map = {model => 0, media => 1, geneKOs => 2, reactionKOs => 3, secondaryMedia => 4};
+my $link_map = {model => 0, media => 1, geneKOs => 2, additionalCpds => 3, reactionKOs => 4, secondaryMedia => 5};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

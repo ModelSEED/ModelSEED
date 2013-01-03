@@ -49,14 +49,15 @@ Description:
 sub buildClassifier {
     my $self = shift;
 	my $args = args(["filename","name","mapping"],{}, @_);
+	my $mapping = $args->{mapping};
 	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
 	my $headings = [split(/\t/,$data->[0])];
 	my $popprob = [split(/\t/,$data->[1])];
 	my $classifier = ModelSEED::MS::Classifier->new({
 		name => $args->{name},
 		type => $headings->[0],
-		mapping_uuid => $args->{mapping}->uuid(),
-		mapping => $args->{mapping}
+		mapping_uuid => $mapping->uuid(),
+		mapping => $mapping
 	});
 	my $cfHash = {};
 	for (my $i=1; $i < @{$headings}; $i++) {
@@ -67,7 +68,7 @@ sub buildClassifier {
 	}
 	my $cfRoleHash = {};
 	for (my $i=2;$i < @{$data}; $i++) {
-		my $row = split(/\t/,$data->[$i]);
+		my $row = [split(/\t/,$data->[$i])];
 		my $objData = {
 			classifications => [],
 			classification_uuids => [],
@@ -147,7 +148,7 @@ sub buildFBAFormulation {
 		fbaConstraints => [],
 		fbaObjectiveTerms => [{
 			variableType => "biomassflux",
-			id => "Biomass/id/bio00001",
+			id => "Biomass/id/bio1",
 			coefficient => 1
 		}],
 		fbaPhenotypeSimulations => []
