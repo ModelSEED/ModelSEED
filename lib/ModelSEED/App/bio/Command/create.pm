@@ -35,7 +35,7 @@ sub execute {
     $new_biochemistry->add("aliasSets",ModelSEED::MS::AliasSet->new({name=>'searchname',source=>'ModelSEED',attribute=>'compounds',class=>'Compound'}));
 
     #add proton
-    $new_biochemistry->addCompoundFromHash({id=>['cpd00067'],names=>['H+','Proton'],namespace=>'ModelSEED',formula=>['H']});
+    $new_biochemistry->addCompoundFromHash({id=>['cpd00067'],names=>['H+','Proton'],namespace=>'ModelSEED',formula=>['H'],charge=>[1]});
 
     #add compartments
     $new_biochemistry->addCompartmentFromHash({id=>'e',name=>'Extracellular',hierarchy=>0});
