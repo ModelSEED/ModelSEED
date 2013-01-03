@@ -616,7 +616,8 @@ sub addReactionFromHash {
 	    deltagerr => [10000000],
 	    enzymes => [],
 	    autoadd => 0,
-	    addmergealias => 0}, $arguments);
+	    addmergealias => 0,
+	    balancedonly => 0}, $arguments);
 
 	# Remove names that are too long
 	$arguments->{names} = [ grep { length($_) < 255 } @{$arguments->{names}} ];
@@ -724,6 +725,20 @@ sub addReactionFromHash {
 	    }
 	    return $searchRxn;
 	}
+
+    #if balancerxn option checked
+    #then do $rxn->checkReactionMassChargeBalance()
+    #and only add reaction if it passes those checks
+    #saves having to delete the reaction too
+    if($arguments->{balancedonly}==1){
+	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1});
+	print STDERR join("|",$result),"\n";
+	if($result->{balanced}==0 && (defined($result->{error}) || defined($result->{imbalancedAtoms}))){
+	    verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status(),"\n");
+	    return;
+	}
+    }
+
 	# Attach reaction to biochemistry
 	$self->add("reactions", $rxn);
 	$self->addAlias({
@@ -1012,15 +1027,36 @@ sub checkForProton {
     my ($self) = @_;
     
     if($self->queryObject("aliasSets",{name => "ModelSEED", attribute=>"compounds"})){
-	return $self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+	my $obj=$self->getObjectByAlias("compounds","cpd00067","ModelSEED");
+	return $obj if $obj;
     }    
     if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
-	return $self->getObjectByAlias("compounds","C00080","KEGG");
+	my $obj=$self->getObjectByAlias("compounds","C00080","KEGG");
+	return $obj if $obj;
     }
     if($self->queryObject("aliasSets",{name => "MetaCyc", attribute=>"compounds"})){
-	return $self->getObjectByAlias("compounds","PROTON","MetaCyc");
+	my $obj=$self->getObjectByAlias("compounds","PROTON","MetaCyc");
+	return $obj if $obj;
     }
     return $self->queryObject("compounds",{name => "H+"});
+}
+
+sub checkForWater {
+    my ($self) = @_;
+
+    if($self->queryObject("aliasSets",{name => "ModelSEED", attribute=>"compounds"})){
+	my $obj=$self->getObjectByAlias("compounds","cpd00001","ModelSEED");
+	return $obj if $obj;
+    }
+    if($self->queryObject("aliasSets",{name => "KEGG", attribute=>"compounds"})){
+	my $obj=$self->getObjectByAlias("compounds","C00001","KEGG");
+	return $obj if $obj;
+    }
+    if($self->queryObject("aliasSets",{name => "MetaCyc", attribute=>"compounds"})){
+	my $obj=$self->getObjectByAlias("compounds","WATER","MetaCyc");
+	return $obj if $obj;
+    }
+    return $self->queryObject("compounds",{name => "Water"});
 }
 
 sub __upgrade__ {
