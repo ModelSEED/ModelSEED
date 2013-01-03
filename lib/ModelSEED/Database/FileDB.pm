@@ -107,6 +107,9 @@ sub save_data {
              $is_overwrite = 1;
         }
     }
+    if ($is_overwrite == 0) {
+    	$object->{uuid} = Data::UUID->new()->create_str();
+    }
     if(defined($oldUUID)) {
         # We have an existing alias, so must:
         # - insert uuid in ancestors if we're not merging
