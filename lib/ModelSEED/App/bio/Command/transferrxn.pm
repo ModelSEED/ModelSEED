@@ -84,6 +84,7 @@ sub execute {
     if (defined($opts->{saveas})) {
     	my $new_ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
     	verbose("Saving biochemistry with transferred reactions as ".$new_ref."...\n");
+	$biochemistry->name($opts->{saveas});
 	$store->save_object($new_ref,$biochemistry);
     }elsif (defined($opts->{saveover})) {
     	verbose("Saving over original biochemistry with transferred reactions...\n");

@@ -517,10 +517,13 @@ sub translateArrayOptions {
 	if ($args->{delimiter} eq "|") {
 		$args->{delimiter} = "\\|";
 	}
+	if ($args->{delimiter} eq ";") {
+		$args->{delimiter} = "\\;";
+	}
 	my $output = [];
 	if (ref($args->{option}) eq "ARRAY") {
 		foreach my $item (@{$args->{option}}) {
-			push(@{$output},[split($args->{delimiter},$item)]);
+			push(@{$output},split($args->{delimiter},$item));
 		}
 	} else {
 		$output = [split($args->{delimiter},$args->{option})];

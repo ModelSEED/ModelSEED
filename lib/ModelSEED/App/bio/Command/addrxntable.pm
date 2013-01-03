@@ -44,14 +44,14 @@ sub execute {
 	$opts->{rxnnamespace} = $args->[0];
 	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
     } 
-	#processing table
-	my $mergeto = [];
-	if (defined($opts->{mergeto})) {
-	    my $mergeto = translateArrayOptions({
-	    	option => $opts->{mergeto},
-	    	delimiter => ","
-	    });
-	}
+
+    #processing table
+    my $mergeto = [];
+    if (defined($opts->{mergeto})) {
+	$mergeto = translateArrayOptions({
+	    option => $opts->{mergeto},
+	    delimiter => ","});
+    }
 
     #creating namespaces if they don't exist
     if(!$biochemistry->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
@@ -71,6 +71,14 @@ sub execute {
 	    class => "Reaction"});
     }
 
+    if(!$biochemistry->queryObject("aliasSets",{name => "name", attribute=>"reactions"})){
+	$biochemistry->add("aliasSets",{
+	    name => "name",
+	    source => "name",
+	    attribute => "reactions",
+	    class => "Reaction"});
+    }
+
     my $headingTranslation = {
     	name => "names",
 	enzyme => "enzymes"
@@ -82,6 +90,8 @@ sub execute {
         }else{
 	    $rxnData->{equationAliasType} = $opts->{rxnnamespace};
 	}
+	$rxnData->{autoadd} = 1 if $opts->{autoadd};
+
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
             if (defined($headingTranslation->{$heading})) {
@@ -99,6 +109,7 @@ sub execute {
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
         verbose "Saving biochemistry with new reactions as ".$ref."...\n";
+	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);
     } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
         verbose "Saving over original biochemistry with new reactions...\n";

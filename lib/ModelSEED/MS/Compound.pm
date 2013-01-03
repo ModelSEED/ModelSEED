@@ -105,26 +105,28 @@ Description:
 =cut
 
 sub calculateAtomsFromFormula {
-	my ($self) = @_;
+        my ($self) = @_;
 	my $atoms = {};
 	my $formula = $self->formula();
-	if (length($formula) == 0) {
+	if (length($formula) == 0 || $formula eq "noformula") {
 		$atoms->{error} = "No formula";
 	} else {
-		$formula =~ s/([A-Z][a-z]*)/|$1/g;
-		$formula =~ s/([\d]+)/:$1/g;
-		my $array = [split(/\|/,$formula)];
+	    foreach my $component ( split(/\./,$formula) ){
+		$component =~ s/([A-Z][a-z]*)/|$1/g;
+		$component =~ s/([\d]+)/:$1/g;
+		my $array = [split(/\|/,$component)];
 		for (my $i=1; $i < @{$array}; $i++) {
 			my $arrayTwo = [split(/:/,$array->[$i])];
 			if (defined($arrayTwo->[1])) {
 				if ($arrayTwo->[1] !~ m/^\d+$/) {
 					$atoms->{error} = "Invalid formula:".$self->formula();
 				}
-				$atoms->{$arrayTwo->[0]} = $arrayTwo->[1];
+				$atoms->{$arrayTwo->[0]} += $arrayTwo->[1];
 			} else {
-				$atoms->{$arrayTwo->[0]} = 1;
+				$atoms->{$arrayTwo->[0]} += 1;
 			}
 		}
+	    }
 	}
 	return $atoms;
 }
