@@ -15,11 +15,12 @@ sub opt_spec {
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["rxnnamespace|r:s", "Name space for reaction IDs"],
         ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
-        ["autoadd|a","Automatically add any missing compounds to DB"],
+        ["autoadd|u","Automatically add any missing compounds to DB"],
         ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
         ["verbose|v", "Print verbose status information"],
 	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
+	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
 
@@ -55,6 +56,10 @@ sub execute {
 	$opts->{rxnnamespace} = $args->[0];
 	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
     } 
+
+    if(defined($opts->{balancedonly}) && defined($opts->{autoadd})){
+	print STDERR "Warning: automatically added compounds will have no formula and lead to the automatic rejection of reactions\n";
+    }
 
     #processing table
     my $mergeto = [];
@@ -99,7 +104,8 @@ sub execute {
         my $rxnData = {
 	    reactionIDaliasType => $opts->{rxnnamespace},
 	    mergeto => $mergeto,
-	    addmergealias => $opts->{addmergealias}
+	    addmergealias => $opts->{addmergealias},
+	    balancedonly => $opts->{balancedonly}
 	};
         if (defined($opts->{cpdnamespace})) {
         	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
@@ -128,7 +134,7 @@ sub execute {
     }
 
     if (defined($opts->{saveas})) {
-        $ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
+        $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
         verbose "Saving biochemistry with new reactions as ".$ref."...\n";
 	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);
