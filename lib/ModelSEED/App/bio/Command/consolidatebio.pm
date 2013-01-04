@@ -34,18 +34,6 @@ sub execute {
 	verbose("Neither the saveas or saveover options were used\nThis run will therefore be a dry run and the biochemistry will not be saved\n");
     }
 
-    if(!defined($opts->{mergevia})){
-	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
-    }
-
-    #processing table
-    my $mergevia = [];
-    if (defined($opts->{mergevia})) {
-	$mergevia = translateArrayOptions({
-	    option => $opts->{mergevia},
-	    delimiter => ","});
-    }
-
     if(!defined($opts->{namespace})){
 	verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
 	$opts->{namespace}=[$args->[0]];
@@ -67,6 +55,17 @@ sub execute {
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
 
     verbose("Using: ",$biochemistry->name(),"\n");
+
+    if(!defined($opts->{mergevia})){
+	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+    }else{
+	$opts->{mergevia} = translateArrayOptions({ option => $opts->{mergevia}, delimiter => "," });
+	foreach my $mergeNamespace (@{$opts->{mergevia}}){
+	    if(!$biochemistry->queryObject("aliasSets",{name => $mergeNamespace, attribute=>"compounds"})){
+		$self->usage_error("Namespace for merging (".$mergeNamespace.") not found in biochemistry object");
+	    }
+	}
+    }
 
     #Add empty aliasSets
     if(!defined($opts->{noaliastransfer})){
