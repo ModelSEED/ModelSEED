@@ -85,7 +85,6 @@ sub execute {
     }
 
     $biochemistry->mergeBiochemistry($other_biochemistry,$opts);
-
     if (defined($opts->{saveas})) {
 	my $new_ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
 	verbose("Saving biochemistry with merged compounds as ".$new_ref."...\n");

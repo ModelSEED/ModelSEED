@@ -24,6 +24,7 @@ END
 
 sub opt_spec {
     return (
+        ["file|f:s", "Filename with JSON data"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -44,8 +45,8 @@ sub execute {
     }
     my $object;
     {
-        local $\;
-        my $str = <$fh>;
+    	my @lines = <$fh>;
+        my $str = join("\n",@lines);
         my $perl = JSON::XS->new->utf8(1)->decode($str);
         close($fh);
         $object = $store->create($ref_base_type, $perl);
