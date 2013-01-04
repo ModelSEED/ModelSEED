@@ -130,6 +130,10 @@ sub execute {
 		$rxnData->{$heading} = $data;
             }
         }
+	#Not adding biomass reactions by default
+	next if $rxnData->{id}->[0] =~ /biomass/i || $rxnData->{names}->[0] =~ /biomass/i;
+	next if $rxnData->{id}->[0] =~ /^R_BIO/;
+
         my $rxn = $biochemistry->addReactionFromHash($rxnData);
     }
 
