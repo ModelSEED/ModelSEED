@@ -12,6 +12,7 @@ sub abstract { return "Creates an empty biochemistry"; }
 sub usage_desc { return "bio create [name]"; }
 sub opt_spec {
     return (
+	["namespace|n:s", "Sets the default NameSpace to use for the biochemsitry object"],
     	["verbose|v", "Print comments on command actions"]
    	);
 }
@@ -26,9 +27,10 @@ sub execute {
     #verbosity
     set_verbose(1) if $opts->{verbose};
 
-    my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => 'ModelSEED',
-							     name => $args->[0]});
+    $opts->{namespace}='ModelSEED' if !defined($opts->{namespace});
 
+    my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace},
+							     name => $args->[0]});
     #Add empty aliasSets
     $new_biochemistry->add("aliasSets",ModelSEED::MS::AliasSet->new({name=>'ModelSEED',source=>'ModelSEED',attribute=>'compounds',class=>'Compound'}));
     $new_biochemistry->add("aliasSets",ModelSEED::MS::AliasSet->new({name=>'ModelSEED',source=>'ModelSEED',attribute=>'reactions',class=>'Reaction'}));
