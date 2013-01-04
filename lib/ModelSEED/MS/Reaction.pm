@@ -240,7 +240,8 @@ sub loadFromEquation {
 		    compartment => $args->{compartment},
 		    coefficient => $Coefficient
 		};
-		if ($TempArray[$i] =~ m/^[\w,\-+]+\[([a-zA-Z]+)\]/) {
+		my $Compound=quotemeta($NewRow->{compound});
+		if ($TempArray[$i] =~ m/^${Compound}\[([a-zA-Z]+)\]/) {
 		    $NewRow->{compartment} = lc($1);
 		}
 		my $comp = $compHash->{$NewRow->{compartment}};
