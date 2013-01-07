@@ -19,7 +19,8 @@ sub opt_spec {
         ["verbose|v", "Print verbose status information"],
 	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
-	["addmergealias|g", "Add identifiers to merging namespace."]
+	["addmergealias|g", "Add identifiers to merging namespace."],
+	["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
     );
 }
 
@@ -112,6 +113,22 @@ sub execute {
         }
         my $cpd = $biochemistry->addCompoundFromHash($cpdData);
     }
+
+    if(defined($opts->{checkforduplicates})){
+	my $aliases = $biochemistry->queryObject("aliasSets",{ name => $opts->{namespace}, attribute => "compounds" })->aliases();
+	my %uuidAliasHash=();
+	
+	foreach my $alias (keys %$aliases){
+	    foreach my $uuid (@{$aliases->{$alias}}){
+		$uuidAliasHash{$uuid}{$alias}=1;
+	    }
+	}
+
+	foreach my $uuid ( grep { scalar( keys %{$uuidAliasHash{$_}} )>1 } keys %uuidAliasHash ){
+	    print STDERR "Multiple compounds merged to a single UUID (".$uuid."): ".join("|",keys %{$uuidAliasHash{$uuid}})."\n";
+	}
+    }
+
     #Saving biochemistry
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
