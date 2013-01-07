@@ -460,8 +460,10 @@ sub addCompoundFromHash {
 	}
 	return $cpd;
     }
+
     # Checking for id uniqueness within scope of another aliasType, if passed
     foreach my $aliasType (@{$arguments->{mergeto}}) {
+
 	#define whether a column in table is available that matches merging namespace
 	my $matchingId=$arguments->{id}->[0];
 	$matchingId=$arguments->{lc($aliasType)}->[0] if(exists($arguments->{lc($aliasType)}));
@@ -526,8 +528,9 @@ sub addCompoundFromHash {
 		$cpd = $self->queryObject("compounds",{searchnames => $searchname});
 	    }
 
-	    if (defined($cpd)) {
-		verbose("Compound matched based on name ".$name."\n");
+	    if (defined($cpd)){
+		verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name."\n");
+		
 		$self->addAlias({attribute => "compounds",
 				 aliasName => $arguments->{namespace},
 				 alias => $arguments->{id}->[0],
@@ -687,7 +690,10 @@ sub addReactionFromHash {
 	})) {
 	    verbose("Reaction ".$arguments->{id}->[0]." was rejected\n");
 	    return undef;
+	}else{
+	    #verbose("Reaction ".$arguments->{id}->[0]." passed\n");
 	}
+
 	# Generate equation search string and check to see if reaction not already in database
 	my $code = $rxn->equationCode();
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
