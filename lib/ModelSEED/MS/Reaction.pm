@@ -18,6 +18,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
@@ -40,12 +41,14 @@ sub _buildequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
-
+sub _buildcompfreeequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
+}
 sub _buildequationformula {
     my ($self,$args) = @_;
     return $self->createEquation({format=>"formula",hashed=>0,water=>0});
 }
-
 sub _buildbalanced {
 	my ($self,$args) = @_;
 	my $result = $self->checkReactionMassChargeBalance({rebalanceProtons => 0});
@@ -130,7 +133,7 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = args([], { format => "uuid", hashed => 0, water => 0 }, @_);
+    my $args = args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
@@ -182,6 +185,7 @@ sub createEquation {
 		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 		for (my $j=0; $j < @{$comps}; $j++) {
 			my $compartment = "[".$comps->[$j]."]";
+			$compartment="" if !$args->{compts};
 			if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
 				my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
 				if (length($reactcode) > 0) {
@@ -197,7 +201,7 @@ sub createEquation {
 		}
 	}
 	if ($args->{hashed} == 1) {
-		return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
+	        return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
 	}
 	return $reactcode.$sign.$productcode;
 }
