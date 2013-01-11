@@ -74,7 +74,7 @@ sub _buildmfatoolkitBinary {
 			chomp $bin;
 		}
 	}
-	if (!-e $bin) {
+	if ((! defined $bin) || (!-e $bin)) {
         ModelSEED::Exception::MissingConfig->throw(
             variable => 'MFATK_BIN',
             message => <<ND
