@@ -10,6 +10,7 @@ use ModelSEED::MS::FBACompoundVariable;
 use ModelSEED::MS::FBAReactionVariable;
 use ModelSEED::MS::FBABiomassVariable;
 use ModelSEED::MS::FBAPhenotypeSimultationResult;
+use ModelSEED::MS::FBAPromResult;
 use ModelSEED::MS::FBADeletionResult;
 use ModelSEED::MS::FBAMinimalMediaResult;
 use ModelSEED::MS::FBAMetaboliteProductionResult;
@@ -39,6 +40,7 @@ has fbaCompoundVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => 
 has fbaReactionVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAReactionVariable)', metaclass => 'Typed', reader => '_fbaReactionVariables', printOrder => '3');
 has fbaBiomassVariables => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBABiomassVariable)', metaclass => 'Typed', reader => '_fbaBiomassVariables', printOrder => '1');
 has fbaPhenotypeSimultationResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAPhenotypeSimultationResult)', metaclass => 'Typed', reader => '_fbaPhenotypeSimultationResults', printOrder => '6');
+has fbaPromResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAPromResult)', metaclass => 'Typed', reader => '_fbaPromResults', printOrder => '7');
 has fbaDeletionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBADeletionResult)', metaclass => 'Typed', reader => '_fbaDeletionResults', printOrder => '4');
 has minimalMediaResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAMinimalMediaResult)', metaclass => 'Typed', reader => '_minimalMediaResults', printOrder => '5');
 has fbaMetaboliteProductionResults => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(FBAMetaboliteProductionResult)', metaclass => 'Typed', reader => '_fbaMetaboliteProductionResults', printOrder => '0');
@@ -153,6 +155,12 @@ my $subobjects = [
             'class' => 'FBAPhenotypeSimultationResult'
           },
           {
+            'printOrder' => 7,
+            'name' => 'fbaPromResults',
+            'type' => 'encompassed',
+            'class' => 'FBAPromResult'
+          },
+          {
             'printOrder' => 4,
             'name' => 'fbaDeletionResults',
             'type' => 'encompassed',
@@ -172,7 +180,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {fbaCompoundVariables => 0, fbaReactionVariables => 1, fbaBiomassVariables => 2, fbaPhenotypeSimultationResults => 3, fbaDeletionResults => 4, minimalMediaResults => 5, fbaMetaboliteProductionResults => 6};
+my $subobject_map = {fbaCompoundVariables => 0, fbaReactionVariables => 1, fbaBiomassVariables => 2, fbaPhenotypeSimultationResults => 3, fbaPromResults => 4, fbaDeletionResults => 5, minimalMediaResults => 6, fbaMetaboliteProductionResults => 7};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -204,6 +212,10 @@ around 'fbaBiomassVariables' => sub {
 around 'fbaPhenotypeSimultationResults' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('fbaPhenotypeSimultationResults');
+};
+around 'fbaPromResults' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('fbaPromResults');
 };
 around 'fbaDeletionResults' => sub {
   my ($orig, $self) = @_;
