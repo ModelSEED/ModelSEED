@@ -618,7 +618,7 @@ sub createFromAPI {
 		$data->{mediacompounds} = [];
 		my $notfound = [];
 		for (my $i=0; $i < @{$cpds};$i++) {
-			(my $cpd,my $type,my $idtype,my $reftext) = $parent->interpretReference($cpds->[$i],"Compound");
+			my $cpd = $parent->searchForCompound($cpds->[$i]);
 			if (defined($cpd)) {
 				my $conc = "0.001";
 				if (defined($concentrations->[$i])) {

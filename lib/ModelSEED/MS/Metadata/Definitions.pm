@@ -3658,6 +3658,14 @@ $objectDefinitions->{ModelReaction} = {
 			type       => 'ModelSEED::uuid',
 			req        => 1
 		},
+		{
+			name       => 'probability',
+			printOrder => 8,
+			perm       => 'rw',
+			type       => 'Num',
+			default	   => 1,
+			req        => 0
+		}
 	],
 	subobjects => [
 		{

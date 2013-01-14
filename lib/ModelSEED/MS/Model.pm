@@ -792,6 +792,132 @@ sub addCompoundToModel {
 	return $mdlcpd;
 }
 
+=head3 adjustBiomassReaction
+
+Definition:
+	ModelSEED::MS::Model->adjustBiomassReaction({
+		biomass => string
+		compound => string,
+		compartment => string,
+		compartmentIndex => integer,
+		coefficient => float
+	});
+Description:
+	Modifies the biomass reaction to adjust a compound, add a compound, or remove a compound
+	
+=cut
+sub adjustBiomassReaction {
+    my $self = shift;
+    my $args = args(["compound","coefficient"],{
+    	biomass => "bio1",
+    	compartment => "c",
+    	compartmentIndex => 0
+    }, @_);
+    my $bio = $self->searchForBiomass($args->{biomass});
+    if (!defined($bio)) {
+    	error("Biomass ".$args->{biomass}." not found!");
+    }
+    my $mdlcpd = $self->searchForCompound($args->{compound},$args->{compartment},$args->{compartmentIndex});
+    if (!defined($mdlcpd)) {
+    	error("ModelCompound ".$args->{compound}."_".$args->{compartment}.$args->{compartmentIndex}." not found!");
+    }
+    $bio->adjustBiomassReaction({
+    	coefficient => $args->{coefficient},
+		modelcompound => $mdlcpd
+    });
+}
+
+=head3 manualReactionAdjustment
+
+Definition:
+	ModelSEED::MS::Model->manualReactionAdjustment({
+		reaction => string,
+    	direction => string,
+    	compartment => string,
+    	compartmentIndex => integer,
+    	gpr => [[[]]],
+    	removeReaction => 0/1(0),
+    	addReaction => 0/1(0)
+	});
+Description:
+	
+		
+=cut
+sub manualReactionAdjustment {
+    my $self = shift;
+    my $args = args(["reaction"],{
+    	direction => undef,
+    	compartment => "c",
+    	compartmentIndex => 0,
+    	gpr => undef,
+    	removeReaction => 0,
+    	addReaction => 0
+    }, @_);
+    if ($args->{reaction} =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
+    	$args->{reaction} = $1;
+    	$args->{compartment} = $2;
+    	$args->{compartmentIndex} = $3;
+    }
+    if (!defined($args->{compartment})) {
+    	$args->{compartment} = "c";
+    }
+    if (!defined($args->{compartmentIndex})) {
+    	$args->{compartmentIndex} = 0;
+    }
+    my $mdlrxn = $self->searchForReaction($args->{reaction},$args->{compartment},$args->{compartmentIndex});
+    if (defined($mdlrxn)) {
+    	if ($args->{addReaction} == 1) {
+    		error("Cannot add reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is already in model!");
+    	} elsif ($args->{removeReaction} == 1) {
+    		$self->remove("modelreactions",$mdlrxn);
+    	} else {
+    		if (defined($args->{direction})) {
+    			$mdlrxn->direction($args->{direction});
+    		}
+    		if (defined($args->{gpr})) {
+    			$mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
+    		}
+    	}
+    } else {
+    	if ($args->{removeReaction} == 1) {
+    		error("Cannot remove reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is not in model!");
+    	} elsif ($args->{addReaction} == 1) {
+    		my $bio = $self->biochemistry();
+    		my $rxn = $bio->searchForReaction($args->{reaction});
+    		if (!defined($rxn)) {
+		    	error("Reaction ".$args->{reaction}." not found in biochemistry!");
+		    }
+			my $cmp = $bio->queryObject("compartments",{label => $args->{compartment}});
+		    if (!defined($cmp)) {
+		    	error("Compartment ".$args->{compartment}." not found in biochemistry!");
+		    }
+		    my $mdlcmp = $self->queryObject("modelcompartments",{
+		    	compartment_uuid => $cmp->uuid(),
+		    	compartmentIndex => $args->{compartmentIndex}
+		    });
+		    if (!defined($mdlcmp)) {
+		    	$mdlcmp = $self->addCompartmentToModel({
+		    		compartment => $cmp,
+		    		pH => 7,
+		    		potential => 0,
+		    		compartmentIndex => $args->{compartmentIndex}
+		    	});
+		    }
+		    my $mdlrxn = $self->addReactionToModel({
+		    	reaction => $rxn,
+		    	direction => $args->{direction},
+				protons => undef,
+				overrideCompartment => $mdlcmp
+		    });
+		    if (defined($args->{gpr})) {
+    			$mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
+    		}
+    	} else {
+    		error("Cannot alter reaction ".$args->{reaction}."_".$args->{compartment}.$args->{compartmentIndex}.", reaction is not in model!");
+    	}
+    }
+}
+
 =head3 labelBiomassCompounds
 
 Definition:
@@ -1806,20 +1932,24 @@ Description:
 sub searchForCompound {
     my $self = shift;
     my $id = shift;
-    my $compartment = "c0";
-    if ($id =~ m/(.+)\[(.+)\]/) {
+    my $compartment = shift;
+    my $index = shift;
+    if ($id =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$id = $1;
     	$compartment = $2;
-    	if ($compartment !~ m/[a-z]\d+$/) {
-    		$compartment .= "0";
-    	}
-    	
+    	$index = $3;
+    }
+    if (!defined($compartment)) {
+    	$compartment = "c";
+    }
+    if (!defined($index)) {
+    	$index = 0;
     }
     my $cpd = $self->biochemistry()->searchForCompound($id);
     if (!defined($cpd)) {
     	return undef;
     }
-    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment});
+    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment.$index});
     if (!defined($mdlcmp)) {
     	return undef;
     }
@@ -1860,19 +1990,24 @@ Description:
 sub searchForReaction {
     my $self = shift;
     my $id = shift;
-    my $compartment = "c0";
-    if ($id =~ m/(.+)\[(.+)\]/) {
+    my $compartment = shift;
+    my $index = shift;
+    if ($id =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$id = $1;
     	$compartment = $2;
-    	if ($compartment !~ m/[a-z]\d+$/) {
-    		$compartment .= "0";
-    	}
+    	$index = $3;
+    }
+    if (!defined($compartment)) {
+    	$compartment = "c";
+    }
+    if (!defined($index)) {
+    	$index = 0;
     }
     my $reaction = $self->biochemistry()->searchForReaction($id);
     if (!defined($reaction)) {
     	return undef;
     }
-    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment});
+    my $mdlcmp = $self->queryObject("modelcompartments",{label => $compartment.$index});
     if (!defined($mdlcmp)) {
     	return undef;
     }

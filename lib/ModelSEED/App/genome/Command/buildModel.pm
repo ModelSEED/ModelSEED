@@ -11,7 +11,7 @@ sub abstract { return "Construct a model using this annotated genome" }
 sub usage_desc { return "genome buildModel [ reference || - ] [model-name]"; }
 sub opt_spec {
     return (
-        ["mapping|m", "Use a specific mapping to build the model"],
+        ["mapping|m:s", "Use a specific mapping to build the model"],
         ["verbose|v", "Print verbose about the model construction"],
         ["help|h|?", "Print this usage information"],
     );

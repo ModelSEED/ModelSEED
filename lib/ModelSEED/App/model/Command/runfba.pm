@@ -105,14 +105,8 @@ sub execute {
     }
     # Running FBA
     print STDERR "Running FBA..." if($opts->{verbose});
-    my $solver = ModelSEED::Solver::FBA->new(store => $store);     
-    my $token = $solver->start($fbaform);
-    if (!$solver->done($token)) {
-        print STDERR $token;
-        return;
-    } 
-    my $fbaResult = $solver->getResults($token);
-    if (!defined($fbaResult)) {
+    my $results = $fbaform->runFBA(); 
+    if (!defined($results)) {
     	print STDERR " FBA failed with no solution returned!\n";
     } else {
 	    push(@{$model->fbaFormulation_uuids()},$fbaform->uuid());
