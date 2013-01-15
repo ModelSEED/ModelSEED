@@ -95,7 +95,7 @@ foreach (@{$data}) {
 	    $tfMapTarget->{"tfOnProbability"} = $tf_on_tg_on_count / $tf_on_count;
 	}
 	if ($tf_off_count != 0) {
-	    $tfMapTarget->{"tfOffProbability"} = $tf_off_tg_on_count / $tf_on_count;
+	    $tfMapTarget->{"tfOffProbability"} = $tf_off_tg_on_count / $tf_off_count;
 	}
 	push @$tfMapTargets, $tfMapTarget;
     }
