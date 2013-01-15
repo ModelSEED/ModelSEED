@@ -8,48 +8,23 @@
 use strict;
 use ModelSEED::MS::DB::Biomass;
 package ModelSEED::MS::Biomass;
-
-=head1 ModelSEED::MS::Biomass
-
-=head2 METHODS
-
-=head2 loadFromEquation
-
-    $biomass->buildFromEquation(\%config);
-
-Replaces the existing biomass object with one constructed from an
-equation string. Config is a hash-ref with the following required parameters:
-
-=over 4
-
-=item equation
-
-The equation string.
-
-
-=item aliasType
-
-The alias type to use for finding the appropriate
-L<ModelSEED::MS::Compound> from the biochemistry
-L<ModelSEED::MS::AliasSet> objects.
-
-=back
-
-=cut
-
 use Moose;
 use ModelSEED::utilities qw( args );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biomass';
+#***********************************************************************************************************
+# ADDITIONAL ATTRIBUTES:
+#***********************************************************************************************************
 has definition => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_definition' );
 has modelequation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_modelequation' );
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equation' );
 has equationCode => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equationcode' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_mapped_uuid' );
 has id  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_id' );
-has index  => ( is => 'rw', isa => 'Int',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_index' );
-
-
+has "index"  => ( is => 'rw', isa => 'Int',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_index' );
+#***********************************************************************************************************
+# BUILDERS:
+#***********************************************************************************************************
 # _equation_builder : builds a biomass equation from a configuration
 # format : type of ids to use, default uuid
 # hashed : boolean, if true, return a md5 sum of the string in place of the string
@@ -156,6 +131,98 @@ sub _parse_equation_string {
     return $reagents;
 }
 
+
+
+sub _build_definition {
+    my ($self) = @_;
+    return $self->_equation_builder({format=>"name",hashed=>0});
+}
+
+sub _build_equation {
+    my ($self) = @_;
+    return $self->_equation_builder({format=>"id",hashed=>0});
+}
+
+sub _build_modelequation {
+    my ($self) = @_;
+    return $self->_equation_builder({format=>"modelid",hashed=>0});
+}
+
+sub _build_equationcode {
+    my ($self,$args) = @_;
+    return $self->_equation_builder({format=>"uuid",hashed=>1});
+}
+
+sub _build_mapped_uuid {
+    my ($self) = @_;
+    return "00000000-0000-0000-0000-000000000000";
+}
+sub _build_id {
+    my ($self) = @_;
+    my $prefix = "bio";
+    return sprintf("${prefix}%05d", $self->index);
+}
+
+sub _build_index {
+    my ($self) = @_;
+    my $index = 1;
+    if (defined($self->parent())) {
+        my $biomasses = $self->parent->biomasses;
+        map { $_->index($index); $index++ } @$biomasses;
+    }
+}
+
+#***********************************************************************************************************
+# CONSTANTS:
+#***********************************************************************************************************
+
+#***********************************************************************************************************
+# FUNCTIONS:
+#***********************************************************************************************************
+=head3 adjustBiomassReaction
+
+Definition:
+	ModelSEED::MS::Biomass->adjustBiomassReaction({
+		coefficient => float
+		modelcompound => ModelSEED::MS::ModelCompound
+	});
+Description:
+	Modifies the biomass reaction to adjust a compound, add a compound, or remove a compound
+	
+=cut
+sub adjustBiomassReaction {
+    my $self = shift;
+    my $args = args(["modelcompound","coefficient"],{}, @_);
+	my $biocpds = $self->biomasscompounds();
+	for (my $i=0; $i < @{$biocpds}; $i++) {
+		my $biocpd = $biocpds->[$i];
+		if ($biocpd->modelcompound()->uuid() eq $args->{modelcompound}->uuid()) {
+			if ($args->{coefficient} == 0) {
+				$self->remove("biomasscompounds",$biocpd);
+			} else {
+				$biocpd->coefficient($args->{coefficient});
+			}
+		}
+	}
+	if ($args->{coefficient} != 0) {
+		$self->add("biomasscompounds",{
+			modelcompound_uuid => $args->{modelcompound}->uuid(),
+			coefficient => $args->{coefficient}
+		});
+	}
+}
+
+=head3 loadFromEquation
+
+Definition:
+	ModelSEED::MS::Biomass = ModelSEED::MS::Biomass->loadFromEquation({
+		equation => string,
+		aliasType => string
+	});
+Description:
+	Converts the input equation string into a biomass reaction object
+	
+=cut
 sub loadFromEquation {
     my $self = shift;
     my $args = args(["equation","aliasType"],{}, @_);
@@ -219,45 +286,6 @@ sub loadFromEquation {
             modelcompound_uuid => $modcpd->uuid(),
             coefficient => $coefficient,
         });
-    }
-}
-
-sub _build_definition {
-    my ($self) = @_;
-    return $self->_equation_builder({format=>"name",hashed=>0});
-}
-
-sub _build_equation {
-    my ($self) = @_;
-    return $self->_equation_builder({format=>"id",hashed=>0});
-}
-
-sub _build_modelequation {
-    my ($self) = @_;
-    return $self->_equation_builder({format=>"modelid",hashed=>0});
-}
-
-sub _build_equationcode {
-    my ($self,$args) = @_;
-    return $self->_equation_builder({format=>"uuid",hashed=>1});
-}
-
-sub _build_mapped_uuid {
-    my ($self) = @_;
-    return "00000000-0000-0000-0000-000000000000";
-}
-sub _build_id {
-    my ($self) = @_;
-    my $prefix = "bio";
-    return sprintf("${prefix}%05d", $self->index);
-}
-
-sub _build_index {
-    my ($self) = @_;
-    my $index = 1;
-    if (defined($self->parent())) {
-        my $biomasses = $self->parent->biomasses;
-        map { $_->index($index); $index++ } @$biomasses;
     }
 }
 

@@ -1144,7 +1144,7 @@ sub createAnnotation {
 	}
 	# Creating annotation object
 	my $anno = ModelSEED::MS::Annotation->new({
-		name=>$genomeData->name(),
+		name=>$defaultGenome->{name},
 		mapping_uuid =>$args->{mapping}->uuid(),
 		mapping =>$args->{mapping}
 	});

@@ -293,5 +293,51 @@ sub addModelReactionProtein {
 	return $mdlrxnprot;
 }
 
+=head3 setGPRFromArray
+Definition:
+	ModelSEED::MS::Model = ModelSEED::MS::Model->setGPRFromArray({
+		gpr => []
+	});
+Description:
+	Sets the GPR of the reaction from three nested arrays
+
+=cut
+
+sub setGPRFromArray {
+	my $self = shift;
+    my $args = args(["gpr"],{}, @_);
+	my $anno = $self->parent()->annotation();
+	$self->modelReactionProteins([]);
+	for (my $i=0; $i < @{$args->{gpr}}; $i++) {
+    	if (defined($args->{gpr}->[$i]) && ref($args->{gpr}->[$i]) eq "ARRAY") {
+	    	my $prot = $self->add("modelReactionProteins",{
+	    		complex_uuid => "00000000-0000-0000-0000-000000000000",
+	    		note => "Manually specified GPR"
+	    	});
+	    	for (my $j=0; $j < @{$args->{gpr}->[$i]}; $j++) {
+	    		if (defined($args->{gpr}->[$i]->[$j]) && ref($args->{gpr}->[$i]->[$j]) eq "ARRAY") {
+		    		my $subunit = $prot->add("modelReactionProteinSubunits",{
+			    		role_uuid => "00000000-0000-0000-0000-000000000000",
+			    		triggering => 0,
+			    		optional => 0,
+			    		note => "Manually specified GPR"
+			    	});
+		    		for (my $k=0; $k < @{$args->{gpr}->[$i]->[$j]}; $k++) {
+		    			if (defined($args->{gpr}->[$i]->[$j]->[$k])) {
+		    				my $ftr = $anno->queryObjects("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
+		    				if (!defined($ftr)) {
+		    					error("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!");
+							}
+		    				$subunit->add("modelReactionProteinSubunitGenes",{
+					    		feature_uuid => $ftr->uuid()
+					    	});
+		    			}
+		    		}
+	    		}
+	    	}
+    	}
+    }
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

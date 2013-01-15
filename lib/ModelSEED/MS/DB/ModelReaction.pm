@@ -24,6 +24,7 @@ has reaction_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', 
 has direction => (is => 'rw', isa => 'Str', printOrder => '5', default => '=', type => 'attribute', metaclass => 'Typed');
 has protons => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
 has modelcompartment_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', required => 1, type => 'attribute', metaclass => 'Typed');
+has probability => (is => 'rw', isa => 'Num', printOrder => '8', default => '1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -101,10 +102,18 @@ my $attributes = [
             'name' => 'modelcompartment_uuid',
             'type' => 'ModelSEED::uuid',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 8,
+            'name' => 'probability',
+            'default' => 1,
+            'type' => 'Num',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, reaction_uuid => 2, direction => 3, protons => 4, modelcompartment_uuid => 5};
+my $attribute_map = {uuid => 0, modDate => 1, reaction_uuid => 2, direction => 3, protons => 4, modelcompartment_uuid => 5, probability => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

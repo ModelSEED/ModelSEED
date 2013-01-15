@@ -33,6 +33,7 @@ sub opt_spec {
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
         ["fva","Perform flux variability analysis"],
+        ["prom:s","promModel object to perform probabilistic regulation of metabolism (PROM)"],
         ["simulateko","Simulate single gene knockouts"],
         ["minimizeflux","Minimize fluxes in output solution"],
         ["findminmedia","Predict minimal media formulations for the model"],
@@ -56,6 +57,7 @@ sub execute {
     # Retreiving the model object on which FBA will be performed
     my ($model, $ref) = $helper->get_object("model",$args,$store);
     $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
+    my ($pmodel, $pref) = $helper->get_object("pROMModel", [$opts->{prom}], $store) if (defined $opts->{prom});
     my $out_fh;
     if ($opts->{fileout}) {
         my $filename = $opts->{fileout};
@@ -68,7 +70,7 @@ sub execute {
         $fbaform = $helper->object_from_file("FBAFormulation", $opts->{config}, $store);
     } else {
         # Creating FBA formulation
-        my $input = { model => $model };
+        my $input = { model => $model, promModel => $pmodel };
         my $overrideList = {
             media             => "media",
             notes             => "notes",
@@ -79,8 +81,8 @@ sub execute {
             objfraction       => "objectiveConstraintFraction",
             allreversible     => "allReversible",
             objective         => "objectiveString",
-            rxnko             => "geneKO",
-            geneko            => "reactionKO",
+            geneko             => "geneKO",
+            rxnko            => "reactionKO",
             uptakelim         => "uptakeLimits",
             defaultmaxflux    => "defaultMaxFlux",
             defaultminuptake  => "defaultMinDrainFlux",
@@ -105,14 +107,8 @@ sub execute {
     }
     # Running FBA
     print STDERR "Running FBA..." if($opts->{verbose});
-    my $solver = ModelSEED::Solver::FBA->new(store => $store);     
-    my $token = $solver->start($fbaform);
-    if (!$solver->done($token)) {
-        print STDERR $token;
-        return;
-    } 
-    my $fbaResult = $solver->getResults($token);
-    if (!defined($fbaResult)) {
+    my $results = $fbaform->runFBA(); 
+    if (!defined($results)) {
     	print STDERR " FBA failed with no solution returned!\n";
     } else {
 	    push(@{$model->fbaFormulation_uuids()},$fbaform->uuid());
