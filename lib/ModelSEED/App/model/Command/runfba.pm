@@ -44,6 +44,7 @@ sub opt_spec {
         ["minthermoerror","Minimize uncertainty in thermodynamic constraints"],
         ["norun", "Do not run the FBA; print out the configuration as JSON"],
         ["html","Print FBA results in HTML"],
+        ["readable","Print FBA results in readable format"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -125,6 +126,8 @@ sub execute {
 	    }
 	    if ($opts->{html}) {
 	    	print $out_fh $fbaform->createHTML();
+	    } elsif ($opts->{readable}) {
+	    	print $out_fh $fbaform->toReadableString();
 	    } else {
 	    	print $out_fh $fbaform->toJSON({pp => 1});
 	    }
