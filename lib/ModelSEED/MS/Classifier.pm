@@ -79,7 +79,6 @@ sub classifyAnnotation {
 			$largestClass = $class;
 		}
 	}
-	print "Class:".$largestClass->name()."\n";
 	return $largestClass;
 }
 
