@@ -1209,6 +1209,236 @@ sub printExchange {
 	return $output;
 }
 
+sub htmlComponents {
+	my $self = shift;
+	my $args = args([],{}, @_);
+	my $data = $self->_createReadableData();
+	my $output = {
+		title => $self->_type()." Viewer",
+		tablist => [],
+		tabs => {
+			main => {
+				content => "",
+				name => "Overview"
+			}
+		}
+	};
+	$output->{tabs}->{main}->{content} .= "<table>\n";
+	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
+		$output->{tabs}->{main}->{content} .= "<tr><th>".$data->{attributes}->{headings}->[$i]."</th><td style='font-size:16px;border: 1px solid black;'>".$data->{attributes}->{data}->[0]->[$i]."</td></tr>\n";
+	}
+	$output->{tabs}->{main}->{content} .= "</table>\n";
+	my $id;
+	my $name;
+	foreach my $subobject (@{$data->{subobjects}}) {
+		if ($subobject->{name} ne "biomasses") {
+			if ($subobject->{name} eq "modelcompartments") {
+				$id = "tab-2";
+				$name = "Compartments";
+			} elsif ($subobject->{name} eq "modelcompounds") {
+				$id = "tab-3";
+				$name = "Compounds";
+			} elsif ($subobject->{name} eq "modelreactions") {
+				$id = "tab-4";
+				$name = "Reactions";
+			}
+			push(@{$output->{tablist}},$id);
+			$output->{tabs}->{$id} = {
+				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$subobject->{headings}}).'</th></tr>'."\n",
+				name => $name
+			};
+			foreach my $row (@{$subobject->{data}}) {
+				$output->{tabs}->{$id}->{content} .= '<tr><td>'.join("</td><td>",@{$row}).'</td></tr>'."\n";
+			}
+			$output->{tabs}->{$id}->{content} .= '</table>'."\n";
+		}
+	}
+	push(@{$output->{tablist}},("tab-5","tab-6","tab-7"));
+	my $headingsOne = ["Biomass","DNA","RNA","Protein","Cellwall","Lipid","Cofactor","Energy"];
+	my $headingsTwo = ["Biomass","Model compound","Compartment","Coefficient"];
+	my $tableOne = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n";
+	my $tableTwo = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsTwo}).'</th></tr>'."\n";
+	my $biomasses = $self->biomasses();
+	foreach my $bio (@{$biomasses}) {
+		$tableOne .= '<tr><td>'.$bio->id()."</td><td>".$bio->dna()."</td><td>".$bio->rna()."</td><td>".$bio->protein()."</td><td>".$bio->cellwall()."</td><td>".$bio->lipid()."</td><td>".$bio->cofactor()."</td><td>".$bio->energy()."</td></tr>";
+		my $biocpds = $bio->biomasscompounds();
+		foreach my $biocpd (@{$biocpds}) {
+			$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+		}
+	}
+	$tableOne .= '</table>'."\n";
+	$tableTwo .= '</table>'."\n";
+	$output->{tabs}->{"tab-5"} = {
+		content => $tableOne."<br>".$tableTwo,
+		name => "Biomass reactions"
+	};
+	$headingsOne = ["Integrated","Gapfill simulation","Media","Solution","Cost","Gapfilled reaction","Biomass removal","Media supplement"];
+	$output->{tabs}->{"tab-6"} = {
+		content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+		name => "Gapfilling"
+	};
+	foreach my $gf (@{$self->integratedGapfillings()}) {
+		if (defined($gf->gapfillingSolutions()->[0])) {
+			my $count = 0;
+			foreach my $sol (@{$gf->gapfillingSolutions()}) {
+				my $rxns = "";
+				my $bios = "";
+				my $medias = "";
+				foreach my $rxn (@{$sol->gapfillingSolutionReactions()}) {
+					if (length($rxns)) {
+						$rxns .= "<br>";
+					}
+					$rxns .= $rxn->reaction()->id();
+				}
+				foreach my $cpd (@{$sol->mediaSupplements()}) {
+					if (length($medias)) {
+						$medias .= "<br>";
+					}
+					$medias .= $cpd->id();
+				}
+				foreach my $bio (@{$sol->biomassRemovals()}) {
+					if (length($bios)) {
+						$bios .= "<br>";
+					}
+					$bios .= $bio->id();
+				}
+				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
+					"<td>Yes</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
+				"</tr>";
+				$count++;
+			}
+		} else {
+			$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
+				"<td>Yes</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
+			"</tr>";
+		}
+	}
+	foreach my $gf (@{$self->unintegratedGapfillings()}) {
+		if (defined($gf->gapfillingSolutions()->[0])) {
+			my $count = 0;
+			foreach my $sol (@{$gf->gapfillingSolutions()}) {
+				my $rxns = "";
+				my $bios = "";
+				my $medias = "";
+				foreach my $rxn (@{$sol->gapfillingSolutionReactions()}) {
+					if (length($rxns)) {
+						$rxns .= "<br>";
+					}
+					$rxns .= $rxn->reaction()->id();
+				}
+				foreach my $cpd (@{$sol->mediaSupplements()}) {
+					if (length($medias)) {
+						$medias .= "<br>";
+					}
+					$medias .= $cpd->id();
+				}
+				foreach my $bio (@{$sol->biomassRemovals()}) {
+					if (length($bios)) {
+						$bios .= "<br>";
+					}
+					$bios .= $bio->id();
+				}
+				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
+					"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
+				"</tr>";
+				$count++;
+			}
+		} else {
+			$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
+				"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
+			"</tr>";
+		}
+	}
+	$output->{tabs}->{"tab-6"}->{content} .= '</table>'."\n";
+	$headingsOne = ["Gapgen simulation","Media","Solution","Cost","Removed reaction","Biomass addition","Media removal"];
+	$output->{tabs}->{"tab-7"} = {
+		content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+		name => "Gapgen"
+	};
+	foreach my $gg (@{$self->integratedGapgens()}) {
+		if (defined($gg->gapgenSolutions()->[0])) {
+			my $count = 0;
+			foreach my $sol (@{$gg->gapgenSolutions()}) {
+				my $rxns = "";
+				my $bios = "";
+				my $medias = "";
+				foreach my $rxn (@{$sol->gapgenSolutionReactions()}) {
+					if (length($rxns)) {
+						$rxns .= "<br>";
+					}
+					$rxns .= $rxn->modelreaction()->id();
+				}
+				foreach my $cpd (@{$sol->mediaRemovals()}) {
+					if (length($medias)) {
+						$medias .= "<br>";
+					}
+					$medias .= $cpd->id();
+				}
+				foreach my $bio (@{$sol->biomassSupplements()}) {
+					if (length($bios)) {
+						$bios .= "<br>";
+					}
+					$bios .= $bio->id();
+				}
+				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
+					"<td>Yes</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
+				"</tr>";
+				$count++;
+			}
+		} else {
+			$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
+				"<td>Yes</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
+			"</tr>";
+		}
+	}
+	foreach my $gg (@{$self->unintegratedGapgens()}) {
+		if (defined($gg->gapgenSolutions()->[0])) {
+			my $count = 0;
+			foreach my $sol (@{$gg->gapgenSolutions()}) {
+				my $rxns = "";
+				my $bios = "";
+				my $medias = "";
+				foreach my $rxn (@{$sol->gapgenSolutionReactions()}) {
+					if (length($rxns)) {
+						$rxns .= "<br>";
+					}
+					$rxns .= $rxn->modelreaction()->id();
+				}
+				foreach my $cpd (@{$sol->mediaRemovals()}) {
+					if (length($medias)) {
+						$medias .= "<br>";
+					}
+					$medias .= $cpd->id();
+				}
+				foreach my $bio (@{$sol->biomassSupplements()}) {
+					if (length($bios)) {
+						$bios .= "<br>";
+					}
+					$bios .= $bio->id();
+				}
+				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
+					"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
+				"</tr>";
+				$count++;
+			}
+		} else {
+			$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
+				"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
+			"</tr>";
+		}
+	}
+	$output->{tabs}->{"tab-7"}->{content} .= '</table>'."\n";
+	return $output;
+}
+
 =head3 export
 
 Definition:

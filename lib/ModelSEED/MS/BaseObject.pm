@@ -102,6 +102,102 @@ use ModelSEED::utilities qw( verbose error args );
 use Scalar::Util qw(weaken);
 our $VERSION = undef;
 
+my $htmlheader = <<HEADER;
+<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>\${TITLE}</title>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
+<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+<script src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
+<script type="text/javascript">
+    function UpdateTableHeaders() {
+        \$("div.divTableWithFloatingHeader").each(function() {
+            var originalHeaderRow = \$(".tableFloatingHeaderOriginal", this);
+            var floatingHeaderRow = \$(".tableFloatingHeader", this);
+            var offset = \$(this).offset();
+            var scrollTop = \$(window).scrollTop();
+            if ((scrollTop > offset.top) && (scrollTop < offset.top + \$(this).height())) {
+                floatingHeaderRow.css("visibility", "visible");
+                floatingHeaderRow.css("top", Math.min(scrollTop - offset.top, \$(this).height() - floatingHeaderRow.height()) + "px");
+                // Copy row width from whole table
+                floatingHeaderRow.css('width', "1200px");
+                // Copy cell widths from original header
+                \$("th", floatingHeaderRow).each(function(index) {
+                    var cellWidth = \$("th", originalHeaderRow).eq(index).css('width');
+                    \$(this).css('width', cellWidth);
+                });
+            }
+            else {
+                floatingHeaderRow.css("visibility", "hidden");
+                floatingHeaderRow.css("top", "0px");
+            }
+        });
+    }
+    \$(function() {
+    	\$( "#tabs" ).tabs();
+  	});
+    \$(document).ready(function() {
+        \$("table.tableWithFloatingHeader").each(function() {
+            \$(this).wrap("<div class=\\"divTableWithFloatingHeader\\" style=\\"position:relative\\"></div>");
+            var originalHeaderRow = \$("tr:first", this)
+            originalHeaderRow.before(originalHeaderRow.clone());
+            var clonedHeaderRow = \$("tr:first", this)
+            clonedHeaderRow.addClass("tableFloatingHeader");
+            clonedHeaderRow.css("position", "absolute");
+            clonedHeaderRow.css("top", "0px");
+            clonedHeaderRow.css("left", \$(this).css("margin-left"));
+            clonedHeaderRow.css("visibility", "hidden");
+            originalHeaderRow.addClass("tableFloatingHeaderOriginal");
+        });
+        UpdateTableHeaders();
+        \$(window).scroll(UpdateTableHeaders);
+        \$(window).resize(UpdateTableHeaders);
+    });
+</script>
+<style type="text/css">
+	h1 {
+	    font-size: 16px;
+	}
+	table.tableWithFloatingHeader {
+	    font-size: 12px;
+	    text-align: left;
+		 border: 0;
+		 width: 1200px;
+	}
+	th {
+	    font-size: 14px;
+	    background: #ddd;
+		 border: 1px solid black;
+	    vertical-align: top;
+	    padding: 5px 5px 5px 5px;
+	}
+	td {
+	   font-size: 16px;
+		vertical-align: top;
+		border: 1px solid black;
+	}
+</style>
+</head>
+HEADER
+	my $htmlbody = <<BODY;
+<body>
+<div id="tabs">
+	<ul>
+        <li><a href="#tab-1">Overview</a></li>
+        \${TABS}
+    </ul>
+	<div id="tab-1">
+          \${MAINTAB}
+    </div>
+    \${TABDIVS}
+</div>
+</body>
+BODY
+	my $htmltail = <<TAIL;
+</html>
+TAIL
+
 around BUILDARGS => sub {
     my $orig  = shift;
     my $class = shift;
@@ -320,117 +416,72 @@ sub parseReferenceList {
 ######################################################################
 #Output functions
 ######################################################################
+sub htmlComponents {
+	my $self = shift;
+	my $args = args([],{}, @_);
+	my $data = $self->_createReadableData();
+	my $output = {
+		title => $self->_type()." Viewer",
+		tablist => [],
+		tabs => {
+			main => {
+				content => "",
+				name => "Overview"
+			}
+		}
+	};
+	$output->{tabs}->{main}->{content} .= "<table>\n";
+	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
+		$output->{tabs}->{main}->{content} .= "<tr><th>".$data->{attributes}->{headings}->[$i]."</th><td style='font-size:16px;border: 1px solid black;'>".$data->{attributes}->{data}->[0]->[$i]."</td></tr>\n";
+	}
+	$output->{tabs}->{main}->{content} .= "</table>\n";
+	my $count = 2;
+	foreach my $subobject (@{$data->{subobjects}}) {
+		my $name = $self->_type()." ".$subobject->{name};
+		my $id = "tab-".$count;
+		push(@{$output->{tablist}},$id);
+		$output->{tabs}->{$id} = {
+			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$subobject->{headings}}).'</th></tr>'."\n",
+			name => $name
+		};
+		foreach my $row (@{$subobject->{data}}) {
+			$output->{tabs}->{$id}->{content} .= '<tr><td>'.join("</td><td>",@{$row}).'</td></tr>'."\n";
+		}
+		$output->{tabs}->{$id}->{content} .= '</table>'."\n";
+		$count++;
+	}
+	return $output;
+}
+
 sub createHTML {
 	my $self = shift;
 	my $args = args([],{internal => 0}, @_);
-	my $data = $self->_createReadableData();
-	my $output = [];
+	my $document = "";
 	if ($args->{internal} == 0) {
-		push(@{$output},(
-			'<!doctype HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">',
-			'<html><head>',
-			'<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>',
-			'    <script type="text/javascript">',
-			'        function UpdateTableHeaders() {',
-			'            $("div.divTableWithFloatingHeader").each(function() {',
-			'                var originalHeaderRow = $(".tableFloatingHeaderOriginal", this);',
-			'                var floatingHeaderRow = $(".tableFloatingHeader", this);',
-			'                var offset = $(this).offset();',
-			'                var scrollTop = $(window).scrollTop();',
-			'                if ((scrollTop > offset.top) && (scrollTop < offset.top + $(this).height())) {',
-			'                    floatingHeaderRow.css("visibility", "visible");',
-			'                    floatingHeaderRow.css("top", Math.min(scrollTop - offset.top, $(this).height() - floatingHeaderRow.height()) + "px");',
-			'                    // Copy row width from whole table',
-			'                    floatingHeaderRow.css(\'width\', "1200px");',
-			'                    // Copy cell widths from original header',
-			'                    $("th", floatingHeaderRow).each(function(index) {',
-			'                        var cellWidth = $("th", originalHeaderRow).eq(index).css(\'width\');',
-			'                        $(this).css(\'width\', cellWidth);',
-			'                    });',
-			'                }',
-			'                else {',
-			'                    floatingHeaderRow.css("visibility", "hidden");',
-			'                    floatingHeaderRow.css("top", "0px");',
-			'                }',
-			'            });',
-			'        }',
-			'        $(document).ready(function() {',
-			'            $("table.tableWithFloatingHeader").each(function() {',
-			'                $(this).wrap("<div class=\"divTableWithFloatingHeader\" style=\"position:relative\"></div>");',
-			'                var originalHeaderRow = $("tr:first", this)',
-			'                originalHeaderRow.before(originalHeaderRow.clone());',
-			'                var clonedHeaderRow = $("tr:first", this)',
-			'                clonedHeaderRow.addClass("tableFloatingHeader");',
-			'                clonedHeaderRow.css("position", "absolute");',
-			'                clonedHeaderRow.css("top", "0px");',
-			'                clonedHeaderRow.css("left", $(this).css("margin-left"));',
-			'                clonedHeaderRow.css("visibility", "hidden");',
-			'                originalHeaderRow.addClass("tableFloatingHeaderOriginal");',
-			'            });',
-			'            UpdateTableHeaders();',
-			'            $(window).scroll(UpdateTableHeaders);',
-			'            $(window).resize(UpdateTableHeaders);',
-			'        });',
-			'    </script>',
-			'<style type="text/css">',
-			'h1 {',
-			'    font-size: 16px;',
-			'}',
-			'table.tableWithFloatingHeader {',
-			'    font-size: 12px;',
-			'    text-align: left;',
-			'	 border: 0;',
-			'	 width: 1200px;',
-			'}',
-			'th {',
-			'    font-size: 14px;',
-			'    background: #ddd;',
-			'	 border: 1px solid black;',
-			'    vertical-align: top;',
-			'    padding: 5px 5px 5px 5px;',
-			'}',
-			'td {',
-			'   font-size: 16px;',
-			'	vertical-align: top;',
-			'	border: 1px solid black;',
-			'}',
-			'</style></head>'
-		));
+		$document .= $htmlheader."\n";
 	}
-	push(@{$output},'<h2>'.$self->_type().' attributes</h2>');
-	push(@{$output},'<table>');
-	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
-		push(@{$output},"<tr><th>".$data->{attributes}->{headings}->[$i]."</th><td style='font-size:16px;border: 1px solid black;'>".$data->{attributes}->{data}->[0]->[$i]."</td></tr>");
-	}
-	push(@{$output},'</table>');
-	foreach my $subobject (@{$data->{subobjects}}) {
-		push(@{$output},(
-			'<h2>'.$subobject->{name}.' subobjects</h2>',
-			'<table class="tableWithFloatingHeader">',
-			'<tr><th>'.join("</th><th>",@{$subobject->{headings}}).'</th></tr>'
-		));
-		foreach my $row (@{$subobject->{data}}) {
-			push(@{$output},'<tr><td>'.join("</td><td>",@{$row}).'</td></tr>');
-		}
-		push(@{$output},'</table>');
-	}
-	if (defined($data->{results})) {
-		for (my $i=0; $i < @{$data->{results}}; $i++) {
-			my $rs = $data->{results}->[$i];
-			my $objects = $self->$rs();
-			if (defined($objects->[0])) {
-				push(@{$output},"<h2>".$rs." objects</h2>");
-				for (my $j=0; $j < @{$objects}; $j++) {
-					push(@{$output},$objects->[$j]->createHTML({internal => 1}));
-				}
-			}
-		}
-	}
+	$document .= $htmlbody."\n";
 	if ($args->{internal} == 0) {
-		push(@{$output},'</html>');
+		$document .= $htmltail;
 	}
-	my $html = join("\n",@{$output});
-	return $html;
+	my $htmlData = $self->htmlComponents();
+	my $title = $htmlData->{title};
+	$document =~ s/\$\{TITLE\}/$title/;
+	my $tablist = "";
+	foreach my $id (@{$htmlData->{tablist}}) {
+		$tablist .= '<li><a href="#'.$id.'">'.$htmlData->{tabs}->{$id}->{name}."</a></li>\n";
+	}
+	$document =~ s/\$\{TABS\}/$tablist/;
+	my $maintab = $htmlData->{tabs}->{main}->{content};
+	$document =~ s/\$\{MAINTAB\}/$maintab/;
+	my $divdata = "";
+	for (my $i=0; $i < @{$htmlData->{tablist}}; $i++) {
+		$divdata .= '<div id="'.$htmlData->{tablist}->[$i].'">'."\n";
+		$divdata .= $htmlData->{tabs}->{$htmlData->{tablist}->[$i]}->{content};
+		$divdata .= "</div>\n";
+	}
+	$document =~ s/\$\{TABDIVS\}/$divdata/;
+	return $document;
 }
 
 sub toReadableString {
