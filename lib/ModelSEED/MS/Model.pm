@@ -1255,7 +1255,7 @@ sub htmlComponents {
 	}
 	push(@{$output->{tablist}},("tab-5","tab-6","tab-7"));
 	my $headingsOne = ["Biomass","DNA","RNA","Protein","Cellwall","Lipid","Cofactor","Energy"];
-	my $headingsTwo = ["Biomass","Model compound","Compartment","Coefficient"];
+	my $headingsTwo = ["Biomass","Model compound","Name","Compartment","Coefficient"];
 	my $tableOne = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n";
 	my $tableTwo = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsTwo}).'</th></tr>'."\n";
 	my $biomasses = $self->biomasses();
@@ -1263,7 +1263,14 @@ sub htmlComponents {
 		$tableOne .= '<tr><td>'.$bio->id()."</td><td>".$bio->dna()."</td><td>".$bio->rna()."</td><td>".$bio->protein()."</td><td>".$bio->cellwall()."</td><td>".$bio->lipid()."</td><td>".$bio->cofactor()."</td><td>".$bio->energy()."</td></tr>";
 		my $biocpds = $bio->biomasscompounds();
 		foreach my $biocpd (@{$biocpds}) {
-			$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+			if ($biocpd->coefficient() < 0) {
+				$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->name()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+			}
+		}
+		foreach my $biocpd (@{$biocpds}) {
+			if ($biocpd->coefficient() >= 0) {
+				$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->name()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+			}
 		}
 	}
 	$tableOne .= '</table>'."\n";
@@ -1288,19 +1295,19 @@ sub htmlComponents {
 					if (length($rxns)) {
 						$rxns .= "<br>";
 					}
-					$rxns .= $rxn->reaction()->id();
+					$rxns .= $rxn->reaction()->id().":".$rxn->reaction()->definition();
 				}
 				foreach my $cpd (@{$sol->mediaSupplements()}) {
 					if (length($medias)) {
 						$medias .= "<br>";
 					}
-					$medias .= $cpd->id();
+					$medias .= $cpd->id().":".$cpd->name();
 				}
 				foreach my $bio (@{$sol->biomassRemovals()}) {
 					if (length($bios)) {
 						$bios .= "<br>";
 					}
-					$bios .= $bio->id();
+					$bios .= $bio->id().":".$bio->name();
 				}
 				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
 					"<td>Yes</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
@@ -1326,19 +1333,19 @@ sub htmlComponents {
 					if (length($rxns)) {
 						$rxns .= "<br>";
 					}
-					$rxns .= $rxn->reaction()->id();
+					$rxns .= $rxn->reaction()->id().":".$rxn->reaction()->definition();
 				}
 				foreach my $cpd (@{$sol->mediaSupplements()}) {
 					if (length($medias)) {
 						$medias .= "<br>";
 					}
-					$medias .= $cpd->id();
+					$medias .= $cpd->id().":".$cpd->name();
 				}
 				foreach my $bio (@{$sol->biomassRemovals()}) {
 					if (length($bios)) {
 						$bios .= "<br>";
 					}
-					$bios .= $bio->id();
+					$bios .= $bio->id().":".$bio->name();
 				}
 				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
 					"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
@@ -1370,19 +1377,19 @@ sub htmlComponents {
 					if (length($rxns)) {
 						$rxns .= "<br>";
 					}
-					$rxns .= $rxn->modelreaction()->id();
+					$rxns .= $rxn->modelreaction()->id().":".$rxn->reaction()->definition();
 				}
 				foreach my $cpd (@{$sol->mediaRemovals()}) {
 					if (length($medias)) {
 						$medias .= "<br>";
 					}
-					$medias .= $cpd->id();
+					$medias .= $cpd->id().":".$cpd->name();
 				}
 				foreach my $bio (@{$sol->biomassSupplements()}) {
 					if (length($bios)) {
 						$bios .= "<br>";
 					}
-					$bios .= $bio->id();
+					$bios .= $bio->id().":".$bio->name();
 				}
 				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
 					"<td>Yes</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
@@ -1408,19 +1415,19 @@ sub htmlComponents {
 					if (length($rxns)) {
 						$rxns .= "<br>";
 					}
-					$rxns .= $rxn->modelreaction()->id();
+					$rxns .= $rxn->modelreaction()->id().":".$rxn->reaction()->definition();
 				}
 				foreach my $cpd (@{$sol->mediaRemovals()}) {
 					if (length($medias)) {
 						$medias .= "<br>";
 					}
-					$medias .= $cpd->id();
+					$medias .= $cpd->id().":".$cpd->name();
 				}
 				foreach my $bio (@{$sol->biomassSupplements()}) {
 					if (length($bios)) {
 						$bios .= "<br>";
 					}
-					$bios .= $bio->id();
+					$bios .= $bio->id().":".$bio->name();
 				}
 				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
 					"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
