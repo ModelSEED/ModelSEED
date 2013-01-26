@@ -225,7 +225,9 @@ Description:
 =cut
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation","aliasType"],{}, @_);
+    my $args = args(["equation"],{
+    	aliasType => undef
+    }, @_);
     my $mod = $self->parent();
     my $bio = $self->parent()->biochemistry();
     my $reagentHashes = $self->_parse_equation_string($args->{equation});
@@ -259,6 +261,8 @@ sub loadFromEquation {
         my $cpd;
         if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
             $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $compound});
+        } elsif (!defined($args->{aliasType})) {
+        	$cpd = $bio->searchForCompound($compound);
         } else {
             $cpd = $bio->getObjectByAlias("compounds",$compound,$args->{aliasType});
         }

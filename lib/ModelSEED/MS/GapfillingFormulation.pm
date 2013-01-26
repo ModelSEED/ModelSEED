@@ -468,7 +468,7 @@ sub createSolutionsFromArray {
 						my $count = 0;
 						my $rxnHash;
 						my $gfsolution = $self->add("gapfillingSolutions",{});
-						my $subarray = [split(/,/,$solutionsArray->[$k])];
+						my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 						for (my $j=0; $j < @{$subarray}; $j++) {
 							if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
 								my $cpdid = $2;
