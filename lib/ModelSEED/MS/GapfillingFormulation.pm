@@ -312,7 +312,7 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"just print LP file"} = "0";
 	$form->parameters()->{"use database fields"} = "1";
 	$form->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
-	$form->parameters()->{"CPLEX solver time limit"} = "82800";
+	$form->parameters()->{"CPLEX solver time limit"} = "3600";
 	$form->parameters()->{"Perform gap filling"} = "1";
 	$form->parameters()->{"Add DB reactions for gapfilling"} = "1";
 	$form->parameters()->{"Balanced reactions in gap filling only"} = $self->balancedReactionsOnly();

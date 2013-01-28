@@ -215,9 +215,10 @@ sub adjustBiomassReaction {
 =head3 loadFromEquation
 
 Definition:
-	ModelSEED::MS::Biomass = ModelSEED::MS::Biomass->loadFromEquation({
+	[string]:Missing compounds = ModelSEED::MS::Biomass->loadFromEquation({
 		equation => string,
-		aliasType => string
+		aliasType => string,
+		addMissingCompounds => 0/1
 	});
 Description:
 	Converts the input equation string into a biomass reaction object
@@ -226,11 +227,13 @@ Description:
 sub loadFromEquation {
     my $self = shift;
     my $args = args(["equation"],{
-    	aliasType => undef
+    	aliasType => undef,
+    	addMissingCompounds => 0
     }, @_);
     my $mod = $self->parent();
     my $bio = $self->parent()->biochemistry();
     my $reagentHashes = $self->_parse_equation_string($args->{equation});
+    my $missingCompounds = [];
     foreach my $reagent (@$reagentHashes) {
         my $compound    = $reagent->{compound};
         my $compartment = $reagent->{compartment};
@@ -268,29 +271,36 @@ sub loadFromEquation {
         }
         if (!defined($cpd)) {
             ModelSEED::utilities::USEWARNING("Unrecognized compound '".$compound."' used in biomass equation!");
-            $cpd = $bio->add("compounds",{
-                locked => "0",
-                name => $compound,
-                abbreviation => $compound
-            });
+            if ($args->{addMissingCompounds} == 1) {
+	            $cpd = $bio->add("compounds",{
+	                locked => "0",
+	                name => $compound,
+	                abbreviation => $compound
+	            });
+            } else {
+            	push(@{$missingCompounds},$compound);
+            }
         }
-        my $modcpd = $mod->queryObject("modelcompounds",{
-            compound_uuid => $cpd->uuid(),
-            modelcompartment_uuid => $comp->uuid()
-        });
-        if (!defined($modcpd)) {
-            $modcpd = $mod->add("modelcompounds",{
-                compound_uuid => $cpd->uuid(),
-                charge => $cpd->defaultCharge(),
-                formula => $cpd->formula(),
-                modelcompartment_uuid => $comp->uuid()
-            });
+        if (defined($cpd)) {
+	        my $modcpd = $mod->queryObject("modelcompounds",{
+	            compound_uuid => $cpd->uuid(),
+	            modelcompartment_uuid => $comp->uuid()
+	        });
+	        if (!defined($modcpd)) {
+	            $modcpd = $mod->add("modelcompounds",{
+	                compound_uuid => $cpd->uuid(),
+	                charge => $cpd->defaultCharge(),
+	                formula => $cpd->formula(),
+	                modelcompartment_uuid => $comp->uuid()
+	            });
+	        }
+	        $self->add("biomasscompounds",{
+	            modelcompound_uuid => $modcpd->uuid(),
+	            coefficient => $coefficient,
+	        });
         }
-        $self->add("biomasscompounds",{
-            modelcompound_uuid => $modcpd->uuid(),
-            coefficient => $coefficient,
-        });
     }
+    return $missingCompounds;
 }
 
 __PACKAGE__->meta->make_immutable;

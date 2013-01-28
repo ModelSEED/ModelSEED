@@ -639,12 +639,16 @@ sub getLinkedObject {
     my ($self, $sourceType, $attribute, $uuid) = @_;
     my $source = lc($attribute);
     if ($sourceType eq 'ModelSEED::Store') {
-    	my $refName = lc(substr($attribute, 0,1)).substr($attribute,1);
-        my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $refName);
-        if (!defined($self->store)) {
+    	if (!defined($self->store)) {
         	error("Getting object from undefined store!");
         }
-        return $self->store->get_object($ref);
+        if (ref($self->store) eq "ModelSEED::Store") {
+        	my $refName = lc(substr($attribute, 0,1)).substr($attribute,1);
+        	my $ref = ModelSEED::Reference->new(uuid => $uuid, type => $refName);
+        	return $self->store->get_object($ref);	
+        } else {
+        	return $self->store->get_object($attribute,$uuid);
+        }
     } else {
         my $source = lc($sourceType);
         my $sourceObj = $self->$source();
@@ -659,6 +663,12 @@ sub getLinkedObject {
             );
         }
         $object = $sourceObj->getObject($attribute,$uuid);
+		if (!defined($object) && $attribute eq "media" && $sourceType eq "Biochemistry" && ref($self->store) eq "ModelSEED::KBaseStore") {
+			$object = $self->store()->get_object("Media",$uuid);
+			if (defined($object)) {
+				$sourceObj->add("media",$object);
+			}
+		}
         return $object if defined $object;
         error("Could not find UUID ".$uuid."!");
 #        ModelSEED::Exception::BadObjectLink->throw(
@@ -849,7 +859,7 @@ sub fbaproblem {
 sub store {
     my ($self) = @_;
     my $parent = $self->parent();
-    if (defined($parent) && ref($parent) ne "ModelSEED::Store") {
+    if (defined($parent) && ref($parent) ne "ModelSEED::Store" && ref($parent ne "ModelSEED::KBaseStore")) {
         return $parent->store();
     }
     return $parent;

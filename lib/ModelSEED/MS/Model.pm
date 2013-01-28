@@ -2269,7 +2269,7 @@ sub __upgrade__ {
 				delete($hash->{gapgenFormulations});
 			}
 			$hash->{__VERSION__} = 2;
-			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {#TODO KBaseStore
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
 				$parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
