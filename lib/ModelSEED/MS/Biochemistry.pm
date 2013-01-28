@@ -851,8 +851,11 @@ sub mergeBiochemistry {
     foreach my $type (@{$typelist}) {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
+	if($type eq "compounds" && !$opts->{consolidate} && defined($opts->{mergevia})){
+	    $objs=$bio->sortCompounds($opts->{mergevia},$bio);
+	}
     	my $uuidTranslation = {};
-    	my $revUuidTranslation = {};
+    	$opts->{touched}={};
 	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name()."\n");
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
@@ -877,7 +880,7 @@ sub mergeBiochemistry {
 		    }
 
 		    my $dupObj = $self->$func($obj,$opts);
-		    if ( defined($dupObj) && ( !exists($revUuidTranslation->{$dupObj->uuid()}) || defined($opts->{consolidate} ) )){
+		    if ( defined($dupObj) ){
 				verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObj->id()."\n");
 				foreach my $aliasName (keys %$aliases){
 				    foreach my $alias (keys %{$aliases->{$aliasName}}){
@@ -890,10 +893,14 @@ sub mergeBiochemistry {
 				    }
 				}
 				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
-				$revUuidTranslation->{$dupObj->uuid()}{$obj->uuid()}=1;
+				$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
 				$obj->uuid($dupObj->uuid());
 		    } else {
-			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
+			if( defined($dupObj) && exists($opts->{touched}{$dupObj->uuid()}) ){
+			    verbose("Possible self-merge detected in own database for ".substr($type,0,-1). " (".$objId." --> ".$dupObj->id().")\nMay need to run consolidatebio first\n");
+			}else{
+			    verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
+			}
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
@@ -991,16 +998,54 @@ sub checkForDuplicateCompound {
     if(defined($opts->{mergevia})){
 	foreach my $mergeNamespace (@{$opts->{mergevia}}){
 	    next if !$obj->getAlias($mergeNamespace);
-	    my $dupObj = $self->getObjectByAlias("compounds",$obj->getAlias($mergeNamespace),$mergeNamespace);
-	    if($dupObj){
-		verbose("Duplicate compound found using ".$mergeNamespace."\n");
-		return $dupObj;
+	    foreach my $alias (@{$obj->getAliases($mergeNamespace)}){
+		my $dupObj = $self->getObjectByAlias("compounds",$alias,$mergeNamespace);
+		if($dupObj && ( !exists($opts->{touched}{$dupObj->uuid()} ) || defined($opts->{consolidate}) )){
+		    verbose("Duplicate compound found using $alias in $mergeNamespace\n");
+		    return $dupObj;
+		}
 	    }
 	}
 	return undef;
     }
     return undef if !$obj->name();
     return $self->queryObject("compounds",{name => $obj->name()});
+}
+
+=head3 sortCompounds
+Definition:
+	void sortCompound(arrayref,arrayref);
+Description:
+	This command re-sorts compounds according to the aliases
+
+=cut
+
+sub sortCompounds {
+    my ($self,$aliasNames,$biochem) = @_;
+    my $bio=$self;
+    $bio=$biochem if $biochem;
+
+    my @newCpdOrder=();
+    my %touchedCpds=();
+    
+    foreach my $aliasName (@$aliasNames){
+	my $aliases = $bio->queryObject("aliasSets",{name=>$aliasName,attribute=>"compounds"})->aliases();
+	foreach my $alias (sort keys %$aliases){
+	    foreach my $uuid (@{$aliases->{$alias}}){
+		push(@newCpdOrder,$bio->getObject("compounds",$uuid)) if !exists($touchedCpds{$uuid});
+		$touchedCpds{$uuid}=1;
+	    }
+	}
+    }
+
+    if(scalar(@newCpdOrder) != scalar(@{$bio->compounds()})){
+	my $cpds=$bio->compounds();
+	foreach my $cpd (@$cpds){
+	    push(@newCpdOrder, $cpd) if !exists($touchedCpds{$cpd->uuid()});
+	}
+    }
+
+    return \@newCpdOrder;
 }
 
 =head3 checkForDuplicateCompartment
