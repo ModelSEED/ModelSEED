@@ -57,9 +57,9 @@ use Module::Load;
 #***********************************************************************************************************
 # ATTRIBUTES:
 #***********************************************************************************************************
-has auth => ( is => 'ro', isa => 'Str', required => 1);
-has workspace => ( is => 'ro', isa => 'Ref', required => 1);
-has cache => ( is => 'ro', isa => 'HashRef',default => sub { return {}; });
+has auth => ( is => 'rw', isa => 'Str', required => 1);
+has workspace => ( is => 'rw', isa => 'Ref', required => 1);
+has cache => ( is => 'rw', isa => 'HashRef',default => sub { return {}; });
 
 #***********************************************************************************************************
 # BUILDERS:
