@@ -11,6 +11,7 @@ package ModelSEED::MS::Biomass;
 use Moose;
 use ModelSEED::utilities qw( args );
 use namespace::autoclean;
+use POSIX qw(floor ceil);
 extends 'ModelSEED::MS::DB::Biomass';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -18,6 +19,7 @@ extends 'ModelSEED::MS::DB::Biomass';
 has definition => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_definition' );
 has modelequation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_modelequation' );
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equation' );
+has rescaledEquation  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_rsequation' );
 has equationCode => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equationcode' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_mapped_uuid' );
 has id  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_id' );
@@ -32,12 +34,39 @@ sub _equation_builder {
     my $self = shift;
     my $args = args([], {
         format => "uuid",
-        hashed => 0
+        hashed => 0,
+        rescale => 0
     }, @_);
     my $cpds = $self->biomasscompounds();
     my $rgtHash;
+    my $blacklistCpd = {
+    	cpd17043_c0 => 1,
+    	cpd17041_c0 => 1,
+    	cpd11416_c0 => 1,
+    	cpd17042_c0 => 1
+    };
     for (my $i=0; $i < @{$cpds}; $i++) {
         my $id = $cpds->[$i]->modelcompound()->compound()->uuid();
+        my $coef = $cpds->[$i]->coefficient();
+        if ($args->{rescale} == 1) {
+	        if (!defined($blacklistCpd->{$cpds->[$i]->modelcompound()->id()})) {
+		        if ($coef > 10) {
+		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
+		        	if ($redisual > 0.5) {
+		        		$redisual = $redisual-1;
+		        	}
+		        	$coef = $coef-$redisual*1000;
+		        } elsif ($coef < -10) {
+		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
+		        	if ($redisual > 0.5) {
+		        		$redisual = $redisual-1;
+		        	}
+		        	$coef = $coef-$redisual*1000;
+		        } else {
+		        	$coef = 1000*$coef;
+		        }
+	        }
+        }
         if ($args->{format} eq "name" || $args->{format} eq "id") {
             my $function = $args->{format};
             $id = $cpds->[$i]->modelcompound()->compound()->$function();
@@ -49,7 +78,7 @@ sub _equation_builder {
         if (!defined($rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()})) {
             $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} = 0;
         }
-        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} += $cpds->[$i]->coefficient();
+        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} += $coef;
     }
     my $reactcode = "";
     my $productcode = "";
@@ -151,6 +180,11 @@ sub _build_modelequation {
 sub _build_equationcode {
     my ($self,$args) = @_;
     return $self->_equation_builder({format=>"uuid",hashed=>1});
+}
+
+sub _build_rsequation {
+    my ($self,$args) = @_;
+    return $self->_equation_builder({format=>"id",hashed=>0,rescale => 1});
 }
 
 sub _build_mapped_uuid {
