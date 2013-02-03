@@ -461,9 +461,9 @@ sub createStandardFBABiomass {
 				}
 			}
 			if ($class ne "energy" && $class ne "macromolecule") {
-				my $mass = $templateComp->compound()->mass();
+				my $mass = 0.001*$templateComp->compound()->mass();
 				if (!defined($mass) || $mass == 0) {
-					$mass = 1;
+					$mass = 0.001;
 				}
 				if ($biomassComps->{$class}->{$templateCompUUID} < 0) {
 					$totalMass += -1*$mass*$biomassComps->{$class}->{$templateCompUUID};

@@ -55,15 +55,15 @@ sub _equation_builder {
 		        	if ($redisual > 0.5) {
 		        		$redisual = $redisual-1;
 		        	}
-		        	$coef = $coef-$redisual*1000;
+		        	$coef = $coef-$redisual*10;
 		        } elsif ($coef < -10) {
 		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
 		        	if ($redisual > 0.5) {
 		        		$redisual = $redisual-1;
 		        	}
-		        	$coef = $coef-$redisual*1000;
+		        	$coef = $coef-$redisual*10;
 		        } else {
-		        	$coef = 1000*$coef;
+		        	$coef = 10*$coef;
 		        }
 	        }
         }
@@ -296,10 +296,10 @@ sub loadFromEquation {
             });
         }
         my $cpd;
-        if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
-            $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $compound});
-        } elsif (!defined($args->{aliasType})) {
+        if (!defined($args->{aliasType})) {
         	$cpd = $bio->searchForCompound($compound);
+        } elsif ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
+            $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $compound});
         } else {
             $cpd = $bio->getObjectByAlias("compounds",$compound,$args->{aliasType});
         }
