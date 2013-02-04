@@ -416,6 +416,9 @@ sub addCompartmentFromHash {
 	id => $arguments->{id},
 	name => $arguments->{name},
 	hierarchy => $arguments->{hierarchy}});
+    if($arguments->{uuid}){
+	$cpt->uuid($arguments->{uuid});
+    }
 }
 
 =head3 addCompoundFromHash
@@ -852,7 +855,7 @@ sub mergeBiochemistry {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
 	if($type eq "compounds" && !$opts->{consolidate} && defined($opts->{mergevia})){
-	    $objs=$bio->sortCompounds($opts->{mergevia},$bio);
+	    $objs=$bio->sortObjectsByNamespace("compounds",$opts->{mergevia},$bio);
 	}
     	my $uuidTranslation = {};
     	$opts->{touched}={};
@@ -903,7 +906,11 @@ sub mergeBiochemistry {
 			}
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
-				$self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
+				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
+				    verbose("Skipping searchname ".$alias." as its already present\n");
+				}else{
+				    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
+				}
 			    }
 			}
 			$self->add($type,$obj);
@@ -1012,40 +1019,45 @@ sub checkForDuplicateCompound {
     return $self->queryObject("compounds",{name => $obj->name()});
 }
 
-=head3 sortCompounds
+=head3 sortObjectsByNamespace
 Definition:
-	void sortCompound(arrayref,arrayref);
+	void sortObjectsByNamespace(string,arrayref,arrayref);
 Description:
-	This command re-sorts compounds according to the aliases
-
+	This command re-sorts objects according to whether they have aliases.
+        Only works for compounds and reactions
 =cut
 
-sub sortCompounds {
-    my ($self,$aliasNames,$biochem) = @_;
+sub sortObjectsByNamespace {
+    my ($self,$type,$aliasNames,$biochem) = @_;
     my $bio=$self;
     $bio=$biochem if $biochem;
 
-    my @newCpdOrder=();
-    my %touchedCpds=();
+    my @newObjOrder=();
+    my %touchedObjs=();
     
     foreach my $aliasName (@$aliasNames){
-	my $aliases = $bio->queryObject("aliasSets",{name=>$aliasName,attribute=>"compounds"})->aliases();
+	my $aliases = $bio->queryObject("aliasSets",{name=>$aliasName,attribute=>$type})->aliases();
 	foreach my $alias (sort keys %$aliases){
 	    foreach my $uuid (@{$aliases->{$alias}}){
-		push(@newCpdOrder,$bio->getObject("compounds",$uuid)) if !exists($touchedCpds{$uuid});
-		$touchedCpds{$uuid}=1;
+		my $obj=$bio->getObject($type,$uuid);
+		if(!$obj){
+		    print STDERR "Object $uuid not found for $alias in set $aliasName\n";
+		    next;
+		}
+		push(@newObjOrder,$bio->getObject($type,$uuid)) if !exists($touchedObjs{$uuid});
+		$touchedObjs{$uuid}=1;
 	    }
 	}
     }
 
-    if(scalar(@newCpdOrder) != scalar(@{$bio->compounds()})){
-	my $cpds=$bio->compounds();
-	foreach my $cpd (@$cpds){
-	    push(@newCpdOrder, $cpd) if !exists($touchedCpds{$cpd->uuid()});
+    if(scalar(@newObjOrder) != scalar(@{$bio->$type()})){
+	my $objs=$bio->$type();
+	foreach my $obj (@$objs){
+	    push(@newObjOrder, $obj) if !exists($touchedObjs{$obj->uuid()});
 	}
     }
 
-    return \@newCpdOrder;
+    return \@newObjOrder;
 }
 
 =head3 checkForDuplicateCompartment
