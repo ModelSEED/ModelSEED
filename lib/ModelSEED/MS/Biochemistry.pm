@@ -1157,7 +1157,7 @@ sub __upgrade__ {
 						delete($cpd->{structures});
 					}
 				}
-				if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {
+				if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {#TODO KBaseStore
 					$hash->{parent}->save_object("biochemistryStructures/".$hash->{uuid},$bioStruct);
 				}
 				$hash->{biochemistryStructures_uuid} = $bioStruct->uuid();
@@ -1239,7 +1239,7 @@ sub __upgrade__ {
 				}
 			}
 			$hash->{__VERSION__} = 2;
-			if ( defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store" && defined($hash->{uuid}) ) {
+			if ( defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store" && defined($hash->{uuid}) ) {#TODO KBaseStore
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
 				$parent->save_data("biochemistry/".$hash->{uuid},$hash,{schema_update => 1});

@@ -5,7 +5,7 @@ package ModelSEED::MS::Metadata::Definitions;
 my $objectDefinitions = {};
 
 $objectDefinitions->{FBAFormulation} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -1256,7 +1256,7 @@ $objectDefinitions->{FBAMetaboliteProductionResult} = {
 };
 
 $objectDefinitions->{GapgenFormulation} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'parent',
 	attributes => [
 		{
@@ -1480,7 +1480,7 @@ $objectDefinitions->{GapgenSolutionReaction} = {
 };
 
 $objectDefinitions->{GapfillingFormulation} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'parent',
 	attributes => [
 		{
@@ -1978,7 +1978,7 @@ $objectDefinitions->{ReactionSetMultiplier} = {
 };
 
 $objectDefinitions->{User} = {
-	parents    => ["ModelSEED::Store"],
+	parents    => ["Ref"],
 	class      => 'parent',
 	attributes => [
 		{
@@ -2035,7 +2035,7 @@ $objectDefinitions->{User} = {
 };
 
 $objectDefinitions->{BiochemistryStructures} = {
-	parents    => ["ModelSEED::Store"],
+	parents    => ["Ref"],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -2170,7 +2170,7 @@ $objectDefinitions->{AliasSet} = {
 };
 
 $objectDefinitions->{Biochemistry} = {
-	parents    => ["ModelSEED::Store"],
+	parents    => ["Ref"],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -3139,7 +3139,7 @@ $objectDefinitions->{ReactionSet} = {
 };
 
 $objectDefinitions->{PROMModel} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -3300,7 +3300,7 @@ $objectDefinitions->{TranscriptionFactorMapTarget} = {
 };
 
 $objectDefinitions->{Model} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -4066,7 +4066,7 @@ $objectDefinitions->{ModelReactionProteinSubunitGene} = {
 };
 
 $objectDefinitions->{Annotation} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -4433,7 +4433,7 @@ $objectDefinitions->{SubsystemState} = {
 };
 
 $objectDefinitions->{Classifier} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{
@@ -4572,7 +4572,7 @@ $objectDefinitions->{ClassifierRole} = {
 };
 
 $objectDefinitions->{Mapping} = {
-	parents    => ['ModelSEED::Store'],
+	parents    => ['Ref'],
 	class      => 'indexed',
 	attributes => [
 		{

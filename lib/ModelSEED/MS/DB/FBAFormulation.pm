@@ -18,7 +18,7 @@ extends 'ModelSEED::MS::IndexedObject';
 
 
 # PARENT:
-has parent => (is => 'rw', isa => 'ModelSEED::Store', type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
@@ -404,7 +404,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, promModel_uuid => 3, model_uuid => 4, media_uuid => 5, secondaryMedia_uuids => 6, fva => 7, comboDeletions => 8, fluxMinimization => 9, findMinimalMedia => 10, notes => 11, expressionData_uuid => 12, objectiveConstraintFraction => 13, allReversible => 14, defaultMaxFlux => 15, defaultMaxDrainFlux => 16, defaultMinDrainFlux => 17, maximizeObjective => 18, decomposeReversibleFlux => 19, decomposeReversibleDrainFlux => 20, fluxUseVariables => 21, drainfluxUseVariables => 22, geneKO_uuids => 23, reactionKO_uuids => 24, parameters => 25, inputfiles => 26, outputfiles => 27, uptakeLimits => 28, numberOfSolutions => 29, simpleThermoConstraints => 30, thermodynamicConstraints => 31, noErrorThermodynamicConstraints => 32, minimizeErrorThermodynamicConstraints => 33, PROMKappa => 34};
+my $attribute_map = {uuid => 0, modDate => 1, regulatorymodel_uuid => 2, promModel_uuid => 3, model_uuid => 4, media_uuid => 5, secondaryMedia_uuids => 6, fva => 7, comboDeletions => 8, fluxMinimization => 9, findMinimalMedia => 10, notes => 11, expressionData_uuid => 12, objectiveConstraintFraction => 13, allReversible => 14, defaultMaxFlux => 15, defaultMaxDrainFlux => 16, defaultMinDrainFlux => 17, maximizeObjective => 18, decomposeReversibleFlux => 19, decomposeReversibleDrainFlux => 20, fluxUseVariables => 21, drainfluxUseVariables => 22, additionalCpd_uuids => 23, geneKO_uuids => 24, reactionKO_uuids => 25, parameters => 26, inputfiles => 27, outputfiles => 28, uptakeLimits => 29, numberOfSolutions => 30, simpleThermoConstraints => 31, thermodynamicConstraints => 32, noErrorThermodynamicConstraints => 33, minimizeErrorThermodynamicConstraints => 34, PROMKappa => 35};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -484,7 +484,7 @@ my $links = [
           }
         ];
 
-my $link_map = {model => 0, promModel => 1, media => 2, geneKOs => 3, reactionKOs => 4, secondaryMedia => 5};
+my $link_map = {model => 0, promModel => 1, media => 2, geneKOs => 3, additionalCpds => 4, reactionKOs => 5, secondaryMedia => 6};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -11,6 +11,7 @@ package ModelSEED::MS::Biomass;
 use Moose;
 use ModelSEED::utilities qw( args );
 use namespace::autoclean;
+use POSIX qw(floor ceil);
 extends 'ModelSEED::MS::DB::Biomass';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -18,6 +19,7 @@ extends 'ModelSEED::MS::DB::Biomass';
 has definition => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_definition' );
 has modelequation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_modelequation' );
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equation' );
+has rescaledEquation  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_rsequation' );
 has equationCode => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_equationcode' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_mapped_uuid' );
 has id  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_build_id' );
@@ -32,12 +34,39 @@ sub _equation_builder {
     my $self = shift;
     my $args = args([], {
         format => "uuid",
-        hashed => 0
+        hashed => 0,
+        rescale => 0
     }, @_);
     my $cpds = $self->biomasscompounds();
     my $rgtHash;
+    my $blacklistCpd = {
+    	cpd17043_c0 => 1,
+    	cpd17041_c0 => 1,
+    	cpd11416_c0 => 1,
+    	cpd17042_c0 => 1
+    };
     for (my $i=0; $i < @{$cpds}; $i++) {
         my $id = $cpds->[$i]->modelcompound()->compound()->uuid();
+        my $coef = $cpds->[$i]->coefficient();
+        if ($args->{rescale} == 1) {
+	        if (!defined($blacklistCpd->{$cpds->[$i]->modelcompound()->id()})) {
+		        if ($coef > 10) {
+		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
+		        	if ($redisual > 0.5) {
+		        		$redisual = $redisual-1;
+		        	}
+		        	$coef = $coef-$redisual*10;
+		        } elsif ($coef < -10) {
+		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
+		        	if ($redisual > 0.5) {
+		        		$redisual = $redisual-1;
+		        	}
+		        	$coef = $coef-$redisual*10;
+		        } else {
+		        	$coef = 10*$coef;
+		        }
+	        }
+        }
         if ($args->{format} eq "name" || $args->{format} eq "id") {
             my $function = $args->{format};
             $id = $cpds->[$i]->modelcompound()->compound()->$function();
@@ -49,7 +78,7 @@ sub _equation_builder {
         if (!defined($rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()})) {
             $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} = 0;
         }
-        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} += $cpds->[$i]->coefficient();
+        $rgtHash->{$id}->{$cpds->[$i]->modelcompound()->modelcompartment()->label()} += $coef;
     }
     my $reactcode = "";
     my $productcode = "";
@@ -153,6 +182,11 @@ sub _build_equationcode {
     return $self->_equation_builder({format=>"uuid",hashed=>1});
 }
 
+sub _build_rsequation {
+    my ($self,$args) = @_;
+    return $self->_equation_builder({format=>"id",hashed=>0,rescale => 1});
+}
+
 sub _build_mapped_uuid {
     my ($self) = @_;
     return "00000000-0000-0000-0000-000000000000";
@@ -215,9 +249,10 @@ sub adjustBiomassReaction {
 =head3 loadFromEquation
 
 Definition:
-	ModelSEED::MS::Biomass = ModelSEED::MS::Biomass->loadFromEquation({
+	[string]:Missing compounds = ModelSEED::MS::Biomass->loadFromEquation({
 		equation => string,
-		aliasType => string
+		aliasType => string,
+		addMissingCompounds => 0/1
 	});
 Description:
 	Converts the input equation string into a biomass reaction object
@@ -225,10 +260,14 @@ Description:
 =cut
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation","aliasType"],{}, @_);
+    my $args = args(["equation"],{
+    	aliasType => undef,
+    	addMissingCompounds => 0
+    }, @_);
     my $mod = $self->parent();
     my $bio = $self->parent()->biochemistry();
     my $reagentHashes = $self->_parse_equation_string($args->{equation});
+    my $missingCompounds = [];
     foreach my $reagent (@$reagentHashes) {
         my $compound    = $reagent->{compound};
         my $compartment = $reagent->{compartment};
@@ -257,36 +296,45 @@ sub loadFromEquation {
             });
         }
         my $cpd;
-        if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
+        if (!defined($args->{aliasType})) {
+        	$cpd = $bio->searchForCompound($compound);
+        } elsif ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
             $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $compound});
         } else {
             $cpd = $bio->getObjectByAlias("compounds",$compound,$args->{aliasType});
         }
         if (!defined($cpd)) {
             ModelSEED::utilities::USEWARNING("Unrecognized compound '".$compound."' used in biomass equation!");
-            $cpd = $bio->add("compounds",{
-                locked => "0",
-                name => $compound,
-                abbreviation => $compound
-            });
+            if ($args->{addMissingCompounds} == 1) {
+	            $cpd = $bio->add("compounds",{
+	                locked => "0",
+	                name => $compound,
+	                abbreviation => $compound
+	            });
+            } else {
+            	push(@{$missingCompounds},$compound);
+            }
         }
-        my $modcpd = $mod->queryObject("modelcompounds",{
-            compound_uuid => $cpd->uuid(),
-            modelcompartment_uuid => $comp->uuid()
-        });
-        if (!defined($modcpd)) {
-            $modcpd = $mod->add("modelcompounds",{
-                compound_uuid => $cpd->uuid(),
-                charge => $cpd->defaultCharge(),
-                formula => $cpd->formula(),
-                modelcompartment_uuid => $comp->uuid()
-            });
+        if (defined($cpd)) {
+	        my $modcpd = $mod->queryObject("modelcompounds",{
+	            compound_uuid => $cpd->uuid(),
+	            modelcompartment_uuid => $comp->uuid()
+	        });
+	        if (!defined($modcpd)) {
+	            $modcpd = $mod->add("modelcompounds",{
+	                compound_uuid => $cpd->uuid(),
+	                charge => $cpd->defaultCharge(),
+	                formula => $cpd->formula(),
+	                modelcompartment_uuid => $comp->uuid()
+	            });
+	        }
+	        $self->add("biomasscompounds",{
+	            modelcompound_uuid => $modcpd->uuid(),
+	            coefficient => $coefficient,
+	        });
         }
-        $self->add("biomasscompounds",{
-            modelcompound_uuid => $modcpd->uuid(),
-            coefficient => $coefficient,
-        });
     }
+    return $missingCompounds;
 }
 
 __PACKAGE__->meta->make_immutable;

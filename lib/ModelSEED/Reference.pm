@@ -341,7 +341,7 @@ sub _build_schema {
         my $definition = $defs->{$name};
         my $parents = $definition->{parents} || [];
         my %parents = map { $_ => 1 } @{$definition->{parents}};
-        if ( defined $parents && defined $parents{'ModelSEED::Store'} ) {
+        if ( defined $parents && defined $parents{'Ref'} && $name ne "AliasSet" ) {
             my $refName = lc(substr($name, 0,1)).substr($name,1);
             $schema->{children}->{$refName} =
                 _build_schema_recursive($name, $defs);

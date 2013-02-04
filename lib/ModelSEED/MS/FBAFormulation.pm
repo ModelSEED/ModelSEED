@@ -330,7 +330,12 @@ sub createJobDirectory {
 	for (my $i=0; $i < @{$biomasses}; $i++) {
 		my $bio = $biomasses->[$i];
 		push(@{$mdlData},$bio->id().";=>;c;UNIVERSAL");
-		my $equation = $bio->equation();
+		my $equation;
+		if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
+			$equation = $bio->rescaledEquation();
+		} else {
+			$equation = $bio->equation();
+		}
 		$equation =~ s/\+/ + /g;
 		$equation =~ s/\)([a-zA-Z])/) $1/g;
 		$equation =~ s/=\>/ => /g;
