@@ -1250,8 +1250,8 @@ sub htmlComponents {
 			};
 			foreach my $metprod (@{$result->fbaMetaboliteProductionResults()}) {
 				$output->{tabs}->{$tab}->{content} .= '<tr>'.
-					"<td>".$metprod->modelcompound()->id()."</td>".
-					"<td>".$metprod->modelcompound()->name()."</td>".
+					"<td>".$metprod->modelCompound()->id()."</td>".
+					"<td>".$metprod->modelCompound()->name()."</td>".
 					"<td>".$metprod->maximumProduction()."</td>".
 				"</tr>";
 			}
