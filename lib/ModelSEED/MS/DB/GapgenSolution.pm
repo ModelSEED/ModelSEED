@@ -23,6 +23,8 @@ has solutionCost => (is => 'rw', isa => 'Num', printOrder => '0', default => '1'
 has biomassSupplement_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has mediaRemoval_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has additionalKO_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has integrated => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
+has suboptimal => (is => 'rw', isa => 'Bool', printOrder => '1', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -105,10 +107,26 @@ my $attributes = [
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 1,
+            'name' => 'integrated',
+            'default' => 0,
+            'type' => 'Bool',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 1,
+            'name' => 'suboptimal',
+            'default' => 0,
+            'type' => 'Bool',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, solutionCost => 2, biomassSupplement_uuids => 3, mediaRemoval_uuids => 4, additionalKO_uuids => 5};
+my $attribute_map = {uuid => 0, modDate => 1, solutionCost => 2, biomassSupplement_uuids => 3, mediaRemoval_uuids => 4, additionalKO_uuids => 5, integrated => 6, suboptimal => 7};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

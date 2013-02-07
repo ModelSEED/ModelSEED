@@ -26,6 +26,8 @@ has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '
 has reactionRemovalHypothesis => (is => 'rw', isa => 'Bool', printOrder => '0', default => '1', type => 'attribute', metaclass => 'Typed');
 has referenceMedia_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
+has timePerSolution => (is => 'rw', isa => 'Int', printOrder => '16', type => 'attribute', metaclass => 'Typed');
+has totalTimeLimit => (is => 'rw', isa => 'Int', printOrder => '17', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -129,10 +131,24 @@ my $attributes = [
             'name' => 'modDate',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 16,
+            'name' => 'timePerSolution',
+            'type' => 'Int',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 17,
+            'name' => 'totalTimeLimit',
+            'type' => 'Int',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionRemovalHypothesis => 6, referenceMedia_uuid => 7, modDate => 8};
+my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionRemovalHypothesis => 6, referenceMedia_uuid => 7, modDate => 8, timePerSolution => 9, totalTimeLimit => 10};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

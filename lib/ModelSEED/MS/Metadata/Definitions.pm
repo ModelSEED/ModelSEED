@@ -1325,6 +1325,20 @@ $objectDefinitions->{GapgenFormulation} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
+		},
+		{
+			name       => 'timePerSolution',
+			printOrder => 16,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0
+		},
+		{
+			name       => 'totalTimeLimit',
+			printOrder => 17,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0
 		}
 	],
 	subobjects => [
@@ -1411,6 +1425,22 @@ $objectDefinitions->{GapgenSolution} = {
 			req        => 0,
 			default    => "sub{return [];}"
 		},
+		{
+			name       => 'integrated',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => 0
+		},
+		{
+			name       => 'suboptimal',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => 0
+		}
 	],
 	subobjects => [
 		{
@@ -1646,6 +1676,20 @@ $objectDefinitions->{GapfillingFormulation} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
+		},
+		{
+			name       => 'timePerSolution',
+			printOrder => 16,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0
+		},
+		{
+			name       => 'totalTimeLimit',
+			printOrder => 17,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0
 		}
 	],
 	subobjects => [
@@ -1757,6 +1801,22 @@ $objectDefinitions->{GapfillingSolution} = {
 			req        => 0,
 			default    => "sub{return [];}"
 		},
+		{
+			name       => 'integrated',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => 0
+		},
+		{
+			name       => 'suboptimal',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => 0
+		}
 	],
 	subobjects => [
 		{

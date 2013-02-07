@@ -1309,15 +1309,19 @@ sub htmlComponents {
 					}
 					$bios .= $bio->id().":".$bio->name();
 				}
+				my $integrated = "No";
+				if ($sol->integrated() == 1) {
+					$integrated	= "Yes";
+				}
 				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-					"<td>Yes</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$integrated."</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
 					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
 				"</tr>";
 				$count++;
 			}
 		} else {
 			$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-				"<td>Yes</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
+				"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
 				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
 			"</tr>";
 		}
@@ -1391,15 +1395,19 @@ sub htmlComponents {
 					}
 					$bios .= $bio->id().":".$bio->name();
 				}
+				my $integrated = "No";
+				if ($sol->integrated() == 1) {
+					$integrated	= "Yes";
+				}
 				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-					"<td>Yes</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+					"<td>".$integrated."</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
 					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
 				"</tr>";
 				$count++;
 			}
 		} else {
 			$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-				"<td>Yes</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
+				"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
 				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
 			"</tr>";
 		}
@@ -1819,6 +1827,7 @@ sub integrateGapfillSolution {
 		error("Specified solution not found in gapfilling formulation!");
 	}
 	my $sol = $gfss->[$num];
+	$sol->integrated(1);
 	#Integrating biomass removals into model
 	if (defined($sol->biomassRemovals()) && @{$sol->biomassRemovals()} > 0) {
 		my $removals = $sol->biomassRemovals();
@@ -1911,6 +1920,7 @@ sub integrateGapgenSolution {
 		error("Specified solution not found in gapgen formulation!");
 	}
 	my $sol = $ggss->[$num];
+	$sol->integrated(1);
 	my $solrxns = $sol->gapgenSolutionReactions();
 	for (my $m=0; $m < @{$solrxns}; $m++) {
 		my $rxn = $solrxns->[$m];

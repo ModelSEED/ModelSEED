@@ -173,7 +173,8 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"just print LP file"} = "0";
 	$form->parameters()->{"use database fields"} = "1";
 	$form->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
-	$form->parameters()->{"CPLEX solver time limit"} = "82800";
+	$form->parameters()->{"CPLEX solver time limit"} = $self->timePerSolution();
+	$form->parameters()->{"Recursive MILP timeout"} = $self->totalTimeLimit();
 	push(@{$form->outputfiles}, "GapGenerationReport.txt");
 	return $form;	
 }
@@ -215,11 +216,17 @@ sub parseGapgenResults {
 	my $outputHash = $fbaResults->outputfiles();
 	if (defined($outputHash->{"GapGenerationReport.txt"})) {
 		my $filedata = $outputHash->{"GapGenerationReport.txt"};
+		my $subopt = 0;
+		if (defined($fbaResults->outputfiles()->{"suboptimalSolutions.txt"})) {
+			$subopt = 1;
+		}
 		for (my $i=1; $i < @{$filedata}; $i++) {
 			my $array = [split(/\t/,$filedata->[$i])];
 			if (defined($array->[1])) {
 				my $subarray = [split(/,/,$array->[1])];
-				my $ggsolution = $self->add("gapgenSolutions",{});
+				my $ggsolution = $self->add("gapgenSolutions",{
+					suboptimal => $subopt
+				});
 				$ggsolution->loadFromData({
 					objective => $array->[0],
 					reactions => $subarray,

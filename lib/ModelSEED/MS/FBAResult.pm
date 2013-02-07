@@ -848,6 +848,9 @@ sub parseOutputFiles {
 			$self->outputfiles()->{$filename} = ModelSEED::utilities::LOADFILE($directory."/".$filename);
 		}
 	}
+	if (-e $directory."/suboptimalSolutions.txt") {
+		$self->outputfiles()->{"suboptimalSolutions.txt"} = 1;
+	}
 }
 
 __PACKAGE__->meta->make_immutable;
