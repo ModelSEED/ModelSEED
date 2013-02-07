@@ -300,6 +300,30 @@ sub toJSON {
     return $JSON->encode($data);
 }
 
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::BaseObject->export({
+		format => readable/html/json
+	});
+Description:
+	Exports media data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
+}
+
 ######################################################################
 #Alias functions
 ######################################################################

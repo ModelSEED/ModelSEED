@@ -228,17 +228,19 @@ sub adjustBiomassReaction {
     my $self = shift;
     my $args = args(["modelcompound","coefficient"],{}, @_);
 	my $biocpds = $self->biomasscompounds();
+	my $found = 0;
 	for (my $i=0; $i < @{$biocpds}; $i++) {
 		my $biocpd = $biocpds->[$i];
 		if ($biocpd->modelcompound()->uuid() eq $args->{modelcompound}->uuid()) {
 			if ($args->{coefficient} == 0) {
 				$self->remove("biomasscompounds",$biocpd);
 			} else {
+				$found = 1;
 				$biocpd->coefficient($args->{coefficient});
 			}
 		}
 	}
-	if ($args->{coefficient} != 0) {
+	if ($args->{coefficient} != 0 && $found == 0) {
 		$self->add("biomasscompounds",{
 			modelcompound_uuid => $args->{modelcompound}->uuid(),
 			coefficient => $args->{coefficient}

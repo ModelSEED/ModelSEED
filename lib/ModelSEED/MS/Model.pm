@@ -887,7 +887,7 @@ sub manualReactionAdjustment {
     		if (!defined($rxn)) {
 		    	error("Reaction ".$args->{reaction}." not found in biochemistry!");
 		    }
-			my $cmp = $bio->queryObject("compartments",{label => $args->{compartment}});
+			my $cmp = $bio->queryObject("compartments",{id => $args->{compartment}});
 		    if (!defined($cmp)) {
 		    	error("Compartment ".$args->{compartment}." not found in biochemistry!");
 		    }
