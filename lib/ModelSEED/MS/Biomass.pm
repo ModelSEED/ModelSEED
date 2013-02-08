@@ -55,15 +55,15 @@ sub _equation_builder {
 		        	if ($redisual > 0.5) {
 		        		$redisual = $redisual-1;
 		        	}
-		        	$coef = $coef-$redisual*10;
+		        	$coef = $coef-$redisual*1;
 		        } elsif ($coef < -10) {
 		        	my $redisual = ceil($cpds->[$i]->coefficient()) - $cpds->[$i]->coefficient();
 		        	if ($redisual > 0.5) {
 		        		$redisual = $redisual-1;
 		        	}
-		        	$coef = $coef-$redisual*10;
+		        	$coef = $coef-$redisual*1;
 		        } else {
-		        	$coef = 10*$coef;
+		        	$coef = 1*$coef;
 		        }
 	        }
         }
