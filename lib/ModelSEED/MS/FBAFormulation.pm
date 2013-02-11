@@ -575,22 +575,43 @@ sub createJobDirectory {
 		my $userBounds = {};
 		my $mediaCpds = $media->mediacompounds();
 		for (my $i=0; $i < @{$mediaCpds}; $i++) {
-			$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
-				max => $mediaCpds->[$i]->maxFlux(),
-				min => $mediaCpds->[$i]->minFlux()
-			};
+			if ($self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
+					max => $mediaCpds->[$i]->maxFlux(),
+					min => $mediaCpds->[$i]->minFlux()
+				};
+			}
 		}
 		for (my $i=0; $i < @{$cpdbnds}; $i++) {
-			$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
-				max => $cpdbnds->[$i]->upperBound(),
-				min => $cpdbnds->[$i]->lowerBound()
-			};
+			if ($self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
+					max => $cpdbnds->[$i]->upperBound(),
+					min => $cpdbnds->[$i]->lowerBound()
+				};
+			}
 		}
 		for (my $i=0; $i < @{$rxnbnds}; $i++) {
-			$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
-				max => $rxnbnds->[$i]->upperBound(),
-				min => $rxnbnds->[$i]->lowerBound()
-			};
+			if ($self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
+					max => $rxnbnds->[$i]->upperBound(),
+					min => $rxnbnds->[$i]->lowerBound()
+				};
+			}
 		}
 		my $dataArrays;
 		foreach my $var (keys(%{$userBounds})) {
