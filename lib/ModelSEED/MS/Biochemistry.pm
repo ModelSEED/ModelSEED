@@ -741,7 +741,6 @@ sub addReactionFromHash {
     #saves having to delete the reaction too
     if($arguments->{balancedonly}==1){
 	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1});
-	print STDERR join("|",$result),"\n";
 	if($result->{balanced}==0 && (defined($result->{error}) || defined($result->{imbalancedAtoms}))){
 	    verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status(),"\n");
 	    return;
@@ -899,11 +898,7 @@ sub mergeBiochemistry {
 				$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
 				$obj->uuid($dupObj->uuid());
 		    } else {
-			if( defined($dupObj) && exists($opts->{touched}{$dupObj->uuid()}) ){
-			    verbose("Possible self-merge detected in own database for ".substr($type,0,-1). " (".$objId." --> ".$dupObj->id().")\nMay need to run consolidatebio first\n");
-			}else{
-			    verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
-			}
+			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
