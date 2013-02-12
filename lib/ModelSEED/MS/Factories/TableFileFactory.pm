@@ -132,7 +132,6 @@ sub _buildgenomeTbl {
 }
 sub _buildbiomassTemplateData() {
 	my ($self) = @_;
-	my $filedata = ModelSEED::utilities::LOADFILE($self->filepath()."/biomassTemplateData.txt");
 	my $template = {
 		"spontaneous reactions" => [],
 		"universal reactions" => [],
@@ -141,6 +140,10 @@ sub _buildbiomassTemplateData() {
 		"universal biomass components" => [],
 		"conditional biomass components" => [],
 	};
+	return $template if !-f $self->filepath()."/biomassTemplateData.txt";
+
+	my $filedata = ModelSEED::utilities::LOADFILE($self->filepath()."/biomassTemplateData.txt");
+
 	for (my $i=0; $i < @{$filedata};$i++) {
 		if ($filedata->[$i] =~ m/Spontaneous\sreactions:(.+)/) {
 			$template->{"spontaneous reactions"} = [split(/;/,$1)];
@@ -264,31 +267,31 @@ sub createModel {
 			for (my $m=0; $m < @{$gpr}; $m++) {
 				my $protObj = $mdlrxn->add("modelReactionProteins",{
 					complex_uuid => "00000000-0000-0000-0000-000000000000",
-					note => "Imported from SBML"
+					note => "Imported from ".$args->{id}.".mdl"
 				});
 				for (my $j=0; $j < @{$gpr->[$m]}; $j++) {
 					my $subObj = $protObj->add("modelReactionProteinSubunits",{
 						role_uuid => "00000000-0000-0000-0000-000000000000",
-						note => "Imported from SBML"
+						note => "Imported from ".$args->{id}.".mdl"
 					});
 					for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
 						my $ftrID = $gpr->[$m]->[$j]->[$k];
-						my $ftrObj = $anno->getObjectByAlias("features",$ftrID,"SEED");
+						my $ftrObj = $anno->getObjectByAlias("features",$ftrID,"SEED") if $anno->getObject("aliasSets",{name=>"SEED",attribute=>"features"});
 						if (!defined($ftrObj)) {
 							$ftrObj = $anno->queryObject("features",{
 								id => $ftrID
 							});
 						}
 						if (!defined($ftrObj)) {
-							print "Unable to find feature for:".$ftrID."\n";
-							$ftrObj = $anno->add("features",{
-								id => $ftrID,
-								genome_uuid => $anno->genomes()->[0]->uuid(),
-							});
+							verbose("Unable to find feature for:".$ftrID."\n");
+							if($anno->genomes()->[0]){
+							    $ftrObj = $anno->add("features",{id => $ftrID,
+											     genome_uuid => $anno->genomes()->[0]->uuid()});
+							}
 						}
-						my $ftr = $subObj->add("modelReactionProteinSubunitGenes",{
-							feature_uuid => $ftrObj->uuid()
-						});
+						if(defined($ftrObj)){
+						    my $ftr = $subObj->add("modelReactionProteinSubunitGenes",{feature_uuid => $ftrObj->uuid()});
+						}
 					}
 				}
 			}
@@ -1102,6 +1105,9 @@ sub createMapping {
         my $rxn = $biochemistry->getObjectByAlias(
             "reactions", $rule->REACTION(), "ModelSEED"
         );
+	if(!defined($rxn)){
+	    $rxn = $biochemistry->getObject("reactions", $rule->REACTION());
+	}
         next unless(defined($rxn));
         push(@{$complex->reaction_uuids()},$rxn->uuid);
 	}
