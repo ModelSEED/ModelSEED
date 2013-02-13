@@ -407,6 +407,8 @@ sub createJobDirectory {
 			$geneKO .= ";".$gene->id();
 		}
 	}
+	$geneKO =~ s/kb\|g\.\d+\.//g;
+	$geneKO =~ s/fig\|\d+\.\d+\.//g;
 	#Setting reaction KO
 	my $rxnKO = "none";
 	for (my $i=0; $i < @{$self->reactionKOs()}; $i++) {
