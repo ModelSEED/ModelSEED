@@ -20,6 +20,7 @@ sub opt_spec {
         ["verbose|v", "Print verbose status information"],
 	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
+	["addmergealias|g", "Add identifiers to merging namespace."],
 	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
