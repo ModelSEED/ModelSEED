@@ -77,7 +77,7 @@ sub _mstypetrans {
 		Model => "Model",
 		GapfillingFormulation => "GapFill",
 		GapgenFormulation => "GapGen",
-		PROMModel => "PROMModel",
+		PROMModel => "PromConstraints",
 		Media => "Media"
 	};
 }
@@ -91,7 +91,7 @@ sub _wstypetrans {
 		Media => "Media",
 		GapFill => "GapfillingFormulation",
 		GapGen => "GapgenFormulation",
-		PROMModel => "PROMModel"
+		PromConstraints => "PROMModel",
 	};
 }
 #***********************************************************************************************************

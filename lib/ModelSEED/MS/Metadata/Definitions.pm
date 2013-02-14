@@ -4018,7 +4018,7 @@ $objectDefinitions->{ModelReactionProtein} = {
 			printOrder => 0,
 			perm       => 'rw',
 			type       => 'ModelSEED::uuid',
-			req        => 1
+			req        => 0
 		},
 		{
 			name       => 'note',

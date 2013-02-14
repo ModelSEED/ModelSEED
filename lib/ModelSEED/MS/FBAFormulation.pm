@@ -577,7 +577,7 @@ sub createJobDirectory {
 		my $userBounds = {};
 		my $mediaCpds = $media->mediacompounds();
 		for (my $i=0; $i < @{$mediaCpds}; $i++) {
-			if ($self->parameters()->{"Complete gap filling"} == 1) {
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
 					max => 10000,
 					min => -10000
@@ -590,7 +590,7 @@ sub createJobDirectory {
 			}
 		}
 		for (my $i=0; $i < @{$cpdbnds}; $i++) {
-			if ($self->parameters()->{"Complete gap filling"} == 1) {
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
 					max => 10000,
 					min => -10000
@@ -603,7 +603,7 @@ sub createJobDirectory {
 			}
 		}
 		for (my $i=0; $i < @{$rxnbnds}; $i++) {
-			if ($self->parameters()->{"Complete gap filling"} == 1) {
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
 				$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
 					max => 10000,
 					min => -10000

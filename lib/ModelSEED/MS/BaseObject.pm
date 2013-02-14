@@ -883,7 +883,7 @@ sub fbaproblem {
 sub store {
     my ($self) = @_;
     my $parent = $self->parent();
-    if (defined($parent) && ref($parent) ne "ModelSEED::Store" && ref($parent ne "ModelSEED::KBaseStore")) {
+    if (defined($parent) && ref($parent) ne "ModelSEED::Store" && ref($parent) ne "ModelSEED::KBaseStore") {
         return $parent->store();
     }
     return $parent;
