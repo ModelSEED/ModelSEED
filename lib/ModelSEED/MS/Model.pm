@@ -2061,23 +2061,92 @@ Description:
 
 sub computeNetworkDistances {
     my $self = shift;
-	my $args = args([], { reactions => 0, roles => 0 }, @_);
+	my $args = args([], { reactions => 0, roles => 0, genes => 0 }, @_);
 	my $input = {};
 	my $tbl = {headings => ["Compounds"],data => []};
-	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
 		$input->{reactions} = 1;
 		$tbl = {headings => ["Reactions"],data => []};
 		if ($args->{roles} == 1) {
 			$tbl = {headings => ["Roles"],data => []};
 		}
+		elsif ($args->{genes} == 1) {
+			$tbl = {headings => ["Genes"],data => []};
+		}
 	}
+	#Set cofactor.
+	my $biochemistry = $self->biochemistry();
+    my $list = [ qw(
+                       cpd00001 cpd00009 cpd00010 cpd00011 cpd00012 cpd00013 cpd00015 cpd11609 cpd11610 cpd00067 cpd00099 cpd00099 cpd12713 cpd00242 cpd00007 cpd00025
+               ) ];
+    for (my $i=0; $i < @{$list}; $i++) {
+	my $cpd = $biochemistry->getObjectByAlias("compounds",$list->[$i],"ModelSEED");
+	if (!defined($cpd)) {
+            print "Could not find ".$list->[$i]."!\n";
+	} else {
+            print "Cofactor found: ".$cpd->id()."\n";
+            $cpd->isCofactor(1);
+	}
+    }
+    my $rxns = $biochemistry->reactions();
+    my $pairlist = [
+        ["cpd00097","cpd00986"],
+        ["cpd00109","cpd00110"],
+        ["cpd11620","cpd11621"],
+        ["cpd00228","cpd00823"],
+        ["cpd11665","cpd11669"],
+        ["cpd00733","cpd00734"],
+        ["cpd11807","cpd11808"],
+        ["cpd00364","cpd00415"],
+        ["cpd12505","cpd12576"],
+        ["cpd12669","cpd12694"],
+        ["cpd00003","cpd00004"],
+        ["cpd00005","cpd00006"],
+        ["cpd00002","cpd00008"],
+        ["cpd00002","cpd00018"],
+        ["cpd00008","cpd00018"],
+        ["cpd00052","cpd00096"],
+        ["cpd00002","cpd00046"],
+        ["cpd00046","cpd00096"],
+        ["cpd00062","cpd00091"],
+        ["cpd00062","cpd00014"],
+        ["cpd00014","cpd00091"],
+        ["cpd00038","cpd00126"],
+        ["cpd00038","cpd00031"],
+        ["cpd00126","cpd00031"],
+        ["cpd00357","cpd00793"],
+    ]; 
+    for (my $i=0; $i < @{$rxns}; $i++) {
+ 	my $rxn = $rxns->[$i];
+ 	for (my $j=0; $j < @{$pairlist}; $j++) {
+            my $pair = $pairlist->[$j];
+            my $rgts = $rxn->reagents();
+            for (my $k=0; $k < @{$rgts}; $k++) {
+                my $rgt = $rgts->[$k];
+                if ($rgt->compound()->id() eq $pair->[0]) {
+                    for (my $m=0; $m < @{$rgts}; $m++) {
+                        my $rgtTwo = $rgts->[$m];
+                        if ($rgtTwo->compound()->id() eq $pair->[1]) {
+                            if ($rgt->coefficient()*$rgtTwo->coefficient() < 0) {
+                                print "Cofactor set in reaction ".$rxn->id()."\n";
+                                $rgt->isCofactor(1);
+                                $rgtTwo->isCofactor(1);
+                            }
+                        }
+                    }
+                }
+            }
+ 	}
+    }
+# cofactor set.
 	print STDERR "Building graph!\n";
 	my $graph = $self->buildGraph($input);
 	print STDERR "Computing distances!\n";
 	my $apsp = $graph->all_pairs_shortest_paths();
 	print STDERR "Shortest paths computed!\n";
-	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
 		my ($roleHash,%rxn2roles);
+		my ($geneHash,%rxn2genes);
 		my $rxns = $self->modelreactions();
 		$tbl->{headings}->[0] = "Reactions";
 		if ($args->{roles} == 1) {
@@ -2098,9 +2167,50 @@ sub computeNetworkDistances {
 			my $count = 0;
 			foreach my $role (sort(keys(%{$roleHash}))) {
 				$roleHash->{$role} = $count;
-				$count++;
+				$count++;				
 			}
 		}
+		if ($args->{genes} == 1) {
+			$tbl->{headings}->[0] = "Genes";
+			for (my $i=0; $i < @{$rxns}; $i++) {
+			    my $modelrxn = $rxns->[$i];
+			    my @genes;
+			    my $isUniversal = 0;
+			    foreach my $protein (@{$modelrxn->modelReactionProteins()}) {
+				if ((@{$protein->modelReactionProteinSubunits()} == 0) and (length($protein->note()) > 0)) {
+				    $isUniversal = 1; # May need to check what is in note.
+				}
+				else {
+				    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+					foreach my $subunitGene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+					    # push id rather than object itself because there is no object for unknown genes					   
+					    push @genes, $subunitGene->feature()->id();
+					}				    				    
+				    }
+				}
+			    }		
+			    # Calculate distance for Unknown gene, too.
+			    if (@genes == 0 and !$isUniversal) {
+				push @genes, "Unknown:". $rxns->[$i]->id();
+			    }
+			    $rxn2genes{$rxns->[$i]->id()} = \@genes;
+			    for (my $j=0;$j < @genes; $j++) {
+				$geneHash->{$genes[$j]} = 1;
+
+			    }
+			}
+			my $count = 0;
+			foreach my $role (sort(keys(%{$roleHash}))) {
+				$roleHash->{$role} = $count;
+				$count++;
+			}
+			foreach my $gene (sort(keys(%{$geneHash}))) {
+				$geneHash->{$gene} = $count;
+				$count++;
+			}
+
+		}
+
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			if ($args->{reactions} == 1) {
 				$tbl->{headings}->[$i+1] = $rxns->[$i]->id();
@@ -2112,6 +2222,12 @@ sub computeNetworkDistances {
 					$tbl->{data}->[$count]->[0] = $role;
 					$count++;
 				}
+				foreach my $gene (sort(keys(%{$geneHash}))) {
+					$tbl->{headings}->[$count+1] = $gene;
+					$tbl->{data}->[$count]->[0] = $gene;
+					$count++;
+				}
+
 			}
 			for (my $j=0;$j < @{$rxns}; $j++) {
 				if ($args->{reactions} == 1) {
@@ -2123,7 +2239,7 @@ sub computeNetworkDistances {
 						$tbl->{data}->[$i]->[$j+1] = -1;
 					}
 				    }
-				} else {
+				} elsif ($args->{roles} == 1) {
 				        my @roles1 = @{$rxn2roles{$rxns->[$i]->id()}};
 					for (my $k=0;$k < @roles1; $k++) {
 						my $indexOne = $roleHash->{$roles1[$k]->name()};
@@ -2131,6 +2247,27 @@ sub computeNetworkDistances {
 						my @roles2 = @{$rxn2roles{$rxns->[$j]->id()}};
 						for (my $m=0;$m < @roles2; $m++) {
 							my $indexTwo = $roleHash->{$roles2[$m]->name()}+1;
+							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
+								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    }
+							} else {
+							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							}
+							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+							    $tbl->{data}->[$indexOne]->[$indexTwo] = -1;
+							}
+						}
+					}
+				}
+				elsif ($args->{genes} == 1) {
+				        my @genes1 = @{$rxn2genes{$rxns->[$i]->id()}};
+					for (my $k=0;$k < @genes1; $k++) {
+						my $indexOne = $geneHash->{$genes1[$k]};
+
+						my @genes2 = @{$rxn2genes{$rxns->[$j]->id()}};
+						for (my $m=0;$m < @genes2; $m++) {
+							my $indexTwo = $geneHash->{$genes2[$m]}+1;
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
 							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());

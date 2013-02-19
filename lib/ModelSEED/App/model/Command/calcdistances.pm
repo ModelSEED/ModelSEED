@@ -16,6 +16,7 @@ sub opt_spec {
         ["verbose|v", "Print verbose status information"],
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
         ["roles|o","Calculate distances between roles (metabolites default)"],
+	["genes|g","Calculate distances between genes (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
         ["threshold|t:s","Only print pairs with distance under threshold"],
     );
@@ -35,7 +36,8 @@ sub execute {
 	print STDERR "Computing network distances...\n" if($opts->{verbose});
 	my $tbl = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
-		roles => $opts->{roles}
+		roles=> $opts->{roles},
+		genes=> $opts->{genes},
 	});
 	#Printing results
 	print STDERR "Printing results...\n" if($opts->{verbose});
