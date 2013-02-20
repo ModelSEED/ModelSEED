@@ -2174,7 +2174,7 @@ sub computeNetworkDistances {
 			$tbl->{headings}->[0] = "Genes";
 			for (my $i=0; $i < @{$rxns}; $i++) {
 			    my $modelrxn = $rxns->[$i];
-			    my @genes;
+			    my %genes;
 			    my $isUniversal = 0;
 			    foreach my $protein (@{$modelrxn->modelReactionProteins()}) {
 				if ((@{$protein->modelReactionProteinSubunits()} == 0) and (length($protein->note()) > 0)) {
@@ -2184,15 +2184,17 @@ sub computeNetworkDistances {
 				    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
 					foreach my $subunitGene (@{$subunit->modelReactionProteinSubunitGenes()}) {
 					    # push id rather than object itself because there is no object for unknown genes					   
-					    push @genes, $subunitGene->feature()->id();
+					    $genes{$subunitGene->feature()->id()} = 1;
 					}				    				    
 				    }
 				}
 			    }		
 			    # Calculate distance for Unknown gene, too.
-			    if (@genes == 0 and !$isUniversal) {
-				push @genes, "Unknown:". $rxns->[$i]->id();
+			    if (keys %genes == 0 and !$isUniversal) {
+				$genes{"Unknown:". $rxns->[$i]->id()} = 1;
 			    }
+			    my @genes = keys %genes;
+			    print STDERR "Found @genes for ", $rxns->[$i]->id(), "\n";
 			    $rxn2genes{$rxns->[$i]->id()} = \@genes;
 			    for (my $j=0;$j < @genes; $j++) {
 				$geneHash->{$genes[$j]} = 1;
@@ -2269,7 +2271,8 @@ sub computeNetworkDistances {
 						for (my $m=0;$m < @genes2; $m++) {
 							my $indexTwo = $geneHash->{$genes2[$m]}+1;
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
+							    my $path_length = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    if (defined $path_length && ($path_length < $tbl->{data}->[$indexOne]->[$indexTwo])) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 							    }
 							} else {
