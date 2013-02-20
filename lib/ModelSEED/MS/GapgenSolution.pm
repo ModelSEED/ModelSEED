@@ -15,10 +15,28 @@ extends 'ModelSEED::MS::DB::GapgenSolution';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has solrxn => ( is => 'rw',printOrder => -1, isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsolrxn' );
+has biocpd => ( is => 'rw',printOrder => -1, isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiocpd' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildsolrxn {
+	my ($self) = @_;
+	my $rxns = [];
+	for (my $i=0; $i < @{$self->gapgenSolutionReactions()};$i++) {
+		push(@{$rxns},[$self->gapgenSolutionReactions()->[$i]->direction(),$self->gapfillingSolutionReactions()->[$i]->reaction()->id()]);
+	}
+	return $rxns;
+}
+sub _buildbiocpd {
+	my ($self) = @_;
+	my $cpds = [];
+	for (my $i=0; $i < @{$self->biomassSupplements()};$i++) {
+		push(@{$cpds},$self->biomassSupplements()->[$i]->compound()->id())
+	}
+	return $cpds;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:

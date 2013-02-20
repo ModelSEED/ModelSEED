@@ -153,6 +153,7 @@ sub get_object {
 		$object->{_kbaseWSMeta}->{ws} = $output->{metadata}->[7];
 		$object->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
 		$object->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];
+		$object->{_kbaseWSMeta}->{wsmeta} = $output->{metadata};
 	}
     #Adding object to cache
     if ($type ne "Media") {

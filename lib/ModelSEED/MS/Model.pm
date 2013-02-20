@@ -20,15 +20,24 @@ extends 'ModelSEED::MS::DB::Model';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has definition => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
-
+has features => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatures' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _builddefinition {
+sub _buildfeatures {
 	my ($self) = @_;
-	return $self->createEquation({format=>"name",hashed=>0});
+	#Retrieving list of genes in model
+	my $rxns = $self->modelreactions();
+	my $ftrhash = {};
+	for (my $i=0; $i < @{$rxns};$i++) {
+		my $rxn = $rxns->[$i];
+		my $ftrs = $rxn->featureUUIDs();
+		foreach my $ftr (@{$ftrs}) {
+			$ftrhash->{$ftr} = 1;
+		}
+	}
+	return [keys(%{$ftrhash})];
 }
 
 #***********************************************************************************************************
@@ -1850,7 +1859,7 @@ sub integrateGapfillSolution {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		my $mdlrxn = $self->queryObject("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
-		if (defined($mdlrxn)) {
+		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			verbose(
 				"Making ".$mdlrxn->id()." reversible."
 			);
