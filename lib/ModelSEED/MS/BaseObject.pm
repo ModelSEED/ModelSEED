@@ -107,94 +107,47 @@ my $htmlheader = <<HEADER;
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>\${TITLE}</title>
-<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
-<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
-<script src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
+<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css">
+<link rel="stylesheet" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+<script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.js"></script>
 <script type="text/javascript">
-    function UpdateTableHeaders() {
-        \$("div.divTableWithFloatingHeader").each(function() {
-            var originalHeaderRow = \$(".tableFloatingHeaderOriginal", this);
-            var floatingHeaderRow = \$(".tableFloatingHeader", this);
-            var offset = \$(this).offset();
-            var scrollTop = \$(window).scrollTop();
-            if ((scrollTop > offset.top) && (scrollTop < offset.top + \$(this).height())) {
-                floatingHeaderRow.css("visibility", "visible");
-                floatingHeaderRow.css("top", Math.min(scrollTop - offset.top, \$(this).height() - floatingHeaderRow.height()) + "px");
-                // Copy row width from whole table
-                floatingHeaderRow.css('width', "1200px");
-                // Copy cell widths from original header
-                \$("th", floatingHeaderRow).each(function(index) {
-                    var cellWidth = \$("th", originalHeaderRow).eq(index).css('width');
-                    \$(this).css('width', cellWidth);
-                });
-            }
-            else {
-                floatingHeaderRow.css("visibility", "hidden");
-                floatingHeaderRow.css("top", "0px");
-            }
-        });
-    }
-    \$(function() {
-    	\$( "#tabs" ).tabs();
-  	});
-    \$(document).ready(function() {
-        \$("table.tableWithFloatingHeader").each(function() {
-            \$(this).wrap("<div class=\\"divTableWithFloatingHeader\\" style=\\"position:relative\\"></div>");
-            var originalHeaderRow = \$("tr:first", this)
-            originalHeaderRow.before(originalHeaderRow.clone());
-            var clonedHeaderRow = \$("tr:first", this)
-            clonedHeaderRow.addClass("tableFloatingHeader");
-            clonedHeaderRow.css("position", "absolute");
-            clonedHeaderRow.css("top", "0px");
-            clonedHeaderRow.css("left", \$(this).css("margin-left"));
-            clonedHeaderRow.css("visibility", "hidden");
-            originalHeaderRow.addClass("tableFloatingHeaderOriginal");
-        });
-        UpdateTableHeaders();
-        \$(window).scroll(UpdateTableHeaders);
-        \$(window).resize(UpdateTableHeaders);
+  \$(document).ready(function() {
+    \$('#tab-header a').click(function (e) {
+      e.preventDefault();
+      \$(this).tab('show');
     });
+
+    \$('.data-table').dataTable();
+  });
 </script>
 <style type="text/css">
-	h1 {
-	    font-size: 16px;
-	}
-	table.tableWithFloatingHeader {
-	    font-size: 12px;
-	    text-align: left;
-		 border: 0;
-		 width: 1200px;
-	}
-	th {
-	    font-size: 14px;
-	    background: #ddd;
-		 border: 1px solid black;
-	    vertical-align: top;
-	    padding: 5px 5px 5px 5px;
-	}
-	td {
-	   font-size: 16px;
-		vertical-align: top;
-		border: 1px solid black;
-	}
+    #tabs {
+        margin: 20px 50px;
+    }
 </style>
 </head>
 HEADER
-	my $htmlbody = <<BODY;
+
+my $htmlbody = <<BODY;
 <body>
 <div id="tabs">
-	<ul>
-        <li><a href="#tab-1">Overview</a></li>
-        \${TABS}
-    </ul>
-	<div id="tab-1">
-          \${MAINTAB}
-    </div>
-    \${TABDIVS}
+<ul class="nav nav-tabs" id="tab-header">
+<li class="active"><a href="#tab-1">Overview</a></li>
+\${TABS}
+</ul>
+<div class="tab-content">
+<div class="tab-pane active" id="tab-1">
+\${MAINTAB}
+</div>
+\${TABDIVS}
+</div>
 </div>
 </body>
 BODY
-	my $htmltail = <<TAIL;
+
+my $htmltail = <<TAIL;
 </html>
 TAIL
 
@@ -298,6 +251,30 @@ sub toJSON {
     my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
     return $JSON->encode($data);
+}
+
+=head3 export
+
+Definition:
+	string = ModelSEED::MS::BaseObject->export({
+		format => readable/html/json
+	});
+Description:
+	Exports media data to the specified format.
+
+=cut
+
+sub export {
+    my $self = shift;
+	my $args = args(["format"], {}, @_);
+	if (lc($args->{format}) eq "readable") {
+		return $self->toReadableString();
+	} elsif (lc($args->{format}) eq "html") {
+		return $self->createHTML();
+	} elsif (lc($args->{format}) eq "json") {
+		return $self->toJSON({pp => 1});
+	}
+	error("Unrecognized type for export: ".$args->{format});
 }
 
 ######################################################################
@@ -441,13 +418,9 @@ sub htmlComponents {
 		my $id = "tab-".$count;
 		push(@{$output->{tablist}},$id);
 		$output->{tabs}->{$id} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$subobject->{headings}}).'</th></tr>'."\n",
+			content => ModelSEED::utilities::PRINTHTMLTABLE( $subobject->{headings}, $subobject->{data}, 'data-table' ),
 			name => $name
 		};
-		foreach my $row (@{$subobject->{data}}) {
-			$output->{tabs}->{$id}->{content} .= '<tr><td>'.join("</td><td>",@{$row}).'</td></tr>'."\n";
-		}
-		$output->{tabs}->{$id}->{content} .= '</table>'."\n";
 		$count++;
 	}
 	return $output;
@@ -476,7 +449,7 @@ sub createHTML {
 	$document =~ s/\$\{MAINTAB\}/$maintab/;
 	my $divdata = "";
 	for (my $i=0; $i < @{$htmlData->{tablist}}; $i++) {
-		$divdata .= '<div id="'.$htmlData->{tablist}->[$i].'">'."\n";
+		$divdata .= '<div class="tab-pane" id="'.$htmlData->{tablist}->[$i].'">'."\n";
 		$divdata .= $htmlData->{tabs}->{$htmlData->{tablist}->[$i]}->{content};
 		$divdata .= "</div>\n";
 	}
@@ -859,7 +832,7 @@ sub fbaproblem {
 sub store {
     my ($self) = @_;
     my $parent = $self->parent();
-    if (defined($parent) && ref($parent) ne "ModelSEED::Store" && ref($parent ne "ModelSEED::KBaseStore")) {
+    if (defined($parent) && ref($parent) ne "ModelSEED::Store" && ref($parent) ne "ModelSEED::KBaseStore") {
         return $parent->store();
     }
     return $parent;

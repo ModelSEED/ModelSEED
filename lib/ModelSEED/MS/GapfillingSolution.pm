@@ -18,10 +18,28 @@ has gapfillingReactionString => ( is => 'rw',printOrder => 2, isa => 'Str', type
 has biomassRemovalString => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiomassRemovalString' );
 has mediaSupplementString => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaSupplementString' );
 has koRestoreString => ( is => 'rw',printOrder => 5, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildkoRestoreString' );
+has solrxn => ( is => 'rw',printOrder => -1, isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsolrxn' );
+has biocpd => ( is => 'rw',printOrder => -1, isa => 'ArrayRef', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbiocpd' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildsolrxn {
+	my ($self) = @_;
+	my $rxns = [];
+	for (my $i=0; $i < @{$self->gapfillingSolutionReactions()};$i++) {
+		push(@{$rxns},[$self->gapfillingSolutionReactions()->[$i]->direction(),$self->gapfillingSolutionReactions()->[$i]->reaction()->id()]);
+	}
+	return $rxns;
+}
+sub _buildbiocpd {
+	my ($self) = @_;
+	my $cpds = [];
+	for (my $i=0; $i < @{$self->biomassRemovals()};$i++) {
+		push(@{$cpds},$self->biomassRemovals()->[$i]->compound()->id())
+	}
+	return $cpds;
+}
 sub _buildgapfillingReactionString {
 	my ($self) = @_;
 	my $string = "";

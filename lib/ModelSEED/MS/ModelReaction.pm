@@ -29,6 +29,7 @@ has isTransporter => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'ms
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
 has translatedDirection  => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtranslatedDirection' );
 has featureIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureIDs' );
+has featureUUIDs  => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureUUIDs' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -200,6 +201,18 @@ sub _buildfeatureIDs {
 		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
 			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
 				$featureHash->{$gene->feature()->id()} = 1;
+			}
+		}
+	}
+	return [keys(%{$featureHash})];
+}
+sub _buildfeatureUUIDs {
+	my ($self) = @_;
+	my $featureHash = {};
+	foreach my $protein (@{$self->modelReactionProteins()}) {
+		foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+			foreach my $gene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+				$featureHash->{$gene->feature()->uuid()} = 1;
 			}
 		}
 	}

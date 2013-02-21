@@ -25,10 +25,11 @@ has mfatoolkitBinary => ( is => 'rw', isa => 'Str',printOrder => '-1', type => '
 has mfatoolkitDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmfatoolkitDirectory' );
 has dataDirectory => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddataDirectory' );
 has cplexLicense => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcplexLicense' );
-has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
+has readableObjective => ( is => 'rw', isa => 'Str',printOrder => '30', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreadableObjective' );
 has mediaID => ( is => 'rw', isa => 'Str',printOrder => '0', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmediaID' );
 has knockouts => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildknockouts' );
 has promBounds => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildpromBounds' );
+has additionalCompoundString => ( is => 'rw', isa => 'Str',printOrder => '4', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildadditionalCompoundString' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -132,7 +133,7 @@ sub _buildreadableObjective {
 		if ($term->coefficient() != 1) {
 			$coef = "(".$term->coefficient().") ";
 		}
-		$string .= $coef.$term->entity()->id()."_".$term->variableType();
+		$string .= $coef.$term->entity()->id();
 	}
 	$string .= " }";
 	return $string;
@@ -214,6 +215,18 @@ sub _buildpromBounds {
 	}	
 
 	return $final_bounds;
+}
+sub _buildadditionalCompoundString {
+	my ($self) = @_;
+	my $output = "";
+	my $addCpds = $self->additionalCpds();
+	for (my $i=0; $i < @{$addCpds}; $i++) {
+		if (length($output) > 0) {
+			$output .= ";";
+		}
+		$output .= $addCpds->[$i]->name();
+	}
+	return $output;
 }
 
 #***********************************************************************************************************
@@ -394,6 +407,8 @@ sub createJobDirectory {
 			$geneKO .= ";".$gene->id();
 		}
 	}
+	$geneKO =~ s/kb\|g\.\d+\.//g;
+	$geneKO =~ s/fig\|\d+\.\d+\.//g;
 	#Setting reaction KO
 	my $rxnKO = "none";
 	for (my $i=0; $i < @{$self->reactionKOs()}; $i++) {
@@ -467,6 +482,9 @@ sub createJobDirectory {
 	}
 	#Creating FBA experiment file
 	my $fbaExpFile = $self->setupFBAExperiments();
+	if ($fbaExpFile ne "none") {
+		$optMetabolite = 0;
+	}
 	#Setting parameters
 	my $parameters = {
 		"perform MFA" => 1,
@@ -562,22 +580,43 @@ sub createJobDirectory {
 		my $userBounds = {};
 		my $mediaCpds = $media->mediacompounds();
 		for (my $i=0; $i < @{$mediaCpds}; $i++) {
-			$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
-				max => $mediaCpds->[$i]->maxFlux(),
-				min => $mediaCpds->[$i]->minFlux()
-			};
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$mediaCpds->[$i]->compound()->id()}->{"e"}->{"DRAIN_FLUX"} = {
+					max => $mediaCpds->[$i]->maxFlux(),
+					min => $mediaCpds->[$i]->minFlux()
+				};
+			}
 		}
 		for (my $i=0; $i < @{$cpdbnds}; $i++) {
-			$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
-				max => $cpdbnds->[$i]->upperBound(),
-				min => $cpdbnds->[$i]->lowerBound()
-			};
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$cpdbnds->[$i]->compound()->id()}->{$cpdbnds->[$i]->modelcompartment()->label()}->{$translation->{$cpdbnds->[$i]->variableType()}} = {
+					max => $cpdbnds->[$i]->upperBound(),
+					min => $cpdbnds->[$i]->lowerBound()
+				};
+			}
 		}
 		for (my $i=0; $i < @{$rxnbnds}; $i++) {
-			$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
-				max => $rxnbnds->[$i]->upperBound(),
-				min => $rxnbnds->[$i]->lowerBound()
-			};
+			if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
+				$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
+					max => 10000,
+					min => -10000
+				};
+			} else {
+				$userBounds->{$rxnbnds->[$i]->reaction()->id()}->{$rxnbnds->[$i]->modelcompartment()->label()}->{$translation->{$rxnbnds->[$i]->variableType()}} = {
+					max => $rxnbnds->[$i]->upperBound(),
+					min => $rxnbnds->[$i]->lowerBound()
+				};
+			}
 		}
 		my $dataArrays;
 		foreach my $var (keys(%{$userBounds})) {
@@ -958,6 +997,293 @@ sub export {
 		return $self->toJSON({pp => 1});
 	}
 	error("Unrecognized type for export: ".$args->{format});
+}
+
+=head3 htmlComponents
+
+Definition:
+	string = ModelSEED::MS::FBAFormulation->htmlComponents();
+Description:
+	Generates html view of FBA result
+
+=cut
+
+sub htmlComponents {
+	my $self = shift;
+	my $args = args([],{}, @_);
+	my $data = $self->_createReadableData();
+	my $output = {
+		title => "FBA Viewer",
+		tablist => [],
+		tabs => {
+			main => {
+				content => "",
+				name => "Overview"
+			}
+		}
+	};
+	$output->{tabs}->{main}->{content} .= "<table>\n";
+	for (my $i=0; $i < @{$data->{attributes}->{headings}}; $i++) {
+		$output->{tabs}->{main}->{content} .= "<tr><th>".$data->{attributes}->{headings}->[$i]."</th><td style='font-size:16px;border: 1px solid black;'>".$data->{attributes}->{data}->[0]->[$i]."</td></tr>\n";
+	}
+	if (defined($self->fbaResults()->[0])) {
+		$output->{tabs}->{main}->{content} .= "<tr><th>Objective value</th><td style='font-size:16px;border: 1px solid black;'>".$self->fbaResults()->[0]->objectiveValue()."</td></tr>\n";
+	}
+	$output->{tabs}->{main}->{content} .= "</table>\n";
+	my $index = 2;
+	my $tab = "tab-".$index;
+	my $headingsOne = ["Media compound","Compound name","Concentration","Min uptake","Max uptake"];
+        my $dataOne = [];
+	if (@{$self->media()->mediacompounds()} > 0) {
+		$index++;
+		foreach my $medcpd (@{$self->media()->mediacompounds()}) {
+                        push(@$dataOne, [
+				$medcpd->compound()->id(),
+				$medcpd->compound()->name(),
+				$medcpd->concentration(),
+				$medcpd->minFlux(),
+				$medcpd->maxFlux()
+                        ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Media"
+		};
+		push(@{$output->{tablist}},$tab);
+	}
+	if (@{$self->fbaReactionBounds()} > 0 || @{$self->fbaCompoundBounds()} > 0) {
+		$tab = "tab-".$index;
+		$index++;
+		$headingsOne = ["Variable ID","Definition","Type","Upper bound","Lower bound"];
+                $dataOne = [];
+		foreach my $bound (@{$self->fbaCompoundBounds()}) {
+                        push(@$dataOne, [
+                                $bound->modelCompound()->id(),
+                                $bound->modelCompound()->name(),
+                                $bound->variableType(),
+                                $bound->upperBound(),
+                                $bound->lowerBound()
+                        ]);
+		}
+		foreach my $bound (@{$self->fbaReactionBounds()}) {
+                        push(@$dataOne, [
+				$bound->modelReaction()->id(),
+				$bound->modelReaction()->definition(),
+				$bound->variableType(),
+				$bound->upperBound(),
+				$bound->lowerBound()
+                        ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Bounds"
+		};
+		push(@{$output->{tablist}},$tab);
+	}
+	if (@{$self->fbaConstraints()} > 0) {
+		$tab = "tab-".$index;
+		$index++;
+		$headingsOne = ["Name","Constraint"];
+                $dataOne = [];
+		foreach my $const (@{$self->fbaConstraints()}) {
+                        push(@$dataOne, [ $const->name(), $const->readableString() ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Constraints"
+		};
+		push(@{$output->{tablist}},$tab);
+	}
+	#Retrieving result
+	if (defined($self->fbaResults()->[0])) {
+		my $result = $self->fbaResults()->[0];
+		$tab = "tab-".$index;
+		$index++;
+		$headingsOne = ["Reaction ID","Definition","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
+                $dataOne = [];
+		foreach my $rxnflux (@{$result->fbaReactionVariables()}) {
+                        push(@$dataOne, [
+				$rxnflux->modelreaction()->id(),
+				$rxnflux->modelreaction()->definition(),
+				$rxnflux->variableType(),
+				$rxnflux->value(),
+				$rxnflux->lowerBound(),
+				$rxnflux->upperBound(),
+				$rxnflux->min(),
+				$rxnflux->max(),
+				$rxnflux->class()
+                        ]);
+		}
+		foreach my $rxnflux (@{$result->fbaBiomassVariables()}) {
+                        push(@$dataOne, [
+				$rxnflux->biomass()->id(),
+				$rxnflux->biomass()->definition(),
+				$rxnflux->variableType(),
+				$rxnflux->value(),
+				$rxnflux->lowerBound(),
+				$rxnflux->upperBound(),
+				$rxnflux->min(),
+				$rxnflux->max(),
+				$rxnflux->class()
+                        ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Reaction fluxes"
+		};
+		push(@{$output->{tablist}},$tab);
+		$tab = "tab-".$index;
+		$index++;
+		$headingsOne = ["Compound ID","Name","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
+                $dataOne = [];
+		foreach my $cpdflux (@{$result->fbaCompoundVariables()}) {
+                        push(@$dataOne, [
+				$cpdflux->modelcompound()->id(),
+				$cpdflux->modelcompound()->name(),
+				$cpdflux->variableType(),
+				$cpdflux->value(),
+				$cpdflux->lowerBound(),
+				$cpdflux->upperBound(),
+				$cpdflux->min(),
+				$cpdflux->max(),
+				$cpdflux->class()
+                        ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Compound fluxes"
+		};
+		push(@{$output->{tablist}},$tab);
+		if (@{$result->fbaPhenotypeSimultationResults()} > 0) {
+			$tab = "tab-".$index;
+			$index++;
+			$headingsOne = ["Label","Media","Addtl cpd","Gene KO","Observed growth","Simulated growth","Class"];
+                        $dataOne = [];
+			foreach my $pheno (@{$result->fbaPhenotypeSimultationResults()}) {
+				my $phenospec = $pheno->fbaPhenotypeSimulation();
+				my $genes = "";
+				my $addcpd = "";
+				for (my $i=0; $i < @{$phenospec->geneKOs()}; $i++) {
+					if (length($genes) > 0) {
+						$genes .= ";";
+					}
+					$genes .= $phenospec->geneKOs()->[$i]->id();
+				}
+				for (my $i=0; $i < @{$phenospec->additionalCpds()}; $i++) {
+					if (length($addcpd) > 0) {
+						$addcpd .= ";";
+					}
+					$addcpd .= $phenospec->additionalCpds()->[$i]->name();
+				}
+                                push(@$dataOne, [
+					$phenospec->label(),
+					$phenospec->media()->id(),
+					$addcpd,
+					$genes,
+					$phenospec->observedGrowthFraction(),
+					$pheno->simulatedGrowth()." (".$pheno->simulatedGrowthFraction().")",
+					$pheno->class()
+                                ]);
+			}
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Phenotype results"
+			};
+			push(@{$output->{tablist}},$tab);
+		}
+		if (@{$result->fbaPromResults()} > 0) {
+			$tab = "tab-".$index;
+			$index++;
+			$headingsOne = ["Objective fraction","Alpha","Beta"];
+                        $dataOne = [];
+			foreach my $promres (@{$result->fbaPromResults()}) {
+                                push($dataOne, [
+					$promres->objectFraction(),
+					$promres->alpha(),
+					$promres->beta()
+                                ]);
+			}
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "PROM results"
+			};
+			push(@{$output->{tablist}},$tab);
+		}
+		if (@{$result->fbaDeletionResults()} > 0) {
+			$tab = "tab-".$index;
+			$index++;
+			$headingsOne = ["Gene KOs","Growth fraction"];
+                        $dataOne = [];
+			foreach my $delres (@{$result->fbaDeletionResults()}) {
+				my $genes = "";
+				for (my $i=0; $i < @{$delres->genekos()}; $i++) {
+					if (length($genes) > 0) {
+						$genes .= ";";
+					}
+					$genes .= $delres->genekos()->[$i]->id();
+				}
+                                push(@$dataOne, [
+					$genes,
+					$delres->growthFraction()
+                                ]);
+			}
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Deletion results"
+			};
+			push(@{$output->{tablist}},$tab);
+		}
+		if (@{$result->minimalMediaResults()} > 0) {
+			$tab = "tab-".$index;
+			$index++;
+			$headingsOne = ["Media index","Essential nutrient","Compound ID","Name"];
+                        $dataOne = [];
+			my $mediaIndex = 0;
+			foreach my $minmed (@{$result->minimalMediaResults()}) {
+				foreach my $minmedcpd (@{$minmed->essentialNutrients()}) {
+                                        push(@$dataOne, [
+						$mediaIndex,
+						"Yes",
+						$minmedcpd->id(),
+						$minmedcpd->name()
+                                        ]);
+				}
+				foreach my $minmedcpd (@{$minmed->optionalNutrients()}) {
+                                        push(@$dataOne, [
+						$mediaIndex,
+						"No",
+						$minmedcpd->id(),
+						$minmedcpd->name()
+                                        ]);
+				}
+				$mediaIndex++;
+			}
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Minimal media"
+			};
+			push(@{$output->{tablist}},$tab);
+		}
+		if (@{$result->fbaMetaboliteProductionResults()} > 0) {
+			$tab = "tab-".$index;
+			$index++;
+			$headingsOne = ["Compound ID","Name","Maximum production"];
+                        $dataOne = [];
+			foreach my $metprod (@{$result->fbaMetaboliteProductionResults()}) {
+                                push(@$dataOne, [
+					$metprod->modelCompound()->id(),
+					$metprod->modelCompound()->name(),
+					$metprod->maximumProduction()
+                                ]);
+			}
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Compound production"
+			};
+			push(@{$output->{tablist}},$tab);
+		}
+	}
+	return $output;
 }
 
 __PACKAGE__->meta->make_immutable;

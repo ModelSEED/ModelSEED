@@ -17,7 +17,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::ModelReaction', weak_ref => 1,
 
 
 # ATTRIBUTES:
-has complex_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
+has complex_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has note => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
@@ -41,7 +41,7 @@ sub _type { return 'ModelReactionProtein'; }
 
 my $attributes = [
           {
-            'req' => 1,
+            'req' => 0,
             'printOrder' => 0,
             'name' => 'complex_uuid',
             'type' => 'ModelSEED::uuid',

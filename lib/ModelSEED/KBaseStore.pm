@@ -77,7 +77,7 @@ sub _mstypetrans {
 		Model => "Model",
 		GapfillingFormulation => "GapFill",
 		GapgenFormulation => "GapGen",
-		PROMModel => "PROMModel",
+		PROMModel => "PromConstraints",
 		Media => "Media"
 	};
 }
@@ -91,7 +91,7 @@ sub _wstypetrans {
 		Media => "Media",
 		GapFill => "GapfillingFormulation",
 		GapGen => "GapgenFormulation",
-		PROMModel => "PROMModel"
+		PromConstraints => "PROMModel",
 	};
 }
 #***********************************************************************************************************
@@ -153,6 +153,7 @@ sub get_object {
 		$object->{_kbaseWSMeta}->{ws} = $output->{metadata}->[7];
 		$object->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
 		$object->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];
+		$object->{_kbaseWSMeta}->{wsmeta} = $output->{metadata};
 	}
     #Adding object to cache
     if ($type ne "Media") {

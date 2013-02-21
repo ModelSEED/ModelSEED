@@ -312,7 +312,8 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"just print LP file"} = "0";
 	$form->parameters()->{"use database fields"} = "1";
 	$form->parameters()->{"REVERSE_USE;FORWARD_USE;REACTION_USE"} = "1";
-	$form->parameters()->{"CPLEX solver time limit"} = "3600";
+	$form->parameters()->{"CPLEX solver time limit"} = $self->timePerSolution();
+	$form->parameters()->{"Recursive MILP timeout"} = $self->totalTimeLimit();
 	$form->parameters()->{"Perform gap filling"} = "1";
 	$form->parameters()->{"Add DB reactions for gapfilling"} = "1";
 	$form->parameters()->{"Balanced reactions in gap filling only"} = $self->balancedReactionsOnly();
@@ -434,8 +435,13 @@ sub parseGapfillingResults {
 	my $outputHash = $fbaResults->outputfiles();
 	if (defined($outputHash->{"CompleteGapfillingOutput.txt"})) {
 		my $filedata = $outputHash->{"CompleteGapfillingOutput.txt"};
+		my $subopt = 0;
+		if (defined($outputHash->{"suboptimalSolutions.txt"})) {
+			$subopt = 1;
+		}
 		$self->createSolutionsFromArray({
-			data => $filedata
+			data => $filedata,
+			subopt => $subopt
 		});
 	}
 }
@@ -454,7 +460,7 @@ Description:
 
 sub createSolutionsFromArray {
     my $self = shift;
-    my $args = args(["data"], { model => $self->model }, @_ );
+    my $args = args(["data"], { model => $self->model,subopt => 0 }, @_ );
 	my $data = $args->{data};
 	my $mdl = $args->{model};
 	my $bio = $mdl->biochemistry();
@@ -467,7 +473,7 @@ sub createSolutionsFromArray {
 					if (length($solutionsArray->[$k]) > 0) {
 						my $count = 0;
 						my $rxnHash;
-						my $gfsolution = $self->add("gapfillingSolutions",{});
+						my $gfsolution = $self->add("gapfillingSolutions",{suboptimal => $args->{subopt}});
 						my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
 						for (my $j=0; $j < @{$subarray}; $j++) {
 							if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
