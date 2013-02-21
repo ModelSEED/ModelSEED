@@ -1030,67 +1030,65 @@ sub htmlComponents {
 	my $index = 2;
 	my $tab = "tab-".$index;
 	my $headingsOne = ["Media compound","Compound name","Concentration","Min uptake","Max uptake"];
+        my $dataOne = [];
 	if (@{$self->media()->mediacompounds()} > 0) {
 		$index++;
+		foreach my $medcpd (@{$self->media()->mediacompounds()}) {
+                        push(@$dataOne, [
+				$medcpd->compound()->id(),
+				$medcpd->compound()->name(),
+				$medcpd->concentration(),
+				$medcpd->minFlux(),
+				$medcpd->maxFlux()
+                        ]);
+		}
 		$output->{tabs}->{$tab} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
 			name => "Media"
 		};
-		foreach my $medcpd (@{$self->media()->mediacompounds()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$medcpd->compound()->id()."</td>".
-				"<td>".$medcpd->compound()->name()."</td>".
-				"<td>".$medcpd->concentration()."</td>".
-				"<td>".$medcpd->minFlux()."</td>".
-				"<td>".$medcpd->maxFlux()."</td>".
-			"</tr>";
-		}
-		$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
 		push(@{$output->{tablist}},$tab);
 	}
 	if (@{$self->fbaReactionBounds()} > 0 || @{$self->fbaCompoundBounds()} > 0) {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Variable ID","Definition","Type","Upper bound","Lower bound"];
-		$output->{tabs}->{$tab} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-			name => "Bounds"
-		};
+                $dataOne = [];
 		foreach my $bound (@{$self->fbaCompoundBounds()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$bound->modelCompound()->id()."</td>".
-				"<td>".$bound->modelCompound()->name()."</td>".
-				"<td>".$bound->variableType()."</td>".
-				"<td>".$bound->upperBound()."</td>".
-				"<td>".$bound->lowerBound()."</td>".
-			"</tr>";
+                        push(@$dataOne, [
+                                $bound->modelCompound()->id(),
+                                $bound->modelCompound()->name(),
+                                $bound->variableType(),
+                                $bound->upperBound(),
+                                $bound->lowerBound()
+                        ]);
 		}
 		foreach my $bound (@{$self->fbaReactionBounds()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$bound->modelReaction()->id()."</td>".
-				"<td>".$bound->modelReaction()->definition()."</td>".
-				"<td>".$bound->variableType()."</td>".
-				"<td>".$bound->upperBound()."</td>".
-				"<td>".$bound->lowerBound()."</td>".
-			"</tr>";
+                        push(@$dataOne, [
+				$bound->modelReaction()->id(),
+				$bound->modelReaction()->definition(),
+				$bound->variableType(),
+				$bound->upperBound(),
+				$bound->lowerBound()
+                        ]);
 		}
-		$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Bounds"
+		};
 		push(@{$output->{tablist}},$tab);
 	}
 	if (@{$self->fbaConstraints()} > 0) {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Name","Constraint"];
+                $dataOne = [];
+		foreach my $const (@{$self->fbaConstraints()}) {
+                        push(@$dataOne, [ $const->name(), $const->readableString() ]);
+		}
 		$output->{tabs}->{$tab} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
 			name => "Constraints"
 		};
-		foreach my $const (@{$self->fbaConstraints()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$const->name()."</td><td>".$const->readableString()."</td>".
-			"</tr>";
-		}
-		$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
 		push(@{$output->{tablist}},$tab);
 	}
 	#Retrieving result
@@ -1099,68 +1097,65 @@ sub htmlComponents {
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Reaction ID","Definition","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
-		$output->{tabs}->{$tab} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-			name => "Reaction fluxes"
-		};
+                $dataOne = [];
 		foreach my $rxnflux (@{$result->fbaReactionVariables()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$rxnflux->modelreaction()->id()."</td>".
-				"<td>".$rxnflux->modelreaction()->definition()."</td>".
-				"<td>".$rxnflux->variableType()."</td>".
-				"<td>".$rxnflux->value()."</td>".
-				"<td>".$rxnflux->lowerBound()."</td>".
-				"<td>".$rxnflux->upperBound()."</td>".
-				"<td>".$rxnflux->min()."</td>".
-				"<td>".$rxnflux->max()."</td>".
-				"<td>".$rxnflux->class()."</td>".
-			"</tr>";
+                        push(@$dataOne, [
+				$rxnflux->modelreaction()->id(),
+				$rxnflux->modelreaction()->definition(),
+				$rxnflux->variableType(),
+				$rxnflux->value(),
+				$rxnflux->lowerBound(),
+				$rxnflux->upperBound(),
+				$rxnflux->min(),
+				$rxnflux->max(),
+				$rxnflux->class()
+                        ]);
 		}
 		foreach my $rxnflux (@{$result->fbaBiomassVariables()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$rxnflux->biomass()->id()."</td>".
-				"<td>".$rxnflux->biomass()->definition()."</td>".
-				"<td>".$rxnflux->variableType()."</td>".
-				"<td>".$rxnflux->value()."</td>".
-				"<td>".$rxnflux->lowerBound()."</td>".
-				"<td>".$rxnflux->upperBound()."</td>".
-				"<td>".$rxnflux->min()."</td>".
-				"<td>".$rxnflux->max()."</td>".
-				"<td>".$rxnflux->class()."</td>".
-			"</tr>";
-		}	
-		$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
+                        push(@$dataOne, [
+				$rxnflux->biomass()->id(),
+				$rxnflux->biomass()->definition(),
+				$rxnflux->variableType(),
+				$rxnflux->value(),
+				$rxnflux->lowerBound(),
+				$rxnflux->upperBound(),
+				$rxnflux->min(),
+				$rxnflux->max(),
+				$rxnflux->class()
+                        ]);
+		}
+		$output->{tabs}->{$tab} = {
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+			name => "Reaction fluxes"
+		};
 		push(@{$output->{tablist}},$tab);
 		$tab = "tab-".$index;
 		$index++;
 		$headingsOne = ["Compound ID","Name","Variable","Value","Lower bound","Upper bound","Min","Max","Class"];
+                $dataOne = [];
+		foreach my $cpdflux (@{$result->fbaCompoundVariables()}) {
+                        push(@$dataOne, [
+				$cpdflux->modelcompound()->id(),
+				$cpdflux->modelcompound()->name(),
+				$cpdflux->variableType(),
+				$cpdflux->value(),
+				$cpdflux->lowerBound(),
+				$cpdflux->upperBound(),
+				$cpdflux->min(),
+				$cpdflux->max(),
+				$cpdflux->class()
+                        ]);
+		}
 		$output->{tabs}->{$tab} = {
-			content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+                        content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
 			name => "Compound fluxes"
 		};
-		foreach my $cpdflux (@{$result->fbaCompoundVariables()}) {
-			$output->{tabs}->{$tab}->{content} .= '<tr>'.
-				"<td>".$cpdflux->modelcompound()->id()."</td>".
-				"<td>".$cpdflux->modelcompound()->name()."</td>".
-				"<td>".$cpdflux->variableType()."</td>".
-				"<td>".$cpdflux->value()."</td>".
-				"<td>".$cpdflux->lowerBound()."</td>".
-				"<td>".$cpdflux->upperBound()."</td>".
-				"<td>".$cpdflux->min()."</td>".
-				"<td>".$cpdflux->max()."</td>".
-				"<td>".$cpdflux->class()."</td>".
-			"</tr>";
-		}
-		$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
 		push(@{$output->{tablist}},$tab);
 		if (@{$result->fbaPhenotypeSimultationResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Label","Media","Addtl cpd","Gene KO","Observed growth","Simulated growth","Class"];
-			$output->{tabs}->{$tab} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-				name => "Phenotype results"
-			};
+                        $dataOne = [];
 			foreach my $pheno (@{$result->fbaPhenotypeSimultationResults()}) {
 				my $phenospec = $pheno->fbaPhenotypeSimulation();
 				my $genes = "";
@@ -1177,45 +1172,45 @@ sub htmlComponents {
 					}
 					$addcpd .= $phenospec->additionalCpds()->[$i]->name();
 				}
-				$output->{tabs}->{$tab}->{content} .= '<tr>'.
-					"<td>".$phenospec->label()."</td>".
-					"<td>".$phenospec->media()->id()."</td>".
-					"<td>".$addcpd."</td>".
-					"<td>".$genes."</td>".
-					"<td>".$phenospec->observedGrowthFraction()."</td>".
-					"<td>".$pheno->simulatedGrowth()." (".$pheno->simulatedGrowthFraction().")</td>".
-					"<td>".$pheno->class()."</td>".
-				"</tr>";
+                                push(@$dataOne, [
+					$phenospec->label(),
+					$phenospec->media()->id(),
+					$addcpd,
+					$genes,
+					$phenospec->observedGrowthFraction(),
+					$pheno->simulatedGrowth()." (".$pheno->simulatedGrowthFraction().")",
+					$pheno->class()
+                                ]);
 			}
-			$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Phenotype results"
+			};
 			push(@{$output->{tablist}},$tab);
 		}
 		if (@{$result->fbaPromResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Objective fraction","Alpha","Beta"];
+                        $dataOne = [];
+			foreach my $promres (@{$result->fbaPromResults()}) {
+                                push($dataOne, [
+					$promres->objectFraction(),
+					$promres->alpha(),
+					$promres->beta()
+                                ]);
+			}
 			$output->{tabs}->{$tab} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
 				name => "PROM results"
 			};
-			foreach my $promres (@{$result->fbaPromResults()}) {
-				$output->{tabs}->{$tab}->{content} .= '<tr>'.
-					"<td>".$promres->objectFraction()."</td>".
-					"<td>".$promres->alpha()."</td>".
-					"<td>".$promres->beta()."</td>".
-				"</tr>";
-			}
-			$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
 			push(@{$output->{tablist}},$tab);
 		}
 		if (@{$result->fbaDeletionResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Gene KOs","Growth fraction"];
-			$output->{tabs}->{$tab} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-				name => "Deletion results"
-			};
+                        $dataOne = [];
 			foreach my $delres (@{$result->fbaDeletionResults()}) {
 				my $genes = "";
 				for (my $i=0; $i < @{$delres->genekos()}; $i++) {
@@ -1224,61 +1219,64 @@ sub htmlComponents {
 					}
 					$genes .= $delres->genekos()->[$i]->id();
 				}
-				$output->{tabs}->{$tab}->{content} .= '<tr>'.
-					"<td>".$genes."</td>".
-					"<td>".$delres->growthFraction()."</td>".
-				"</tr>";
+                                push(@$dataOne, [
+					$genes,
+					$delres->growthFraction()
+                                ]);
 			}
-			$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Deletion results"
+			};
 			push(@{$output->{tablist}},$tab);
 		}
 		if (@{$result->minimalMediaResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Media index","Essential nutrient","Compound ID","Name"];
-			$output->{tabs}->{$tab} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-				name => "Minimal media"
-			};
+                        $dataOne = [];
 			my $mediaIndex = 0;
 			foreach my $minmed (@{$result->minimalMediaResults()}) {
 				foreach my $minmedcpd (@{$minmed->essentialNutrients()}) {
-					$output->{tabs}->{$tab}->{content} .= '<tr>'.
-						"<td>".$mediaIndex."</td>".
-						"<td>Yes</td>".
-						"<td>".$minmedcpd->id()."</td>".
-						"<td>".$minmedcpd->name()."</td>".
-					"</tr>";
+                                        push(@$dataOne, [
+						$mediaIndex,
+						"Yes",
+						$minmedcpd->id(),
+						$minmedcpd->name()
+                                        ]);
 				}
 				foreach my $minmedcpd (@{$minmed->optionalNutrients()}) {
-					$output->{tabs}->{$tab}->{content} .= '<tr>'.
-						"<td>".$mediaIndex."</td>".
-						"<td>No</td>".
-						"<td>".$minmedcpd->id()."</td>".
-						"<td>".$minmedcpd->name()."</td>".
-					"</tr>";
+                                        push(@$dataOne, [
+						$mediaIndex,
+						"No",
+						$minmedcpd->id(),
+						$minmedcpd->name()
+                                        ]);
 				}
 				$mediaIndex++;
 			}
-			$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
+			$output->{tabs}->{$tab} = {
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+				name => "Minimal media"
+			};
 			push(@{$output->{tablist}},$tab);
 		}
 		if (@{$result->fbaMetaboliteProductionResults()} > 0) {
 			$tab = "tab-".$index;
 			$index++;
 			$headingsOne = ["Compound ID","Name","Maximum production"];
+                        $dataOne = [];
+			foreach my $metprod (@{$result->fbaMetaboliteProductionResults()}) {
+                                push(@$dataOne, [
+					$metprod->modelCompound()->id(),
+					$metprod->modelCompound()->name(),
+					$metprod->maximumProduction()
+                                ]);
+			}
 			$output->{tabs}->{$tab} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
 				name => "Compound production"
 			};
-			foreach my $metprod (@{$result->fbaMetaboliteProductionResults()}) {
-				$output->{tabs}->{$tab}->{content} .= '<tr>'.
-					"<td>".$metprod->modelCompound()->id()."</td>".
-					"<td>".$metprod->modelCompound()->name()."</td>".
-					"<td>".$metprod->maximumProduction()."</td>".
-				"</tr>";
-			}
-			$output->{tabs}->{$tab}->{content} .= '</table>'."\n";
 			push(@{$output->{tablist}},$tab);
 		}
 	}

@@ -1244,46 +1244,39 @@ sub htmlComponents {
 			}
 			push(@{$output->{tablist}},$id);
 			$output->{tabs}->{$id} = {
-				content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$subobject->{headings}}).'</th></tr>'."\n",
+                                content => ModelSEED::utilities::PRINTHTMLTABLE( $subobject->{headings}, $subobject->{data}, 'data-table'),
 				name => $name
 			};
-			foreach my $row (@{$subobject->{data}}) {
-				$output->{tabs}->{$id}->{content} .= '<tr><td>'.join("</td><td>",@{$row}).'</td></tr>'."\n";
-			}
-			$output->{tabs}->{$id}->{content} .= '</table>'."\n";
 		}
 	}
 	push(@{$output->{tablist}},("tab-5","tab-6","tab-7"));
 	my $headingsOne = ["Biomass","DNA","RNA","Protein","Cellwall","Lipid","Cofactor","Energy"];
 	my $headingsTwo = ["Biomass","Model compound","Name","Compartment","Coefficient"];
-	my $tableOne = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n";
-	my $tableTwo = '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsTwo}).'</th></tr>'."\n";
+        my $dataOne = [];
+        my $dataTwo = [];
 	my $biomasses = $self->biomasses();
 	foreach my $bio (@{$biomasses}) {
-		$tableOne .= '<tr><td>'.$bio->id()."</td><td>".$bio->dna()."</td><td>".$bio->rna()."</td><td>".$bio->protein()."</td><td>".$bio->cellwall()."</td><td>".$bio->lipid()."</td><td>".$bio->cofactor()."</td><td>".$bio->energy()."</td></tr>";
+                push(@$dataOne, [ $bio->id(), $bio->dna(), $bio->rna(), $bio->protein(), $bio->cellwall(), $bio->lipid(), $bio->cofactor(), $bio->energy() ]);
 		my $biocpds = $bio->biomasscompounds();
 		foreach my $biocpd (@{$biocpds}) {
 			if ($biocpd->coefficient() < 0) {
-				$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->name()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+                                push(@$dataTwo, [ $bio->id(), $biocpd->modelcompound()->id(), $biocpd->modelcompound()->name(), $biocpd->modelcompound()->modelcompartment()->id(), $biocpd->coefficient() ]);
 			}
 		}
 		foreach my $biocpd (@{$biocpds}) {
 			if ($biocpd->coefficient() >= 0) {
-				$tableTwo .= '<tr><td>'.$bio->id()."</td><td>".$biocpd->modelcompound()->id()."</td><td>".$biocpd->modelcompound()->name()."</td><td>".$biocpd->modelcompound()->modelcompartment()->id()."</td><td>".$biocpd->coefficient()."</td></tr>";
+                                push(@$dataTwo, [ $bio->id(), $biocpd->modelcompound()->id(), $biocpd->modelcompound()->name(), $biocpd->modelcompound()->modelcompartment()->id(), $biocpd->coefficient() ]);
 			}
 		}
 	}
-	$tableOne .= '</table>'."\n";
-	$tableTwo .= '</table>'."\n";
+	my $tableOne = ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' );
+	my $tableTwo = ModelSEED::utilities::PRINTHTMLTABLE( $headingsTwo, $dataTwo, 'data-table' );
 	$output->{tabs}->{"tab-5"} = {
 		content => $tableOne."<br>".$tableTwo,
 		name => "Biomass reactions"
 	};
 	$headingsOne = ["Integrated","Gapfill simulation","Media","Solution","Cost","Gapfilled reaction","Biomass removal","Media supplement"];
-	$output->{tabs}->{"tab-6"} = {
-		content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-		name => "Gapfilling"
-	};
+        $dataOne = [];
 	foreach my $gf (@{$self->integratedGapfillings()}) {
 		if (defined($gf->gapfillingSolutions()->[0])) {
 			my $count = 0;
@@ -1313,17 +1306,11 @@ sub htmlComponents {
 				if ($sol->integrated() == 1) {
 					$integrated	= "Yes";
 				}
-				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-					"<td>".$integrated."</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
-					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
-				"</tr>";
+                                push(@$dataOne, [ $integrated, $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-			$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-				"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
-				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
-			"</tr>";
+                    push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	foreach my $gf (@{$self->unintegratedGapfillings()}) {
@@ -1351,25 +1338,19 @@ sub htmlComponents {
 					}
 					$bios .= $bio->id().":".$bio->name();
 				}
-				$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-					"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
-					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
-				"</tr>";
+                                push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-			$output->{tabs}->{"tab-6"}->{content} .= '<tr>'.
-				"<td>No</td><td>".$gf->uuid()."</td><td>".$gf->fbaFormulation()->media()->uuid()."</td>".
-				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
-			"</tr>";
+                        push(@$dataOne, [ "No", $gf->uuid(), $gf->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
 		}
 	}
-	$output->{tabs}->{"tab-6"}->{content} .= '</table>'."\n";
-	$headingsOne = ["Gapgen simulation","Media","Solution","Cost","Removed reaction","Biomass addition","Media removal"];
-	$output->{tabs}->{"tab-7"} = {
-		content => '<table class="tableWithFloatingHeader">'."\n".'<tr><th>'.join("</th><th>",@{$headingsOne}).'</th></tr>'."\n",
-		name => "Gapgen"
+	$output->{tabs}->{"tab-6"} = {
+		content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+		name => "Gapfilling"
 	};
+	$headingsOne = ["Integrated","Gapgen simulation","Media","Solution","Cost","Removed reaction","Biomass addition","Media removal"];
+        $dataOne = [];
 	foreach my $gg (@{$self->integratedGapgens()}) {
 		if (defined($gg->gapgenSolutions()->[0])) {
 			my $count = 0;
@@ -1399,17 +1380,11 @@ sub htmlComponents {
 				if ($sol->integrated() == 1) {
 					$integrated	= "Yes";
 				}
-				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-					"<td>".$integrated."</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
-					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
-				"</tr>";
+                                push(@$dataOne, [ $integrated, $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-			$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-				"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
-				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
-			"</tr>";
+                        push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
 		}
 	}
 	foreach my $gg (@{$self->unintegratedGapgens()}) {
@@ -1437,20 +1412,17 @@ sub htmlComponents {
 					}
 					$bios .= $bio->id().":".$bio->name();
 				}
-				$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-					"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
-					"<td>".$count."</td><td>".$sol->solutionCost()."</td><td>".$rxns."</td><td>".$bios."</td><td>".$medias."</td>".
-				"</tr>";
+                                push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), $count, $sol->solutionCost(), $rxns, $bios, $medias ]);
 				$count++;
 			}
 		} else {
-			$output->{tabs}->{"tab-7"}->{content} .= '<tr>'.
-				"<td>No</td><td>".$gg->uuid()."</td><td>".$gg->fbaFormulation()->media()->uuid()."</td>".
-				"<td>None</td><td>None</td><td>None</td><td>None</td><td>None</td>".
-			"</tr>";
+                        push(@$dataOne, [ "No", $gg->uuid(), $gg->fbaFormulation()->media()->uuid(), "None", "None", "None", "None", "None" ]);
 		}
 	}
-	$output->{tabs}->{"tab-7"}->{content} .= '</table>'."\n";
+	$output->{tabs}->{"tab-7"} = {
+		content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
+		name => "Gapgen"
+	};
 	return $output;
 }
 

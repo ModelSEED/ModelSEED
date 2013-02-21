@@ -423,6 +423,70 @@ sub PRINTTABLESPARSE {
     }
 }
 
+=head3 PRINTHTMLTABLE
+
+Definition:
+    string = ModelSEED::utilities::PRINTHTMLTABLE( array[string]:headers, array[array[string]]:data, string:table_class );
+Description:
+    Utility method to print html table
+Example:
+    my $headers = ['Column 1', 'Column 2', 'Column 3'];
+    my $data = [['1.1', '1.2', '1.3'], ['2.1', '2.2', '2.3'], ['3.1', '3.2', '3.3']];
+    my $html = ModelSEED::utilities::PRINTHTMLTABLE( $headers, $data, 'my-class');
+
+=cut
+
+sub PRINTHTMLTABLE {
+    my ($headers, $data, $class) = @_;
+
+    # do some checking
+    my $error = 0;
+    unless (defined($headers) && ref($headers) eq 'ARRAY') {
+        $error = 1;
+    }
+
+    if (defined($data) && ref($data) eq 'ARRAY') {
+        foreach my $row (@$data) {
+            unless (defined($row) && ref($row) eq 'ARRAY' && scalar @$row == scalar @$headers) {
+                $error = 1;
+            }
+        }
+    } else {
+        $error = 1;
+    }
+
+    if ($error) {
+        ERROR("Call to PRINTHTMLTABLE failed: incorrect arguments and/or argument structure");
+    }
+
+    # now create the table
+    my $html = [];
+    push($html, '<table' . (defined($class) ? ' class="' . $class . '"' : "") . ">");
+    push($html, '<thead>');
+    push($html, '<tr>');
+
+    foreach my $header (@$headers) {
+        push($html, '<th>' . $header . '</th>');
+    }
+
+    push($html, '</tr>');
+    push($html, '</thead>');
+    push($html, '<tbody>');
+
+    foreach my $row (@$data) {
+        push($html, '<tr>');
+        foreach my $cell (@$row) {
+            push($html, '<td>' . $cell . '</td>');
+        }
+        push($html, '</tr>');
+    }
+
+    push($html, '</tbody>');
+    push($html, '</table>');
+
+    return join("\n", @$html);
+}
+
 =head3 MODELSEEDCORE
 
 Definition:
