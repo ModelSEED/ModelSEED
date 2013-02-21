@@ -461,28 +461,28 @@ sub PRINTHTMLTABLE {
 
     # now create the table
     my $html = [];
-    push($html, '<table' . (defined($class) ? ' class="' . $class . '"' : "") . ">");
-    push($html, '<thead>');
-    push($html, '<tr>');
+    push(@$html, '<table' . (defined($class) ? ' class="' . $class . '"' : "") . ">");
+    push(@$html, '<thead>');
+    push(@$html, '<tr>');
 
     foreach my $header (@$headers) {
-        push($html, '<th>' . $header . '</th>');
+        push(@$html, '<th>' . $header . '</th>');
     }
 
-    push($html, '</tr>');
-    push($html, '</thead>');
-    push($html, '<tbody>');
+    push(@$html, '</tr>');
+    push(@$html, '</thead>');
+    push(@$html, '<tbody>');
 
     foreach my $row (@$data) {
-        push($html, '<tr>');
+        push(@$html, '<tr>');
         foreach my $cell (@$row) {
-            push($html, '<td>' . $cell . '</td>');
+            push(@$html, '<td>' . $cell . '</td>');
         }
-        push($html, '</tr>');
+        push(@$html, '</tr>');
     }
 
-    push($html, '</tbody>');
-    push($html, '</table>');
+    push(@$html, '</tbody>');
+    push(@$html, '</table>');
 
     return join("\n", @$html);
 }
