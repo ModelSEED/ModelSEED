@@ -482,6 +482,9 @@ sub createJobDirectory {
 	}
 	#Creating FBA experiment file
 	my $fbaExpFile = $self->setupFBAExperiments();
+	if ($fbaExpFile ne "none") {
+		$optMetabolite = 0;
+	}
 	#Setting parameters
 	my $parameters = {
 		"perform MFA" => 1,
