@@ -1327,7 +1327,7 @@ sub htmlComponents {
 		}
 	}
 	foreach my $gf (@{$self->unintegratedGapfillings()}) {
-		if (defined($gf->gapfillingSolutions()->[0])) {
+		if (defined($gf) && defined($gf->gapfillingSolutions()->[0])) {
 			my $count = 0;
 			foreach my $sol (@{$gf->gapfillingSolutions()}) {
 				my $rxns = "";
@@ -2237,9 +2237,6 @@ sub computeNetworkDistances {
 					$tbl->{data}->[$i]->[$j+1] = 0;
 				    } else {
 					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
-					if (!defined($tbl->{data}->[$i]->[$j+1])) {
-						$tbl->{data}->[$i]->[$j+1] = -1;
-					}
 				    }
 				} elsif ($args->{roles} == 1) {
 				        my @roles1 = @{$rxn2roles{$rxns->[$i]->id()}};
@@ -2255,9 +2252,6 @@ sub computeNetworkDistances {
 							    }
 							} else {
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
-							}
-							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-							    $tbl->{data}->[$indexOne]->[$indexTwo] = -1;
 							}
 						}
 					}
@@ -2278,13 +2272,17 @@ sub computeNetworkDistances {
 							} else {
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 							}
-							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-							    $tbl->{data}->[$indexOne]->[$indexTwo] = -1;
-							}
 						}
 					}
 				}
 			}
+		}
+		for (my $i=0; $i < @{$tbl->{data}}; $i++) {
+		    for (my $j=0; $j < @{$tbl->{data}->[$i]}; $j++) {
+			if (!defined($tbl->{data}->[$i]->[$j])) {
+			    $tbl->{data}->[$i]->[$j] = -1;
+			}
+		    }
 		}
 	} else {
 		my $cpds = $self->modelcompounds();
