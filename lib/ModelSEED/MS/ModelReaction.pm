@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::ModelReaction;
 package ModelSEED::MS::ModelReaction;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities qw( args error );
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ModelReaction';
 #***********************************************************************************************************
@@ -321,6 +321,9 @@ sub setGPRFromArray {
     my $args = args(["gpr"],{}, @_);
 	my $anno = $self->parent()->annotation();
 	$self->modelReactionProteins([]);
+	foreach my $prot (@{$self->modelReactionProteins()}) {
+		$self->remove("modelReactionProteins",$prot);
+	}
 	for (my $i=0; $i < @{$args->{gpr}}; $i++) {
     	if (defined($args->{gpr}->[$i]) && ref($args->{gpr}->[$i]) eq "ARRAY") {
 	    	my $prot = $self->add("modelReactionProteins",{
@@ -337,7 +340,7 @@ sub setGPRFromArray {
 			    	});
 		    		for (my $k=0; $k < @{$args->{gpr}->[$i]->[$j]}; $k++) {
 		    			if (defined($args->{gpr}->[$i]->[$j]->[$k])) {
-		    				my $ftr = $anno->queryObjects("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
+		    				my $ftr = $anno->queryObject("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
 		    				if (!defined($ftr)) {
 		    					error("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!");
 							}

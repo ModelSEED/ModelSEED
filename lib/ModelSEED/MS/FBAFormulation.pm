@@ -1197,11 +1197,11 @@ sub htmlComponents {
 			$headingsOne = ["Objective fraction","Alpha","Beta"];
                         $dataOne = [];
 			foreach my $promres (@{$result->fbaPromResults()}) {
-                                push($dataOne, [
-					$promres->objectFraction(),
-					$promres->alpha(),
-					$promres->beta()
-                                ]);
+            	push(@{$dataOne},[
+            		$promres->objectFraction(),
+            		$promres->alpha(),
+            		$promres->beta()
+            	]);    
 			}
 			$output->{tabs}->{$tab} = {
                                 content => ModelSEED::utilities::PRINTHTMLTABLE( $headingsOne, $dataOne, 'data-table' ),
