@@ -30,7 +30,7 @@ This also works when importing by a given ID. The current available sources are:
     "RAST" (rast.nmpdr.org) - Note that listing is currently not available with this.
     "KBASE" (kbase.us) - Systems Biology Knowledgebase
 
-To import an annotated genome, supply the genome's ID, the alias that
+To import an annotated genome, supply the genome\'s ID, the alias that
 you would like to save it to and a mapping object to use:
     
     \$ ms import annotation 83333.1 ecoli -m main
