@@ -276,6 +276,7 @@ sub createModel {
 					});
 					for (my $k=0; $k < @{$gpr->[$m]->[$j]}; $k++) {
 						my $ftrID = $gpr->[$m]->[$j]->[$k];
+						next if !$ftrID;
 						my $ftrObj = $anno->getObjectByAlias("features",$ftrID,"SEED") if $anno->getObject("aliasSets",{name=>"SEED",attribute=>"features"});
 						if (!defined($ftrObj)) {
 							$ftrObj = $anno->queryObject("features",{
