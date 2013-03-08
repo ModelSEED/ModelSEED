@@ -678,7 +678,8 @@ sub addReactionFromHash {
 		deltaG => $arguments->{deltag}->[0],
 		deltaGErr => $arguments->{deltagerr}->[0],
 		status => "OK",
-		thermoReversibility => "="
+		thermoReversibility => "=",
+		defaultProtons => '0.0'
 	});
 	# Attach biochemistry object to reaction object
 	$rxn->parent($self);
