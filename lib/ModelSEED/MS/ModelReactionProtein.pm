@@ -23,9 +23,9 @@ has exchangeGPRString => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 
 sub _buildgprString {
 	my ($self) = @_;
 	if (@{$self->modelReactionProteinSubunits()} == 0) {
-		if (length($self->note()) > 0) {
-			return $self->note();
-		}
+		#if (length($self->note()) > 0) {
+		#	return $self->note();
+		#}
 		return "Unknown";
 	}
 	my $gpr = "";
