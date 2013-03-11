@@ -6,11 +6,11 @@ use File::Path;
 use ModelSEED::Client::SAP;
 
 my $directory = $ARGV[0];
-my $genomeHash = $sapObject->all_genomes({
+my $sap = ModelSEED::Client::SAP->new();
+my $genomeHash = $sap->all_genomes({
 	-complete => 1,
 	-prokaryotic => 1
 });
-my $sap = ModelSEED::Client::SAP->new();
 my $count = 0;
 foreach my $genome (keys(%{$genomeHash})) {
 	print "Processing ".$count." ".$genome." of ".keys(%{$genomeHash})."\n";
