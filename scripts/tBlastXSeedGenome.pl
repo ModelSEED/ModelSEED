@@ -41,24 +41,24 @@ if (defined($genomeHash->{$genome})) {
 	}
 	close(THREE);
 	system("/vol/rast-bcr/2010-1124/linux-rhel5-x86_64/bin/blastall -i ".$directory."/".$genome."/query -d ".$directory."/".$genome."/fasta -p tblastx -FF -e 1.0e-5 -m 8 -o ".$directory."/".$genome."/query.out");
-	my $output = [];
-	open (FOUR, "<", $directory."/".$genome."/query.out");
-	while (my $Line = <FOUR>) {
-		$Line =~ s/\r//;
-		chomp($Line);
-		my $lineArray = [split(/\t/,$Line)];
-		if (defined($lineArray->[11])) {
-			$results->{$query->[$i]}->{$lineArray->[1]} = {
-				identity => $lineArray->[2],
-				"length" => $lineArray->[3],
-				qstart => $lineArray->[6],
-				qend => $lineArray->[7],
-				tstart => $lineArray->[8],
-				tend => $lineArray->[9],
-				evalue => $lineArray->[10],
-				bitscore => $lineArray->[11],
-			}
-		}
-	}
-	close(FOUR);
+#	my $output = [];
+#	open (FOUR, "<", $directory."/".$genome."/query.out");
+#	while (my $Line = <FOUR>) {
+#		$Line =~ s/\r//;
+#		chomp($Line);
+#		my $lineArray = [split(/\t/,$Line)];
+#		if (defined($lineArray->[11])) {
+#			$results->{$query->[$i]->[0]}->{$lineArray->[1]} = {
+#				identity => $lineArray->[2],
+#				"length" => $lineArray->[3],
+#				qstart => $lineArray->[6],
+#				qend => $lineArray->[7],
+#				tstart => $lineArray->[8],
+#				tend => $lineArray->[9],
+#				evalue => $lineArray->[10],
+#				bitscore => $lineArray->[11],
+#			}
+#		}
+#	}
+#	close(FOUR);
 }
