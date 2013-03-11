@@ -15,7 +15,7 @@ my $count = 0;
 foreach my $genome (keys(%{$genomeHash})) {
 	print "Processing ".$count." ".$genome." of ".keys(%{$genomeHash})."\n";
 	$count++;
-	if (-e $directory."/".$genome."/fasta.nsq") {
+	if (!-e $directory."/".$genome."/fasta.nsq") {
 		my $genomeHash = $sap->genome_contigs({
 			-ids => [$genome]
 		});
