@@ -2,6 +2,7 @@
 $|++;
 use strict;
 use SeedUtils;
+use File::Path;
 use ModelSEED::Client::SAP;
 
 my $genome = $ARGV[0];
