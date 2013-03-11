@@ -6,41 +6,42 @@ use ModelSEED::Client::SAP;
 
 my $genome = $ARGV[0];
 my $directory = $ARGV[1];
-my $queryfile = $ARGV[1];
+my $queryfile = $ARGV[2];
 my $sap = ModelSEED::Client::SAP->new();
 my $genomeHash = $sap->genome_contigs({
 	-ids => [$genome]
 });
 my $query = [];
-open (my $fh, "<", $queryfile);
-while (my $Line = <$fh>) {
+open (ONE, "<", $queryfile);
+while (my $Line = <ONE>) {
 	$Line =~ s/\r//;
 	chomp($Line);
-	push(@{$query},$Line);
+	push(@{$query},[split(/\t/,$Line)]);
 }
-close($fh);
+close(ONE);
 my $results;
 if (defined($genomeHash->{$genome})) {
 	my $contigHash = $sap->contig_sequences({
 		-ids => $genomeHash->{$genome}
 	});
 	File::Path::mkpath $directory."/".$genome."/";
-	open ( my $fh, ">", $directory."/".$genome."/fasta");
+	open ( TWO, ">", $directory."/".$genome."/fasta");
 	foreach my $contig (keys(%{$contigHash})) {
 		my $fastaString = SeedUtils::create_fasta_record($contig,0,$contigHash->{$contig});
-		print $fh $fastaString;
+		print TWO $fastaString;
 	}
-	close($fh);
-	system("formatdb -i ".$directory."/".$genome."/fasta -p F");   
-	for (my $i=0; $i < @{$query}; $i++) {
+	close(TWO);
+	system("formatdb -i ".$directory."/".$genome."/fasta -p F"); 
+	for (my $i=0; $i < 1; $i++) {
+	#for (my $i=0; $i < @{$query}; $i++) {
 		my $fastaString = SeedUtils::create_fasta_record("Sequence ".$i,undef, $query->[$i]);
-		open( my $fh, ">".$directory."/".$genome."/query");
-		print $fh  $fastaString;
-		close($fh);
+		open(THREE, ">".$directory."/".$genome."/query");
+		print THREE  $fastaString;
+		close(THREE);
 		system("/vol/rast-bcr/2010-1124/linux-rhel5-x86_64/bin/blastall -i ".$directory."/".$genome."/query -d ".$directory."/".$genome."/fasta -p tblastx -FF -e 1.0e-5 -m 8 -o ".$directory."/".$genome."/query.out");
 		my $output = [];
-		open (my $fh, "<", $directory."/".$genome."/query-".$i.".out");
-		while (my $Line = <$fh>) {
+		open (FOUR, "<", $directory."/".$genome."/query-".$i.".out");
+		while (my $Line = <FOUR>) {
 			$Line =~ s/\r//;
 			chomp($Line);
 			my $lineArray = [split(/\t/,$Line)];
@@ -57,6 +58,6 @@ if (defined($genomeHash->{$genome})) {
 				}
 			}
 		}
-		close($fh);
+		close(FOUR);
 	}
 }
