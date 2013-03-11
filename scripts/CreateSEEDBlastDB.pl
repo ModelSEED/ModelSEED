@@ -11,8 +11,10 @@ my $genomeHash = $sapObject->all_genomes({
 	-prokaryotic => 1
 });
 my $sap = ModelSEED::Client::SAP->new();
+my $count = 0;
 foreach my $genome (keys(%{$genomeHash})) {
-	print "Processing ".$genome."\n";
+	print "Processing ".$count." ".$genome." of ".keys(%{$genomeHash})."\n";
+	$count++;
 	if (-e $directory."/".$genome."/fasta.nsq") {
 		my $genomeHash = $sap->genome_contigs({
 			-ids => [$genome]
