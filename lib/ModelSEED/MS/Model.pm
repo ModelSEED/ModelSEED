@@ -1327,7 +1327,7 @@ sub htmlComponents {
 		}
 	}
 	foreach my $gf (@{$self->unintegratedGapfillings()}) {
-		if (defined($gf) && defined($gf->gapfillingSolutions()->[0])) {
+		if (defined($gf->gapfillingSolutions()->[0])) {
 			my $count = 0;
 			foreach my $sol (@{$gf->gapfillingSolutions()}) {
 				my $rxns = "";
@@ -2064,6 +2064,7 @@ sub computeNetworkDistances {
 	my $args = args([], { reactions => 0, roles => 0, genes => 0 }, @_);
 	my $input = {};
 	my $tbl = {headings => ["Compounds"],data => []};
+	$tbl->{detail} = [] if $args->{detail};
 	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
 		$input->{reactions} = 1;
 		$tbl = {headings => ["Reactions"],data => []};
@@ -2082,9 +2083,8 @@ sub computeNetworkDistances {
     for (my $i=0; $i < @{$list}; $i++) {
 	my $cpd = $biochemistry->getObjectByAlias("compounds",$list->[$i],"ModelSEED");
 	if (!defined($cpd)) {
-            print "Could not find ".$list->[$i]."!\n";
+            print STDERR "Could not find ".$list->[$i]."!\n";
 	} else {
-            print "Cofactor found: ".$cpd->id()."\n";
             $cpd->isCofactor(1);
 	}
     }
@@ -2128,7 +2128,6 @@ sub computeNetworkDistances {
                         my $rgtTwo = $rgts->[$m];
                         if ($rgtTwo->compound()->id() eq $pair->[1]) {
                             if ($rgt->coefficient()*$rgtTwo->coefficient() < 0) {
-                                print "Cofactor set in reaction ".$rxn->id()."\n";
                                 $rgt->isCofactor(1);
                                 $rgtTwo->isCofactor(1);
                             }
@@ -2235,8 +2234,16 @@ sub computeNetworkDistances {
 				if ($args->{reactions} == 1) {
 				    if ($i == $j) {
 					$tbl->{data}->[$i]->[$j+1] = 0;
+					if ($args->{detail}) {
+					    my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+					    $tbl->{data}->[$i]->[$j+1] .= "; @vs" if @vs > 0;
+					}
 				    } else {
 					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+					if ($args->{detail}) {
+					    my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+					    $tbl->{data}->[$i]->[$j+1] .= "; @vs" if @vs > 0;
+					}
 				    }
 				} elsif ($args->{roles} == 1) {
 				        my @roles1 = @{$rxn2roles{$rxns->[$i]->id()}};
@@ -2249,9 +2256,17 @@ sub computeNetworkDistances {
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
 							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+								if ($args->{detail}) {
+								    my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+								}
 							    }
 							} else {
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    if ($args->{detail}) {
+								my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+							    }
 							}
 						}
 					}
@@ -2268,9 +2283,17 @@ sub computeNetworkDistances {
 							    my $path_length = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
 							    if (defined $path_length && ($path_length < $tbl->{data}->[$indexOne]->[$indexTwo])) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+								if ($args->{detail}) {
+								    my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0; 
+								}
 							    }
 							} else {
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    if ($args->{detail}) {
+								my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+							    }
 							}
 						}
 					}
@@ -2295,6 +2318,10 @@ sub computeNetworkDistances {
 					$tbl->{data}->[$i]->[$j+1] = 0;
 				} else {
 					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($cpds->[$i]->id(), $cpds->[$j]->id());
+					if ($args->{detail}) {
+					    my @vs = $apsp->path_vertices($cpds->[$i]->id(), $cpds->[$j]->id()); 
+					    $tbl->{data}->[$i]->[$j+1] .= "; @vs" if @vs > 0;
+					}
 					if (!defined($tbl->{data}->[$i]->[$j+1])) {
 						$tbl->{data}->[$i]->[$j+1] = -1;
 					}

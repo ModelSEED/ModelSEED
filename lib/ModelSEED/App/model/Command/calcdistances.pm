@@ -18,6 +18,7 @@ sub opt_spec {
         ["roles|o","Calculate distances between roles (metabolites default)"],
 	["genes|g","Calculate distances between genes (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
+        ["detail|d","Print details of each path"],
         ["threshold|t:s","Only print pairs with distance under threshold"],
     );
 }
@@ -38,6 +39,7 @@ sub execute {
 		reactions => $opts->{reactions},
 		roles=> $opts->{roles},
 		genes=> $opts->{genes},
+		detail=> $opts->{detail},
 	});
 	#Printing results
 	print STDERR "Printing results...\n" if($opts->{verbose});
