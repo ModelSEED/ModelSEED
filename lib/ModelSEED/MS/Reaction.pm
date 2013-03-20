@@ -320,6 +320,18 @@ sub loadFromEquation {
 
 =head3 checkReactionMassChargeBalance
 Definition:
+	{} = ModelSEED::MS::Reaction->checkReactionCueBalance({});
+Description:
+	Checks if the cues in the reaction can be balanced
+
+=cut
+
+sub checkReactionCueBalance {
+
+}
+
+=head3 checkReactionMassChargeBalance
+Definition:
 	{
 		balanced => 0/1,
 		error => string,

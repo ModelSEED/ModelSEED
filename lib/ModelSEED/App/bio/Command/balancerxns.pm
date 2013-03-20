@@ -15,7 +15,8 @@ sub opt_spec {
     	["namespace|n:s", "Default name space for biochemistry"],
     	["verbose|v", "Print comments on command actions"],
 	["water|w", "Balance with water if possible"],
-	["protons|p", "Do not balance protons (default is to balance protons)"]
+	["protons|p", "Do not balance protons (default is to balance protons)"],
+	["cues|c", "Also balance the structural cues of the reaction"]
    	);
 }
 
@@ -47,6 +48,9 @@ sub execute {
 
     foreach my $rxn (@{$biochemistry->reactions()}){
 	my $results=$rxn->checkReactionMassChargeBalance({rebalanceProtons=>$opts->{protons},rebalanceWater=>$opts->{water}});
+	if($opts->{cues} && $opts->{cues}==1){
+	    $results=$rxn->checkReactionCueBalance();
+	}
     }
     $store->save_object($ref,$biochemistry);
 }

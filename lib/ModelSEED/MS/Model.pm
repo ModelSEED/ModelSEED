@@ -294,7 +294,11 @@ sub buildModelFromAnnotation {
 		my $ftrroles = $ftr->featureroles();
 		for (my $j=0; $j < @{$ftrroles}; $j++) {
 			my $ftrrole = $ftrroles->[$j];
-			push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$ftrrole->compartment()}},$ftr);
+			if($ftrrole->compartment() ne "c" && $ftrrole->compartment ne "u"){
+			    print STDERR $ftrrole->role_uuid(),"\t",$ftrrole->compartment(),"\t",$ftrrole->role()->name(),"\n";
+			}else{
+			    push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$ftrrole->compartment()}},$ftr);
+			}
 		}
 	}
     warn "Constructing reactions...\n" if($args->{verbose});
@@ -341,6 +345,7 @@ sub buildModelFromAnnotation {
 					my $cpxrxn = $complexreactions->[$j];
 					my $override = undef;
 					if ($cmp ne "c") {
+					    print STDERR $cmp,"\n";
 						my $biocmp = $self->biochemistry()->queryObject("compartments",{id => $cmp});
 						$override = $self->addCompartmentToModel({
 							compartment => $biocmp
