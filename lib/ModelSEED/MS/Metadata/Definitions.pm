@@ -3667,6 +3667,264 @@ $objectDefinitions->{RegulonStimuli} = {
 	reference_id_types => [qw(uuid)],
 };
 
+$objectDefinitions->{Model} = {
+	parents    => ['Ref'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'defaultNameSpace',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0,
+			default    => "ModelSEED"
+		},
+		{
+			name       => 'modDate',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'id',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'version',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'type',
+			printOrder => 5,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0,
+			default    => "Singlegenome"
+		},
+		{
+			name       => 'status',
+			printOrder => 7,
+			perm       => 'rw',
+			type       => 'Str',
+			len        => 32,
+			req        => 0
+		},
+		{
+			name       => 'growth',
+			printOrder => 6,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0
+		},
+		{
+			name       => 'current',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Int',
+			req        => 0,
+			default    => "1"
+		},
+		{
+			name       => 'mapping_uuid',
+			printOrder => 8,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'biochemistry_uuid',
+			printOrder => 9,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'annotation_uuid',
+			printOrder => 10,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'fbaFormulation_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'integratedGapfilling_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'integratedGapfillingSolutions',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'unintegratedGapfilling_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'integratedGapgen_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'integratedGapgenSolutions',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub{return {};}"
+		},
+		{
+			name       => 'unintegratedGapgen_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'forwardedLinks',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'HashRef',
+			req        => 0,
+			default    => "sub {return {};}"
+		}
+	],
+	subobjects => [
+		{
+			name       => "biomasses",
+			printOrder => 0,
+			class      => "Biomass",
+			type       => "child"
+		},
+		{
+			name       => "modelcompartments",
+			printOrder => 1,
+			class      => "ModelCompartment",
+			type       => "child"
+		},
+		{
+			name       => "modelcompounds",
+			printOrder => 2,
+			class      => "ModelCompound",
+			type       => "child"
+		},
+		{
+			name       => "modelreactions",
+			printOrder => 3,
+			class      => "ModelReaction",
+			type       => "child"
+		}
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "fbaFormulations",
+			attribute => "fbaFormulation_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "FBAFormulation",
+			array     => 1
+		},
+		{
+			name      => "unintegratedGapfillings",
+			attribute => "unintegratedGapfilling_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapfillingFormulation",
+			array     => 1
+		},
+		{
+			name      => "integratedGapfillings",
+			attribute => "integratedGapfilling_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapfillingFormulation",
+			array     => 1
+		},
+		{
+			name      => "unintegratedGapgens",
+			attribute => "unintegratedGapgen_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapgenFormulation",
+			array     => 1
+		},
+		{
+			name      => "integratedGapgens",
+			attribute => "integratedGapgen_uuids",
+			parent    => "ModelSEED::Store",
+			method    => "GapgenFormulation",
+			array     => 1
+		},
+		{
+			name      => "biochemistry",
+			attribute => "biochemistry_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Biochemistry",
+			weak      => 0
+		},
+		{
+			name      => "mapping",
+			attribute => "mapping_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Mapping",
+			weak      => 0
+		},
+		{
+			name      => "annotation",
+			attribute => "annotation_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Annotation",
+			weak      => 0
+		}
+	],
+	reference_id_types => [qw(uuid alias)],
+	version            => 2.0,
+};
+
 $objectDefinitions->{Biomass} = {
 	alias      => "Model",
 	parents    => ['Model'],
