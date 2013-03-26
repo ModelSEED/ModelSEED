@@ -95,6 +95,55 @@ sub addStructure {
 	return $structure;
 }
 
+
+=head3 calculateEnergyofFormation
+
+Definition:
+    (float:deltaG, float:deltaGErr = ModelSEED::MS::Reaction->calculateEnergyofFormation();
+Description:
+    Determine the energy of formation of a compound based on its structural cues
+
+=cut
+
+sub calculateEnergyofFormation{
+    my $self=shift;
+
+    my %Cues=%{$self->cues()};
+    return if scalar(keys %Cues)==0;
+
+    my $biochem=$self->parent();
+
+    my $noDeltaG=0;
+    my %cue_dG=();
+    my %cue_dGE=();
+    foreach my $cue (keys %Cues){
+	$cue_dG{$cue}=$biochem->getObject("cues",$cue)->deltaG();
+	$cue_dGE{$cue}=$biochem->getObject("cues",$cue)->deltaGErr();
+        $noDeltaG=1 if !defined($cue_dG{$cue}) || $cue_dG{$cue} == -10000;
+    }
+
+    if($noDeltaG){
+	$self->deltaG("10000000");
+	$self->deltaGErr("10000000");
+	return;
+    }
+
+    my $deltaG=0.0;
+    my $deltaGErr=0.0;
+    foreach my $cue (keys %Cues){
+        $deltaG+=($cue_dG{$cue}*$Cues{$cue});
+        $deltaGErr+=(($cue_dGE{$cue}*$Cues{$cue})**2);
+    }
+    $deltaGErr=$deltaGErr**0.5;
+    $deltaGErr=2.0 if !$deltaGErr;
+
+    $deltaG=sprintf("%.2f",$deltaG);
+    $deltaGErr=sprintf("%.2f",$deltaGErr);
+
+    $self->deltaG($deltaG);
+    $self->deltaGErr($deltaGErr);
+}
+
 =head3 calculateAtomsFromFormula
 
 Definition:

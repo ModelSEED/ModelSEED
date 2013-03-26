@@ -327,7 +327,75 @@ Description:
 =cut
 
 sub checkReactionCueBalance {
+    my $self = shift;
 
+    #Adding up atoms and charge from all reagents
+    my $rgts = $self->reagents();
+
+    #balance out reagents in case of 'cpderror' but cannot apply to transport reactions
+    my %reagents=();
+    foreach my $rgt (@$rgts){
+	$reagents{$rgt->compound_uuid()}+=$rgt->coefficient();
+    }
+
+    #balance out cues
+    my %Cues=();
+    foreach my $rgt ( grep { $reagents{$_->compound_uuid()} != 0 } @$rgts ){
+	my %cues = %{$rgt->compound()->cues()};
+	foreach my $cue (keys %cues){
+	    $Cues{$cue}+=($cues{$cue}*$rgt->coefficient());
+	}
+    }
+
+    %Cues = map { $_ => $Cues{$_} } grep { $Cues{$_} != 0 } keys %Cues;
+
+    $self->cues(\%Cues);
+}
+
+=head3 checkReactionMassChargeBalance
+Definition:
+	{} = ModelSEED::MS::Reaction->checkReactionCueBalance({});
+Description:
+	Checks if the cues in the reaction can be balanced
+
+=cut
+
+sub calculateEnergyofReaction{
+    my $self=shift;
+    my %Cues=%{$self->cues()};
+    return if scalar(keys %Cues)==0;
+
+    my $biochem=$self->parent();
+
+    my $noDeltaG=0;
+    my %cue_dG=();
+    my %cue_dGE=();
+    foreach my $cue( grep { $Cues{$_} !=0 } keys %Cues){
+	$cue_dG{$cue}=$biochem->getObject("cues",$cue)->deltaG();
+	$cue_dGE{$cue}=$biochem->getObject("cues",$cue)->deltaGErr();
+        $noDeltaG=1 if !defined($cue_dG{$cue}) || $cue_dG{$cue} == -10000;
+    }
+
+    if($noDeltaG){
+	$self->deltaG("10000000");
+	$self->deltaGErr("10000000");
+	return;
+    }
+
+    my $deltaG=0.0;
+    my $deltaGErr=0.0;
+    foreach my $cue (keys %Cues){
+        $deltaG+=($cue_dG{$cue}*$Cues{$cue});
+        $deltaGErr+=(($cue_dGE{$cue}*$Cues{$cue})**2);
+    }
+    $deltaGErr=$deltaGErr**0.5;
+    $deltaGErr=2.0 if !$deltaGErr;
+
+    $deltaG=sprintf("%.2f",$deltaG);
+    $deltaGErr=sprintf("%.2f",$deltaGErr);
+
+    $self->deltaG($deltaG);
+    $self->deltaGErr($deltaGErr);
 }
 
 =head3 checkReactionMassChargeBalance
