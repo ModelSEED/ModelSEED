@@ -93,6 +93,7 @@ sub execute {
     	name => "names",
 	database => "id"
     };
+
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
         my $cpdData = {
         	namespace => $opts->{namespace},
