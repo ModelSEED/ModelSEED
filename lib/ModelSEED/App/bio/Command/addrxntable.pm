@@ -20,7 +20,7 @@ sub opt_spec {
         ["verbose|v", "Print verbose status information"],
 	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
-	["addmergealias|g", "Add identifiers to merging namespace."],
+	["addmergealias|g:s@", "Add identifiers to merging namespace."],
 	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
@@ -70,6 +70,13 @@ sub execute {
 	    delimiter => ","});
     }
 
+    my $addmergealias = [];
+    if (defined($opts->{addmergealias})) {
+	$addmergealias = translateArrayOptions({
+	    option => $opts->{addmergealias},
+	    delimiter => ","});
+    }
+
     #creating namespaces if they don't exist
     if(!$biochemistry->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
 	$biochemistry->add("aliasSets",{
@@ -80,6 +87,15 @@ sub execute {
     }
 
     foreach my $merge (@$mergeto){
+	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"reactions"});
+	$biochemistry->add("aliasSets",{
+	    name => $merge,
+	    source => $merge,
+	    attribute => "reactions",
+	    class => "Reaction"});
+    }
+
+    foreach my $merge (@$addmergealias){
 	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"reactions"});
 	$biochemistry->add("aliasSets",{
 	    name => $merge,
@@ -105,7 +121,7 @@ sub execute {
         my $rxnData = {
 	    reactionIDaliasType => $opts->{rxnnamespace},
 	    mergeto => $mergeto,
-	    addmergealias => $opts->{addmergealias},
+	    addmergealias => $addmergealias,
 	    balancedonly => $opts->{balancedonly}
 	};
         if (defined($opts->{cpdnamespace})) {
