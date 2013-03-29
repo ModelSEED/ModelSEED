@@ -3,6 +3,7 @@ $|++;
 use strict;
 use SeedUtils;
 use File::Path;
+use File::Temp qw(tempfile);
 use ModelSEED::Client::SAP;
 my $genome = $ARGV[0];
 my $directory = $ARGV[1];
