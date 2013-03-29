@@ -617,6 +617,7 @@ sub addReactionFromHash {
     my ($self,$arguments) = @_;
 	$arguments = args(["equation","id"], {
 	    names => undef,
+	    compartment => ['c'],
 	    equationAliasType => $self->defaultNameSpace(),
 	    reactionIDaliasType => $self->defaultNameSpace(),
 	    direction => ["="],
@@ -624,7 +625,6 @@ sub addReactionFromHash {
 	    deltagerr => [10000000],
 	    enzymes => [],
 	    autoadd => 0,
-	    addmergealias => 0,
 	    balancedonly => 0}, $arguments);
 
 	# Remove names that are too long
@@ -636,7 +636,7 @@ sub addReactionFromHash {
 	if (defined($rxn)) {
 		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType}."\n");
 		if($arguments->{addmergealias}){
-		    foreach my $aliasType (@{$arguments->{mergeto}}){
+		    foreach my $aliasType (@{$arguments->{addmergealias}}){
 			$self->addAlias({ attribute => "reactions",
 					  aliasName => $aliasType,
 					  alias => $arguments->{id}->[0],
@@ -660,7 +660,7 @@ sub addReactionFromHash {
 			});
 
 			if($arguments->{addmergealias}){
-			    foreach my $otherAliasType (@{$arguments->{mergeto}}){
+			    foreach my $otherAliasType (@{$arguments->{addmergealias}}){
 				next if $otherAliasType eq $aliasType;
 				$self->addAlias({ attribute => "reactions",
 						  aliasName => $otherAliasType,
@@ -672,9 +672,17 @@ sub addReactionFromHash {
 			return $rxn;
 	    }
 	}
+    #Get compartment object
+    my $compartment = $self->queryObject('compartments',{id=>$arguments->{compartment}->[0]});
+    if(!$compartment){
+	verbose("Compartment ".$arguments->{compartment}->[0]." was not recognized\n");
+	return undef;
+    }
+    
 	# Creating reaction from equation
 	$rxn = ModelSEED::MS::Reaction->new({
 		name => $arguments->{names}->[0],
+		compartment => $compartment,
 		abbreviation => $arguments->{abbreviation}->[0],
 		direction => $arguments->{direction}->[0],
 		deltaG => $arguments->{deltag}->[0],
@@ -727,7 +735,7 @@ sub addReactionFromHash {
 			      uuid => $searchRxn->uuid()
 			    });
 	    if($arguments->{addmergealias}){
-		foreach my $aliasType (@{$arguments->{mergeto}}){
+		foreach my $aliasType (@{$arguments->{addmergealias}}){
 		    $self->addAlias({ attribute => "reactions",
 				      aliasName => $aliasType,
 				      alias => $arguments->{id}->[0],
@@ -750,16 +758,16 @@ sub addReactionFromHash {
 	}
     }
 
-	# Attach reaction to biochemistry
-	$self->add("reactions", $rxn);
-	$self->addAlias({
-		attribute => "reactions",
-		aliasName => $arguments->{reactionIDaliasType},
-		alias => $arguments->{id}->[0],
-		uuid => $rxn->uuid()
-	});
+    # Attach reaction to biochemistry
+    $self->add("reactions", $rxn);
+    $self->addAlias({
+	attribute => "reactions",
+	aliasName => $arguments->{reactionIDaliasType},
+	alias => $arguments->{id}->[0],
+	uuid => $rxn->uuid()
+		    });
     if($arguments->{addmergealias}){
-        foreach my $aliasType (@{$arguments->{mergeto}}){
+        foreach my $aliasType (@{$arguments->{addmergealias}}){
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $aliasType,
 			      alias => $arguments->{id}->[0],
@@ -767,23 +775,23 @@ sub addReactionFromHash {
 			    });
 	}
     }
-	for (my $i=0;$i < @{$arguments->{names}}; $i++) {
-		$self->addAlias({
-			attribute => "reactions",
-			aliasName => "name",
-			alias => $arguments->{names}->[$i],
-			uuid => $rxn->uuid()
-		});
-	}
-	for (my $i=0;$i < @{$arguments->{enzymes}}; $i++) {
-		$self->addAlias({
-			attribute => "reactions",
-			aliasName => "Enzyme Class",
-			alias => $arguments->{enzymes}->[$i],
-			uuid => $rxn->uuid()
-		});
-	}
-	return $rxn;
+    for (my $i=0;$i < @{$arguments->{names}}; $i++) {
+	$self->addAlias({
+	    attribute => "reactions",
+	    aliasName => "name",
+	    alias => $arguments->{names}->[$i],
+	    uuid => $rxn->uuid()
+			});
+    }
+    for (my $i=0;$i < @{$arguments->{enzymes}}; $i++) {
+	$self->addAlias({
+	    attribute => "reactions",
+	    aliasName => "Enzyme Class",
+	    alias => $arguments->{enzymes}->[$i],
+	    uuid => $rxn->uuid()
+			});
+    }
+    return $rxn;
 }
 
 =head3 searchForCompound
