@@ -4,6 +4,203 @@ package ModelSEED::MS::Metadata::Definitions;
 
 my $objectDefinitions = {};
 
+$objectDefinitions->{Configuration} = {
+	parents    => ['Ref'],
+	class      => 'parent',
+	attributes => [
+		{
+			name       => 'username',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "Public"
+		},
+		{
+			name       => 'password',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'PRIMARY_STORE',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'CPLEX_LICENCE',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+		},
+		{
+			name       => 'ERROR_DIR',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'MFATK_CACHE',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'MFATK_BIN',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		}
+	],
+	subobjects  => [
+		{
+			name       => "stores",
+			printOrder => -1,
+			class      => "Store",
+			type       => "encompassed"
+		},
+		{
+			name       => "users",
+			printOrder => -1,
+			class      => "User",
+			type       => "encompassed"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => []
+};
+
+$objectDefinitions->{Store} = {
+	parents    => ['Configuration'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'name',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'url',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'database',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'type',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1,
+			default    => "workspace"
+		},
+		{
+			name       => 'dbuser',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "root"
+		},
+		{
+			name       => 'dbpassword',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		}
+	],
+	subobjects  => [],
+	primarykeys => [qw(uuid name)],
+	links       => []
+};
+
+$objectDefinitions->{User} = {
+	parents    => ["Configuration"],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'login',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'password',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'email',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'firstname',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'lastname',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+	],
+	subobjects         => [],
+	primarykeys        => [qw(uuid)],
+	links              => [],
+	reference_id_types => [qw(uuid)],
+	version            => 1.0,
+};
+
 $objectDefinitions->{FBAFormulation} = {
 	parents    => ['Ref'],
 	class      => 'indexed',
@@ -2035,63 +2232,6 @@ $objectDefinitions->{ReactionSetMultiplier} = {
 		}
 	],
 	reference_id_types => [qw(uuid)],
-};
-
-$objectDefinitions->{User} = {
-	parents    => ["Ref"],
-	class      => 'parent',
-	attributes => [
-		{
-			name       => 'uuid',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
-			req        => 0
-		},
-		{
-			name       => 'login',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'password',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 1
-		},
-		{
-			name       => 'email',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'firstname',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'lastname',
-			printOrder => 0,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => ""
-		},
-	],
-	subobjects         => [],
-	primarykeys        => [qw(uuid)],
-	links              => [],
-	reference_id_types => [qw(uuid)],
-	version            => 1.0,
 };
 
 $objectDefinitions->{BiochemistryStructures} = {

@@ -1,122 +1,36 @@
 package ModelSEED::App::stores::Command::add;
 use strict;
 use common::sense;
-use Try::Tiny;
-use Module::Load;
-use ModelSEED::Exceptions;
-use JSON::XS;
-use Class::Autouse qw(
-    ModelSEED::Configuration
-    ModelSEED::Database::FileDB
-);
-use base 'App::Cmd::Command';
-
-our $typeToClass = $ModelSEED::App::stores::typeToClass;
-our $typeToArgs = $ModelSEED::App::stores::typeToArgs;
-our $defaultArgValues = $ModelSEED::App::stores::defaultArgValues;
-
-sub abstract { "Add another store interface" }
-sub usage_desc { "stores add name --type type ..." }
-
-sub opt_spec {
-    my $spec = [
-        [ 'type=s', "Type of interface [".join('|', keys %$typeToClass) ."]" ],
-        ["help|h|?", "Print this usage information"],
-    ];
-    foreach my $type (values %$typeToArgs) {
-        push(@$spec, values %{$type});
-    }
-    return @$spec;
-}
-sub validate_args {
-    my ($self, $opt, $args) = @_;
-    my $name = $args->[0];
-    my $val = $self->_buildConfig($opt, $name);
-    unless(ref($val)) {
-        $self->usage_error($val);
-    }
+use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use base 'ModelSEED::App::StoresBaseCommand';
+sub abstract { return "Lists all stores currently available in this Model SEED installation." }
+sub usage_desc { return "stores add [name of store]"; }
+sub options {
+    return (
+        ["type|t=s", "Type of store (default is 'workspace')"],
+        ["url|u=s", "URL of store (default is 'localhost')"],
+        ["database|d=s", "Database of store (default is 'msws')"],
+    );
 }
 
-sub execute {
-    my ($self, $opt, $args) = @_;
-    print($self->usage) && return if $opt->{help};
-    my $name = shift @$args;
-    unless (defined($name)) {
-        $self->usage_error("Must provide name for database.");
-    }
-    my $config = $self->_buildConfig($opt, $name);
-    my $ms = ModelSEED::Configuration->new();
-    my $stores = $ms->config->{stores};
-    my %map = map { $_->{name} => $_ } @$stores; 
-    if (defined($map{$name})) {
-        $self->usage_error("Store with $name already exists! "
-                . "Use the 'update' command to update.");
-    }
-    push(@{$ms->config->{stores}}, $config);
-    $ms->save();
-    my $db = $self->_get_database_instance($config);
-    $db->init_database();
-}
-
-sub _buildConfig {
-    my ($self, $opt, $name) = @_;
-    my $config = {name => $name};
-    my $argMap = {
-        file => { filename => 1 },
-    };
-    my $type = $opt->{type};
-    # Set the type
-    return "--type required" unless(defined($type));
-    $config->{type} = $type;
-    # Set the class
-    return "unknown type $type" unless(defined($typeToClass->{$type}));
-    $config->{class} = $typeToClass->{$type};
-    # Check the args
-    return "unknown type $type" unless(defined($typeToArgs->{$type}));
-    my $requiredArgs = $typeToArgs->{$type};
-    my $defaults = $defaultArgValues->{$type};
-    foreach my $arg (keys %$requiredArgs) {
-        my $spec = $requiredArgs->{$arg};
-        if (defined($opt->{$arg})) {
-            $config->{$arg} = $opt->{$arg};
-        } elsif (defined($defaults->{$arg})) {
-            $config->{$arg} = $defaults->{$arg};
-        } elsif ($spec->[0] =~ /=/) {
-            return "--$arg required for $type" unless (defined($opt->{$arg}));
-        }
-    }
-    if($config->{type} eq 'mongo') {
-        my $success;
-        try {
-            load MongoDB;
-            $success = 1;
-        };
-        unless($success) {
-            $self->usage_error(
-                "You must install perl module MongoDB to use this interface"
-            );
-        }
-    }
-    if ($config->{type} eq 'file') {
-        $config->{filename} = $name;
-    }
-    return $config;
-}
-
-sub _get_database_instance {
-    my ($self, $config) = @_;
-    my $class = $config->{class};
-    my $instance;
-    try {
-        load $class;
-        $instance = $class->new($config);
-    } catch {
-        ModelSEED::Exception::DatabaseConfigError->throw(
-            dbName => $config->{name},
-            configText => JSON::XS->new->pretty(1)->encode($config),
-        );
-    };
-    return $instance;
+sub sub_execute {
+    my ($self, $opts, $args) = @_;
+	my $name = shift @$args;
+	unless (defined($name)) {
+        $self->usage_error("Must provide name for the store.");
+    } 
+	my $config = config();
+	$opts = args($opts,[],{
+		type => "workspace",
+		url => "localhost",
+		database => "msws",
+		name => $name
+	});
+	$config->add_store($opts);
+	if (!defined($opts->{dryrun})) {
+		$config->save_to_file();
+	}
+	return;
 }
 
 1;

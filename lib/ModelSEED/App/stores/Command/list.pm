@@ -1,32 +1,43 @@
 package ModelSEED::App::stores::Command::list;
 use strict;
 use common::sense;
-use Class::Autouse qw(ModelSEED::Configuration);
-use base 'App::Cmd::Command';
-sub abstract { "List current stores in order of priority" }
-sub opt_spec {
-    [ 'verbose|v', "print detailed configuration for each store" ],
-    ["help|h|?", "Print this usage information"],
-}
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $ms = ModelSEED::Configuration->new();    
-    my $stores = $ms->config->{stores};
-    if($opts->{verbose}) {
-        print map { _detailed($_) . "\n" } @$stores;
-    } else {
-        print map { $_->{name} . "\n" } @$stores;
-    }
+use Text::Table;
+use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use base 'ModelSEED::App::StoresBaseCommand';
+sub abstract { return "Lists all stores currently available in this Model SEED installation." }
+sub usage_desc { return "stores list [options]"; }
+sub options {
+    return (
+        ["type|t=s", "Only list stores of this type"],
+    );
 }
 
-sub _detailed {
-    my ($s) = @_;
-    # name    key=value key=value
-    my $hide = { name => 1, class => 1 };
-    my @attrs = grep { !$hide->{$_} } keys %$s;
-    my $string = join(" ", map { $_ . '=' . $s->{$_} } @attrs);
-    return $s->{name} . "\t" . $string;
+sub sub_execute {
+    my ($self, $opts, $args) = @_;
+	my $config = config();
+	my $stores = $config->stores();
+	my $tbl = [];
+	foreach my $store (@{$stores}) {
+		my $primary = "no";
+		if ($store->name() eq $config->PRIMARY_STORE()) {
+			$primary = "yes";
+		}
+		if (!defined($opts->{type}) || $opts->{type} eq $store->type()) {
+			push(@{$tbl},[
+	            $store->name(),
+	            $store->type(),
+	            $store->url(),
+	            $store->database(),
+	           	$primary
+	        ]);
+		}
+	}
+    my $table = Text::Table->new(
+		'Name','Type','URL','Database','Primary'
+	);
+    $table->load(@$tbl);
+    print $table;
+	return;
 }
 
 1;

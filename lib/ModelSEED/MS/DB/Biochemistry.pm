@@ -12,6 +12,7 @@ use ModelSEED::MS::Reaction;
 use ModelSEED::MS::Media;
 use ModelSEED::MS::CompoundSet;
 use ModelSEED::MS::ReactionSet;
+use ModelSEED::MS::Stimuli;
 use ModelSEED::MS::AliasSet;
 use ModelSEED::MS::Cue;
 use Moose;
@@ -44,6 +45,7 @@ has reactions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { retur
 has media => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Media)', metaclass => 'Typed', reader => '_media', printOrder => '2');
 has compoundSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(CompoundSet)', metaclass => 'Typed', reader => '_compoundSets', printOrder => '-1');
 has reactionSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(ReactionSet)', metaclass => 'Typed', reader => '_reactionSets', printOrder => '-1');
+has stimuli => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(Stimuli)', metaclass => 'Typed', reader => '_stimuli', printOrder => '-1');
 has aliasSets => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'child(AliasSet)', metaclass => 'Typed', reader => '_aliasSets', printOrder => '-1');
 has cues => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(Cue)', metaclass => 'Typed', reader => '_cues', printOrder => '1');
 
@@ -196,6 +198,12 @@ my $subobjects = [
           },
           {
             'printOrder' => -1,
+            'name' => 'stimuli',
+            'type' => 'child',
+            'class' => 'Stimuli'
+          },
+          {
+            'printOrder' => -1,
             'name' => 'aliasSets',
             'type' => 'child',
             'class' => 'AliasSet'
@@ -209,7 +217,7 @@ my $subobjects = [
           }
         ];
 
-my $subobject_map = {compartments => 0, compounds => 1, reactions => 2, media => 3, compoundSets => 4, reactionSets => 5, aliasSets => 6, cues => 7};
+my $subobject_map = {compartments => 0, compounds => 1, reactions => 2, media => 3, compoundSets => 4, reactionSets => 5, stimuli => 6, aliasSets => 7, cues => 8};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -249,6 +257,10 @@ around 'compoundSets' => sub {
 around 'reactionSets' => sub {
   my ($orig, $self) = @_;
   return $self->_build_all_objects('reactionSets');
+};
+around 'stimuli' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('stimuli');
 };
 around 'aliasSets' => sub {
   my ($orig, $self) = @_;

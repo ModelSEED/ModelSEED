@@ -6,9 +6,12 @@ use Data::Dumper;
 use File::Temp qw(tempfile);
 use File::Path;
 use File::Copy::Recursive;
+use JSON::XS;
+use ModelSEED::MS::Configuration;
 use parent qw( Exporter );
-our @EXPORT_OK = qw( args usage error verbose set_verbose translateArrayOptions );
-our $VERBOSE = undef; # A GLOB Reference to print verbose() calls to, or undef.
+our @EXPORT_OK = qw( config LOADFILE args usage error verbose set_verbose translateArrayOptions );
+our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef.
+our $CONFIG = undef;
 
 =head1 ModelSEED::utilities
 
@@ -91,6 +94,98 @@ sub verbose {
     } else {
         return 0;
     }
+}
+
+=head3 config
+
+Definition:
+	ModelSEED::MS::Config = ModelSEED::utilities::config({
+		filename => string
+	});
+Description:
+	Loads and returns the current configuration
+Example:
+
+=cut
+
+sub config {
+	my ($args) = @_;
+	$args = args([],{
+		filename => undef,
+		reload => 0,
+		config => undef
+	}, @_);
+	if (defined($args->{config})) {
+		$CONFIG = ModelSEED::MS::Config->new($args->{config});
+	} elsif (!defined($CONFIG) || $args->{reload} == 1) {
+		my $filename = $ENV{HOME}."/.modelseed2";
+		if (defined($args->{filename})) {
+			$filename = $args->{filename};
+		}
+		my $data = {};
+		my $json = JSON::XS->new->utf8->pretty(1);;
+		if (-e $filename) {
+			$data = join("\n",@{LOADFILE($ENV{HOME}."/.modelseed2")});
+			$data = $json->decode($data);
+		} elsif (-e $ENV{HOME}."/.modelseed") {
+			my $olddata = join("\n",@{LOADFILE($ENV{HOME}."/.modelseed")});
+			$olddata = $json->decode($olddata);
+			if (defined($olddata->{user_options})) {
+				my $vars = [qw(CPLEX_LICENCE MFATK_CACHE ERROR_DIR MFATK_BIN)];
+				foreach my $var (@{$vars}) {
+					if (defined($olddata->{user_options}->{$var})) {
+						$data->{$var} = $olddata->{user_options}->{$var};
+					}
+				}
+			}
+			if (defined($olddata->{stores})) {
+				foreach my $store (@{$olddata->{stores}}) {
+					my $newStore = {
+						name => $store->{name}
+					};
+					if ($store->{type} eq "file") {
+						$newStore->{type} = "filedb";
+						$newStore->{url} = $store->{directory};
+						$newStore->{database} = $store->{filename};
+					} elsif ($store->{type} eq "mongo") {
+						$newStore->{type} = "mongo";
+						$newStore->{url} = $store->{host};
+						$newStore->{database} = $store->{db_name};
+						$newStore->{dbuser} = $store->{username};
+						$newStore->{dbpassword} = $store->{password};
+					}
+					push(@{$data->{stores}},$newStore);
+				}
+			}
+			if (defined($olddata->{users})) {
+				foreach my $key (keys(%{$olddata->{users}})) {
+					push(@{$data->{users}},{
+						login => $olddata->{users}->{$key}->{login},
+						password => $olddata->{users}->{$key}->{password},
+						email => $olddata->{users}->{$key}->{email},
+						firstname => $olddata->{users}->{$key}->{firstname},
+						lastname => $olddata->{users}->{$key}->{lastname}
+					});
+				}
+			}
+			if (defined($olddata->{login})) {
+				$data->{username} = $olddata->{login}->{username};
+				$data->{password} = $olddata->{login}->{password};
+			}
+		} else {
+			$data = {
+				username => "Public",
+				password => "",
+				PRIMARY_STORE => "",
+				ERROR_DIR => $ENV{HOME}."/.modelseed_error",
+				MFATK_CACHE => $ENV{HOME}."/temp",
+				stores => [],
+				users => []
+			};
+		}
+		$CONFIG = ModelSEED::MS::Configuration->new($data);
+	}
+	return $CONFIG;
 }
 
 sub _get_args {
