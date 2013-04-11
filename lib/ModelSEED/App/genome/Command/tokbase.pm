@@ -9,9 +9,9 @@ use Class::Autouse qw(
     ModelSEED::App::Helpers
 );
 
-sub abstract { return "Loads this annotation as a genome object in KBase" }
+sub abstract { return "Loads this annotation as a genome object into KBase store" }
 
-sub usage_desc { return "genome tokbase [ reference] [?]"; }
+sub usage_desc { return "genome tokbase [ reference] [store]"; }
 
 sub description { return <<END;
 This function translates the annotation object into a KBase genome and uploads it.
@@ -22,24 +22,19 @@ END
 sub options {
     return (
         ["workspace|w=s", "KBase workspace where genome will be uploaded"],
-        ["url|u=s", "URL of the KBase workspace server"],
-        ["database|d=s", "Database of store (default is 'msws')"],
     );
 }
 
 sub sub_execute {
     my ($self, $opts, $args, $obj) = @_;
-	my $auth;
-	if (!defined($opts->{username})) {
-		$auth = $self->kbauth();
-	} else {
-		$auth = $self->kbauth({
-			username => $opts->{username},
-			password => $opts->{password},
-		});
-	}
-	if (!defined($opts->{workspace})) {
-		$opts->{workspace} = $self->kbworkspace($auth);
+	my $storeName = shift @$args;
+	my $config = config();
+	$store = $config->currentUser()->findStore($storeName);
+	unless (defined($store)) {
+        $self->usage_error("Specified store not currently accossiated to user.");
+    }
+    if (!defined($opts->{workspace})) {
+		$opts->{workspace} = $store->currentWorkspace();
 	}
 	my $genome = $obj->buildKBaseGenome();
 	$self->kbfbaclient->genome_object_to_workspace({

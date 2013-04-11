@@ -1,21 +1,16 @@
 package ModelSEED::App::model::Command::gapgen;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( set_verbose verbose );
-sub abstract { return "Identify changes in the model to force an objective to zero in the specified conditions"; }
-sub usage_desc { return "model gapgen [ model || - ] [options]"; }
-sub opt_spec {
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+sub abstract { return "Identify changes in the model to force an objective to zero in the specified conditions" }
+sub usage_desc { return "model gapgen [model] [options]" }
+sub options {
     return (
-        ["verbose|v", "Print verbose status information"],
         ["media:s","Target media formulation in which to force objective to zero"],
         ["refmedia:s","Reference media formulation in which the objective must be nonzero"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
@@ -33,25 +28,11 @@ sub opt_spec {
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
         ["integratesol|i", "Integrate first solution into model"],
         ["printraw|r", "Print raw data instead of readable data"],
-        ["saveas|a:s", "New name the results should be saved to"],
-        ["dryrun|d", "Donot save results in database"],
-        ["help|h|?", "Print this usage information"]
+        ["saveas|a:s", "New name the results should be saved to"]
     );
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    #Retreiving the model object on which FBA will be performed
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	if ($opts->{verbose}) {
-        set_verbose(1);
-    	delete $opts->{verbose};
-    }
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
 	#Standard commands to handle where output will be printed
     my $out_fh = \*STDOUT;
 	#Creating gapfilling formulation
@@ -108,18 +89,17 @@ sub execute {
     	verbose("Automatically integrating first solution in model.");
     	$model->integrateGapgenSolution($gapgenFormulation,0);
     }
-    if ($opts->{saveas}) {
-    	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	verbose("New alias set for model:".$ref);
-    }
-    if ($opts->{dryrun}) {
-    	verbose("Dry run selected. Results not saved!");
-    } else {
-    	verbose("Saving model to:".$ref);
-    	$store->save_object("fBAFormulation/".$gapgenFormulation->fbaFormulation()->uuid(),$gapgenFormulation->fbaFormulation());
-		$store->save_object("gapgenFormulation/".$gapgenFormulation->uuid(),$gapgenFormulation);
-    	$store->save_object($ref,$model);
-    }
+    $self->save_object({
+		type => "FBAFormulation",
+		reference => "FBAFormulation/".$gapgenFormulation->fbaFormulation()->uuid(),
+		object => $gapgenFormulation->fbaFormulation()
+	});
+    $self->save_object({
+		type => "GapgenFormulation",
+		reference => "GapgenFormulation/".$gapgenFormulation->uuid(),
+		object => $gapgenFormulation
+	});
+    $self->save_model();
 }
 
 1;

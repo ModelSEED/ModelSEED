@@ -1,33 +1,21 @@
 package ModelSEED::App::model::Command::genome;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
-use Try::Tiny;
-use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
-);
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Returns the associated annotation object" }
-sub usage_desc { return "model genome [ reference ] [options]" }
-sub opt_spec { 
-    return (
-        ["raw|r", "Return raw JSON output"],
-        ["full", "Return the full annotation object in a readable form"],
-        ["help|h|?", "Print this usage information"],
-    );
+sub usage_desc { return "model genome [model]" }
+sub options {
+    return ();
+}
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
+    my $anno = $self->get_object({
+    	reference => "Annotation/".$model->annotation_uuid(),
+    	store => $opts->{store}
+    });
+	print "Model linked to genome:\n".$anno->msStoreID()."\n";
 }
 
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper= ModelSEED::App::Helpers->new();
-    my ($model, $modelRef) = $helper->get_object("model", $args, $store);
-    $self->usage_error("Must specify a model to use") unless(defined($model));
-    print $helper->handle_ref_lookup(
-        $store, $model, "annotation_uuid", "annotation", $opts
-    );
-}
 1;

@@ -1,9 +1,9 @@
-package ModelSEED::App::GenomeBaseCommand;
+package ModelSEED::App::MappingBaseCommand;
 use strict;
 use common::sense;
 use base 'ModelSEED::App::BaseCommand';
 use Class::Autouse qw(
-    ModelSEED::MS::Genome
+    ModelSEED::MS::Mapping
 );
 sub parent_options {
     my ( $class, $app ) = @_;
@@ -16,30 +16,30 @@ sub class_execute {
     my ($self, $opts, $args) = @_;
     my $id = shift @$args;
 	unless (defined($id)) {
-        $self->usage_error("Must provide ID of genome");
+        $self->usage_error("Must provide ID of mapping");
     }
-    if ($id !~ m/^Annotation\//) {
-    	$id = "Annotation/".$id;
+    if ($id !~ m/^Mapping\//) {
+    	$id = "Mapping/".$id;
     }
    	my $obj = $self->get_object({
-   		type => "Annotation",
+   		type => "Mapping",
    		reference => $id,
    		store => $opts->{store}
    	});
     return $self->sub_execute($opts, $args,$obj);
 }
 
-sub save_genome {
+sub save_mapping {
 	my ($self,$obj) = @_;
 	my $ref = $obj->msStoreID();
     if ($self->gopts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for genome:".$ref);
+    	verbose("New alias set for map:".$ref);
     }
-    verbose("Saving genome to:".$ref);
+    verbose("Saving map to:".$ref);
     $self->save_object({
-	   	type => "Annotation",
+	   	type => "Mapping",
 	   	reference => $ref,
 	   	store => $self->opts()->{store},
 		object => $obj

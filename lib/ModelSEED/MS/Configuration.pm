@@ -11,19 +11,27 @@ package ModelSEED::MS::Configuration;
 use ModelSEED::utilities qw( error PRINTFILE config args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Moose;
+use ModelSEED::MS::User;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Configuration';
 
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-
+has currentUser => ( is => 'rw', isa => 'ModelSEED::MS::User',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcurrentUser');
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-
-
+sub _buildcurrentUser {
+	my ($self) = @_;
+	my $user = $self->queryObject("users",{login => $self->username()});
+	if (!defined($user)) {
+		error("Currently logged user ".$self->username()." does not exist!");
+	}
+	$user->check_password($self->password());
+	return $user;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:
@@ -32,10 +40,35 @@ extends 'ModelSEED::MS::DB::Configuration';
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 authenticate
+
+Definition:
+	string:username authenticate({token => string});
+Description:
+	Authenticates against the local user store
+	
+=cut
+
+sub authenticate {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::args(["token"], {}, $args);
+	if ($args->{token} =~ m/^(.+)\t(.+)$/) {
+		my $user = $1;
+		my $token = $2;
+		my $obj = $self->queryObject("users",{login => $user});
+		if (!defined($obj)) {
+			ModelSEED::utilities::error("User ".$user." not found!");
+		}
+		$obj->authenticate($token);
+		return $user;
+	}
+    ModelSEED::utilities::error("Illformed token in authentication!");
+}
+
 =head3 add_store
 
 Definition:
-	ModelSEED::MS::Store = add_store({
+	ModelSEED::MS::User = add_store({
 		type => string,
 		url => string,
 		database => string,
@@ -48,17 +81,27 @@ Description:
 
 sub add_store {
     my $self = shift;
-    my $args = args(["name"], {
+    my $args = ModelSEED::utilities::args(["name"], {
     	type => "workspace",
     	url => "localhost",
-    	database => "msws"
+    	database => "msws",
+    	login => $self->username(),
+    	password => $self->password(),
+    	accounttype => "seed"
     }, @_);
 	my $store = $self->queryObject("stores",{name => $args->{name}});
 	if (defined($store)) {
 		error("A store with name ".$args->{name}." already exists!");
 	}
 	$self->validate_store_type($args->{type});
-	return $self->add("stores",$args);
+	$store = $self->add("stores",$args);
+	$self->currentUser()->add_user_store({
+		store => $store,
+		login => $args->{login},
+		password => $args->{password},
+		accounttype => $args->{accounttype}
+	});
+	return $store;
 }
 
 =head3 remove_store
@@ -75,7 +118,7 @@ Description:
 
 sub remove_store {
     my $self = shift;
-    my $args = args(["name"], {
+    my $args = ModelSEED::utilities::args(["name"], {
     	"delete" => 0
     }, @_);
 	my $store = $self->queryObject("stores",{name => $args->{name}});
@@ -85,6 +128,9 @@ sub remove_store {
 	if ($args->{delete} == 1) {
 		error("Cannot delete stores yet!");
 	}
+	$self->currentUser()->remove_user_store({
+		store => $store,
+	});
 	return $self->remove("stores",$store);
 }
 
@@ -104,10 +150,8 @@ sub select_store {
 	if (!defined($store)) {
 		error("A store with name ".$name." does not exist!");
 	}
-	$self->PRIMARY_STORE($name);
+	$self->currentUser()->primaryStoreName($name);
 }
-
-
 
 =head3 validate_store_type
 
@@ -222,9 +266,9 @@ Description:
 
 sub save_to_file {
     my $self = shift;
-    my $args = args([], { filename => $self->filename() }, @_);
+    my $args = ModelSEED::utilities::args([], { filename => $ENV{HOME}."/.modelseed2" }, @_);
 	my $data = $self->export({format => "json"});
-	PRINTFILE($args->{filename},[$data]);
+	ModelSEED::utilities::PRINTFILE($args->{filename},[$data]);
 }
 
 __PACKAGE__->meta->make_immutable;

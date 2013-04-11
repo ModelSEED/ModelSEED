@@ -6,7 +6,7 @@ my $objectDefinitions = {};
 
 $objectDefinitions->{Configuration} = {
 	parents    => ['Ref'],
-	class      => 'parent',
+	class      => 'indexed',
 	attributes => [
 		{
 			name       => 'username',
@@ -19,14 +19,6 @@ $objectDefinitions->{Configuration} = {
 		{
 			name       => 'password',
 			printOrder => 1,
-			perm       => 'rw',
-			type       => 'Str',
-			req        => 0,
-			default    => ""
-		},
-		{
-			name       => 'PRIMARY_STORE',
-			printOrder => 0,
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0,
@@ -66,17 +58,17 @@ $objectDefinitions->{Configuration} = {
 	],
 	subobjects  => [
 		{
-			name       => "stores",
-			printOrder => -1,
-			class      => "Store",
-			type       => "encompassed"
-		},
-		{
 			name       => "users",
 			printOrder => -1,
 			class      => "User",
 			type       => "encompassed"
 		},
+		{
+			name       => "stores",
+			printOrder => -1,
+			class      => "Store",
+			type       => "encompassed"
+		}
 	],
 	primarykeys => [qw(uuid)],
 	links       => []
@@ -193,10 +185,80 @@ $objectDefinitions->{User} = {
 			req        => 0,
 			default    => ""
 		},
+		{
+			name       => 'primaryStoreName',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+	],
+	subobjects         => [
+		{
+			name       => "userStores",
+			printOrder => -1,
+			class      => "UserStore",
+			type       => "encompassed"
+		}
+	],
+	primarykeys        => [qw(uuid login)],
+	links              => [],
+	reference_id_types => [qw(uuid)],
+	version            => 1.0,
+};
+
+$objectDefinitions->{UserStore} = {
+	parents    => ["User"],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'store_uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'login',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'password',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'accountType',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'defaultMapping_ref',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		}
 	],
 	subobjects         => [],
-	primarykeys        => [qw(uuid)],
-	links              => [],
+	primarykeys        => [qw(store_uuid)],
+	links              => [
+		{
+			name      => "associatedStore",
+			attribute => "store_uuid",
+			parent    => "Configuration",
+			method    => "stores",
+			weak      => 0
+		},
+	],
 	reference_id_types => [qw(uuid)],
 	version            => 1.0,
 };

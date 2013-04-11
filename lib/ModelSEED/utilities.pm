@@ -9,7 +9,7 @@ use File::Copy::Recursive;
 use JSON::XS;
 use ModelSEED::MS::Configuration;
 use parent qw( Exporter );
-our @EXPORT_OK = qw( config LOADFILE args usage error verbose set_verbose translateArrayOptions );
+our @EXPORT_OK = qw( config args usage error verbose set_verbose translateArrayOptions LOADFILE );
 our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef.
 our $CONFIG = undef;
 
@@ -123,7 +123,7 @@ sub config {
 			$filename = $args->{filename};
 		}
 		my $data = {};
-		my $json = JSON::XS->new->utf8->pretty(1);;
+		my $json = JSON::XS->new->utf8->pretty(1);
 		if (-e $filename) {
 			$data = join("\n",@{LOADFILE($ENV{HOME}."/.modelseed2")});
 			$data = $json->decode($data);
@@ -138,10 +138,23 @@ sub config {
 					}
 				}
 			}
+			if (defined($olddata->{users})) {
+				foreach my $key (keys(%{$olddata->{users}})) {
+					push(@{$data->{users}},{
+						login => $olddata->{users}->{$key}->{login},
+						password => $olddata->{users}->{$key}->{password},
+						email => $olddata->{users}->{$key}->{email},
+						firstname => $olddata->{users}->{$key}->{firstname},
+						lastname => $olddata->{users}->{$key}->{lastname},
+						primaryStoreName => "local"
+					});
+				}
+			}
 			if (defined($olddata->{stores})) {
 				foreach my $store (@{$olddata->{stores}}) {
 					my $newStore = {
-						name => $store->{name}
+						name => $store->{name},
+						uuid => Data::UUID->new()->create_str()
 					};
 					if ($store->{type} eq "file") {
 						$newStore->{type} = "filedb";
@@ -155,17 +168,15 @@ sub config {
 						$newStore->{dbpassword} = $store->{password};
 					}
 					push(@{$data->{stores}},$newStore);
-				}
-			}
-			if (defined($olddata->{users})) {
-				foreach my $key (keys(%{$olddata->{users}})) {
-					push(@{$data->{users}},{
-						login => $olddata->{users}->{$key}->{login},
-						password => $olddata->{users}->{$key}->{password},
-						email => $olddata->{users}->{$key}->{email},
-						firstname => $olddata->{users}->{$key}->{firstname},
-						lastname => $olddata->{users}->{$key}->{lastname}
-					});
+					for (my $i=0; $i < @{$data->{users}}; $i++) {
+						push(@{$data->{users}->[$i]->{userStores}},{
+							store_uuid => $newStore->{uuid},
+							login => $data->{users}->[$i]->{login},
+							password => $data->{users}->[$i]->{password},
+							accountType => "seed",
+							defaultMapping_ref => "Mapping/chenry/main"
+						});
+					}
 				}
 			}
 			if (defined($olddata->{login})) {
@@ -176,7 +187,6 @@ sub config {
 			$data = {
 				username => "Public",
 				password => "",
-				PRIMARY_STORE => "",
 				ERROR_DIR => $ENV{HOME}."/.modelseed_error",
 				MFATK_CACHE => $ENV{HOME}."/temp",
 				stores => [],

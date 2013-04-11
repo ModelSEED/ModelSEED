@@ -98,7 +98,10 @@ sub _wstypetrans {
 # FUNCTIONS:
 #***********************************************************************************************************
 sub get_object {
-    my ($self,$type,$ref) = @_;
+    my ($self,$type,$ref,$dataOnly) = @_;
+    if (!defined($dataOnly)) {
+    	$dataOnly = 0;
+    }
     #If the object is cached, returning the cached object
     if (defined($self->cache()->{$type}->{$ref})) {
     	return $self->cache()->{$type}->{$ref};
@@ -137,7 +140,7 @@ sub get_object {
 	}
     #Instantiating object
     my $object = $output->{data};
-    if (defined($class)) {
+    if (defined($class) && $dataOnly == 0) {
     	$object = $class->new($object);
     	if ($type ne "Media") {
     		$object->parent($self);
@@ -154,9 +157,11 @@ sub get_object {
 		$object->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
 		$object->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];
 		$object->{_kbaseWSMeta}->{wsmeta} = $output->{metadata};
+		$self->{_msStoreID} = $type."/".$output->{metadata}->[7]."/".$output->{metadata}->[0];
+		$self->{_msStoreRef} = $type."/".$output->{metadata}->[8];
 	}
     #Adding object to cache
-    if ($type ne "Media") {
+    if ($type ne "Media" && $dataOnly == 0) {
     	$self->cache()->{$type}->{$ref} = $object;
     }
     return $object;

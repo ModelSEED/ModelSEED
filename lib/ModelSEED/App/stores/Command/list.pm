@@ -15,25 +15,26 @@ sub options {
 sub sub_execute {
     my ($self, $opts, $args) = @_;
 	my $config = config();
-	my $stores = $config->stores();
+	my $stores = $config->currentUser()->userStores();
 	my $tbl = [];
 	foreach my $store (@{$stores}) {
 		my $primary = "no";
-		if ($store->name() eq $config->PRIMARY_STORE()) {
+		if ($store->associatedStore()->name() eq $config->currentUser()->primaryStoreName()) {
 			$primary = "yes";
 		}
 		if (!defined($opts->{type}) || $opts->{type} eq $store->type()) {
 			push(@{$tbl},[
-	            $store->name(),
-	            $store->type(),
-	            $store->url(),
-	            $store->database(),
-	           	$primary
+	            $store->associatedStore()->name(),
+	            $store->associatedStore()->type(),
+	            $store->associatedStore()->url(),
+	            $store->associatedStore()->database(),
+	           	$primary,
+	           	$store->login()
 	        ]);
 		}
 	}
     my $table = Text::Table->new(
-		'Name','Type','URL','Database','Primary'
+		'Name','Type','URL','Database','Primary','Login'
 	);
     $table->load(@$tbl);
     print $table;

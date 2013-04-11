@@ -1,9 +1,9 @@
-package ModelSEED::App::GenomeBaseCommand;
+package ModelSEED::App::ModelBaseCommand;
 use strict;
 use common::sense;
 use base 'ModelSEED::App::BaseCommand';
 use Class::Autouse qw(
-    ModelSEED::MS::Genome
+    ModelSEED::MS::Model
 );
 sub parent_options {
     my ( $class, $app ) = @_;
@@ -16,33 +16,33 @@ sub class_execute {
     my ($self, $opts, $args) = @_;
     my $id = shift @$args;
 	unless (defined($id)) {
-        $self->usage_error("Must provide ID of genome");
+        $self->usage_error("Must provide ID of model");
     }
-    if ($id !~ m/^Annotation\//) {
-    	$id = "Annotation/".$id;
+    if ($id !~ m/^Model\//) {
+    	$id = "Model/".$id;
     }
    	my $obj = $self->get_object({
-   		type => "Annotation",
+   		type => "Model",
    		reference => $id,
    		store => $opts->{store}
    	});
     return $self->sub_execute($opts, $args,$obj);
 }
 
-sub save_genome {
-	my ($self,$obj) = @_;
-	my $ref = $obj->msStoreID();
+sub save_model {
+	my ($self,$model) = @_;
+	my $ref = $model->msStoreID();
     if ($self->gopts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for genome:".$ref);
+    	verbose("New alias set for model:".$ref);
     }
-    verbose("Saving genome to:".$ref);
+    verbose("Saving model to:".$ref);
     $self->save_object({
-	   	type => "Annotation",
+	   	type => "Model",
 	   	reference => $ref,
 	   	store => $self->opts()->{store},
-		object => $obj
+		object => $model
     });
 }
 

@@ -1,32 +1,4 @@
 package ModelSEED::App::stores;
 use strict;
 use base 'App::Cmd';
-sub default_command { 'list' };
-sub usage_desc { $_[0]->arg0 . " [command] " }
-
-our $typeToClass = {
-    file => 'ModelSEED::Database::FileDB',
-    mongo => 'ModelSEED::Database::MongoDBSimple',
-    rest => 'ModelSEED::Database::Rest',
-};
-
-our $typeToArgs = {
-    file => { directory => [ 'directory=s' => 'Directory to store the database in' ] },
-    mongo => { host => [ 'host=s' => 'Hostname of machine running mongod' ],
-               db_name => [ 'db_name:s' => 'Database name to use for storage' ],,
-               username => [ 'username:s' => 'Username to login' ],
-               password => [ 'password:s' => 'Password to login' ],
-    },
-};
-
-our $defaultArgValues = {
-    file => {
-        directory => $ENV{HOME} . "/.modelseed_filedb"
-    },
-    mongo => {
-        db_name => 'ModelSeed'
-    },
-    rest => {},
-};
-
 1;

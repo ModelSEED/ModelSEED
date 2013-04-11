@@ -1,27 +1,20 @@
 package ModelSEED::App::model::Command::runfba;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::model;
 use Class::Autouse qw(
     JSON::XS
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::FBAFormulation
     ModelSEED::Solver::FBA
 );
-sub abstract { return "Fill gaps in the reaction network for a model"; }
-sub usage_desc { return "model runfba [ model || - ] [options]"; }
-sub opt_spec {
+use base 'ModelSEED::App::ModelBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+sub abstract { return "Run flux balance analysis on the model" }
+sub usage_desc { return "model runfba [model id] [options]" }
+sub options {
     return (
-        ["config|c:s", "Configuration filename for formulating the FBA"],
-        ["overwrite|o", "Save FBA solution in existing model"],
-        ["save|s:s", "Save FBA solution in a new model"],
-        ["verbose|v", "Print verbose status information"],
-        ["fileout|f:s", "Name of file where FBA solution object will be printed"],
+    	["config|c:s", "Configuration filename for formulating the FBA"],
         ["media:s","Media formulation to be used for the FBA simulation"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
         ["objective:s","String describing the objective of the FBA problem"],
@@ -45,30 +38,27 @@ sub opt_spec {
         ["norun", "Do not run the FBA; print out the configuration as JSON"],
         ["html","Print FBA results in HTML"],
         ["readable","Print FBA results in readable format"],
-        ["help|h|?", "Print this usage information"],
+        ["save|s", "Save results in the existing model"],
+        ["saveas|sa:s", "Save results in a new model"],
     );
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    # Retreiving the model object on which FBA will be performed
-    my ($model, $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-    my ($pmodel, $pref) = $helper->get_object("pROMModel", [$opts->{prom}], $store) if (defined $opts->{prom});
-    my $out_fh;
-    if ($opts->{fileout}) {
-        my $filename = $opts->{fileout};
-        open($out_fh, ">", $filename) or die "Cannot open $filename: $!";
-    } else {
-        $out_fh = \*STDOUT;
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
+    my $pmodel;
+    if (defined($opts->{prom})) {
+	    $pmodel $self->get_object({
+	    	type => "PROMModel",
+	    	reference => $opts->{prom},
+	    	store => $opts->{store},
+	    });
     }
     my $fbaform;
     if ($opts->{config}) {
-        $fbaform = $helper->object_from_file("FBAFormulation", $opts->{config}, $store);
+        $fbaform = $self->object_from_file({
+        	type => "FBAFormulation",
+        	filename => $opts->{config},
+        	store => $opts->{store}
+        });
     } else {
         # Creating FBA formulation
         my $input = { model => $model, promModel => $pmodel };
@@ -107,40 +97,29 @@ sub execute {
         return;
     }
     # Running FBA
-    print STDERR "Running FBA..." if($opts->{verbose});
+    verbose("Running FBA...");
     my $results = $fbaform->runFBA(); 
     if (!defined($results)) {
     	print STDERR " FBA failed with no solution returned!\n";
     } else {
 	    push(@{$model->fbaFormulation_uuids()},$fbaform->uuid());
 	    # Standard commands that save results of the analysis to the database
-	    if ($opts->{overwrite}) {
-	    	print STDERR "Saving model with FBA solution over original model...\n" if($opts->{verbose});
-	    	$store->save_object("fBAFormulation/".$fbaform->uuid(),$fbaform);
-	    	$store->save_object($ref,$model);
-	    } elsif ($opts->{save}) {
-			$ref = $helper->process_ref_string($opts->{save}, "model", $auth->username);
-			print STDERR "Saving model with FBA solution as new model ".$ref."...\n" if($opts->{verbose});
-			$store->save_object("fBAFormulation/".$fbaform->uuid(),$fbaform);	
-			$store->save_object($ref,$model);
+	    if ($opts->{save} || $opts->{saveas}) {
+	    	$self->save_object({
+				type => "FBAFormulation",
+				reference => "FBAFormulation/".$fbaform->uuid(),
+				object => $gapfillingFormulation->fbaFormulation()
+			});
+	    	$model->add("fbaFormulations",$fbaform);
+	    	$self->save_model($model);
 	    }
 	    if ($opts->{html}) {
-	    	print $out_fh $fbaform->createHTML();
+	    	print $fbaform->createHTML();
 	    } elsif ($opts->{readable}) {
-	    	print $out_fh $fbaform->toReadableString();
+	    	print $fbaform->toReadableString();
 	    } else {
-	    	print $out_fh $fbaform->toJSON({pp => 1});
+	    	print $fbaform->toJSON({pp => 1});
 	    }
-    }
-    close $out_fh if $opts->{fileout};
-}
-
-sub _getModel {
-    my ($self, $args, $store) = @_;
-    my $helper = ModelSEED::App::Helpers->new();
-    my $ref = $helper->get_base_ref("model", $args);
-    if(defined($ref)) {
-        return $store->get_object($ref);
     }
 }
 

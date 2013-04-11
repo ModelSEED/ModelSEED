@@ -1,24 +1,20 @@
 package ModelSEED::App::import::Command::biochemistry;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::import;
+use base 'ModelSEED::App::ImportBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
 use JSON::XS;
 use Class::Autouse qw(
     ModelSEED::MS::Biochemistry
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::TableFileFactory
-    ModelSEED::Database::Composite
-    ModelSEED::Reference
 );
 
 sub abstract { return "Import biochemistry from local or remote database"; }
-
-sub usage_desc { return "ms import biochemistry [alias] [options]"; }
+sub usage_desc { return "ms import biochemistry [biochemistry id] [options]"; }
 sub description { return <<END;
 Import biochemistry data (compounds, reactions, media, compartments,
 etc.) Alias, required, is the name that you would like to save the
@@ -30,48 +26,18 @@ The [--filepath path] argument indicates where flatfiles are for import.
 
 END
 }
-
-sub opt_spec {
+sub options {
     return (
-        ["filepath|f:s", "Directory with flatfiles of data you are importing"],
+    	["filepath|f:s", "Directory with flatfiles of data you are importing"],
         ["namespace|n:s", "Name space of database (default is 'ModelSEED')"],
-        ["store|s:s", "Identify which store to save the biochemistry to"],
-        ["verbose|v", "Print detailed output of import status"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"],
-        ["help|h|?", "Print this usage information"],
-    );
+	);
 }
-
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth = ModelSEED::Auth::Factory->new->from_config();
-    my $helpers = ModelSEED::App::Helpers->new;
-    my $store;
-    # Initialize the store object
-    if($opts->{store}) {
-        my $store_name = $opts->{store};
-        my $ms = ModelSEED::Configuration->new();
-        my $config = $ms->config();
-        my $store_config;
-        foreach my $store (${$config->{stores}}) {
-        	if ($store->{name} eq $store_name) {
-        		$store_config = $store;
-        	}
-        }
-        die "No such store: $store_name" unless(defined($store_config));
-        my $db = ModelSEED::Database::Composite->new(databases => [ $store_config ]);
-        $store = ModelSEED::Store->new(auth => $auth, database => $db);
-    } else {
-        $store = ModelSEED::Store->new(auth => $auth);
-    }
     # Check that required argument are present
-    my ($alias) = @$args;
+    my $alias = shift(@$args);
     $self->usage_error("Must supply an alias") unless(defined($alias));
     # Make sure the alias object is valid "username/alias_string"
-    $alias = $helpers->process_ref_string($alias, "biochemistry", $auth->username);
-    print "Will be saving to $alias...\n" if($opts->{verbose});
-    my $alias_ref = ModelSEED::Reference->new(ref => $alias);
     my $bio;
     if (!defined($opts->{namespace})) {
     	$opts->{namespace} = "ModelSEED";
@@ -98,7 +64,7 @@ sub execute {
             my ($fh2, $uncompressed_filename) = tempfile();
             close($fh1);
             close($fh2);
-            print "Fetching biochemistry from web...\n" if($opts->{verbose});
+            verbose("Fetching biochemistry from web...");
             my $status = getstore($url, $compressed_filename);
             # This should probably be >= 200 <= 400? does getstore handle redirects?
             die "Unable to fetch from model_seed\n" unless($status == 200);
@@ -114,13 +80,15 @@ sub execute {
             }
             $data = JSON::XS->new->utf8->decode($string);
         }
-        print "Validating fetched biochemistry...\n" if($opts->{verbose});
+        verbose("Validating fetched biochemistry...");
         $bio = ModelSEED::MS::Biochemistry->new($data);
     }
-    unless($opts->{dry}) {
-        $store->save_object($alias_ref, $bio);
-    }
-    print "Saved biochemistry to $alias!\n" if($opts->{verbose});
+    verbose("Saved biochemistry to $alias!");
+    $self->save_object({
+    	object => $bio,
+    	type => "Biochemistry",
+    	reference => $alias
+    });
 }
 
 1;

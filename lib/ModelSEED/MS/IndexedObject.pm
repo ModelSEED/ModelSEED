@@ -108,7 +108,6 @@ query parameters, not just the first one. This is returned as an
 array reference.
 
 =cut
-
 package ModelSEED::MS::IndexedObject;
 use Moose;
 use Class::Autouse qw(
@@ -117,8 +116,8 @@ use Class::Autouse qw(
 use ModelSEED::utilities qw( args error );
 use namespace::autoclean;
 use ModelSEED::MS::BaseObject;
-
 extends 'ModelSEED::MS::BaseObject';
+
 has indices => ( is => 'rw', isa => 'HashRef', default => sub { return {} } );
 
 sub add {
@@ -337,7 +336,7 @@ sub queryObjects {
 
 sub _buildIndex {
     my $self = shift;
-    my $args = args(["attribute","subAttribute"],{}, @_);
+    my $args = ModelSEED::utilities::args(["attribute","subAttribute"],{}, @_);
 	my $att = $args->{attribute};
 	my $subatt = $args->{subAttribute};
 	my $newIndex  = {};

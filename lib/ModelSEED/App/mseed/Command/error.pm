@@ -1,10 +1,11 @@
 package ModelSEED::App::mseed::Command::error;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
 use ModelSEED::Configuration;
 use File::stat;
 use Time::localtime;
+use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use base 'ModelSEED::App::MSEEDBaseCommand';
 sub abstract { return "Print information from the error log"; }
 sub usage_desc { return <<END;
 ms error [options] [n]
@@ -13,24 +14,19 @@ If [n] is supplied, print the n'th most recent message.
 
 END
 }
-sub opt_spec {
+sub options {
     return (
-        ["list|l",    "list all recent errors"],
-        ["verbose|v", "verbose list output"],
-        ["help|h|?", "Print this usage information"],
+        ["list|l","list all recent errors"]
     );
 }
 
-
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
     my $n = 0;
     if(@$args) {
         $n = $args->[0];
     }
-    my $Config = ModelSEED::Configuration->new();
-    my $dir = $Config->config->{error_dir};
+    my $dir = config()->ERROR_DIR();
     my ($sortedFiles, $filesModTime) = $self->_getOrderedFileList($dir);
     if($opts->{list} && $opts->{verbose}) {
         foreach my $file (@$sortedFiles) {

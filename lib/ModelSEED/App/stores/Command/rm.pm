@@ -18,10 +18,10 @@ sub sub_execute {
         $self->usage_error("Must provide name of store to delete");
     } 
 	my $config = config();
-	$opts = args($opts,[],{
+	$opts = args([],{
 		"delete" => 0,
 		name => $name
-	});
+	},%{$opts});
 	$config->remove_store($opts);
 	if (!defined($opts->{dryrun})) {
 		$config->save_to_file();
