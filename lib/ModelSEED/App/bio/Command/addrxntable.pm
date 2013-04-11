@@ -15,10 +15,13 @@ sub opt_spec {
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["rxnnamespace|r:s", "Name space for reaction IDs"],
         ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
-        ["autoadd|a","Automatically add any missing compounds to DB"],
+        ["autoadd|u","Automatically add any missing compounds to DB"],
         ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
         ["verbose|v", "Print verbose status information"],
+	["separator|t:s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
+	["addmergealias|g", "Add identifiers to merging namespace."],
+	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
 
@@ -39,11 +42,25 @@ sub execute {
     #load table
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
 
+    #load table
+    my $separator="\\\t";
+    $separator = $opts->{separator}  if exists $opts->{separator};
+    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
+
+    if(scalar(@{$tbl->{data}->[0]})<2){
+	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+#	$self->usage_error("Not enough columns in table, consider using a different separator");
+    }
+
     #set namespace
     if (!defined($opts->{rxnnamespace})) {
 	$opts->{rxnnamespace} = $args->[0];
 	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{rxnnamespace}."\n";
     } 
+
+    if(defined($opts->{balancedonly}) && defined($opts->{autoadd})){
+	print STDERR "Warning: automatically added compounds will have no formula and lead to the automatic rejection of reactions\n";
+    }
 
     #processing table
     my $mergeto = [];
@@ -81,10 +98,16 @@ sub execute {
 
     my $headingTranslation = {
     	name => "names",
-	enzyme => "enzymes"
+	enzyme => "enzymes",
+	database => "id"
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
-        my $rxnData = {reaciontIDaliasType => $opts->{rxnnamespace}, mergeto => $mergeto};
+        my $rxnData = {
+	    reactionIDaliasType => $opts->{rxnnamespace},
+	    mergeto => $mergeto,
+	    addmergealias => $opts->{addmergealias},
+	    balancedonly => $opts->{balancedonly}
+	};
         if (defined($opts->{cpdnamespace})) {
         	$rxnData->{equationAliasType} = $opts->{cpdnamespace};
         }else{
@@ -98,16 +121,24 @@ sub execute {
             	$heading = $headingTranslation->{$heading};
             }
             if ($heading eq "names" || $heading eq "enzymes") {
-	            $rxnData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+	            $rxnData->{$heading} = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } split(/\|/,$tbl->{data}->[$i]->[$j])];
             } else {
-		    $rxnData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+		my $data = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } $tbl->{data}->[$i]->[$j] ];
+		if($heading eq "compartment"){
+		    $data->[0] =~ s/^\[//;
+		    $data->[0] =~ s/\]$//;
+		}
+		$rxnData->{$heading} = $data;
             }
         }
+	#Not adding biomass reactions by default
+	next if $rxnData->{id}->[0] =~ /biomass/i || $rxnData->{id}->[0] =~ /^R_BIO/;
+
         my $rxn = $biochemistry->addReactionFromHash($rxnData);
     }
 
     if (defined($opts->{saveas})) {
-        $ref = $helper->process_ref_string($opts->{save}, "biochemistry", $auth->username);
+        $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
         verbose "Saving biochemistry with new reactions as ".$ref."...\n";
 	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);

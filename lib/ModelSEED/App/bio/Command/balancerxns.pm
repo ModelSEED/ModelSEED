@@ -2,6 +2,7 @@ package ModelSEED::App::bio::Command::balancerxns;
 use strict;
 use common::sense;
 use base 'App::Cmd::Command';
+use ModelSEED::utilities qw( args verbose set_verbose );
 use Class::Autouse qw(
     ModelSEED::Store
     ModelSEED::Auth::Factory
@@ -12,7 +13,9 @@ sub usage_desc { return "bio balancerxns [name]"; }
 sub opt_spec {
     return (
     	["namespace|n:s", "Default name space for biochemistry"],
-    	["verbose|v", "Print comments on command actions"]
+    	["verbose|v", "Print comments on command actions"],
+	["water|w", "Balance with water if possible"],
+	["protons|p", "Do not balance protons (default is to balance protons)"]
    	);
 }
 
@@ -34,9 +37,16 @@ sub execute {
     print "Using: ",$biochemistry->name(),"\n";
     
     $biochemistry->defaultNameSpace($opts->{namespace});
-    
+
+    #default is to balance protons, so switch is used to turn this off
+    if($opts->{proton}){
+	$opts->{proton}=0;
+    }else{
+	$opts->{protons}=1;
+    }
+
     foreach my $rxn (@{$biochemistry->reactions()}){
-	$rxn->checkReactionMassChargeBalance();
+	my $results=$rxn->checkReactionMassChargeBalance({rebalanceProtons=>$opts->{protons},rebalanceWater=>$opts->{water}});
     }
     $store->save_object($ref,$biochemistry);
 }

@@ -15,9 +15,12 @@ sub opt_spec {
         ["saveas|a:s", "New alias for altered biochemistry"],
         ["namespace|c:s", "Name space for aliases added"],
         ["mergeto|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
-        ["matchbyname|a", "Use search names to match compounds"],
+        ["matchbyname|n", "Use search names to match compounds"],
         ["verbose|v", "Print verbose status information"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"]
+	["separator|t:s", "Column separator for file. Default is tab"],
+        ["dry|d", "Perform a dry run; that is, do everything but saving"],
+	["addmergealias|g", "Add identifiers to merging namespace."],
+	["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
     );
 }
 
@@ -31,14 +34,24 @@ sub execute {
     my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
     $self->usage_error("Must specify a valid filename for compound table") unless(defined($args->[1]) && -e $args->[1]);
+
     #verbosity
     set_verbose(1) if $opts->{verbose};
+
     #load table
-    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
+    my $separator="\\\t";
+    $separator = $opts->{separator}  if exists $opts->{separator};
+    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
+
+    if(scalar(@{$tbl->{data}->[0]})<2){
+	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+#	$self->usage_error("Not enough columns in table, consider using a different separator");
+    }
+
     #set namespace
     if (!defined($opts->{namespace})) {
-	    $opts->{namespace} = $args->[0];
-	    print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
+	$opts->{namespace} = $args->[0];
+	print STDERR "Warning: no namespace passed.  Using biochemistry name by default: ".$opts->{namespace}."\n";
     }
 
     #processing table
@@ -77,13 +90,15 @@ sub execute {
     }
 
     my $headingTranslation = {
-    	name => "names"
+    	name => "names",
+	database => "id"
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
         my $cpdData = {
         	namespace => $opts->{namespace},
         	matchbyname => $opts->{matchbyname},
-        	mergeto => $mergeto
+        	mergeto => $mergeto,
+		addmergealias => $opts->{addmergealias}
         };
         for (my $j=0; $j < @{$tbl->{headings}}; $j++) {
             my $heading = lc($tbl->{headings}->[$j]);
@@ -91,13 +106,29 @@ sub execute {
             	$heading = $headingTranslation->{$heading};
             }
             if ($heading eq "names") {
-            	$cpdData->{$heading} = [split(/\|/,$tbl->{data}->[$i]->[$j])];
+            	$cpdData->{$heading} = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } split(/\|/,$tbl->{data}->[$i]->[$j])];
             } else {
-            	$cpdData->{$heading} = [$tbl->{data}->[$i]->[$j]];
+            	$cpdData->{$heading} = [ map { $_ =~ s/^\s+//; $_ =~ s/\s+$//; $_ } $tbl->{data}->[$i]->[$j]];
             }
         }
         my $cpd = $biochemistry->addCompoundFromHash($cpdData);
     }
+
+    if(defined($opts->{checkforduplicates})){
+	my $aliases = $biochemistry->queryObject("aliasSets",{ name => $opts->{namespace}, attribute => "compounds" })->aliases();
+	my %uuidAliasHash=();
+	
+	foreach my $alias (keys %$aliases){
+	    foreach my $uuid (@{$aliases->{$alias}}){
+		$uuidAliasHash{$uuid}{$alias}=1;
+	    }
+	}
+
+	foreach my $uuid ( grep { scalar( keys %{$uuidAliasHash{$_}} )>1 } keys %uuidAliasHash ){
+	    print STDERR "Multiple compounds merged to a single UUID (".$uuid."): ".join("|",keys %{$uuidAliasHash{$uuid}})."\n";
+	}
+    }
+
     #Saving biochemistry
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
