@@ -18,6 +18,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
@@ -40,12 +41,14 @@ sub _buildequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
-
-sub _buildequationformula {
-    my ($self) = @_;
-    return $self->createEquation({format=>"formula",hashed=>0});
+sub _buildcompfreeequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
 }
-
+sub _buildequationformula {
+    my ($self,$args) = @_;
+    return $self->createEquation({format=>"formula",hashed=>0,water=>0});
+}
 sub _buildbalanced {
 	my ($self,$args) = @_;
 	my $result = $self->checkReactionMassChargeBalance({rebalanceProtons => 0});
@@ -80,7 +83,7 @@ sub _buildisTransport {
 	}
 	my $cmp = $rgts->[0]->compartment_uuid();
 	for (my $i=0; $i < @{$rgts}; $i++) {
-		if ($rgts->[0]->compartment_uuid() ne $cmp) {
+		if ($rgts->[$i]->compartment_uuid() ne $cmp) {
 			return 1;
 		}
 	}
@@ -130,17 +133,22 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = args([], { format => "uuid", hashed => 0 }, @_);
+    my $args = args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
         my $hcpd = $self->biochemistry()->checkForProton();
- 	if (!defined($hcpd)) {
+ 	if (!defined($hcpd) && $args->{hashed}==1) {
 	    error("Could not find proton in biochemistry!");
+	}
+        my $wcpd = $self->biochemistry()->checkForWater();
+ 	if (!defined($wcpd) && $args->{water}==1) {
+	    error("Could not find water in biochemistry!");
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
 		my $id = $rgt->[$i]->compound_uuid();
-		next if $id eq $hcpd->uuid() && $args->{hashed}==1;
+		next if $args->{hashed}==1 && $id eq $hcpd->uuid();
+		next if $args->{hashed}==1 && $args->{water}==1 && $id eq $wcpd->uuid();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
 			my $function = $args->{format};
 			$id = $rgt->[$i]->compound()->$function();
@@ -177,6 +185,7 @@ sub createEquation {
 		my $comps = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
 		for (my $j=0; $j < @{$comps}; $j++) {
 			my $compartment = "[".$comps->[$j]."]";
+			$compartment="" if !$args->{compts};
 			if ($rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]} < 0) {
 				my $coef = -1*$rgtHash->{$sortedCpd->[$i]}->{$comps->[$j]};
 				if (length($reactcode) > 0) {
@@ -192,7 +201,7 @@ sub createEquation {
 		}
 	}
 	if ($args->{hashed} == 1) {
-		return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
+	        return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
 	}
 	return $reactcode.$sign.$productcode;
 }
@@ -210,13 +219,11 @@ Description:
 
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation","aliasType"], {}, @_);
+    my $args = args(["equation","aliasType"], {compartment=>"c"}, @_);
 	my $bio = $self->parent();
 	my @TempArray = split(/\s+/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
 	my $Coefficient = 1;
-	my $rxnComp;
-	my $currCompScore;
 	my $parts = [];
 	my $cpdCmpHash;
 	my $compHash;
@@ -226,79 +233,69 @@ sub loadFromEquation {
 	for (my $i = 0; $i < @TempArray; $i++) {
 	    #some identifiers may include '=' sign, need to skip actual '+' in equation
 	    next if $TempArray[$i] eq "+";
-		if ($TempArray[$i] =~ m/^\(([\.\d]+)\)$/ || $TempArray[$i] =~ m/^([\.\d]+)$/) {
-			$Coefficient = $1;
-		} elsif ($TempArray[$i] =~ m/(^[\w\-+]+)/) {
-			$Coefficient *= -1 if ($CurrentlyOnReactants);
-			my $NewRow = {
-				compound => $1,
-				compartment => "c",
-				coefficient => $Coefficient
-			};
-			if ($TempArray[$i] =~ m/^[\w\-+]+\[([a-zA-Z]+)\]/) {
-				$NewRow->{compartment} = lc($1);
-			}
-            my $comp = $compHash->{$NewRow->{compartment}};
-            unless(defined($comp)) {
-                $comp = $bio->queryObject("compartments", {id => $NewRow->{compartment} });
-            }
-            unless(defined($comp)) {
-		ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction!");
-		$comp = $bio->add("compartments",{
-		    locked => "0",
-		    id => $NewRow->{compartment},
-		    name => $NewRow->{compartment},
-		    hierarchy => 3
-				  });
-	    }
-			$compUUIDHash->{$comp->uuid()} = $comp;
-			$compHash->{$comp->id()} = $comp;
-			$NewRow->{compartment} = $comp;
-			my $cpd;
-			if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
-				$cpd = $bio->queryObject("compounds",{$args->{aliasType} => $NewRow->{compound}});
-			} else {
-				$cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
-			}
-			if (!defined($cpd)) {
-				ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
-				if(defined($args->{autoadd}) && $args->{autoadd}==1){
-				    ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
-				    $cpd = $bio->add("compounds",{ locked => "0",
-								   name => $NewRow->{compound},
-								   abbreviation => $NewRow->{compound}
-						     });
-				    $bio->addAlias({ attribute => "compounds",
-						     aliasName => $args->{aliasType},
-						     alias => $NewRow->{compound},
-						     uuid => $cpd->uuid()
-						   });
-				}else{
-				    return 0;
-				}
-			}
-			$NewRow->{compound} = $cpd;
-			if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
-				$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
-			}
-			$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
-			$cpdHash->{$cpd->uuid()} = $cpd;
-			$cpdCmpCount->{$cpd->uuid()."_".$comp->uuid()}++;
-			if ($comp->id() eq "c") {
-				$currCompScore = 100;
-				$rxnComp = $comp;
-			} elsif (!defined($rxnComp) || $comp->hierarchy() > $currCompScore) {
-				$currCompScore = $comp->hierarchy();
-            	$rxnComp = $comp;
-			}
-			push(@$parts, $NewRow);
-			$Coefficient = 1;
-		} elsif ($TempArray[$i] =~ m/=/) {
-			$CurrentlyOnReactants = 0;
+	    if( $TempArray[$i] =~ m/=/ || $TempArray[$i] =~ m/-->/ || $TempArray[$i] =~ m/<--/) {
+		$CurrentlyOnReactants = 0;
+	    } elsif ($TempArray[$i] =~ m/^\(([eE\-\.\d]+)\)$/ || $TempArray[$i] =~ m/^([eE\-\.\d]+)$/) {
+		$Coefficient = $1;
+	    } elsif ($TempArray[$i] =~ m/(^[\/\\<>\w,&;'#:\{\}\-+\(\)]+)/){
+		$Coefficient *= -1 if ($CurrentlyOnReactants);
+		my $NewRow = {
+		    compound => $1,
+		    compartment => $args->{compartment},
+		    coefficient => $Coefficient
+		};
+		my $Compound=quotemeta($NewRow->{compound});
+		if ($TempArray[$i] =~ m/^${Compound}\[([a-zA-Z]+)\]/) {
+		    $NewRow->{compartment} = lc($1);
 		}
-	}
-	if (!defined($rxnComp)) {
-		$rxnComp = $bio->queryObject("compartments",{id => "c"});
+		my $comp = $compHash->{$NewRow->{compartment}};
+		unless(defined($comp)) {
+		    $comp = $bio->queryObject("compartments", { id => $NewRow->{compartment} });
+		}
+		unless(defined($comp)) {
+		    ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$NewRow->{compartment}."' used in reaction ".$args->{rxnId});
+		    $comp = $bio->add("compartments",{
+			locked => "0",
+			id => $NewRow->{compartment},
+			name => $NewRow->{compartment},
+			hierarchy => 3});
+		}
+		$compUUIDHash->{$comp->uuid()} = $comp;
+		$compHash->{$comp->id()} = $comp;
+		$NewRow->{compartment} = $comp;
+		my $cpd;
+		if ($args->{aliasType} eq "uuid" || $args->{aliasType} eq "name") {
+		    $cpd = $bio->queryObject("compounds",{$args->{aliasType} => $NewRow->{compound}});
+		} else {
+		    $cpd = $bio->getObjectByAlias("compounds",$NewRow->{compound},$args->{aliasType});
+		}
+		if (!defined($cpd)) {
+		    ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
+		    if(defined($args->{autoadd}) && $args->{autoadd}==1){
+			ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
+			$cpd = $bio->add("compounds",{ locked => "0",
+						       name => $NewRow->{compound},
+						       abbreviation => $NewRow->{compound}
+					 });
+			$bio->addAlias({ attribute => "compounds",
+					 aliasName => $args->{aliasType},
+					 alias => $NewRow->{compound},
+					 uuid => $cpd->uuid()
+				       });
+		    }else{
+			return 0;
+		    }
+		}
+		$NewRow->{compound} = $cpd;
+		if (!defined($cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()})) {
+		    $cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} = 0;
+		}
+		$cpdCmpHash->{$cpd->uuid()}->{$comp->uuid()} += $Coefficient;
+		$cpdHash->{$cpd->uuid()} = $cpd;
+		$cpdCmpCount->{$cpd->uuid()."_".$comp->uuid()}++;
+		push(@$parts, $NewRow);
+		$Coefficient = 1;
+	    }
 	}
 	foreach my $cpduuid (keys(%{$cpdCmpHash})) {
 	    foreach my $cmpuuid (keys(%{$cpdCmpHash->{$cpduuid}})) {
@@ -341,42 +338,51 @@ Description:
 
 sub checkReactionMassChargeBalance {
     my $self = shift;
-    my $args = args([], {rebalanceProtons => 0}, @_);
+    my $args = args([], {rebalanceProtons => 0,rebalanceWater => 0}, @_);
     my $atomHash;
     my $netCharge = 0;
-    
+    my $status = "OK";
+
     #Adding up atoms and charge from all reagents
     my $rgts = $self->reagents();
     
     #Need to remember whether reaction has proton reagent in which compartment
+    my $waterCompHash=();
     my $protonCompHash=();
     my $compHash=();
     my $hcpd=$self->biochemistry()->checkForProton();
+    my $wcpd=$self->biochemistry()->checkForWater();
 
 	for (my $i=0; $i < @{$rgts};$i++) {
 		my $rgt = $rgts->[$i];
 
-		#Check for protons
-		$protonCompHash->{$rgt->compartment_uuid()}=$rgt if $rgt->compound_uuid() eq $hcpd->uuid();
+		#Check for protons/water
+		$protonCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $rgt->compound_uuid() eq $hcpd->uuid();
+		$waterCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_uuid() eq $wcpd->uuid();
 		$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
 
 		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
 		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
 		my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
+
 		if (defined($cpdatoms->{error})) {
+		        $self->status("CPDERROR");
 			return {
 				balanced => 0,
 				error => $cpdatoms->{error}
 			};	
 		}
+
+		$netCharge += $rgt->coefficient()*$rgt->compound()->defaultCharge();
+
 		foreach my $atom (keys(%{$cpdatoms})) {
 			if (!defined($atomHash->{$atom})) {
 				$atomHash->{$atom} = 0;
 			}
-			$netCharge += $rgt->coefficient()*$rgt->compound()->defaultCharge();
 			$atomHash->{$atom} += $rgt->coefficient()*$cpdatoms->{$atom};
 		}
 	}
+
 	#Adding protons
         #use of defaultProtons() discontinued for time being
 	#$netCharge += $self->defaultProtons()*1;
@@ -391,97 +397,144 @@ sub checkReactionMassChargeBalance {
 	my $results = {
 		balanced => 1
 	};
-	my $onlyH = 1;
-	my $HImbalance = 0;
-	foreach my $atom (keys(%{$atomHash})) { 
-		if ($atomHash->{$atom} > 0.00000001 || $atomHash->{$atom} < -0.00000001) {
-			if ($atom eq "H") {
-				$HImbalance = $atomHash->{$atom};
-			} else {
-				$onlyH = 0;
-			}
-		}
-	}
-	if ($HImbalance != 0 && $onlyH == 1 && $HImbalance == $netCharge) {
-		verbose("Adjusting ".$self->id()." protons by ".$HImbalance."\n");
 
-		if(scalar(keys %$protonCompHash)==0){
-		    #must create proton reagent
-		    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
-		    my $compUuid = (keys %$compHash)[0];
-		    if(scalar(keys %$compHash)>1){
-			my $hierarchy=1;
-			foreach my $tmpCompUuid (keys %$compHash){
-			    if($compHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
-				$compUuid=$tmpCompUuid;
-				$hierarchy=$compHash->{$tmpCompUuid}->hierarchy();
-			    }
-			}
+    my $imbalancedAtoms = {};
+    foreach my $atom (keys(%{$atomHash})) { 
+	if ($atomHash->{$atom} > 0.00000001 || $atomHash->{$atom} < -0.00000001) {
+	    $imbalancedAtoms->{$atom}=$atomHash->{$atom};
+	}
+    }
+
+    if($args->{rebalanceWater} && join("",sort keys %$imbalancedAtoms) eq "HO" && ($imbalancedAtoms->{"H"}/$imbalancedAtoms->{"O"}) == 2){
+	verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"}."\n");
+
+	if(scalar(keys %$waterCompHash)==0){
+	    #must create water reagent
+	    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
+	    my $compUuid = (keys %$compHash)[0];
+	    if(scalar(keys %$compHash)>1){
+		my $hierarchy=1;
+		foreach my $tmpCompUuid (keys %$compHash){
+		    if($compHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+			$compUuid=$tmpCompUuid;
+			$hierarchy=$compHash->{$tmpCompUuid}->hierarchy();
 		    }
-		    
-		    $self->add("reagents", {compound_uuid => $hcpd->uuid(),
-					    compartment_uuid => $compUuid,
-					    coefficient => -1*$HImbalance,
-					    isCofactor => 0});
-
-		}elsif(scalar(keys %$protonCompHash)>0){
-		    #must choose proton reagent
-		    #defaults to compartment with highest number in hierarchy
-		    
-		    my $compUuid = (keys %$protonCompHash)[0];
-		    my $hierarchy=1;
-		    foreach my $tmpCompUuid ( grep { $_ ne $compUuid } keys %$protonCompHash){
-			if($protonCompHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
-				$compUuid=$tmpCompUuid;
-				$hierarchy=$protonCompHash->{$tmpCompUuid}->hierarchy();
-			}
+		}
+	    }
+	    
+	    $self->add("reagents", {compound_uuid => $wcpd->uuid(),
+				    compartment_uuid => $compUuid,
+				    coefficient => -1*$imbalancedAtoms->{"O"},
+				    isCofactor => 0});
+	    
+	}elsif(scalar(keys %$waterCompHash)>0){
+	    #must choose water reagent
+	    #defaults to compartment with highest number in hierarchy
+	    
+	    my $compUuid = (keys %$waterCompHash)[0];
+	    my $hierarchy=1;
+	    foreach my $tmpCompUuid ( grep { $_ ne $compUuid } keys %$waterCompHash){
+		if($waterCompHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+		    $compUuid=$tmpCompUuid;
+		    $hierarchy=$waterCompHash->{$tmpCompUuid}->hierarchy();
+		}
+	    }
+	    
+	    my $rgts = $self->reagents();
+	    for(my $i=0;$i<scalar(@$rgts);$i++){
+		if($rgts->[$i]->compound_uuid() eq $wcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
+		    my $coeff=$rgts->[$i]->coefficient();
+		    $rgts->[$i]->coefficient($coeff+(-1*$imbalancedAtoms->{"O"}));
+		}
+	    }
+	    $self->reagents($rgts);
+	}
+	
+	foreach my $key ("H","O"){
+	    $atomHash->{$key} = 0;
+	    delete($imbalancedAtoms->{$key})
+	}
+    }
+    
+    if ($args->{rebalanceProtons} && join("",keys %$imbalancedAtoms) eq "H") {
+	verbose("Adjusting ".$self->id()." protons by ".$imbalancedAtoms->{"H"}."\n");
+	
+	if(scalar(keys %$protonCompHash)==0){
+	    #must create proton reagent
+	    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
+	    my $compUuid = (keys %$compHash)[0];
+	    if(scalar(keys %$compHash)>1){
+		my $hierarchy=1;
+		foreach my $tmpCompUuid (keys %$compHash){
+		    if($compHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+			$compUuid=$tmpCompUuid;
+			$hierarchy=$compHash->{$tmpCompUuid}->hierarchy();
 		    }
-
-		    my $rgts = $self->reagents();
-		    for(my $i=0;$i<scalar(@$rgts);$i++){
-			if($rgts->[$i]->compound_uuid() eq $hcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
-			    my $coeff=$rgts->[$i]->coefficient();
-			    $rgts->[$i]->coefficient($coeff+(-1*$HImbalance));
-			}
-		    }
-		    $self->reagents($rgts);
 		}
-
-		#my $currentProtons = $self->defaultProtons();
-		#$currentProtons += -1*$HImbalance;
-		#$self->defaultProtons($currentProtons);
-
-		$netCharge = 0;
-		$atomHash->{H} = 0;
-	}
-
-	my $status = "OK";
-	foreach my $atom (keys(%{$atomHash})) { 
-		if ($atomHash->{$atom} > 0.00000001 || $atomHash->{$atom} < -0.00000001) {
-			if ($status eq "OK") {
-				$status = "MI:";	
-			} else {
-				$status .= "|";
-			}
-			$results->{balanced} = 0;
-			$results->{imbalancedAtoms}->{$atom} = $atomHash->{$atom};
-			$status .= $atom.":".$atomHash->{$atom};
+	    }
+	    
+	    $self->add("reagents", {compound_uuid => $hcpd->uuid(),
+				    compartment_uuid => $compUuid,
+				    coefficient => -1*$imbalancedAtoms->{"H"},
+				    isCofactor => 0});
+	    
+	}elsif(scalar(keys %$protonCompHash)>0){
+	    #must choose proton reagent
+	    #defaults to compartment with highest number in hierarchy
+	    
+	    my $compUuid = (keys %$protonCompHash)[0];
+	    my $hierarchy=1;
+	    foreach my $tmpCompUuid ( grep { $_ ne $compUuid } keys %$protonCompHash){
+		if($protonCompHash->{$tmpCompUuid}->hierarchy()>$hierarchy){
+		    $compUuid=$tmpCompUuid;
+		    $hierarchy=$protonCompHash->{$tmpCompUuid}->hierarchy();
 		}
-	}
-
-	if ($netCharge != 0) {
-		if ($status eq "OK") {
-			$status = "CI:".$netCharge;	
-		} else {
-			$status .= "|CI:".$netCharge;
+	    }
+	    
+	    my $rgts = $self->reagents();
+	    for(my $i=0;$i<scalar(@$rgts);$i++){
+		if($rgts->[$i]->compound_uuid() eq $hcpd->uuid() && $rgts->[$i]->compartment_uuid() eq $compUuid){
+		    my $coeff=$rgts->[$i]->coefficient();
+		    $rgts->[$i]->coefficient($coeff+(-1*$imbalancedAtoms->{"H"}));
 		}
-		$results->{balanced} = 0;
-		$results->{imbalancedCharge} = $netCharge;
-		
+	    }
+	    $self->reagents($rgts);
 	}
+	
+	#my $currentProtons = $self->defaultProtons();
+	#$currentProtons += -1*$imbalancedAtoms->{"H"};
+	#$self->defaultProtons($currentProtons);
+	
+	$netCharge += -1*$imbalancedAtoms->{"H"};
+	$atomHash->{H} = 0;
+	delete($imbalancedAtoms->{H});
+	$status.="|HB";
+    }
 
-	$self->status($status);
-	return $results;
+    foreach my $atom (keys(%{$imbalancedAtoms})) { 
+	if ($status eq "OK") {
+	    $status = "MI:";	
+	} else {
+	    $status .= "|";
+	}
+	$results->{balanced} = 0;
+	$results->{imbalancedAtoms}->{$atom} = $atomHash->{$atom};
+	$status .= $atom.":".$atomHash->{$atom};
+    }
+    
+    if ($netCharge != 0) {
+	if ($status eq "OK") {
+	    $status = "CI:".$netCharge;	
+	} else {
+	    $status .= "|CI:".$netCharge;
+	}
+	$results->{balanced} = 0;
+	$results->{imbalancedCharge} = $netCharge;
+	
+    }
+    
+    $self->status($status);
+    return $results;
 }
 
 sub checkForDuplicateReagents{

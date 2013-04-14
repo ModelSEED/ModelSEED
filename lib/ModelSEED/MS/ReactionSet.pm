@@ -28,7 +28,7 @@ sub _buildreactionCodeList {
 		if (length($string) > 0) {
 			$string .= ";"	
 		}
-		my $rxn = $string->[$i];
+		my $rxn = $rxns->[$i];
 		$string .= $rxn->uuid();
 	}
 	return $string;

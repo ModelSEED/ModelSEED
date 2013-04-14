@@ -112,6 +112,10 @@ sub calculateAtomsFromFormula {
 		$atoms->{error} = "No formula";
 	} else {
 	    foreach my $component ( split(/\./,$formula) ){
+		#remove problematic characters
+		$component =~ s/\)n//g;
+		$component =~ s/[\(\)]//g;
+		$component =~ s/\*\d?//g;
 		$component =~ s/([A-Z][a-z]*)/|$1/g;
 		$component =~ s/([\d]+)/:$1/g;
 		my $array = [split(/\|/,$component)];
@@ -120,8 +124,9 @@ sub calculateAtomsFromFormula {
 			if (defined($arrayTwo->[1])) {
 				if ($arrayTwo->[1] !~ m/^\d+$/) {
 					$atoms->{error} = "Invalid formula:".$self->formula();
+				}else{
+				    $atoms->{$arrayTwo->[0]} += $arrayTwo->[1];
 				}
-				$atoms->{$arrayTwo->[0]} += $arrayTwo->[1];
 			} else {
 				$atoms->{$arrayTwo->[0]} += 1;
 			}

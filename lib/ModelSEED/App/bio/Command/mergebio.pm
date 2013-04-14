@@ -19,6 +19,7 @@ sub opt_spec {
         ["saveas|a:s", "New name the merged biochemistry should be saved to"],
         ["saveover|s", "Save results as original biochemistry"],
         ["help|h|?", "Print this usage information"],
+	["checkforduplicates|f:s", "Force a check to report whether multiple compounds from the same file were merged together, which is typically undesirable.  Parameter requires single namespace"],
     );
 }
 
@@ -85,6 +86,26 @@ sub execute {
     }
 
     $biochemistry->mergeBiochemistry($other_biochemistry,$opts);
+
+    if(defined($opts->{checkforduplicates})){
+	if(!$biochemistry->queryObject("aliasSets",{name => $opts->{checkforduplicates}, attribute=>"compounds"})){
+	    print STDERR "Warning: cannot check for duplicate compounds, namespace ".$opts->{checkforduplicates}." does not exist\n";
+	}else{
+	    my $aliases = $biochemistry->queryObject("aliasSets",{ name => $opts->{checkforduplicates}, attribute => "compounds" })->aliases();
+	    my %uuidAliasHash=();
+	    
+	    foreach my $alias (keys %$aliases){
+		foreach my $uuid (@{$aliases->{$alias}}){
+		    $uuidAliasHash{$uuid}{$alias}=1;
+		}
+	    }
+	    
+	    foreach my $uuid ( grep { scalar( keys %{$uuidAliasHash{$_}} )>1 } keys %uuidAliasHash ){
+		print STDERR "Multiple compounds merged to a single UUID (".$uuid."): ".join("|",keys %{$uuidAliasHash{$uuid}})."\n";
+	    }
+	}
+    }
+
     if (defined($opts->{saveas})) {
 	my $new_ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
 	verbose("Saving biochemistry with merged compounds as ".$new_ref."...\n");
