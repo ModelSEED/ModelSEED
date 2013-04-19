@@ -4,6 +4,7 @@ use common::sense;
 use ModelSEED::App::import;
 use base 'ModelSEED::App::ImportBaseCommand';
 use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use Cwd qw(getcwd);
 use Class::Autouse qw(
     ModelSEED::MS::Factories::TableFileFactory
 );

@@ -26,19 +26,19 @@ sub sub_execute {
     my $mapping;
     if(defined($opts->{mapping})) {
         $mapping = $self->get_object({
-	    	type => "Mapping"
+	    	type => "Mapping",
 	    	reference => $opts->{mapping},
 	    });
     } else {
-        $mapping = $annotation->mapping;
+        $mapping = $anno->mapping;
     }
-    my $model = $annotation->createStandardFBAModel({
+    my $model = $anno->createStandardFBAModel({
         mapping => $mapping
     });
     $self->save_object({
-    	type => "Model"
+    	type => "Model",
     	reference => $modelID,
-    	store => $opts->{store}
+    	object => $model
     });
 }
 

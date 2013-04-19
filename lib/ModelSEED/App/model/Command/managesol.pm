@@ -6,6 +6,7 @@ use base 'ModelSEED::App::ModelBaseCommand';
 use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
+    Data::UUID
 );
 sub abstract { return "Lists all gapfilling and gapgeneration solutions for model, and integrates a selected solution" }
 sub usage_desc { return "model managesol [model] [options]" }
@@ -48,8 +49,13 @@ sub sub_execute {
     			if (@{$formsols} > $solNum) {
     				$form->remove($subfunc,$formsols->[$solNum]);
     				my $olduuid = $form->uuid();
-    				my $newuuid = $store->save_object($type."/".$form->uuid(),$form);
-					$model->replaceLinkArrayItem($func,$olduuid,$newuuid);
+    				$form->uuid(Data::UUID->new()->create_str());
+    				$self->save_object({
+						type => "FBAFormulation",
+						reference => "FBAFormulation/".$form->uuid(),
+						object => $form
+					});
+					$model->replaceLinkArrayItem($func,$olduuid,$form->uuid());
     			} else {
     				print STDERR "Invalid solution selected for deletions!"
     			}

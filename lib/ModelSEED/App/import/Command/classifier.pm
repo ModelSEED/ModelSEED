@@ -22,12 +22,13 @@ sub sub_execute {
     my ($self, $opts, $args) = @_;
     $self->usage_error("Must specify filename with classifier information") unless(defined($args->[0]));
     $self->usage_error("Must specify name for the classifier") unless(defined($args->[1]));
+    my $map;
     if(defined($opts->{mapping})) {
     	$map = $self->get_object({
 	    	type => "Mapping",
 	    	reference => $opts->{mapping}
 	    });
-   	else {
+    } else {
    		$map = $self->store()->defaultMapping();
    	}
    	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();

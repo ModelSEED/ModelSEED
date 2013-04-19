@@ -15,7 +15,7 @@ sub options {
 }
 sub sub_execute {
     my ($self, $opts, $args,$anno) = @_;
-    print map { $_->type . "\t" . $_->name ."\n" } @{$annotation->subsystems};
+    print map { $_->type . "\t" . $_->name ."\n" } @{$anno->subsystems};
 }
 
 1;

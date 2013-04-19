@@ -46,7 +46,7 @@ sub sub_execute {
     my ($self, $opts, $args,$model) = @_;
     my $pmodel;
     if (defined($opts->{prom})) {
-	    $pmodel $self->get_object({
+	    $pmodel = $self->get_object({
 	    	type => "PROMModel",
 	    	reference => $opts->{prom},
 	    	store => $opts->{store},
@@ -108,7 +108,7 @@ sub sub_execute {
 	    	$self->save_object({
 				type => "FBAFormulation",
 				reference => "FBAFormulation/".$fbaform->uuid(),
-				object => $gapfillingFormulation->fbaFormulation()
+				object => $fbaform
 			});
 	    	$model->add("fbaFormulations",$fbaform);
 	    	$self->save_model($model);

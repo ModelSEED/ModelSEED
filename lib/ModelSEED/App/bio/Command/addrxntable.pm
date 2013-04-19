@@ -1,54 +1,38 @@
 package ModelSEED::App::bio::Command::addrxntable;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
-use base 'App::Cmd::Command';
+use ModelSEED::App::bio;
+use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
+    ModelSEED::MS::Factories::ExchangeFormatFactory
 );
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Reads in table of reaction data and adds them to the database" }
-sub usage_desc { return "bio addrxntable [< biochemistry | biochemistry] [filename] [options]"; }
-sub opt_spec {
+sub usage_desc { return "bio addrxntable [ biochemistry id ] [filename] [options]"; }
+sub options {
     return (
-        ["saveas|a:s", "New alias for altered biochemistry"],
         ["rxnnamespace|r:s", "Name space for reaction IDs"],
         ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
         ["autoadd|u","Automatically add any missing compounds to DB"],
         ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
-        ["verbose|v", "Print verbose status information"],
-	["separator|t:s", "Column separator for file. Default is tab"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"],
-	["addmergealias|g", "Add identifiers to merging namespace."],
-	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
+        ["separator|t:s", "Column separator for file. Default is tab"],
+        ["addmergealias|g", "Add identifiers to merging namespace."],
+		["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-
-    $self->usage_error("Must specify a biochemistry to use") unless $args->[0];
-    my ($biochemistry, $ref) = $helper->get_object("biochemistry", $args, $store);
-    $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
-    $self->usage_error("Must specify a valid filename for reaction table") unless(defined($args->[1]) && -e $args->[1]);
-
-    #verbosity
-    set_verbose(1) if $opts->{verbose};
-
+sub sub_execute {
+    my ($self, $opts, $args,$bio) = @_;
+    $self->usage_error("Must specify a valid filename for reaction table") unless(defined($args->[0]) && -e $args->[0]);
     #load table
-    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\t");
+    my $tbl = ModelSEED::utilities::LOADTABLE($args->[0],"\\t");
 
     #load table
     my $separator="\\\t";
     $separator = $opts->{separator}  if exists $opts->{separator};
-    my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
+    my $tbl = ModelSEED::utilities::LOADTABLE($args->[0],$separator);
 
     if(scalar(@{$tbl->{data}->[0]})<2){
-	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
+	$tbl = ModelSEED::utilities::LOADTABLE($args->[0],"\\\;");
 #	$self->usage_error("Not enough columns in table, consider using a different separator");
     }
 
@@ -71,8 +55,8 @@ sub execute {
     }
 
     #creating namespaces if they don't exist
-    if(!$biochemistry->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
-	$biochemistry->add("aliasSets",{
+    if(!$bio->queryObject("aliasSets",{name => $opts->{rxnnamespace},attribute=>"reactions"})){
+	$bio->add("aliasSets",{
 	    name => $opts->{rxnnamespace},
 	    source => $opts->{rxnnamespace},
 	    attribute => "reactions",
@@ -80,16 +64,16 @@ sub execute {
     }
 
     foreach my $merge (@$mergeto){
-	next if $biochemistry->queryObject("aliasSets",{name => $merge, attribute=>"reactions"});
-	$biochemistry->add("aliasSets",{
+	next if $bio->queryObject("aliasSets",{name => $merge, attribute=>"reactions"});
+	$bio->add("aliasSets",{
 	    name => $merge,
 	    source => $merge,
 	    attribute => "reactions",
 	    class => "Reaction"});
     }
 
-    if(!$biochemistry->queryObject("aliasSets",{name => "name", attribute=>"reactions"})){
-	$biochemistry->add("aliasSets",{
+    if(!$bio->queryObject("aliasSets",{name => "name", attribute=>"reactions"})){
+	$bio->add("aliasSets",{
 	    name => "name",
 	    source => "name",
 	    attribute => "reactions",
@@ -134,18 +118,10 @@ sub execute {
 	#Not adding biomass reactions by default
 	next if $rxnData->{id}->[0] =~ /biomass/i || $rxnData->{id}->[0] =~ /^R_BIO/;
 
-        my $rxn = $biochemistry->addReactionFromHash($rxnData);
+        my $rxn = $bio->addReactionFromHash($rxnData);
     }
 
-    if (defined($opts->{saveas})) {
-        $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
-        verbose "Saving biochemistry with new reactions as ".$ref."...\n";
-	$biochemistry->name($opts->{saveas});
-    	$store->save_object($ref,$biochemistry);
-    } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
-        verbose "Saving over original biochemistry with new reactions...\n";
-        $store->save_object($ref,$biochemistry);
-    }
+    $self->save_bio($bio);
 }
 
 1;

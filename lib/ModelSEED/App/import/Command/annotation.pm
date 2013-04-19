@@ -60,7 +60,7 @@ sub sub_execute {
 	    	type => "Mapping",
 	    	reference => $opts->{mapping}
 	    });
-   	else {
+    } else {
    		$map = $self->store()->defaultMapping();
    	}
    	# Importing annotation from table file
@@ -72,26 +72,26 @@ sub sub_execute {
             namespace => "SEED",
     	});
     	$anno = $factory->createAnnotation({
-    		mapping => $mapping,
+    		mapping => $map,
     		genome => $id
     	})
     } else {
     	my $config = {
     		genome_id => $id,
-    		mapping => $mapping
+    		mapping => $map
     	};
     	my $factory = ModelSEED::MS::Factories::Annotation->new(om => $self->store()->objectManager());
 	    my $sources = [ $opts->{source} ];
 	    $sources = [ qw(PubSEED RAST KBase) ] unless(@$sources);
 	    $anno = $factory->build($config);
     }
-    my $mapping = $anno->mapping;
+    $map = $anno->mapping;
 	$self->save_object({
     	type => "Mapping",
-    	reference => "Mapping/".$mapping->uuid(),
-    	object => $mapping
+    	reference => "Mapping/".$map->uuid(),
+    	object => $map
     });
-	$anno->mapping_uuid($mapping->uuid());
+	$anno->mapping_uuid($map->uuid());
     $self->save_object({
     	object => $anno,
     	type => "Annotation",

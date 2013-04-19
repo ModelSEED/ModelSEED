@@ -47,7 +47,7 @@ sub sub_execute {
 	    	type => "Biochemistry",
 	    	reference => $opts->{biochemistry}
 	    });
-   	else {
+    } else {
    		$biochemistry = $self->store()->defaultBiochemistry();
    	}
     my $map;

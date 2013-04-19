@@ -33,6 +33,7 @@ sub sub_execute {
 	if (defined($opts->{namespace})) {
 		$input->{namespace} = $opts->{namespace};
 	}
+	my $factory = ModelSEED::MS::Factories::SBMLFactory->new();
 	(my $biochemistry,my $model,my $anno,my $mapping) = $factory->parseSBML($input);
 	if (defined($model) && defined($anno) && defined($mapping) && defined($biochemistry)) {
 		$self->save_object({

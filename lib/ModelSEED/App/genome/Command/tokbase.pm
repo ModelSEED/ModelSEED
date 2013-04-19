@@ -29,7 +29,7 @@ sub sub_execute {
     my ($self, $opts, $args, $obj) = @_;
 	my $storeName = shift @$args;
 	my $config = config();
-	$store = $config->currentUser()->findStore($storeName);
+	my $store = $config->currentUser()->findStore($storeName);
 	unless (defined($store)) {
         $self->usage_error("Specified store not currently accossiated to user.");
     }
@@ -37,12 +37,13 @@ sub sub_execute {
 		$opts->{workspace} = $store->currentWorkspace();
 	}
 	my $genome = $obj->buildKBaseGenome();
-	$self->kbfbaclient->genome_object_to_workspace({
-		genomeobj => $genome,
-		workspace => $opts->{workspace},
-		auth => $auth,
-		biochemistry => $bio,
-		mapping => $map
-	});
-	return;
+#	$self->kbfbaclient->genome_object_to_workspace({
+#		genomeobj => $genome,
+#		workspace => $opts->{workspace},
+#		auth => $auth,
+#		biochemistry => $bio,
+#		mapping => $map
+#	});
 }
+
+1;

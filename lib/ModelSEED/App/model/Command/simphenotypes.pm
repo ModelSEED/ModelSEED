@@ -106,7 +106,7 @@ sub sub_execute {
 	    	$self->save_object({
 				type => "FBAFormulation",
 				reference => "FBAFormulation/".$fbaform->uuid(),
-				object => $gapfillingFormulation->fbaFormulation()
+				object => $fbaform
 			});
 	    	$model->add("fbaFormulations",$fbaform);
 	    	$self->save_model($model);

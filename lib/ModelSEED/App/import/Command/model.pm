@@ -51,8 +51,7 @@ sub sub_execute {
     my ($factory);
     if($opts->{source} eq 'model-seed') {
         $factory = ModelSEED::MS::Factories::FBAMODELFactory->new(
-            auth => $auth,
-            store => $store
+            store => $self->store()
         );
     } else {
         die "Unknown source: " . $opts->{source} . "\n" .
