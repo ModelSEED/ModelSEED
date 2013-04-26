@@ -272,7 +272,7 @@ sub loadFromEquation {
 		if (!defined($cpd)) {
 		    ModelSEED::utilities::USEWARNING("Unrecognized compound '".$NewRow->{compound}."' used in reaction ".$args->{rxnId});
 		    if(defined($args->{autoadd}) && $args->{autoadd}==1){
-			ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database\n");
+			ModelSEED::utilities::verbose("Compound '".$NewRow->{compound}."' automatically added to database");
 			$cpd = $bio->add("compounds",{ locked => "0",
 						       name => $NewRow->{compound},
 						       abbreviation => $NewRow->{compound}
@@ -310,12 +310,401 @@ sub loadFromEquation {
 	    }
 	}
 	
-	#multiple instances of the same reaction in the same compartment is unacceptable.
+	#multiple instances of the same reactant in the same compartment is unacceptable.
+        #however, these aren't rejected, (no duplicate reagents are created in the code above
+        #and instead are accounted for in checkReactionMassChargeBalance()
 	if(scalar( grep { $cpdCmpCount->{$_} >1 } keys %$cpdCmpCount)>0){
-	    return 0;
+	    return 1;
 	}else{
 	    return 1;
 	}
+}
+
+=head3 checkReactionCueBalance
+Definition:
+	{} = ModelSEED::MS::Reaction->checkReactionCueBalance({});
+Description:
+	Checks if the cues in the reaction can be balanced
+
+=cut
+
+sub checkReactionCueBalance {
+    my $self = shift;
+
+    #Adding up atoms and charge from all reagents
+    my $rgts = $self->reagents();
+
+    #balance out reagents in case of 'cpderror'
+    my %reagents=();
+    foreach my $rgt (@$rgts){
+	$reagents{$rgt->compound_uuid()}+=$rgt->coefficient();
+    }
+
+    #balance out cues
+    my %Cues=();
+    foreach my $rgt ( grep { $reagents{$_->compound_uuid()} != 0 } @$rgts ){
+	my %cues = %{$rgt->compound()->cues()};
+	foreach my $cue (keys %cues){
+	    $Cues{$cue}+=($cues{$cue}*$rgt->coefficient());
+	}
+    }
+
+    %Cues = map { $_ => $Cues{$_} } grep { $Cues{$_} != 0 } keys %Cues;
+
+    $self->cues(\%Cues);
+}
+
+=head3 calculateEnergyofReaction
+Definition:
+	{} = ModelSEED::MS::Reaction->calculateEnergyofReaction({});
+Description:
+	calculates the energy of reaction
+
+=cut
+
+sub calculateEnergyofReaction{
+    my $self=shift;
+    my %Cues=%{$self->cues()};
+
+    if($self->status() eq "EMPTY" || $self->status() eq "CPDFORMERROR"){
+	$self->deltaG("10000000");
+	$self->deltaGErr("10000000");
+	return;
+    }
+
+    my $biochem=$self->parent();
+
+    my $noDeltaG=0;
+    my %cue_dG=();
+    my %cue_dGE=();
+    foreach my $cue( grep { $Cues{$_} !=0 } keys %Cues){
+	$cue_dG{$cue}=$biochem->getObject("cues",$cue)->deltaG();
+	$cue_dGE{$cue}=$biochem->getObject("cues",$cue)->deltaGErr();
+        $noDeltaG=1 if !defined($cue_dG{$cue}) || $cue_dG{$cue} == -10000 || $cue_dG{$cue} == 10000000;
+    }
+
+    if($noDeltaG){
+	$self->deltaG("10000000");
+	$self->deltaGErr("10000000");
+	return;
+    }
+
+    my $deltaG=0.0;
+    my $deltaGErr=0.0;
+    foreach my $cue (keys %Cues){
+        $deltaG+=($cue_dG{$cue}*$Cues{$cue});
+        $deltaGErr+=(($cue_dGE{$cue}*$Cues{$cue})**2);
+    }
+    $deltaGErr=$deltaGErr**0.5;
+    $deltaGErr=2.0 if !$deltaGErr;
+
+    $deltaG=sprintf("%.2f",$deltaG);
+    $deltaGErr=sprintf("%.2f",$deltaGErr);
+
+    $self->deltaG($deltaG);
+    $self->deltaGErr($deltaGErr);
+}
+
+=head3 estimateThermoReversibility
+Definition:
+	"" = ModelSEED::MS::Reaction->estimateThermoReversibility({});
+Description:
+	Checks if the cues in the reaction can be balanced
+
+=cut
+
+sub estimateThermoReversibility{
+    my $self=shift;
+    my $args = args([], { direction=>0 }, @_);
+
+    ModelSEED::utilities::set_verbose(1);
+
+    if($self->deltaG() eq "10000000"){
+	$self->thermoReversibility("?");
+	return "No deltaG";
+    }
+
+    my $biochem = $self->parent();
+
+    my $TEMPERATURE=298.15;
+    my $GAS_CONSTANT=0.0019858775;
+    my $RT_CONST=$TEMPERATURE*$GAS_CONSTANT;
+    my $FARADAY = 0.023061; # kcal/vol  gram divided by 1000?
+
+    #Calculate MdeltaG
+    my ($max,$min)=(0.02,0.00001);
+
+    my ($rct_min,$rct_max)=(0.0,0.0);
+    my ($pdt_min,$pdt_max)=(0.0,0.0);
+    foreach my $rgt (@{$self->reagents()}){
+	next if $rgt->compound_uuid() eq $biochem->checkForProton()->uuid() || $rgt->compound_uuid() eq $biochem->checkForWater()->uuid();
+
+	my ($tmx,$tmn)=($max,$min);
+	if($rgt->compartment->id() eq "e"){
+	    ($tmx,$tmn)=(1.0,0.0000001);
+	}
+	if($rgt->coefficient()<0){
+	    $rct_min += ($rgt->coefficient()*log($tmn));
+	    $rct_max += ($rgt->coefficient()*log($tmx));
+	}else{
+	    $pdt_min += ($rgt->coefficient()*log($tmn));
+	    $pdt_max += ($rgt->coefficient()*log($tmx));
+	}
+    }
+
+    my $deltaGTransport=0.0;
+    if($self->isTransport()){
+#	my $deltadpsiG=0.0;
+#	my $deltadconcG=0.0;
+
+#	my $internalpH=7.0;
+#	my $externalpH=7.5;
+#	my $minpH=7.5;
+#	my $maxpH=7.5;
+
+#    foreach my $rgt (@{$self->reagents()}){
+#	if($r->{"DATABASE"}->[0] eq $p->{"DATABASE"}->[0]){
+#	    if($r->{"COMPARTMENT"}->[0] ne $p->{"COMPARTMENT"}){
+		#Find number of mols transported
+		#And direction of transport
+#		my $tempCoeff = 0;
+#		my $tempComp="";
+#		if($r->{"COEFFICIENT"}->[0] < $p->{"COEFFICIENT"}->[0]){
+#		    $tempCoeff=$p->{"COEFFICIENT"}->[0];
+#		    $tempComp=$p->{"COMPARTMENT"}->[0];
+#		}else{
+#		    $tempCoeff=$r->{"COEFFICIENT"}->[0];
+#		    $tempComp=$r->{"COMPARTMENT"}->[0];
+#		}
+		
+		#find direction of transport based on difference in concentrations
+#		my $conc_diff=0.0;
+#		if($tempComp ne "c"){
+#		    $conc_diff=$internalpH-$externalpH;
+#		}else{
+#		    $conc_diff=$externalpH-$internalpH
+#		}
+		
+#		my $delta_psi = 33.33 * $conc_diff - 143.33;
+		
+#		my $cDB=$self->figmodel()->database()->get_object('compound',{id=>$r->{"DATABASE"}->[0]});
+#		my $net_charge=0.0;
+#		if(!$cDB || $cDB->charge() eq "" || $cDB->charge() eq "10000000"){
+#		    print STDERR "Transporting ",$r->{"DATABASE"}->[0]," but no charge\n";
+#		}else{
+#		    $net_charge=$cDB->charge()*$tempCoeff;
+#		}
+		
+#		$deltadpsiG += $net_charge * $FARADAY * $delta_psi;
+#		$deltadconcG += -2.3 * $RT_CONST * $conc_diff * $tempCoeff;
+#	    }
+#	}
+#    }
+
+#if($r->{"DATABASE"}->[0] eq "cpd00067"){
+#$extCoeff -= ($DPSI_COEFF-$RT_CONST*1)*$tempCoeff;
+#$intCoeff += ($DPSI_COEFF-$RT_CONST*1)*$tempCoeff;
+#}else{
+#$extCoeff -= $DPSI_COEFF*$charge*$tempCoeff;
+#$intCoeff += $DPSI_COEFF*$charge*$tempCoeff;
+#}
+#Then for the whole reactant
+#if (HinCoeff < 0) {
+#    DeltaGMin += -HinCoeff*IntpH + -HextCoeff*MaxExtpH;
+#    DeltaGMax += -HinCoeff*IntpH + -HextCoeff*MinExtpH;
+#    mMDeltaG += -HinCoeff*IntpH + -HextCoeff*(IntpH+0.5);
+#}
+#else {
+#    DeltaGMin += -HinCoeff*IntpH + -HextCoeff*MinExtpH;
+#    DeltaGMax += -HinCoeff*IntpH + -HextCoeff*MaxExtpH;
+#    mMDeltaG += -HinCoeff*IntpH + -HextCoeff*(IntpH+0.5);
+#}
+    }
+
+    my $storedmax=$self->deltaG()+$deltaGTransport+($RT_CONST*$pdt_max)+($RT_CONST*$rct_min)+$self->deltaGErr();
+    my $storedmin=$self->deltaG()+$deltaGTransport+($RT_CONST*$pdt_min)+($RT_CONST*$rct_max)-$self->deltaGErr();
+
+    $storedmax=sprintf("%.4f",$storedmax);
+    $storedmin=sprintf("%.4f",$storedmin);
+
+    if($storedmax<0){
+	$self->thermoReversibility(">");
+	$self->direction(">") if $args->{direction};
+        return "MdeltaG:".$storedmin.">".$storedmax;
+    }
+    if($storedmin>0){
+	$self->thermoReversibility("<");
+	$self->direction("<") if $args->{direction};
+        return "MdeltaG:".$storedmin."<".$storedmax;
+    }
+
+    #Do heuristics
+    #1: ATP hydrolysis transport
+    #1a: Find Phosphate stuff
+    my %PhoIDs=("ATP" => { "ModelSEED" => "cpd00002", "KEGG" => "C00002", "MetaCyc" => "ATP", "UUID" =>"" },
+		"ADP" => { "ModelSEED" => "cpd00008", "KEGG" => "C00008", "MetaCyc" => "ADP", "UUID" =>"" },
+		"AMP" => { "ModelSEED" => "cpd00018", "KEGG" => "C00020", "MetaCyc" => "AMP", "UUID" =>"" },
+		"Pi"  => { "ModelSEED" => "cpd00009", "KEGG" => "C00009", "MetaCyc" => "Pi",  "UUID" =>"" },
+		"Ppi" => { "ModelSEED" => "cpd00012", "KEGG" => "C00013", "MetaCyc" => "PPI", "UUID" =>"" });
+
+    my $Source="None";
+    foreach my $src ("KEGG","MetaCyc","ModelSEED"){
+	if($biochem->queryObject("aliasSets",{name=>$src,attribute=>"compounds"})){
+	    my $cpdObj = $biochem->getObjectByAlias("compounds",$PhoIDs{"Pi"}{$src},$src);
+	    if($cpdObj){
+		$Source=$src;
+		last;
+	    }
+	}
+    }
+    if($Source eq "None"){
+	verbose("Cannot use heuristics with atypical biochemistry aliases");
+	return "Error";
+    }
+
+    foreach my $cpd (keys %PhoIDs){
+	my $cpdObj = $biochem->getObjectByAlias("compounds",$PhoIDs{$cpd}{$Source},$Source);
+	if($cpdObj){
+	    $PhoIDs{$cpd}{"UUID"}=$cpdObj->uuid();
+	}else{
+	    verbose("Unable to find phopsphate compound in biochemistry: $cpd");
+	    return "Error";
+	}
+    }
+
+    my %PhoHash=();
+    my %Comps=();
+    my $Contains_Protons=0;
+    foreach my $rgt (@{$self->reagents()}){
+        $Comps{$rgt->compartment()->id()}=1;
+        $Contains_Protons=1 if $rgt->compartment()->id() ne "c" && $rgt->compound_uuid() eq $biochem->checkForProton()->uuid();
+	foreach my $cpd (keys %PhoIDs){
+	    $PhoHash{$cpd} += $rgt->coefficient() if $PhoIDs{$cpd}{"UUID"} eq $rgt->compound_uuid();
+	}
+    }
+
+    #1b: ATP Synthase is reversible
+    if(scalar(keys %Comps)>1 && exists($PhoHash{"ATP"}) && $Contains_Protons){
+	$self->thermoReversibility("=");
+	$self->direction("=") if $args->{direction};
+        return "ATPS";
+    }
+
+    #1b: Find ABC Transporters (but not ATP Synthase)
+    if(scalar(keys %Comps)>1 && exists($PhoHash{"ATP"}) && !$Contains_Protons){
+        my $dir="=";
+        if($PhoHash{"ATP"}<0){
+            $dir=">";
+        }elsif($PhoHash{"ATP"}>0){
+            $dir="<";
+        }
+	$self->thermoReversibility($dir);
+	$self->direction($dir) if $args->{direction};
+        return "ABCT: ".$dir;
+    }
+
+    #2: Calculate mMdeltaG
+    my %GasIDs=("CO2"=> { "ModelSEED" => "cpd00011", "KEGG" => "C00011", "MetaCyc" => "CARBON-DIOXIDE", "UUID" =>"" },
+		"O2" => { "ModelSEED" => "cpd00007", "KEGG" => "C00007", "MetaCyc" => "OXYGEN-MOLECULE", "UUID" =>"" },
+		"H2" => { "ModelSEED" => "cpd11640", "KEGG" => "C00282", "MetaCyc" => "HYDROGEN-MOLECULE", "UUID" =>"" });
+
+    foreach my $cpd (keys %GasIDs){
+	my $cpdObj = $biochem->getObjectByAlias("compounds",$GasIDs{$cpd}{$Source},$Source);
+	if($cpdObj){
+	    $GasIDs{$cpd}{"UUID"}=$cpdObj->uuid();
+	}else{
+	    verbose("Unable to find gas compound in biochemistry: $cpd");
+	    return "Error";
+	}
+    }
+
+    my $conc=0.001;
+    my $rgt_total=0.0;
+    foreach my $rgt (@{$self->reagents()}){
+	next if $rgt->compound_uuid() eq $biochem->checkForProton()->uuid() || $rgt->compound_uuid() eq $biochem->checkForWater()->uuid();
+        my $tconc=$conc;
+        if($rgt->compound_uuid() eq $GasIDs{"CO2"}{"UUID"}){
+            $tconc=0.0001;
+        }
+        if($rgt->compound_uuid() eq $GasIDs{"O2"}{"UUID"} || $rgt->compound_uuid() eq $GasIDs{"H2"}{"UUID"}){
+            $tconc=0.000001;
+        }
+        $rgt_total+=($rgt->coefficient()*log($tconc));
+    }
+
+    my $mMdeltaG=$self->deltaG()+($RT_CONST*$rgt_total);
+    $mMdeltaG=sprintf("%.4f",$mMdeltaG);
+
+    if($mMdeltaG >= -2 && $mMdeltaG <= 2) {
+	$self->thermoReversibility("=");
+	$self->direction("=") if $args->{direction};
+        return "mMdeltaG: $mMdeltaG";
+    }
+
+    #3: Calculate low energy points
+    #3a: Find minimum Phosphate stuff
+    my $LowEnergyPoints=0;
+    my $minimum=10000;
+    if(exists($PhoHash{"ATP"}) && exists($PhoHash{"Pi"}) && exists($PhoHash{"ADP"})){
+        foreach my $key ("ATP", "ADP", "Pi"){
+            if(exists($PhoHash{$key})){
+                $minimum=$PhoHash{$key} if $PhoHash{$key}<$minimum;
+            }
+        }
+        $LowEnergyPoints=$minimum if $minimum<10000;
+    }elsif(exists($PhoHash{"ATP"}) && exists($PhoHash{"Ppi"}) && exists($PhoHash{"AMP"})){
+        foreach my $key ("ATP", "AMP", "Ppi"){
+            if(exists($PhoHash{$key})){
+                $minimum=$PhoHash{$key} if $PhoHash{$key}<$minimum;
+            }
+        }
+        $LowEnergyPoints=$minimum if $minimum<10000;
+    }
+
+    #3b:Find other low energy compounds
+    #taken from software/mfatoolkit/Parameters/Defaults.txt
+    my %LowEIDs=("CO2" => { "ModelSEED" => "cpd00011", "KEGG" => "C00011", "MetaCyc" => "CARBON-DIOXIDE", "UUID" =>"" },
+		 "NH3" => { "ModelSEED" => "cpd00013", "KEGG" => "C00014", "MetaCyc" => "AMMONIA", "UUID" =>"" },
+		 "ACP" => { "ModelSEED" => "cpd11493", "KEGG" => "C00229", "MetaCyc" => "ACP", "UUID" =>"" },
+		 "Pi"  => { "ModelSEED" => "cpd00009", "KEGG" => "C00009", "MetaCyc" => "Pi",  "UUID" =>"" },
+		 "Ppi" => { "ModelSEED" => "cpd00012", "KEGG" => "C00013", "MetaCyc" => "PPI", "UUID" =>"" },
+		 "CoA" => { "ModelSEED" => "cpd00010", "KEGG" => "C00010", "MetaCyc" => "CO-A", "UUID" =>"" },
+		 "DHL" => { "ModelSEED" => "cpd00449", "KEGG" => "C00579", "MetaCyc" => "DIHYDROLIPOAMIDE", "UUID" =>"" },
+		 "CO3" => { "ModelSEED" => "cpd00242", "KEGG" => "C00288", "MetaCyc" => "HCO3", "UUID" =>"" });
+
+    my %LowEUUIDs=();
+    foreach my $cpd (keys %LowEIDs){
+	my $cpdObj = $biochem->getObjectByAlias("compounds",$LowEIDs{$cpd}{$Source},$Source);
+	if($cpdObj){
+	    $LowEIDs{$cpd}{"UUID"}=$cpdObj->uuid();
+	    $LowEUUIDs{$cpdObj->uuid()}=1;
+	}else{
+	    verbose("Unable to find low energy compound in biochemistry: $cpd");
+	    return "Error";
+	}
+    }
+
+    my $LowE_total=0;
+    foreach my $rgt (@{$self->reagents()}){
+	if(exists($LowEUUIDs{$rgt->compound_uuid()})){
+	    $LowE_total += $rgt->coefficient();
+	}
+    }
+
+    $LowEnergyPoints-=$LowE_total;
+
+    #test points
+    if(($LowEnergyPoints*$mMdeltaG) > 2 && $mMdeltaG < 0){
+	$self->thermoReversibility(">");
+	$self->direction(">") if $args->{direction};
+        return "Low Energy Points:$LowEnergyPoints\tmMdeltaG: $mMdeltaG";
+    }elsif(($LowEnergyPoints*$mMdeltaG) > 2 && $mMdeltaG > 0){
+	$self->thermoReversibility("<");
+	$self->direction("<") if $args->{direction};
+        return "Low Energy Points:$LowEnergyPoints\tmMdeltaG: $mMdeltaG";
+    }
+
+    return "Default";
 }
 
 =head3 checkReactionMassChargeBalance
@@ -345,13 +734,61 @@ sub checkReactionMassChargeBalance {
 
     #Adding up atoms and charge from all reagents
     my $rgts = $self->reagents();
-    
+
     #Need to remember whether reaction has proton reagent in which compartment
     my $waterCompHash=();
     my $protonCompHash=();
     my $compHash=();
+    my $cpdCmpCount=();
     my $hcpd=$self->biochemistry()->checkForProton();
     my $wcpd=$self->biochemistry()->checkForWater();
+
+    #check for the one reaction which is truly empty
+    if(scalar(@$rgts)==0){
+	$self->status("EMPTY");
+	return {
+	    balanced => 0,
+	    error => "Reactants cancel out completely"
+	};
+    }
+
+    #check for reactions with duplicate reagents (same compound in same compartment)
+    #this is rare but arises from use of consolidatebio which doesn't check reactions
+    #after merging compounds.  The duplicate reagents need to be removed before balancing
+    #reaction
+    foreach my $rgt (@$rgts){
+	$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+    }
+
+    if(scalar( grep { $cpdCmpCount->{$_} > 1 } keys %$cpdCmpCount)>0){
+
+	foreach my $cpdcmpt ( grep { $cpdCmpCount->{$_} > 1 } keys %$cpdCmpCount){
+
+	    my ($cpd,$cmpt)=split(/_/,$cpdcmpt);
+	    my $coefficient=0;
+	    my $rgtUUIDs="";
+
+	    foreach my $rgt (@$rgts){
+		if($rgt->compartment_uuid() eq $cmpt && $rgt->compound_uuid() eq $cpd){
+		    $coefficient+=$rgt->coefficient();
+
+		    if(!$rgtUUIDs){
+			$rgtUUIDs=$cpdcmpt;
+		    }else{
+			$self->remove("reagents",$rgt);
+		    }
+		}
+	    }
+	    
+	    $rgts = $self->reagents();
+
+	    foreach my $rgt (@$rgts){
+		if($rgt->compound_uuid()."_".$rgt->compartment_uuid() eq $rgtUUIDs){
+		    $rgt->coefficient($coefficient);
+		}
+	    }
+	}
+    }
 
 	for (my $i=0; $i < @{$rgts};$i++) {
 		my $rgt = $rgts->[$i];
@@ -361,12 +798,14 @@ sub checkReactionMassChargeBalance {
 		$waterCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_uuid() eq $wcpd->uuid();
 		$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
 
+		$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+
 		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
 		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
 		my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
 
 		if (defined($cpdatoms->{error})) {
-		        $self->status("CPDERROR");
+		        $self->status("CPDFORMERROR");
 			return {
 				balanced => 0,
 				error => $cpdatoms->{error}
@@ -406,7 +845,7 @@ sub checkReactionMassChargeBalance {
     }
 
     if($args->{rebalanceWater} && join("",sort keys %$imbalancedAtoms) eq "HO" && ($imbalancedAtoms->{"H"}/$imbalancedAtoms->{"O"}) == 2){
-	verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"}."\n");
+	verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"});
 
 	if(scalar(keys %$waterCompHash)==0){
 	    #must create water reagent
@@ -457,7 +896,7 @@ sub checkReactionMassChargeBalance {
     }
     
     if ($args->{rebalanceProtons} && join("",keys %$imbalancedAtoms) eq "H") {
-	verbose("Adjusting ".$self->id()." protons by ".$imbalancedAtoms->{"H"}."\n");
+	verbose("Adjusting ".$self->id()." protons by ".$imbalancedAtoms->{"H"});
 	
 	if(scalar(keys %$protonCompHash)==0){
 	    #must create proton reagent
