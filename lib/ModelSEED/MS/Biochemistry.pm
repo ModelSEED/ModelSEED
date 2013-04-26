@@ -407,17 +407,49 @@ sub addCompartmentFromHash {
     #check to see if compartment doesn't already exist
     my $cpt = $self->queryObject("compartments",{name => $arguments->{name}});
     if (defined($cpt)) {
-	verbose("Compartment found with matching name ".$arguments->{name}."\n");
+	verbose("Compartment found with matching name ".$arguments->{name});
 	return $cpt;
     }
 
-    verbose("Creating compartment ".$arguments->{name}." with id: ".$arguments->{id}."\n");
+    verbose("Creating compartment ".$arguments->{name}." with id: ".$arguments->{id});
     $cpt = $self->add("compartments",{
 	id => $arguments->{id},
 	name => $arguments->{name},
 	hierarchy => $arguments->{hierarchy}});
     if($arguments->{uuid}){
 	$cpt->uuid($arguments->{uuid});
+    }
+}
+
+=head3 addCueFromHash
+Definition:
+	ModelSEED::MS::Cue = ModelSEED::MS::Biochemistry->addCueFromHash({[]});
+Description:
+	This command adds a single structural cue from an input hash
+=cut
+
+sub addCueFromHash {
+    my ($self,$arguments) = @_;
+    $arguments = args(["name"],{ energy=>[10000000], error=>[10000000], charge=>[10000000] }, $arguments);
+
+    #check to see if cue doesn't already exist
+    my $cue = $self->queryObject("cues",{name => $arguments->{name}});
+    if (defined($cue)) {
+	verbose("Cue found with matching name ".$arguments->{name});
+	return $cue;
+    }
+
+    verbose("Creating cue ".$arguments->{name});
+    $cue = $self->add("cues",{
+	name => $arguments->{name}->[0],
+	smallMolecule => $arguments->{smallMolecule}->[0],
+	deltaG => $arguments->{energy}->[0],
+	defaultCharge => $arguments->{charge}->[0],
+	deltaGErr => $arguments->{error}->[0],
+	formula => $arguments->{formula}->[0]});
+
+    if($arguments->{uuid}){
+	$cue->uuid($arguments->{uuid}->[0]);
     }
 }
 
@@ -437,6 +469,7 @@ sub addCompoundFromHash {
 	mergeto => [],
 	abbreviation => undef,
 	formula => ["unknown"],
+	unchargedFormula => ["unknown"],
 	mass => [10000000],
 	charge => [10000000],
 	deltag => [10000000],
@@ -451,7 +484,7 @@ sub addCompoundFromHash {
     # Checking for id uniqueness within scope of own aliasType
     my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
     if (defined($cpd)) {
-	verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace}."\n");
+	verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
 	if($arguments->{addmergealias}){
 	    foreach my $aliasType (@{$arguments->{mergeto}}){
 		$self->addAlias({ attribute => "compounds",
@@ -473,7 +506,7 @@ sub addCompoundFromHash {
 
 	$cpd = $self->getObjectByAlias("compounds",$matchingId,$aliasType);
 	if (defined($cpd)) {
-	    verbose("Compound found with matching id ".$matchingId." for namespace ".$aliasType."\n");
+	    verbose("Compound found with matching id ".$matchingId." for namespace ".$aliasType);
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
 			      alias => $arguments->{id}->[0],
@@ -499,7 +532,7 @@ sub addCompoundFromHash {
        (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
 	$cpd=$self->checkForProton();
 	if(defined($cpd)){
-	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}})."\n");
+	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}}));
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
 			      alias => $arguments->{id}->[0],
@@ -532,7 +565,7 @@ sub addCompoundFromHash {
 	    }
 
 	    if (defined($cpd)){
-		verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name."\n");
+		verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name);
 		
 		$self->addAlias({attribute => "compounds",
 				 aliasName => $arguments->{namespace},
@@ -554,12 +587,13 @@ sub addCompoundFromHash {
     }
 
     # Actually creating compound
-    verbose("Creating compound ".$arguments->{id}->[0]."\n");
+    verbose("Creating compound ".$arguments->{id}->[0]);
 
     $cpd = $self->add("compounds",{
 	name => $arguments->{names}->[0],
 	abbreviation => $arguments->{abbreviation}->[0],
 	formula => $arguments->{formula}->[0],
+	unchargedFormula => $arguments->{unchargedFormula}->[0],
 	mass => $arguments->{mass}->[0],
 	defaultCharge => $arguments->{charge}->[0],
 	deltaG => $arguments->{deltag}->[0],
@@ -632,7 +666,7 @@ sub addReactionFromHash {
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reactionIDaliasType});
 	if (defined($rxn)) {
-		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType}."\n");
+		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType});
 		if($arguments->{addmergealias}){
 		    foreach my $aliasType (@{$arguments->{mergeto}}){
 			$self->addAlias({ attribute => "reactions",
@@ -648,7 +682,7 @@ sub addReactionFromHash {
         foreach my $aliasType (@{$arguments->{mergeto}}){
 	    $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$aliasType);
 	    if( defined($rxn) ){
-			verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType."\n");
+			verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
 			#Alias needs to be created for original namespace if found in different namespace
 			$self->addAlias({
 			    attribute => "reactions",
@@ -692,7 +726,7 @@ sub addReactionFromHash {
 	    rxnId => $arguments->{id}->[0],
 	    compartment => $arguments->{compartment}->[0]
 	})) {
-	    verbose("Reaction ".$arguments->{id}->[0]." was rejected\n");
+	    verbose("Reaction ".$arguments->{id}->[0]." was rejected");
 	    return undef;
 	}else{
 	    #verbose("Reaction ".$arguments->{id}->[0]." passed\n");
@@ -718,7 +752,7 @@ sub addReactionFromHash {
 		    $aliasSetName="could not find ID";
 		}
 	    }
-	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]."\n");
+	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]);
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $arguments->{reactionIDaliasType},
 			      alias => $arguments->{id}->[0],
@@ -743,7 +777,7 @@ sub addReactionFromHash {
     if($arguments->{balancedonly}==1){
 	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1});
 	if($result->{balanced}==0 && (defined($result->{error}) || defined($result->{imbalancedAtoms}))){
-	    verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status(),"\n");
+	    verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status());
 	    return;
 	}
     }
@@ -859,7 +893,7 @@ sub mergeBiochemistry {
 	}
     	my $uuidTranslation = {};
     	$opts->{touched}={};
-	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name()."\n");
+	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name());
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
 		    my $aliases={};
@@ -870,7 +904,12 @@ sub mergeBiochemistry {
 			    }
 			}
 		    }
-		    my $objId=$obj->id();
+		    my $objId="";
+		    if($type eq "cues"){
+			$objId=$obj->name();
+		    }else{
+			$objId=$obj->id();
+		    }
 		    foreach my $idNamespace (@{$opts->{namespace}}){
 			if(exists($aliases->{$idNamespace})){
 			    $objId=(keys %{$aliases->{$idNamespace}})[0];
@@ -884,22 +923,28 @@ sub mergeBiochemistry {
 
 		    my $dupObj = $self->$func($obj,$opts);
 		    if ( defined($dupObj) ){
-				verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObj->id()."\n");
-				foreach my $aliasName (keys %$aliases){
-				    foreach my $alias (keys %{$aliases->{$aliasName}}){
-					if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
-					    verbose("Skipping searchname ".$alias." as its already present\n");
-					}else{
-					    verbose("Adding alias ".$alias." from ".$aliasName." for ".$dupObj->uuid()."\n"); 
-					    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
-					}
-				    }
+			my $dupObjId="";
+			if($type eq "cues"){
+			    $dupObjId=$dupObj->name();
+			}else{
+			    $dupObjId=$dupObj->id();
+			}
+			verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObjId);
+			foreach my $aliasName (keys %$aliases){
+			    foreach my $alias (keys %{$aliases->{$aliasName}}){
+				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
+				    verbose("Skipping searchname ".$alias." as its already present");
+				}else{
+				    verbose("Adding alias ".$alias." from ".$aliasName." for ".$dupObj->uuid()); 
+				    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
 				}
-				$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
-				$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
-				$obj->uuid($dupObj->uuid());
+			    }
+			}
+			$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
+			$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
+			$obj->uuid($dupObj->uuid());
 		    } else {
-			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry\n");
+			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry");
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
@@ -1004,7 +1049,7 @@ sub checkForDuplicateCompound {
 	    foreach my $alias (@{$obj->getAliases($mergeNamespace)}){
 		my $dupObj = $self->getObjectByAlias("compounds",$alias,$mergeNamespace);
 		if($dupObj && ( !exists($opts->{touched}{$dupObj->uuid()} ) || defined($opts->{consolidate}) )){
-		    verbose("Duplicate compound found using $alias in $mergeNamespace\n");
+		    verbose("Duplicate compound found using $alias in $mergeNamespace");
 		    return $dupObj;
 		}
 	    }
