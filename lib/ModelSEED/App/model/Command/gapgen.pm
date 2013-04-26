@@ -31,6 +31,9 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+	["cplextimelimit:s", "Time limit for CPLEX solver in seconds: defaults to 3600 seconds"],
+	["milptimelimit:s", "Time limit for MILP recursion in seconds: defaults to 3600 seconds"],
+        ["norun", "Do not gapfill; print out the configuration as JSON"],
         ["integratesol|i", "Integrate first solution into model"],
         ["printraw|r", "Print raw data instead of readable data"],
         ["saveas|a:s", "New name the results should be saved to"],
@@ -59,7 +62,8 @@ sub execute {
 	my $fbaoverrides = {
 		media => "media",notes => "notes",objfraction => "objectiveConstraintFraction",
 		objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux"
+		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux",
+		cplextimelimit => "cplexTimeLimit",milptimelimit    => "milpRecursionTimeLimit",
 	};
 	my $overrideList = {
 		refmedia => "referenceMedia",nomediahyp => "!mediaHypothesis",nobiomasshyp => "!biomassHypothesis",
@@ -74,7 +78,9 @@ sub execute {
 				$input->{overrides}->{$overrideList->{$argument}} = 1;
 			}
 		} else {
+		    if(defined($opts->{$argument})){
 			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
+		    }
 		}
 	}
 	foreach my $argument (keys(%{$fbaoverrides})) {
@@ -84,6 +90,10 @@ sub execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapgenFormulation = $exchange_factory->buildGapgenFormulation($input);
+    if ($opts->{norun}) {
+        print $gapgenFormulation->toJSON();
+        return;
+    }
     verbose("Running gapgeneration...");
     $gapgenFormulation = $model->gapgenModel({
         gapgenFormulation => $gapgenFormulation,

@@ -299,6 +299,8 @@ rxn01267 )),
 		transporterMultiplier => 1,
 		gapfillingGeneCandidates => [],
 		reactionSetMultipliers => [],
+                cplexTimeLimit => 3600,
+                milpRecursionTimeLimit => 3600,
 	}, $data);
 	#Creating gapfilling formulation object
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
@@ -321,6 +323,8 @@ rxn01267 )),
 		biomassHypothesis => $data->{biomassHypothesis},
 		gprHypothesis => $data->{gprHypothesis},
 		reactionAdditionHypothesis => $data->{reactionAdditionHypothesis},
+		timePerSolution => $data->{cplexTimeLimit},
+		totalTimeLimit => $data->{milpRecursionTimeLimit},
 	});
 	$gapform->parseGeneCandidates({geneCandidates => $data->{gapfillingGeneCandidates}});
 	$gapform->parseSetMultipliers({sets => $data->{reactionSetMultipliers}});
@@ -362,6 +366,8 @@ sub buildGapgenFormulation {
 		biomassHypothesis => 0,
 		gprHypothesis => 0,
 		reactionRemovalHypothesis => 1,
+                cplexTimeLimit => 3600,
+                milpRecursionTimeLimit => 3600,
 	}, $data);
 	#Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{referenceMedia},"Media");
@@ -381,6 +387,8 @@ sub buildGapgenFormulation {
 		biomassHypothesis => $data->{biomassHypothesis},
 		gprHypothesis => $data->{gprHypothesis},
 		reactionRemovalHypothesis => $data->{reactionRemovalHypothesis},
+		timePerSolution => $data->{cplexTimeLimit},
+		totalTimeLimit => $data->{milpRecursionTimeLimit},
 	});
 	return $gapgenform;
 }
@@ -462,6 +470,7 @@ sub parseExchangeFileArray {
 	}
 	#Setting overrides
 	foreach my $key (%{$args->{overrides}}) {
+#	    print $key,"\n" if !exists($args->{overrides}->{$key});
 		$data->{$key} = $args->{overrides}->{$key};
 	}
 	return $data;

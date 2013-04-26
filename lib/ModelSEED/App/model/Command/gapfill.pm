@@ -44,6 +44,8 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+	["cplextimelimit:s", "Time limit for CPLEX solver in seconds: defaults to 3600 seconds"],
+	["milptimelimit:s", "Time limit for MILP recursion in seconds: defaults to 3600 seconds"],
         ["loadsolution|l:s", "Loading existing solution into model"],
         ["norun", "Do not gapfill; print out the configuration as JSON"],
         ["integratesol|i", "Integrate first solution into model"],
@@ -85,7 +87,9 @@ sub execute {
         defaultmaxflux   => "defaultMaxFlux",
         defaultmaxuptake => "defaultMaxDrainFlux",
         defaultminuptake => "defaultMinDrainFlux",
-        numsolutions	 => "numberOfSolutions"
+        numsolutions	 => "numberOfSolutions",
+	cplextimelimit   => "cplexTimeLimit",
+        milptimelimit    => "milpRecursionTimeLimit",
     };
     my $overrideList = {
         nomediahyp      => "!mediaHypothesis",
