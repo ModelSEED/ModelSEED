@@ -160,7 +160,8 @@ sub createStandardFBAModel {
 	my $args = args([],{
 		prefix => "Seed",
 		mapping => $self->mapping(),
-        verbose => 0,
+		verbose => 0,
+		isplant => 0,
 	}, @_);
 	my $mapping = $args->{mapping};
 	my $biochem = $mapping->biochemistry();
