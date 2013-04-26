@@ -373,6 +373,7 @@ sub buildModelFromAnnotation {
 	my $bio = $self->createStandardFBABiomass({
 		annotation => $self->annotation(),
 		mapping => $self->mapping(),
+		isplant => $args->{isplant},
 	});
 }
 
@@ -406,6 +407,7 @@ sub createStandardFBABiomass {
     my $args = args([], {
 		annotation => $self->annotation(),
 		mapping => $self->mapping(),
+		isplant => 0,
 	}, @_);
 	my $anno = $args->{annotation};
 	my $mapping = $args->{mapping};
@@ -415,10 +417,19 @@ sub createStandardFBABiomass {
 		name => $self->name()." auto biomass",
 		id => "bio".($count+1)
 	});
-	my $gramtype = $anno->classifyGenomeFromAnnotation();
-	my $template = $mapping->queryObject("biomassTemplates",{class => $gramtype});
+	my $phylum = "";
+    if(!$args->{isplant}){
+	$phylum=$anno->classifyGenomeFromAnnotation();
+    }else{
+	$phylum = "Plant";
+    }
+
+    my @templates=@{$mapping->biomassTemplates()};
+    print STDERR scalar(@templates),"\n";
+
+	my $template = $mapping->queryObject("biomassTemplates",{class => $phylum});
 	if (!defined($template)) {
-		print "Could not find biomass template for type:".$gramtype."\n";
+		print "Could not find biomass template for type:".$phylum."\n";
 		$template = $mapping->queryObject("biomassTemplates",{class => "Unknown"});
 	}
 	my $list = ["dna","rna","protein","lipid","cellwall","cofactor","energy"];
