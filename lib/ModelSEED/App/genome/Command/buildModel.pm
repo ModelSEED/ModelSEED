@@ -13,6 +13,7 @@ sub opt_spec {
     return (
         ["mapping|m:s", "Use a specific mapping to build the model"],
         ["verbose|v", "Print verbose about the model construction"],
+	["isplant|p", "Build a plant-specific model"],
         ["help|h|?", "Print this usage information"],
     );
 }
@@ -53,8 +54,9 @@ sub execute {
         $mapping = $annotation->mapping;
     }
     my $verbose = (defined $opts->{verbose}) ? 1 : 0;
+    my $isplant = (defined $opts->{isplant}) ? 1 : 0;
     my $model = $annotation->createStandardFBAModel({
-        mapping => $mapping, verbose => $verbose
+        mapping => $mapping, verbose => $verbose, isplant => $isplant
     });
     die "Unable to create model: $model_ref\n" unless($model_ref);
     $model_ref = $helpers->process_ref_string($model_ref, "model", $auth->username);
