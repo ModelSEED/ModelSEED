@@ -34,7 +34,6 @@ sub execute {
     
     my ($biochemistry,$ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
-    print "Using: ",$biochemistry->name(),"\n";
     
     $biochemistry->defaultNameSpace($opts->{namespace});
 

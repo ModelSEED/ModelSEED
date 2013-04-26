@@ -43,6 +43,8 @@ sub execute {
     $separator = $opts->{separator}  if exists $opts->{separator};
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[1],$separator);
 
+    verbose("Loading ".$args->[1]);
+
     if(scalar(@{$tbl->{data}->[0]})<2){
 	$tbl = ModelSEED::utilities::LOADTABLE($args->[1],"\\\;");
 #	$self->usage_error("Not enough columns in table, consider using a different separator");
@@ -91,7 +93,8 @@ sub execute {
 
     my $headingTranslation = {
     	name => "names",
-	database => "id"
+	database => "id",
+	uncharged_formula => "unchargedFormula",
     };
     for (my $i=0; $i < @{$tbl->{data}}; $i++) {
         my $cpdData = {

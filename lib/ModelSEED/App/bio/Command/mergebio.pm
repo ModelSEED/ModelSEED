@@ -42,12 +42,11 @@ sub execute {
 
     my ($biochemistry,$ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
-    print "Using: ",$biochemistry->name(),"\n";
 
     shift(@$args);
     my ($other_biochemistry,$other_ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Merging Biochemistry ".$args->[0]." not found") unless defined($other_biochemistry);
-    print "Merging: ",$other_biochemistry->name(),"\n";
+    verbose("Merging: ".$other_biochemistry->name()." with ".$biochemistry->name());
     
     #test aliasSets for merging
     if(!defined($opts->{mergevia})){

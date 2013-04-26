@@ -54,7 +54,7 @@ sub execute {
     my ($biochemistry,$ref) = $helper->get_object("biochemistry", $args, $store);
     $self->usage_error("Biochemistry ".$args->[0]." not found") unless defined($biochemistry);
 
-    verbose("Using: ",$biochemistry->name(),"\n");
+    verbose("Using: ".$biochemistry->name()."\n");
 
     if(!defined($opts->{mergevia})){
 	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
