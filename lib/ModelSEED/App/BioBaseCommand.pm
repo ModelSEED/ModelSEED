@@ -32,12 +32,12 @@ sub class_execute {
 sub save_bio {
 	my ($self,$obj) = @_;
 	my $ref = $obj->msStoreID();
-    if ($self->gopts()->{saveas}) {
+    if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for bio:".$ref);
+    	ModelSEED::utilities::verbose("New alias set for bio:".$ref);
     }
-    verbose("Saving bio to:".$ref);
+    ModelSEED::utilities::verbose("Saving bio to:".$ref);
     $self->save_object({
 	   	type => "Biochemistry",
 	   	reference => $ref,

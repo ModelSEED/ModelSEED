@@ -823,6 +823,28 @@ sub searchForReaction {
 	return $rxnobj;
 }
 
+=head3 searchForCompartment
+Definition:
+	ModelSEED::MS::Compartment = ModelSEED::MS::Biochemistry->searchForCompartment(string);
+Description:
+	Searches for a compartment by ID, name, or alias.
+
+=cut
+
+sub searchForCompartment {
+	my ($self,$id) = @_;
+	my $cmp = $self->queryObject("compartments",{id => $id});
+	#First search by exact alias match
+	if (!defined($cmp)) {
+		$cmp = $self->getObjectByAlias("compartments",$id);
+	}
+	#Next, search by name
+	if (!defined($cmp)) {
+		$cmp = $self->queryObject("compartments",{name => $id});
+	}
+	return $cmp;
+}
+
 =head3 mergeBiochemistry
 Definition:
 	void mergeBiochemistry(ModelSEED::MS::Biochemistry,{});

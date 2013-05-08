@@ -61,7 +61,7 @@ Description:
 sub authenticate {
     my $self = shift;
     my $token = shift;
-    if ($token ne $self->password()) {
+    if ($self->check_password($self->password())) {
     	ModelSEED::utilities::error("Authentication failed!");
     }
 }

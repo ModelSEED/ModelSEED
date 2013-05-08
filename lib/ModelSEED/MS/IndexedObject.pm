@@ -124,7 +124,7 @@ sub add {
     my ($self, $attribute, $data_or_object) = @_;
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        error("Object doesn't have subobject with name: $attribute");
+        ModelSEED::utilities::error("Object doesn't have subobject with name: $attribute");
     }
     my $obj_info = {
         created => 0,
@@ -182,7 +182,7 @@ sub addFromAPI {
 ######################################################################
 sub addAlias {
     my $self = shift;
-    my $args = args(["attribute","aliasName","alias","uuid"], { source => undef }, @_);
+    my $args = ModelSEED::utilities::args(["attribute","aliasName","alias","uuid"], { source => undef }, @_);
 	if (!defined($args->{source})) {
 		$args->{source} = $args->{aliasName};
 	}
@@ -202,6 +202,22 @@ sub addAlias {
 		});
 	}
 	$aliasSet->addAlias($args->{alias},$args->{uuid});
+}
+
+sub removeAlias {
+    my $self = shift;
+    my $args = ModelSEED::utilities::args(["attribute","aliasName","alias","uuid"], { source => undef }, @_);
+	if (!defined($args->{source})) {
+		$args->{source} = $args->{aliasName};
+	}
+	#Checking for alias set
+	my $aliasSet = $self->queryObject("aliasSets",{
+		name => $args->{aliasName},
+		attribute => $args->{attribute}
+	});
+	if (defined($aliasSet)) {
+		$aliasSet->removeAlias($args->{alias},$args->{uuid});
+	}
 }
 
 sub getObjectByAlias {
@@ -261,7 +277,7 @@ sub getObjects {
     my ($self, $attribute, $uuids) = @_;
 	#Checking arguments
 	if(!defined($attribute) || !defined($uuids) || ref($uuids) ne 'ARRAY') {
-    	error("Bad arguments to getObjects.");
+    	ModelSEED::utilities::error("Bad arguments to getObjects.");
     }
     #Retreiving objects
     my $results = [];
@@ -297,7 +313,7 @@ sub queryObjects {
     my ($self,$attribute,$query) = @_;
 	#Checking arguments
 	if(!defined($attribute) || !defined($query) || ref($query) ne 'HASH') {
-		error("Bad arguments to queryObjects.");
+		ModelSEED::utilities::error("Bad arguments to queryObjects.");
     }
     #ResultSet is a map of $object => $object
     my $resultSet;
@@ -377,7 +393,7 @@ sub _buildIndex {
 
 sub _clearIndex {
     my $self = shift;
-    my $args = args([], {attribute => undef, subAttribute => undef}, @_);
+    my $args = ModelSEED::utilities::args([], {attribute => undef, subAttribute => undef}, @_);
 	my $att = $args->{attribute};
 	my $subatt = $args->{subAttribute};
 	if (!defined($att)) {

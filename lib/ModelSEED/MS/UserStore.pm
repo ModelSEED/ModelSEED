@@ -69,7 +69,11 @@ sub _buildwsstore {
 	my $ws;
 	if ($self->associatedStore()->url() eq "localhost") {
 		require "Bio/KBase/workspaceService/Impl.pm";
-		$ws = Bio::KBase::workspaceService::Impl->new({accounttype => "modelseed"});
+		$ws = Bio::KBase::workspaceService::Impl->new({
+			"accounttype" => "modelseed",
+			"mongodb-host" => $self->associatedStore()->url(),
+			"mongodb-database" => $self->associatedStore()->database()
+		});
 	} else {
 		require "Bio/KBase/workspaceService/Client.pm";
 		$ws = Bio::KBase::workspaceService::Client->new($self->associatedStore()->url());
@@ -88,16 +92,21 @@ sub _buildwsstore {
 }
 sub _builddefaultMapping {
 	my ($self) = @_;
-	my $refs = [split(/\//,$self->defaultMapping_ref())];
+	my $ref = $self->parseReference($self->defaultMapping_ref(),"Mapping");
 	return $self->get_object({
 		type => "Mapping",
-		id => $refs->[2],
-		workspace => $refs->[1]
+		id => $ref->{id},
+		workspace => $ref->{workspace}
 	});
 }
 sub _builddefaultBiochemistry {
 	my ($self) = @_;
-	return $self->defaultMapping()->biochemistry();
+	my $ref = $self->parseReference($self->defaultBiochemistry_ref(),"Biochemistry");
+	return $self->get_object({
+		type => "Biochemistry",
+		id => $ref->{id},
+		workspace => $ref->{workspace}
+	});
 }
 sub _buildobjectManager {
 	my ($self) = @_;
@@ -120,6 +129,7 @@ sub _buildwsTypeTrans {
 		GapFill => "GapfillingFormulation",
 		GapGen => "GapgenFormulation",
 		PromConstraints => "PROMModel",
+		ModelTemplate => "ModelTemplate"
 	};
 }
 
@@ -328,7 +338,7 @@ Description:
 
 sub save_object {
     my $self = shift;
-    my $args = args(["type","id","object"], {
+    my $args = ModelSEED::utilities::args(["type","id","object"], {
 		workspace => undef
     }, @_);
     my $data = $args->{object}->serializeToDB(); 
@@ -354,7 +364,7 @@ Description:
 
 sub save_data {
     my $self = shift;
-    my $args = args(["type","id","data"], {
+    my $args = ModelSEED::utilities::args(["type","id","data"], {
 		workspace => undef
     }, @_);
     my $store = $self->associatedStore();
@@ -368,6 +378,21 @@ sub save_data {
     	my $ws = $self->wsworkspace();
     	if (defined($args->{workspace})) {
     		$ws = $args->{workspace};
+    	}
+    	my $wsmeta;
+    	eval {
+	    	$wsmeta = $wsstore->workspace()->get_workspacemeta({
+	    		id => $args->{id},
+				workspace => $ws,
+				auth => $self->wsauth()
+	    	});
+    	};
+    	if (!defined($wsmeta)) {
+    		$wsstore->workspace()->create_workspace({
+    			workspace => $ws,
+				auth => $self->wsauth(),
+				default_permission => "r"
+    		});
     	}
     	return $wsstore->workspace()->save_object({
 			id => $args->{id},

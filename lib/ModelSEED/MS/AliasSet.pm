@@ -56,5 +56,26 @@ sub addAlias {
 	push(@{$aliasesByuuid->{$uuid}},$alias);
 }
 
+sub removeAlias {
+	my ($self,$alias,$uuid) = @_;
+	my $aliases = $self->aliases();
+	if (defined($aliases->{$alias})) {
+		my $uuids = $aliases->{$alias};
+		for (my $i=0; $i < @{$uuids}; $i++) {
+			if ($uuids->[$i] eq $uuid) {
+				splice(@{$aliases->{$alias}}, $i, 1);
+				$i--;
+			}
+		}
+	}
+	my $aliasesByuuid = $self->aliasesByuuid();
+	for (my $i=0; $i < @{$aliasesByuuid->{$uuid}}; $i++) {
+		if ($aliasesByuuid->{$uuid}->[$i] eq $alias) {
+			splice(@{$aliasesByuuid->{$uuid}}, $i, 1);
+			$i--;
+		}
+	}
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

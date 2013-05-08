@@ -32,7 +32,7 @@ sub class_execute {
 sub save_model {
 	my ($self,$model) = @_;
 	my $ref = $model->msStoreID();
-    if ($self->gopts()->{saveas}) {
+    if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
     	verbose("New alias set for model:".$ref);

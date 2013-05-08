@@ -51,6 +51,8 @@ use ModelSEED::utilities qw ( args verbose error );
 use Class::Autouse qw(
     Bio::KBase::workspaceService::Client
     Bio::KBase::workspaceService::Impl
+    ModelSEED::MS::Biochemistry
+    ModelSEED::MS::Annotation
 );
 use Module::Load;
 
@@ -78,7 +80,8 @@ sub _mstypetrans {
 		GapfillingFormulation => "GapFill",
 		GapgenFormulation => "GapGen",
 		PROMModel => "PromConstraints",
-		Media => "Media"
+		Media => "Media",
+		ModelTemplate => "ModelTemplate"
 	};
 }
 sub _wstypetrans {
@@ -92,6 +95,7 @@ sub _wstypetrans {
 		GapFill => "GapfillingFormulation",
 		GapGen => "GapgenFormulation",
 		PromConstraints => "PROMModel",
+		ModelTemplate => "ModelTemplate"
 	};
 }
 #***********************************************************************************************************
@@ -157,8 +161,8 @@ sub get_object {
 		$object->{_kbaseWSMeta}->{wsinst} = $output->{metadata}->[3];
 		$object->{_kbaseWSMeta}->{wsref} = $output->{metadata}->[8];
 		$object->{_kbaseWSMeta}->{wsmeta} = $output->{metadata};
-		$self->{_msStoreID} = $type."/".$output->{metadata}->[7]."/".$output->{metadata}->[0];
-		$self->{_msStoreRef} = $type."/".$output->{metadata}->[8];
+		$object->{_msStoreID} = $type."/".$output->{metadata}->[7]."/".$output->{metadata}->[0];
+		$object->{_msStoreRef} = $type."/".$output->{metadata}->[8];
 	}
     #Adding object to cache
     if ($type ne "Media" && $dataOnly == 0) {

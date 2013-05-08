@@ -66,6 +66,34 @@ sub save_object {
     return $self->store()->save_object($input);
 }
 
+sub move {
+	my ($self, $args) = @_;
+	my $args = args(["object","newid"],{
+        newstore => config()->currentUser()->primaryStore(),
+        newworkspace => undef,
+        cache => {}
+    }, @_);
+    my $store = config()->currentUser()->findStore($args->{newstore});
+    if (defined($store)) {
+    	$args->{cache}->{$args->{object}->uuid()} = 1;
+    	my $dependencies = $args->{object}->dependencies();
+    	for (my $i=0;$i<@{$dependencies};$i++) {
+    		if (!defined($args->{cache}->{$dependencies->[$i]->uuid()})) {
+    			$self->move({
+    				object => $dependencies->[$i]->uuid(),
+    				newid => $dependencies->[$i]->uuid(),
+    				cache => $args->{cache}
+    			})
+    		}
+    	}
+    	$store->save_object({
+    		object => $args->{object},
+    		id => $args->{id},
+    		workspace => $args->{workspace}
+    	});
+    }
+}
+
 sub save_data {
 	my ($self, $args) = @_;
 	if (defined($self->opts()->{dryrun}) && $self->opts()->{dryrun} == 1) {

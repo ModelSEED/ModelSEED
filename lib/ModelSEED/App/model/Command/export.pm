@@ -13,7 +13,7 @@ sub sub_execute {
     my ($self, $opts, $args,$model) = @_;
 	my $format = shift @$args;
     error("Must specify format for model export") unless(defined($format));
-    print $model->export({format => $args->[1]});
+    print $model->export({format => $format});
 }
 
 1;

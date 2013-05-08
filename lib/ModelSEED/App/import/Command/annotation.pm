@@ -80,7 +80,7 @@ sub sub_execute {
     		genome_id => $id,
     		mapping => $map
     	};
-    	my $factory = ModelSEED::MS::Factories::Annotation->new(om => $self->store()->objectManager());
+    	my $factory = ModelSEED::MS::Factories::Annotation->new();
 	    my $sources = [ $opts->{source} ];
 	    $sources = [ qw(PubSEED RAST KBase) ] unless(@$sources);
 	    $anno = $factory->build($config);

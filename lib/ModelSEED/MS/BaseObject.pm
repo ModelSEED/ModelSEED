@@ -244,6 +244,10 @@ sub cloneObject {
 	return $class->new($data);
 }
 
+sub dependencies {
+	return [];
+}
+
 sub toJSON {
     my $self = shift;
     my $args = ModelSEED::utilities::args([],{pp => 0}, @_);
@@ -373,7 +377,7 @@ sub interpretReference {
 
 sub parseReferenceList {
 	my $self = shift;
-	my $args = args([], { string => "none", delimiter => "|", data => "obj", class => undef }, @_);
+	my $args = ModelSEED::utilities::args([], { string => "none", delimiter => "|", data => "obj", class => undef }, @_);
 	my $output = [];
 	if (!defined($args->{array})) {
 		$args->{array} = ModelSEED::utilities::parseArrayString($args);
@@ -395,7 +399,7 @@ sub parseReferenceList {
 ######################################################################
 sub htmlComponents {
 	my $self = shift;
-	my $args = args([],{}, @_);
+	my $args = ModelSEED::utilities::args([],{}, @_);
 	my $data = $self->_createReadableData();
 	my $output = {
 		title => $self->_type()." Viewer",
@@ -428,7 +432,7 @@ sub htmlComponents {
 
 sub createHTML {
 	my $self = shift;
-	my $args = args([],{internal => 0}, @_);
+	my $args = ModelSEED::utilities::args([],{internal => 0}, @_);
 	my $document = "";
 	if ($args->{internal} == 0) {
 		$document .= $htmlheader."\n";

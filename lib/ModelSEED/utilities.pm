@@ -8,10 +8,12 @@ use File::Path;
 use File::Copy::Recursive;
 use JSON::XS;
 use ModelSEED::MS::Configuration;
+use Bio::KBase::IDServer::Client;
 use parent qw( Exporter );
 our @EXPORT_OK = qw( config args usage error verbose set_verbose translateArrayOptions LOADFILE );
 our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef.
 our $CONFIG = undef;
+our $idserver = undef;
 
 =head1 ModelSEED::utilities
 
@@ -95,6 +97,36 @@ sub verbose {
         return 0;
     }
 }
+
+=head3 idServer
+
+Definition:
+	Bio::KBase::IDServer::Client = idServer();
+Description:
+	Returns ID server client
+
+=cut
+sub idServer {
+	if (!defined($idserver)) {
+		$idserver = Bio::KBase::IDServer::Client->new('http://bio-data-1.mcs.anl.gov/services/idserver');
+	}
+    return $idserver;
+}
+
+=head3 get_new_id
+
+Definition:
+	string id = get_new_id(string prefix);
+Description:
+	Returns ID with given prefix
+
+=cut
+sub get_new_id {
+	my ($prefix) = @_;
+	my $id = idServer()->allocate_id_range( $prefix, 1 );
+    $id = $prefix.$id;
+	return $id;
+};
 
 =head3 config
 
@@ -370,8 +402,7 @@ Description:
 
 sub USEERROR {	
 	my ($message) = @_;
-	print STDERR "\n".$message."\n";
-	print STDERR "Critical error. Discontinuing current operation!\n";
+	print STDERR "\n".$message."\n\n";
 	exit();
 }
 

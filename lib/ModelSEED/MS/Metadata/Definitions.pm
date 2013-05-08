@@ -246,6 +246,13 @@ $objectDefinitions->{UserStore} = {
 			perm       => 'rw',
 			type       => 'Str',
 			req        => 0
+		},
+		{
+			name       => 'defaultBiochemistry_ref',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
 		}
 	],
 	subobjects         => [],
@@ -4163,6 +4170,14 @@ $objectDefinitions->{Biomass} = {
 			default    => ""
 		},
 		{
+			name       => 'other',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
 			name       => 'dna',
 			printOrder => 3,
 			perm       => 'rw',
@@ -5138,6 +5153,379 @@ $objectDefinitions->{ClassifierRole} = {
 			method    => "classifierClassifications",
 			array => 1
 		},
+	]
+};
+
+$objectDefinitions->{ModelTemplate} = {
+	parents    => ['Ref'],
+	class      => 'indexed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 0
+		},
+		{
+			name       => 'name',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1
+		},
+		{
+			name       => 'modelType',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1
+		},
+		{
+			name       => 'domain',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 1
+		},
+		{
+			name       => 'mapping_uuid',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+	],
+	subobjects => [
+		{
+			name       => "templateReactions",
+			printOrder => 0,
+			class      => "TemplateReaction",
+			type       => "child"
+		},
+		{
+			name       => "templateBiomasses",
+			printOrder => 0,
+			class      => "TemplateBiomass",
+			type       => "child"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "mapping",
+			attribute => "mapping_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Mapping",
+			weak      => 0
+		}
+	],
+	reference_id_types => [qw(uuid alias)],
+	version            => 1.0,
+};
+
+$objectDefinitions->{TemplateReaction} = {
+	parents    => ['ModelTemplate'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'reaction_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'compartment_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'complex_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0
+		},
+		{
+			name       => 'direction',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+		},
+		{
+			name       => 'type',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+		},
+	],
+	subobjects => [],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "reaction",
+			attribute => "reaction_uuid",
+			parent    => "Biochemistry",
+			method    => "reactions",
+			weak      => 1
+		},
+		{
+			name      => "compartment",
+			attribute => "compartment_uuid",
+			parent    => "Biochemistry",
+			method    => "compartments",
+			weak      => 1
+		},
+		{
+			name      => "complexes",
+			attribute => "complex_uuids",
+			parent    => "Mapping",
+			method    => "complexes",
+			weak      => 1,
+			array	  => 1
+		}
+	],
+};
+
+$objectDefinitions->{TemplateBiomass} = {
+	parents    => ['ModelTemplate'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'name',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1,
+		},
+		{
+			name       => 'type',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "defaultGrowth"
+		},
+		{
+			name       => 'other',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'dna',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'rna',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'protein',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'lipid',
+			printOrder => 5,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'cellwall',
+			printOrder => 6,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'cofactor',
+			printOrder => 7,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'energy',
+			printOrder => 8,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "0"
+		}
+	],
+	subobjects => [
+		{
+			name  => "templateBiomassComponents",
+			class => "TemplateBiomassComponent",
+			type  => "child"
+		},
+	],
+	primarykeys => [qw(uuid)],
+	links       => []
+};
+
+$objectDefinitions->{TemplateBiomassComponent} = {
+	parents    => ['TemplateBiomass'],
+	class      => 'encompassed',
+	attributes => [
+		{
+			name       => 'uuid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'ModelSEED::uuid',
+			req        => 1
+		},
+		{
+			name       => 'class',
+			printOrder => 1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'universal',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'Bool',
+			default    => 0
+		},
+		{
+			name       => 'compound_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'compartment_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 1
+		},
+		{
+			name       => 'linkedCompound_uuids',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'coefficientType',
+			printOrder => 3,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => "0"
+		},
+		{
+			name       => 'coefficient',
+			printOrder => 4,
+			perm       => 'rw',
+			type       => 'Num',
+			req        => 0,
+			default    => "1"
+		},
+		{
+			name       => 'linkCoefficients',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
+			name       => 'classifierClassification_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+		{
+			name       => 'classifier_uuid',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0,
+			default    => ""
+		},
+	],
+	subobjects  => [],
+	primarykeys => [qw(uuid)],
+	links       => [
+		{
+			name      => "compound",
+			attribute => "compound_uuid",
+			parent    => "Biochemistry",
+			method    => "compounds",
+		},
+		{
+			name      => "compartment",
+			attribute => "compartment_uuid",
+			parent    => "Biochemistry",
+			method    => "compartments",
+		},
+		{
+			name      => "linkedCompounds",
+			attribute => "linkedCompound_uuids",
+			parent    => "Biochemistry",
+			method    => "compounds",
+			array => 1
+		},
+		{
+			name      => "classifierClassification",
+			attribute => "classifierClassification_uuid",
+			parent    => "Classifier",
+			method    => "classifierClassifications",
+			array => 1
+		},
+		{
+			name      => "classifier",
+			attribute => "classifier_uuid",
+			parent    => "ModelSEED::Store",
+			method    => "Classifier",
+			weak      => 0
+		}
 	]
 };
 

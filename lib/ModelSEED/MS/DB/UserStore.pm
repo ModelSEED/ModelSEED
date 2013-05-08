@@ -22,6 +22,7 @@ has login => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type =
 has password => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has accountType => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, type => 'attribute', metaclass => 'Typed');
 has defaultMapping_ref => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has defaultBiochemistry_ref => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # LINKS:
@@ -74,10 +75,17 @@ my $attributes = [
             'name' => 'defaultMapping_ref',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'defaultBiochemistry_ref',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {store_uuid => 0, login => 1, password => 2, accountType => 3, defaultMapping_ref => 4};
+my $attribute_map = {store_uuid => 0, login => 1, password => 2, accountType => 3, defaultMapping_ref => 4, defaultBiochemistry_ref => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

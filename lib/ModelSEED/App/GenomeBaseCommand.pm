@@ -32,7 +32,7 @@ sub class_execute {
 sub save_genome {
 	my ($self,$obj) = @_;
 	my $ref = $obj->msStoreID();
-    if ($self->gopts()->{saveas}) {
+    if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
     	verbose("New alias set for genome:".$ref);

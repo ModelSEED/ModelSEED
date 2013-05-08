@@ -75,6 +75,63 @@ sub _buildtypeClassifier {
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 searchForComplex
+Definition:
+	ModelSEED::MS::Complex = ModelSEED::MS::Mapping->searchForComplex(string);
+Description:
+	Searches for a complex by ID, name, or alias.
+
+=cut
+
+sub searchForComplex {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $cpxobj = $self->getObjectByAlias("complexes",$id);
+	#Next, search by name
+	if (!defined($cpxobj)) {
+		$cpxobj = $self->queryObject("complexes",{name => $id});
+	}
+	return $cpxobj;
+}
+
+=head3 searchForRole
+Definition:
+	ModelSEED::MS::Role = ModelSEED::MS::Mapping->searchForRole(string);
+Description:
+	Searches for a role by ID, name, or alias.
+
+=cut
+
+sub searchForRole {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $roleobj = $self->getObjectByAlias("roles",$id);
+	#Next, search by name
+	if (!defined($roleobj)) {
+		$roleobj = $self->queryObject("roles",{name => $id});
+	}
+	return $roleobj;
+}
+
+=head3 searchForRoleSet
+Definition:
+	ModelSEED::MS::RoleSet = ModelSEED::MS::Mapping->searchForRoleSet(string);
+Description:
+	Searches for a roleset by ID, name, or alias.
+
+=cut
+
+sub searchForRoleSet {
+	my ($self,$id) = @_;
+	#First search by exact alias match
+	my $ssobj = $self->getObjectByAlias("rolesets",$id);
+	#Next, search by name
+	if (!defined($ssobj)) {
+		$ssobj = $self->queryObject("rolesets",{name => $id});
+	}
+	return $ssobj;
+}
+
 =head3 buildSubsystemRoleSets
 
 =cut
@@ -126,6 +183,207 @@ sub buildSubsystemReactionSets {
 	}
 }
 
+sub adjustComplex {
+	my $self = shift;
+    my $args = ModelSEED::utilities::args(["id"], {
+    	name => undef,
+    	clearRoles => 0,
+    	rolesToRemove => [],
+    	rolesToAdd => [],
+    	"delete" => 0
+    }, @_);
+	my $cpx;
+	if ($args->{id} eq "new") {
+		my $id = ModelSEED::utilities::get_new_id("mscpx.");
+		$cpx = ModelSEED::MS::Complex->new({
+			name => $id
+		});
+		$self->addAlias({
+  			attribute => "complexes",
+  			aliasName => "ModelSEED",
+  			alias => $id,
+  			uuid => $cpx->uuid()
+  		});
+  		$self->add("complexes",$cpx);
+	} else {
+		$cpx = $self->searchForComplex($args->{id});
+	}
+	ModelSEED::utilities::error("Specified complex not found!") unless(defined($cpx));
+	if (defined($args->{"delete"}) && $args->{"delete"} == 1) {
+		$self->remove("complexes",$cpx);
+		return $cpx;
+	}
+	if (defined($args->{name})) {
+		$cpx->name($args->{name});
+	}
+    if (defined($args->{clearRoles})) {
+		$cpx->complexroles([]);
+	}
+  	for (my $i=0; $i < @{$args->{rolesToRemove}}; $i++) {
+  		my $role = $args->{rolesToRemove}->[$i];
+   		my $roleobj = $self->searchForRole($role);
+   		if (defined($roleobj)) {
+   			my $cpxroles = $cpx->complexroles();
+   			for (my $i=0; $i < @$cpxroles; $i++) {
+   				if ($cpxroles->[$i]->role_uuid() eq $roleobj->uuid()) {
+   					$cpx->remove("complexroles",$cpxroles->[$i]);
+   					$cpxroles = $cpx->complexroles();
+   					$i--;
+   				}
+   			}
+   		}
+   	}
+    for (my $i=0; $i < @{$args->{rolesToAdd}}; $i++) {
+    	my $role = $args->{rolesToAdd}->[$i]->[0];
+    	my $roleobj = $self->searchForRole($role);
+    	if (defined($roleobj)) {
+    		my $cpxroles = $cpx->complexroles();
+   			my $cpxrole;
+   			for (my $i=0; $i < @$cpxroles; $i++) {
+    			if ($cpxroles->[$i]->role_uuid() eq $roleobj->uuid()) {
+    				$cpxrole = $cpxroles->[$i];
+    				last;
+    			}
+   			}
+   			if (!defined($cpxrole)) {
+   				my $newCpxRole = {
+	    			role_uuid => $roleobj->uuid()
+	    		};
+	    		$cpxrole = $cpx->add("complexroles",$newCpxRole);
+   			}
+   			if (defined($args->{rolesToAdd}->[$i]->[1])) {
+   				$cpxrole->optional($args->{rolesToAdd}->[$i]->[1]);
+   			}
+    		if (defined($args->{rolesToAdd}->[$i]->[3])) {
+   				$cpxrole->type($args->{rolesToAdd}->[$i]->[3]);
+   			}
+    		if (defined($args->{rolesToAdd}->[$i]->[1])) {
+   				$cpxrole->triggering($args->{rolesToAdd}->[$i]->[1]);
+   			}
+    	} else {
+  			print "Role ".$args->{rolesToAdd}->[$i]." not found!\n";
+  		}
+   	}
+   	return $cpx;
+}
+
+sub adjustRole {
+	my $self = shift;
+    my $args = ModelSEED::utilities::args(["id"], {
+    	name => undef,
+    	seedfeature => undef,
+    	aliasToAdd => [],
+    	aliasToRemove => [],
+    	"delete" => 0
+    }, @_);
+	my $role;
+	if ($args->{id} eq "new") {
+		my $id = ModelSEED::utilities::get_new_id("msfr.");
+		$role = ModelSEED::MS::Role->new({
+			name => $id
+		});
+		$self->addAlias({
+  			attribute => "roles",
+  			aliasName => "ModelSEED",
+  			alias => $id,
+  			uuid => $role->uuid()
+  		});
+  		$self->add("roles",$role);
+	} else {
+		$role = $self->searchForRole($args->{id});
+	}
+	ModelSEED::utilities::error("Specified role not found!") unless(defined($role));
+	if (defined($args->{"delete"}) && $args->{"delete"} == 1) {
+		$self->remove("roles",$role);
+		return $role;
+	}
+	if (defined($args->{name})) {
+		$role->name($args->{name});
+	}
+	if (defined($args->{seedfeature})) {
+		$role->seedfeature($args->{seedfeature});
+	}
+  	for (my $i=0; $i < @{$args->{aliasToAdd}}; $i++) {
+  		$self->addAlias({
+  			attribute => "roles",
+  			aliasName => "name",
+  			alias => $args->{aliasToAdd}->[$i],
+  			uuid => $role->uuid()
+  		});
+   	}
+   	for (my $i=0; $i < @{$args->{aliasToRemove}}; $i++) {
+  		$self->removeAlias({
+  			attribute => "roles",
+  			aliasName => "name",
+  			alias => $args->{aliasToRemove}->[$i],
+  			uuid => $role->uuid()
+  		});
+   	}
+   	return $role;
+}
+
+sub adjustRoleset {
+	my $self = shift;
+    my $args = ModelSEED::utilities::args(["id"], {
+    	name => undef,
+    	class => undef,
+    	subclass => undef,
+    	type => undef,
+    	rolesToAdd => [],
+    	rolesToRemove => [],
+    	"delete" => 0
+    }, @_);
+	my $ss;
+	if ($args->{id} eq "new") {
+		my $id = ModelSEED::utilities::get_new_id("msrs.");
+		$ss = ModelSEED::MS::RoleSet->new({
+			name => $id
+		});
+		$self->addAlias({
+  			attribute => "rolesets",
+  			aliasName => "ModelSEED",
+  			alias => $id,
+  			uuid => $ss->uuid()
+  		});
+  		$self->add("rolesets",$ss);
+	} else {
+		$ss = $self->searchForRoleSet($args->{id});
+	}
+	ModelSEED::utilities::error("Specified roleset not found!") unless(defined($ss));
+	if (defined($args->{"delete"}) && $args->{"delete"} == 1) {
+		$self->remove("rolesets",$ss);
+		return $ss;
+	}
+	if (defined($args->{name})) {
+		$ss->name($args->{name});
+	}
+	if (defined($args->{class})) {
+		$ss->class($args->{class});
+	}
+	if (defined($args->{subclass})) {
+		$ss->subclass($args->{subclass});
+	}
+	if (defined($args->{type})) {
+		$ss->type($args->{type});
+	}
+  	for (my $i=0; $i < @{$args->{rolesToAdd}}; $i++) {
+  		my $role = $self->searchForRole($args->{rolesToAdd}->[$i]);
+  		if (defined($role)) {
+  			$ss->addLinkArrayItem($role);
+  		} else {
+  			print "Role ".$args->{rolesToAdd}->[$i]." not found!\n";
+  		}
+   	}
+   	for (my $i=0; $i < @{$args->{rolesToRemove}}; $i++) {
+  		my $role = $self->searchForRole($args->{rolesToRemove}->[$i]);
+  		if (defined($role)) {
+  			$ss->removeLinkArrayItem($role);
+  		}
+   	}
+   	return $ss;
+}
+
+
 sub __upgrade__ {
 	my ($class,$version) = @_;
 	if ($version == 1) {
@@ -166,5 +424,6 @@ sub __upgrade__ {
 	}
 	
 }
+
 __PACKAGE__->meta->make_immutable;
 1;

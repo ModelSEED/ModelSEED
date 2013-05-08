@@ -32,12 +32,12 @@ sub class_execute {
 sub save_mapping {
 	my ($self,$obj) = @_;
 	my $ref = $obj->msStoreID();
-    if ($self->gopts()->{saveas}) {
+    if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for map:".$ref);
+    	ModelSEED::utilities::verbose("New alias set for map:".$ref);
     }
-    verbose("Saving map to:".$ref);
+    ModelSEED::utilities::verbose("Saving map to:".$ref);
     $self->save_object({
 	   	type => "Mapping",
 	   	reference => $ref,
