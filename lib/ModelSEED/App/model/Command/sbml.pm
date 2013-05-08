@@ -1,31 +1,18 @@
 package ModelSEED::App::model::Command::sbml;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
-use Try::Tiny;
-use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
-);
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Print SBML version of the model" }
-sub usage_desc { return <<END;
-model sbml [ reference || - ]
-END
+sub usage_desc { return "model sbml [model id]" }
+sub options {
+    return ();
 }
-sub opt_spec { return (
-        ["help|h|?", "Print this usage information"],
-    );
-}
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    my ($model, $ref) = $helper->get_object("model", $args, $store);
-    $self->usage_error("Must specify an model to use") unless(defined($model));
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
+	my $format = shift @$args;
+    error("Must specify format for model export") unless(defined($format));
     print $model->printSBML();
 }
 

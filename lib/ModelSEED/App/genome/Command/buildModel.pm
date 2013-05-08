@@ -1,23 +1,17 @@
 package ModelSEED::App::genome::Command::buildModel;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::genome;
+use base 'ModelSEED::App::GenomeBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
+    ModelSEED::MS::Annotation
+    ModelSEED::MS::Mapping
+    ModelSEED::MS::ModelTemplate
+    ModelSEED::MS::Biochemistry
 );
 sub abstract { return "Construct a model using this annotated genome" }
-sub usage_desc { return "genome buildModel [ reference || - ] [model-name]"; }
-sub opt_spec {
-    return (
-        ["mapping|m:s", "Use a specific mapping to build the model"],
-        ["verbose|v", "Print verbose about the model construction"],
-	["isplant|p", "Build a plant-specific model"],
-        ["help|h|?", "Print this usage information"],
-    );
-}
-
+sub usage_desc { return "genome buildModel [genome id] [model id] [options]" }
 sub description { return <<END;
 This function constructs a basic model from the annotated genome.
 If no mapping object is supplied, it uses the mapping object
@@ -27,45 +21,67 @@ resulting model.
     \$ genome buildModel my-genome my-model
 END
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helpers = ModelSEED::App::Helpers->new();
-    my $anno_ref = $helpers->process_ref_string(shift @$args, "annotation", $auth->username);
-    my $model_ref = $helpers->process_ref_string(shift @$args, "model", $auth->username);
-    unless(defined($anno_ref)) {
-        $self->usage_error("Must specify an annotation to use");
-    }
-    unless(defined($model_ref)) {
-        $self->usage_error("Must supply a name for model");
-    }
-    my $annotation = $store->get_object($anno_ref);
-    unless(defined($annotation)) {
-        $self->usage_error("Annotation " . $anno_ref->ref . " not found");
-    }
-    my $mapping;
-    if(defined($opts->{mapping})) {
-        $mapping = $helpers->process_ref_string($opts->{mapping}, "mapping", $auth->username);
-        $mapping = $store->get_object($mapping);
+sub options {
+    return (
+    	["template|t=s", "Specific template to use in building a model"],
+		["mapping|m=s", "Mapping with classifiers for model building"],
+		["isplant|p", "Build a plant-specific model"],
+    );
+}
+sub sub_execute {
+    my ($self, $opts, $args,$anno) = @_;
+    my $modelID = shift(@{$args});
+    my $template;
+    my $model;
+    if (defined($opts->{template})) {
+    	$template = $self->get_object({
+	    	type => "ModelTemplate",
+	    	reference => $opts->{template}
+	    });
+	    $self->usage_error("Template model not found!") unless(defined($template));
+	    $model = $template->buildModel({
+	    	annotation => $anno
+	    });
     } else {
-        $mapping = $annotation->mapping;
-    }
-    my $verbose = (defined $opts->{verbose}) ? 1 : 0;
-    my $isplant = (defined $opts->{isplant}) ? 1 : 0;
-    my $model = $annotation->createStandardFBAModel({
-        mapping => $mapping, verbose => $verbose, isplant => $isplant
+    	my $mapping;
+    	if(defined($opts->{mapping})) {
+	        $mapping = $self->get_object({
+		    	type => "Mapping",
+		    	reference => $opts->{mapping},
+		    });
+	    } else {
+	        $mapping = $anno->mapping;
+	    }
+#	    if (defined($opts->{isplant})) {
+#	    	$template = $self->get_object({
+#		    	type => "ModelTemplate",
+#		    	reference => "PlantTemplate"
+#		    });
+#	    } elsif () {
+#	    	$template = $self->get_object({
+#		    	type => "ModelTemplate",
+#		    	reference => "GramNegativeTemplate"
+#		    });
+#		} elsif () {
+#	    	$template = $self->get_object({
+#		    	type => "ModelTemplate",
+#		    	reference => "GramPositiveTemplate"
+#		    });
+#		} else {
+#			$template = $self->get_object({
+#		    	type => "ModelTemplate",
+#		    	reference => "GramNegativeTemplate"
+#		    });
+#		}
+		$model = $anno->createStandardFBAModel({
+        	mapping => $mapping, verbose => 1, isplant => $opts->{isplant}
+		});
+	}
+    $self->save_object({
+    	type => "Model",
+    	reference => $modelID,
+    	object => $model
     });
-    die "Unable to create model: $model_ref\n" unless($model_ref);
-    $model_ref = $helpers->process_ref_string($model_ref, "model", $auth->username);
-    my $rtv = $store->save_object($model_ref, $model);
-    if($rtv) {
-        print "Saved model to $model_ref\n";
-        return;
-    }
-    die "Unable to create model: $model_ref\n" unless($model_ref);
 }
 
 1;

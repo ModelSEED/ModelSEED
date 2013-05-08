@@ -1,32 +1,21 @@
 package ModelSEED::App::genome::Command::mapping;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
-use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
-);
-sub abstract { return "Returns the associated mapping object" }
-sub usage_desc { return "genome mapping [< name | name] [options]" }
-sub opt_spec { 
-    return (
-        ["raw|r", "Return raw JSON output"],
-        ["full", "Return the full mapping object in a readable form"],
-        ["help|h|?", "Print this usage information"],
-    );
+use ModelSEED::App::genome;
+use base 'ModelSEED::App::GenomeBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+sub abstract { return "Prints the name of the mapping linked to the genome" }
+sub usage_desc { return "genome mapping [genome id] [options]" }
+sub options {
+    return ();
+}
+sub sub_execute {
+    my ($self, $opts, $args,$anno) = @_;
+    my $map = $self->get_object({
+    	type => "Mapping",
+    	reference => "Mapping/".$anno->mapping_uuid(),
+    });
+	print "Genome linked to mapping:\n".$map->msStoreID()."\n";
 }
 
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helpers = ModelSEED::App::Helpers->new();
-    my ($anno, $annoRef) = $helpers->get_object("annotation", $args, $store);
-    $self->usage_error("Must specify an annotation to use") unless(defined($anno));
-    print $helpers->handle_ref_lookup(
-        $store, $anno, "mapping_uuid", "mapping", $opts
-    );
-}
 1;

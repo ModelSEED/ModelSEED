@@ -108,11 +108,12 @@ has msseedsvr => (
     lazy    => 1,
     builder => '_build_msseedsvr'
 );
-has om => ( is => 'rw', isa => 'ModelSEED::Store' );
 
 sub availableGenomes {
     my $self = shift @_;
-    my $args = $self->_getArgs(@_);
+    my $args = args([],{
+    	source => undef
+    }, @_);
     my $source = $args->{source};
     my $servers = [qw(sapsvr kbsvr msseedsvr)];
     if(defined($source)) {
@@ -145,16 +146,14 @@ sub availableGenomes {
 
 sub build {
     my $self = shift;
-    my $args = $self->_getArgs(@_);
-    $args->{verobse} = 0 unless defined $args->{verbose};
+    my $args = args(["mapping","genome_id"],{
+    	source => undef
+    }, @_);
 	unless(defined($args->{source})) {
 		$args->{source} = $self->genomeSource($args->{genome_id});	
-        print "Genome source is " . $args->{source} . ".\n" if($args->{verbose});
+        verbose("Genome source is " . $args->{source});
 	}
-	if (!defined($args->{mapping})) {
-		$args->{mapping} = $self->_getMappingObject({mapping_uuid => $args->{mapping_uuid}});
-	}
-    print "Getting genome attributes...\n" if($args->{verbose});
+    verbose("Getting genome attributes...");
 	my $genomeData = $self->_getGenomeAttributes($args->{genome_id});
     my $annoationObj = ModelSEED::MS::Annotation->new({
         name => $genomeData->{name}
@@ -212,21 +211,6 @@ sub _getRoleObject {
 		});
 	}
 	return $roleObj;
-}
-
-sub _getMappingObject {
-    my $self = shift;
-	my $args = args([], { mapping_uuid => undef }, @_);
-	my $mappingObj;
-	if (defined($args->{mapping_uuid})) {
-		$mappingObj = $self->om()->get("Mapping",$args->{mapping_uuid});
-		if (!defined($mappingObj)) {
-			ModelSEED::utilities::ERROR("Mapping with uuid ".$args->{mapping_uuid}." not found in database!");
-		}
-	} else {
-		$mappingObj = $self->om()->add("mappings",{name=>"Test"});
-	}
-	return $mappingObj;
 }
 
 sub genomeSource {
@@ -436,21 +420,6 @@ sub _getGenomeAttributes {
         $attributes = $data->{$id};
     }
     return $attributes;
-}
-
-# Helpers
-
-# Process hashref or hash passed into arguments
-sub _getArgs {
-    my $self = shift @_;
-    if(ref($_[0]) eq 'HASH') {
-        return $_[0];
-    } elsif(scalar(@_) % 2 == 0) {
-        my %hash = @_;
-        return \%hash;
-    } else {
-        return {};
-    }
 }
 
 # Builders

@@ -79,10 +79,26 @@ extends 'ModelSEED::MS::DB::Annotation';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
+has roleHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
+sub _buildroleHash {
+	my ($self) = @_;
+	my $roleFeatures;
+	my $features = $self->features();
+    verbose("Processing " . scalar(@$features) . " features...");
+	for (my $i=0; $i < @{$features}; $i++) {
+		my $ftr = $features->[$i];
+		my $ftrroles = $ftr->featureroles();
+		for (my $j=0; $j < @{$ftrroles}; $j++) {
+			my $ftrrole = $ftrroles->[$j];
+			push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$ftrrole->compartment()}},$ftr);
+		}
+	}
+	return $roleFeatures;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:

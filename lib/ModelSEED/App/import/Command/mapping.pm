@@ -1,25 +1,19 @@
 package ModelSEED::App::import::Command::mapping;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::import;
+use base 'ModelSEED::App::ImportBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
 use JSON::XS;
-use ModelSEED::utilities qw( verbose set_verbose );
 use Class::Autouse qw(
     ModelSEED::MS::Mapping
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::PPOFactory
-    ModelSEED::Database::Composite
-    ModelSEED::Reference
 );
-
 sub abstract { return "Import mapping from local or remote database"; }
-
-sub usage_desc { return "ms import mapping [alias] [options]"; }
+sub usage_desc { return "ms import mapping [mapping id] [options]"; }
 sub description { return <<END;
 Import mapping data (roles, complexes, etc.)
 Alias, required, is the name that you would like to save the mapping as.
@@ -36,55 +30,26 @@ the mapping from. Current supported options are:
 
 END
 }
-
-sub opt_spec {
+sub options {
     return (
-        ["biochemistry|b:s", "Reference to biochemistry to use for import"],
+    	["biochemistry|b:s", "Reference to biochemistry to use for import"],
         ["filepath|f:s", "Directory with flatfiles of data you are importing"],
         ["namespace|n:s", "Name space of database (default is 'ModelSEED')"],
-        ["store|s:s", "Identify which store to save the mapping to"],
-        ["verbose|v", "Print detailed output of import status"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"],
-        ["help|h|?", "Print this usage information"],
-    );
+	);
 }
-
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    set_verbose 1 if $opts->{verbose};
-    print($self->usage) && return if $opts->{help};
-    my $auth = ModelSEED::Auth::Factory->new->from_config();
-    my $helpers = ModelSEED::App::Helpers->new;
-    my $store;
-    # Initialize the store object
-    if($opts->{store}) {
-        my $store_name = $opts->{store};
-        my $config = ModelSEED::Configuration->instance;
-        my $store_config = $config->config->{stores}->{$store_name};
-        die "No such store: $store_name" unless(defined($store_config));
-        my $db = ModelSEED::Database::Composite->new(databases => [ $store_config ]);
-        $store = ModelSEED::Store->new(auth => $auth, database => $db);
-    } else {
-        $store = ModelSEED::Store->new(auth => $auth);
-    }
-    # Check that required argument are present
     my ($alias) = @$args;
     $self->usage_error("Must supply an alias") unless(defined($alias));
-    # Make sure the alias object is valid "username/alias_string"
-    $alias = $helpers->process_ref_string(
-        $alias, "mapping", $auth->username
-    );
-    verbose "Will be saving to $alias...\n";
-    # Getting biochemistry if that was provided
-    my ($biochemistry, $bio_ref);
-    if ($opts->{biochemistry}) {
-        $bio_ref = $helpers->process_ref_string(
-            $opts->{biochemistry}, "biochemistry", $auth->username
-        );
-        $biochemistry = $store->get_object($bio_ref);
-        verbose "Using $bio_ref biochemistry while importing mapping\n";
-    }
-    my $alias_ref = ModelSEED::Reference->new(ref => $alias);
+    my $biochemistry;
+    if(defined($opts->{biochemistry})) {
+    	$biochemistry = $self->get_object({
+	    	type => "Biochemistry",
+	    	reference => $opts->{biochemistry}
+	    });
+    } else {
+   		$biochemistry = $self->store()->defaultBiochemistry();
+   	}
     my $map;
     if (!defined($opts->{namespace})) {
     	$opts->{namespace} = "ModelSEED";
@@ -128,10 +93,11 @@ sub execute {
         $map->biochemistry_uuid($biochemistry->uuid);
         $map->biochemistry($biochemistry);
     }
-    unless($opts->{dry}) {
-        $store->save_object($alias_ref, $map);
-        verbose "Saved mapping to $alias!\n";
-    }
+    $self->save_object({
+    	object => $map,
+    	type => "Mapping",
+    	reference => $alias
+    });
 }
 
 1;

@@ -1,21 +1,22 @@
-package ModelSEED::App::mseed::Command::stores; 
+package ModelSEED::App::mseed::Command::stores;
 use strict;
 use common::sense;
 use ModelSEED::App::stores;
-use base 'App::Cmd::Command';
-sub abstract { "Alias to mseed-stores command" }
-sub opt_spec { return (
-        ["help|h|?", "Print this usage information"],
-    );
+use base 'ModelSEED::App::MSEEDBaseCommand';
+sub abstract { return "Alias to mseed-stores command" }
+sub usage_desc { return "ms stores"; }
+sub options {
+    return ();
 }
-sub execute {
+
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    {
+	{
         local @ARGV = @ARGV;
         my $arg0 = shift @ARGV;
         my $app = ModelSEED::App::stores->new;    
         $app->run;
     }
 }
+
 1;

@@ -15,6 +15,7 @@ use Class::Autouse qw(
 	ModelSEED::MS::FBAFormulation
     ModelSEED::MS::GapfillingFormulation
     ModelSEED::MS::GapgenFormulation
+    ModelSEED::MS::ModelTemplate
 );
 #***********************************************************************************************************
 # ATTRIBUTES:
@@ -199,6 +200,135 @@ sub buildFBAFormulation {
 	$form->parseReactionKOList({string => $data->{reactionKO}});
 	$form->parseConstraints({constraints => $data->{fbaConstraints}});
 	return $form;
+}
+
+=head3 buildTemplateModel
+Definition:
+	ModelSEED::MS::ModelTemplate = buildTemplateModel({
+		templateReactions => [[]],
+		templateBiomass => [[]],
+		name => string,
+		modelType => string,
+		mapping => ModelSEED::MS::Mapping,
+		domain => string
+	});
+Description:
+	Build template model from template model data
+
+=cut
+
+sub buildTemplateModel {
+	my $self = shift;
+	my $args = args(["templateReactions","templateBiomass","mapping","name"],{
+		modelType => "GenomeScale",
+		domain => "Bacteria"
+	}, @_);
+	my $mdlTmp = ModelSEED::MS::ModelTemplate->new({
+		name => $args->{name},
+		modelType => $args->{modelType},
+		domain => $args->{domain},
+		mapping_uuid => $args->{mapping}->uuid()
+	});
+	my $map = $args->{mapping};
+	my $bio = $map->biochemistry();
+	for (my $i=0; $i < @{$args->{templateReactions}}; $i++) {
+		my $row = $args->{templateReactions}->[$i];
+		my $rxn = $bio->searchForReaction($row->[0]);
+		if (!defined($rxn)) {
+			ModelSEED::utilities::error("Reaction ".$row->[0]." not found!");
+		}
+		my $cmp = $bio->searchForCompartment($row->[1]);
+		if (!defined($cmp)) {
+			ModelSEED::utilities::error("Compartment ".$row->[1]." not found!");
+		}
+		my $cpxs = [];
+		for (my $j=0; $j < @{$row->[4]}; $j++) {
+			my $cpx = $map->searchForComplex($row->[4]->[$j]);
+			if (!defined($cpx)) {
+				ModelSEED::utilities::error("Complex ".$row->[4]->[$j]." not found!");
+			}
+			push(@{$cpxs},$cpx->uuid());
+		}
+		if (!defined($row->[2]) || length($row->[2]) == 0) {
+			$row->[2] = $rxn->direction();
+		}
+		if (!defined($row->[3]) || length($row->[3]) == 0) {
+			$row->[3] = "conditional";
+		}
+		$mdlTmp->add("templateReactions",{
+			reaction_uuid => $rxn->uuid(),
+			compartment_uuid => $cmp->uuid(),
+			direction => $row->[2],
+			type => $row->[3],
+			complex_uuids => $cpxs
+		});
+	}
+	for (my $i=0; $i < @{$args->{templateBiomass}}; $i++) {
+		my $row = $args->{templateBiomass}->[$i];
+		my $comps = [];
+		my $tmpBio = $mdlTmp->add("templateBiomasses",{
+			name => $row->[0],
+			type => $row->[1],
+			dna => $row->[2],
+			rna => $row->[3],
+			protein => $row->[4],
+			lipid => $row->[5],
+			cellwall => $row->[6],
+			cofactor => $row->[7],
+			energy => $row->[8],
+			other => $row->[9]
+		});
+		for (my $j=0; $j < @{$row->[10]}; $j++) {
+			my $comprow = $row->[10]->[$j];
+			my $cmp = $bio->searchForCompartment($comprow->[1]);
+			if (!defined($cmp)) {
+				ModelSEED::utilities::error("Compartment ".$comprow->[1]." not found!");
+			}
+			my $cpd = $bio->searchForCompound($comprow->[0]);
+			if (!defined($cpd)) {
+				ModelSEED::utilities::error("Compound ".$comprow->[0]." not found!");
+			}
+			my $comp = ModelSEED::MS::TemplateBiomassComponent->new({
+				class => $comprow->[2],
+				compound_uuid => $cpd->uuid(),
+				compartment_uuid => $cmp->uuid(),
+				coefficientType => $comprow->[3],
+				coefficient => $comprow->[4],
+			});
+			if ($comprow->[5] eq "universal") {
+				$comp->universal(1);
+			} elsif ($comprow->[5] =~ m/(.+):(.+)/) {
+				my $classifier = $1;
+				my $classification = $2;
+				my $cf = $map->queryObject("mappingClassifiers",{name => $classifier});
+				if (!defined($cf)) {
+					ModelSEED::utilities::error("Classifier ".$classifier." not found!");
+				}
+				my $cfclass = $cf->classifier()->queryObject("classifierClassifications",{name => $classification});
+				if (!defined($cfclass)) {
+					ModelSEED::utilities::error("Classifier class ".$classification." not found!");
+				}
+				$comp->classifierClassification_uuid($cfclass->uuid());
+				$comp->classifier_uuid($cf->classifier()->uuid());
+			}
+			if (@{$comprow->[6]} > 0) {
+				my $linkuuids = [];
+				my $linkcoefs = [];
+				for (my $k=0; $k < @{$comprow->[6]}; $k++) {
+					$cpd = $bio->searchForCompound($comprow->[6]->[$k]->[0]);
+					if (!defined($cpd)) {
+						ModelSEED::utilities::error("Compound ".$comprow->[6]->[$k]->[0]." not found!");
+					}
+					push(@{$linkuuids},$cpd->uuid());
+					push(@{$linkcoefs},$comprow->[6]->[$k]->[1]);
+				}
+				$comp->linkedCompound_uuids($linkuuids);
+				$comp->linkCoefficients($linkcoefs);
+			}
+			$tmpBio->add("templateBiomassComponents",$comp);
+		}
+	}
+	return $mdlTmp;
 }
 
 =head3 buildGapfillingFormulation

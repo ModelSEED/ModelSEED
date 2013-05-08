@@ -1,47 +1,30 @@
 package ModelSEED::App::bio::Command::aliasSet;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
-use Try::Tiny;
-use IO::Interactive::Tiny;
+use ModelSEED::App::bio;
+use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::MS::Biochemistry
+    ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Functions on alias sets"; }
-
-sub usage_desc { return <<END;
-bio aliasSet [ options ]
-
-END
-}
-
-sub opt_spec {
+sub usage_desc { return "bio aliasSet [ biochemistry id ] [ options ]";}
+sub options {
     return (
         ["validate", "Run validation logic on alias set"],
         ["list", "List available alias sets"],
         ["store|s:s", "Identify which store to save the annotation to"],
-        ["verbose|v", "Print detailed output of import status"],
-        ["dry|d", "Perform a dry run; that is, do everything but saving"],
         ["mapping|m:s", "Select the preferred mapping object to use when importing the annotation"],
         ["help|h|?", "Print this usage information"],
     );
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $biochem = $self->_getBiochemistry($args);
+sub sub_execute {
+    my ($self, $opts, $args,$bio) = @_;
     if ($opts->{validate}) {
-        $self->_validate($biochem, $args, $opts); 
+        $self->_validate($bio, $args, $opts); 
     } elsif($opts->{list}) {
-        $self->_list($biochem, $args, $opts);
+        $self->_list($bio, $args, $opts);
     }
-
 }
 
 sub _validate {
@@ -78,32 +61,6 @@ sub _list {
     map { $set->{$_->{type}} = 1 } @{$bio->{compoundAliasSets}};
     map { $set->{$_->{type}} = 1 } @{$bio->{reactionAliasSets}};
     print join("\n", sort keys %$set);
-}
-
-sub _getBiochemistry {
-    my ($self, $args) = @_;
-    my $arg = shift @$args; 
-    my ($ref, $bio);
-    if($arg =~ /biochemistry/) {
-        $ref = ModelSEED::Reference->new(ref => $arg);
-    } else {
-        unshift @$args, $arg;
-    }
-    if(!defined($ref) && !IO::Interactive::Tiny::is_interactive() ) {
-        my $str = <STDIN>;
-        chomp $str;
-        $ref = ModelSEED::Reference->new(ref => $arg);
-     }
-     if(!defined($ref)) {
-         my $config = ModelSEED::Configuration->instance;
-         $ref = $config->config->{biochemistry};
-     }
-     my $auth  = ModelSEED::Auth::Factory->new->from_config;
-     my $store = ModelSEED::Store->new(auth => $auth);
-     if(defined($ref)) {
-         $bio = $store->get_data($ref);
-     }
-     return $bio;
 }
 
 1;
