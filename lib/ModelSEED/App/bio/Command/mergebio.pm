@@ -26,7 +26,7 @@ sub sub_execute {
    		reference => $args->[0]
    	});
     $self->usage_error("Merging Biochemistry ".$args->[0]." not found") unless defined($other_biochemistry);
-    verbose("Merging: ".$other_biochemistry->name()." with ".$biochemistry->name());
+    verbose("Merging: ".$other_biochemistry->name()." with ".$bio->name());
     
     #test aliasSets for merging
     if(!defined($opts->{mergevia})){
