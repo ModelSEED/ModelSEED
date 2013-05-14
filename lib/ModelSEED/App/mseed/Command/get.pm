@@ -4,88 +4,50 @@ use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON::XS;
-use Class::Autouse qw(
-    ModelSEED::App::Helpers
-    ModelSEED::Reference
-    ModelSEED::Auth::Factory
-    ModelSEED::Store
-);
-use base 'App::Cmd::Command';
+use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+
+use base 'ModelSEED::App::MSEEDBaseCommand';
 
 sub abstract { return "Get an object from workspace or datastore."; }
 
-sub usage_desc { return "ms get [ref] [- references] [options]"; }
+sub usage_desc { return "ms get [ref] [options]"; }
 
 sub description { return <<END;
 Get an object from the datastore.  
 END
 }
 
-
-sub opt_spec {
+sub options {
     return (
-        ["file|f:s", "Print output to a file"],
         ["pretty|p", "Pretty-print JSON"],
-        ["help|h|?", "Print this usage information"],
     );
 }
-sub execute {
+
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $refs = [];
-    if (@$args) {
-        $refs = $args;
-    } else {
-        $self->usage_error("Must provide at least one reference");
+	my $refs = $args;
+	if (!defined($refs->[0])) {
+        error("Must provide reference");
     }
-    # Check if any of the refs are the string "-"
-    # which means read refs from STDIN, -0 if \0 terminated
-    for(my $i=0; $i<@$refs; $i++) {
-        if($refs->[$i] eq "-") {
-            my $otherRefs = [];
-            while(<STDIN>) {
-                chomp $_;
-                push(@$otherRefs, $_);
-            }
-            splice(@$refs, $i, 1, @$otherRefs);
-            last;
-        }
-    }
+	my $JSON = JSON::XS->new->utf8(1);
+    $JSON->pretty(1) if($opts->{pretty});
     my $cache = {};
     my $output = [];
-    my $JSON = JSON::XS->new->utf8(1);
-    $JSON->pretty(1) if($opts->{pretty});
-    foreach my $ref (@$refs) {
-        my $o = $self->get_object_deep($cache, $store, $ref);
+	foreach my $ref (@$refs) {
+        my $o = $self->get_object_deep($cache,$ref);
         if(ref($o) eq 'ARRAY') {
             push(@$output, @$o);
         } else {
             push(@$output, $o);
         }
-    }
-    my $fh = *STDOUT;
-    if($opts->{file}) {
-        open($fh, "<", $opts->{file}) or
-            die "Could not open file: " .$opts->{file} . ", $@\n";
-    }
-    my $delimiter;
-    $delimiter = "\0" if($opts->{0});
-    $delimiter = "\n" if($opts->{newline});
-    if (defined $delimiter) {
-        print $fh join($delimiter, map { $JSON->encode($_) } @$output);
-    } elsif(@$output == 1) {
-        print $fh $JSON->encode($output->[0]);
-    } else {
-        print $fh $JSON->encode($output);
-    }
-    close($fh);
-    return;
+	}
+    my $delimiter = "\n";
+    print join($delimiter, map { $JSON->encode($_) } @$output);
+	return;
 }
 
 sub get_object_deep {
-    my ($self, $cache, $store, $refstr) = @_;
+    my ($self, $cache,$refstr) = @_;
     my ($ref, $found, $refstring);
     try {
         $ref = ModelSEED::Reference->new(ref => $refstr);
@@ -96,12 +58,12 @@ sub get_object_deep {
         if(defined($cache->{$refstring})) {
             $found = $cache->{$refstring};
         } else {
-            $found = $store->get_data($refstring);
+            $found = $self->get_data($refstring);
         }
     } elsif($ref->type eq 'object' && @{$ref->parent_collections}) {
         $refstring = $ref->base . $ref->delimiter . $ref->id;
         my $parent_ref = $ref->parent_objects->[0];
-        my $parent = $self->get_object_deep($cache, $store, $parent_ref);
+        my $parent = $self->get_object_deep($cache,$parent_ref);
         my @sections = split($ref->delimiter, $ref->base);
         my $subtype = pop @sections;
         my $uuid = $ref->id;
@@ -112,7 +74,7 @@ sub get_object_deep {
         $refstring = $ref->base;
         my $last_i = @{$ref->{parent_objects}};
         my $parent_ref = $ref->parent_objects->[$last_i-1];
-        my $parent = $self->get_object_deep($cache, $store, $parent_ref);
+        my $parent = $self->get_object_deep($cache,$parent_ref);
         my @sections = split($ref->delimiter, $ref->base);
         my $subtype = pop @sections;
         $found = $parent->{$subtype};

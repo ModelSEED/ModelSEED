@@ -21,6 +21,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', default => '', type => 'attribute', metaclass => 'Typed');
+has other => (is => 'rw', isa => 'Num', printOrder => '2', default => '0', type => 'attribute', metaclass => 'Typed');
 has dna => (is => 'rw', isa => 'Num', printOrder => '3', default => '0.05', type => 'attribute', metaclass => 'Typed');
 has rna => (is => 'rw', isa => 'Num', printOrder => '4', default => '0.1', type => 'attribute', metaclass => 'Typed');
 has protein => (is => 'rw', isa => 'Num', printOrder => '5', default => '0.5', type => 'attribute', metaclass => 'Typed');
@@ -83,6 +84,14 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => 2,
+            'name' => 'other',
+            'default' => '0',
+            'type' => 'Num',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => 3,
             'name' => 'dna',
             'default' => '0.05',
@@ -139,7 +148,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, dna => 4, rna => 5, protein => 6, cellwall => 7, lipid => 8, cofactor => 9, energy => 10};
+my $attribute_map = {uuid => 0, modDate => 1, id => 2, name => 3, other => 4, dna => 5, rna => 6, protein => 7, cellwall => 8, lipid => 9, cofactor => 10, energy => 11};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

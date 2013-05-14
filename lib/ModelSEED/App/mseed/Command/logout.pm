@@ -1,21 +1,22 @@
 package ModelSEED::App::mseed::Command::logout;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
-use ModelSEED::Configuration;
-
-sub abstract { return "Log out" }
-sub opt_spec { return (
-        ["help|h|?", "Print this usage information"],
-    );
+use base 'ModelSEED::App::MSEEDBaseCommand';
+sub abstract { return "Log out the currently logged user." }
+sub usage_desc { return "ms logout"; }
+sub options {
+    return ();
 }
 
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $conf = ModelSEED::Configuration->new();
-    delete $conf->config->{login};
-    $conf->save();
+	my $config = config();
+	$config->logout();
+	if (!defined($opts->{dryrun})) {
+		$config->save_to_file();
+	}
+	print "Successfully logged out to public!\n";
+	return;
 }
 
 1;

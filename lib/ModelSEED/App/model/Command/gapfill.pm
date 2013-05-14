@@ -1,21 +1,16 @@
 package ModelSEED::App::model::Command::gapfill;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( verbose set_verbose );
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Fill gaps in the reaction network for a model"; }
-sub usage_desc { return "model gapfill [ model || - ] [options]"; }
-sub opt_spec {
+sub usage_desc { return "model gapfill [model] [options]"; }
+sub options {
     return (
-        ["verbose|v", "Print verbose status information"],
         ["media:s","Media formulation to be used for the FBA simulation"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
         ["objective:s","String describing the objective of the FBA problem"],
@@ -51,24 +46,11 @@ sub opt_spec {
         ["integratesol|i", "Integrate first solution into model"],
         ["printraw|r", "Print raw data instead of readable data"],
         ["saveas|a:s", "New name the results should be saved to"],
-        ["dryrun|d", "Donot save results in database"],
-        ["help|h|?", "Print this usage information"],
     );
 }
 
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    # Retreiving the model object on which FBA will be performed
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	if ($opts->{verbose}) {
-        set_verbose(1);
-    	delete $opts->{verbose};
-    }
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
 	#Standard commands to handle where output will be printed
     my $out_fh = \*STDOUT;
 	#Creating gapfilling formulation
@@ -156,18 +138,17 @@ sub execute {
     	verbose("Automatically integrating first solution in model.");
     	$model->integrateGapfillSolution($gapfillingFormulation,0);
     }
-    if ($opts->{saveas}) {
-    	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	verbose("New alias set for model:".$ref);
-    }
-    if ($opts->{dryrun}) {
-    	verbose("Dry run selected. Results not saved!");
-    } else {
-    	verbose("Saving model!");
-    	$store->save_object("fBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),$gapfillingFormulation->fbaFormulation());
-		$store->save_object("gapfillingFormulation/".$gapfillingFormulation->uuid(),$gapfillingFormulation);
-    	$store->save_object($ref,$model);
-    }
+    $self->save_object({
+		type => "FBAFormulation",
+		reference => "FBAFormulation/".$gapfillingFormulation->fbaFormulation()->uuid(),
+		object => $gapfillingFormulation->fbaFormulation()
+	});
+    $self->save_object({
+    	type => "GapfillingFormulation",
+		reference => "GapfillingFormulation/".$gapfillingFormulation->uuid(),
+		object => $gapfillingFormulation
+	});
+    $self->save_model($opts,$model);
 }
 
 1;

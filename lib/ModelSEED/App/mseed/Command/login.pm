@@ -1,114 +1,53 @@
 package ModelSEED::App::mseed::Command::login;
 use strict;
 use common::sense;
-
-use Module::Load;
-use Try::Tiny;
 use Term::ReadKey;
 use Class::Autouse qw(
-    ModelSEED::Configuration
     ModelSEED::Client::MSAccountManagement
 );
-use base 'App::Cmd::Command';
+use base 'ModelSEED::App::MSEEDBaseCommand';
 
-sub abstract { "Login as a user" }
-sub usage { "%c COMMAND [username]" }
-sub validate_args {
-    my ($self, $opts, $args) = @_;
-    $self->usage_error("Need to supply a username") unless @$args;
-}
-sub opt_spec { return (
-        ["help|h|?", "Print this usage information"],
+sub abstract { return "Login as a user" }
+
+sub usage_desc { return "ms login [username]"; }
+
+sub options {
+    return (
+    	["password|p=s", "Provide password on command line"],
     );
 }
 
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $username = $args->[0];
-
-    my $password;
-    print "Enter password: ";
-    # Please don't remove this unless you've tested
-    # that it works in windows...readkey didn't work
-    if ($^O =~ m/^MSWin/) {
-        $password = <STDIN>;
+	my $username = shift @$args;
+	unless (defined($username)) {
+        $self->usage_error("Must provide username for Model SEED account!");
+    } 
+	my $password;
+    if (!defined($opts->{password})) {
+	    print "Enter password: ";
+		if ($^O =~ m/^MSWin/) {
+	        $password = <STDIN>;
+	    } else {
+	        ReadMode 2;
+	        $password = ReadLine 0;
+	        ReadMode 0;
+	        chomp($password);
+	    }
+	    print "\n";
     } else {
-        ReadMode 2;
-        $password = ReadLine 0;
-        ReadMode 0;
-        chomp($password);
+    	$password = $opts->{password};
     }
-    print "\n";
-
-    my $conf = ModelSEED::Configuration->new();
-    my $users = $conf->config->{users};
-    my $user;
-    if (defined($users->{$username})) {
-        $user = $users->{$username};
-        unless ($self->check_password($user, $password)) {
-            print "Invalid password.\n";
-            return;
-        }
-    } else {
-        $user = $self->import_seed_account($username, $password, $conf);
-    }
-
-    $conf->config->{login} = {
-        username => $username,
-        password => $user->{password}
-    };
-    $conf->save();
-
-    print "Successfully logged in as '$username'\n";
-}
-
-sub import_seed_account {
-    my ($self, $username, $password, $conf) = @_;
-
-    # get the user data
-    my $svr = ModelSEED::Client::MSAccountManagement->new();
-
-    my $output;
-    try {
-        $output = $svr->get_user_info({ username => $username });
-    } catch {
-        die "Error in communicating with SEED authorization service.";
-    };
-
-    if (defined($output->{error})) {
-        print $output->{error}, "\n";
-        return;
-    }
-
-    # create a user object
-    my $user = {
-        login => $output->{username},
-        password => $output->{password},
-        firstname => $output->{firstname},
-        lastname => $output->{lastname},
-        email => $output->{email},
-    };
-
-    # check the password
-    if (!$self->check_password($user, $password)) {
-        print "Invalid password.\n";
-        return;
-    }
-
-    $conf->config->{users}->{$username} = $user;
-
-    return $user;
-}
-
-sub check_password {
-    my ($self, $user, $password) = @_;
-
-    if (crypt($password, $user->{password}) eq $user->{password}) {
-        return 1;
-    } else {
-        return 0;
-    }
+	my $config = config();
+	$config->login({
+		username => $username,
+		password => $password
+	});
+	if (!defined($opts->{dryrun})) {
+		$config->save_to_file();
+	}
+	print "Successfully logged in as '$username'\n";
+	return;
 }
 
 1;

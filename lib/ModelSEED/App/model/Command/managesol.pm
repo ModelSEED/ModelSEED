@@ -1,21 +1,17 @@
 package ModelSEED::App::model::Command::managesol;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
+    Data::UUID
 );
-use ModelSEED::utilities qw( set_verbose verbose );
-sub abstract { return "Lists all gapfilling and gapgeneration solutions for model, and integrates a selected solution"; }
-sub usage_desc { return "model managesol [ model || - ] [options]"; }
-sub opt_spec {
+sub abstract { return "Lists all gapfilling and gapgeneration solutions for model, and integrates a selected solution" }
+sub usage_desc { return "model managesol [model] [options]" }
+sub options {
     return (
-        ["verbose|v", "Print verbose status information"],
         ["gapfillonly|f","Only show gapfilling solutions"],
         ["gapfgenonly|g","Only show gapgeneration solutions"],
         ["solution|s=s", "Solution to be integrated"],
@@ -23,23 +19,10 @@ sub opt_spec {
         ["cleargapgen", "Clear all unintegrated gapgen formulations"],
         ["cleargapfill", "Clear all unintegrated gapfilling formulations"],
         ["saveas|a:s", "New name the model should be saved to"],
-        ["dryrun|d", "Donot save results in database"],
-        ["help|h|?", "Print this usage information"],
     );
 }
-
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	if ($opts->{verbose}) {
-        set_verbose(1);
-    	delete $opts->{verbose};
-    }
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
     #Clearing gapgen or gapfilling solutions
     if (defined($opts->{cleargapgen}) && $opts->{cleargapgen} == 1) {
     	$model->clearLinkArray("unintegratedGapgens");
@@ -66,8 +49,13 @@ sub execute {
     			if (@{$formsols} > $solNum) {
     				$form->remove($subfunc,$formsols->[$solNum]);
     				my $olduuid = $form->uuid();
-    				my $newuuid = $store->save_object($type."/".$form->uuid(),$form);
-					$model->replaceLinkArrayItem($func,$olduuid,$newuuid);
+    				$form->uuid(Data::UUID->new()->create_str());
+    				$self->save_object({
+						type => "FBAFormulation",
+						reference => "FBAFormulation/".$form->uuid(),
+						object => $form
+					});
+					$model->replaceLinkArrayItem($func,$olduuid,$form->uuid());
     			} else {
     				print STDERR "Invalid solution selected for deletions!"
     			}
@@ -136,16 +124,7 @@ sub execute {
 		}
 	}
 	#Saving results in model
-	if ($opts->{saveas}) {
-    	$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-    	verbose("New alias set for model:".$ref);
-    }
-    if ($opts->{dryrun}) {
-    	verbose("Dry run selected. Results not saved!");
-    } else {
-    	verbose("Saving model!");
-       	$store->save_object($ref,$model);
-    }
+    $self->save_model($model);
 }
 
 1;

@@ -1,19 +1,13 @@
 package ModelSEED::App::model::Command::calcdistances;
-use base 'App::Cmd::Command';
-use Class::Autouse qw(
-    ModelSEED::MS::Model
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
-    ModelSEED::MS::Factories::ExchangeFormatFactory
-);
-sub abstract { return "Calculate pairwise distances between metabolites, reactions, and roles"; }
-sub usage_desc { return "model calcdistances [ model || - ] [options]"; }
-sub opt_spec {
+use strict;
+use common::sense;
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+sub abstract { "Calculate pairwise distances between metabolites, reactions, and roles" }
+sub usage_desc { return "ms model calcdistances [model] [options]"; }
+sub options {
     return (
-        ["verbose|v", "Print verbose status information"],
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
         ["roles|o","Calculate distances between roles (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
@@ -21,24 +15,18 @@ sub opt_spec {
     );
 }
 
-sub execute {
-    my ($self, $opts, $args) = @_;
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    #Retreiving the model object on which FBA will be performed
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
 	#Standard commands to handle where output will be printed
     my $out_fh = \*STDOUT;
     #Performing computation
-	print STDERR "Computing network distances...\n" if($opts->{verbose});
+	verbose("Computing network distances...\n");
 	my $tbl = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
 		roles => $opts->{roles}
 	});
 	#Printing results
-	print STDERR "Printing results...\n" if($opts->{verbose});
+	verbose("Printing results...\n");
 	if ($opts->{matrix} == 1) {
 		ModelSEED::utilities::PRINTTABLE("STDOUT",$tbl,"\t");
 	} else {

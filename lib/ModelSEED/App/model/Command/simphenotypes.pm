@@ -1,22 +1,16 @@
 package ModelSEED::App::model::Command::simphenotypes;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use ModelSEED::App::model;
+use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
-    ModelSEED::Store
-    ModelSEED::Auth::Factory
-    ModelSEED::Reference
-    ModelSEED::Configuration
-    ModelSEED::App::Helpers
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-sub abstract { return "Simulate table of growth phenotypes"; }
-sub usage_desc { return "model simphenotypes [ model || - ] [filename] [options]"; }
-sub opt_spec {
+use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+sub abstract { return "Simulate table of growth phenotypes" }
+sub usage_desc { return "model simphenotypes [model id] [filename] [options]" }
+sub options {
     return (
-        ["save|s", "Save results in the existing model"],
-        ["saveas|sa:s", "Save results in a new model"],
-        ["verbose|v", "Print verbose status information"],
         ["notes:s","User notes to be affiliated with FBA simulation"],
         ["objective:s","String describing the objective of the FBA problem"],
         ["rxnko:s","Comma delimited list of reactions in model to be knocked out"],
@@ -25,20 +19,13 @@ sub opt_spec {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
-        ["help|h|?", "Print this usage information"],
+        ["save|s", "Save results in the existing model"],
+        ["saveas|sa:s", "Save results in a new model"],
     );
 }
 
-sub execute {
-    my ($self, $opts, $args) = @_;
-    print($self->usage) && return if $opts->{help};
-    my $auth  = ModelSEED::Auth::Factory->new->from_config;
-    my $store = ModelSEED::Store->new(auth => $auth);
-    my $helper = ModelSEED::App::Helpers->new();
-    #Retreiving the model object on which FBA will be performed
-    (my $model,my $ref) = $helper->get_object("model",$args,$store);
-    $self->usage_error("Model not found; You must supply a valid model name.") unless(defined($model));
-	#Standard commands to handle where output will be printed
+sub sub_execute {
+    my ($self, $opts, $args,$model) = @_;
 	#Reading file with phenotype data
 	if (!defined($args->[1]) || !-e $args->[1]) {
 		$self->usage_error("Phenotype specification file not found.");
@@ -97,7 +84,7 @@ sub execute {
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $fbaform = $exchange_factory->buildFBAFormulation($input);
     #Running FBA
-    print STDERR "Running FBA..." if($opts->{verbose});
+    verbose("Running FBA...");
     my $fbaResult = $fbaform->runFBA();
     #Standard commands that save results of the analysis to the database
     if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {
@@ -115,15 +102,14 @@ sub execute {
     	}
     	ModelSEED::utilities::PRINTTABLE("STDOUT",$phenoData);
 	    #Standard commands that save results of the analysis to the database
-	    if ($opts->{save}) {
-	    	print STDERR "Saving model with FBA solution over original model...\n" if($opts->{verbose});
+	    if ($opts->{save} || $opts->{saveas}) {
+	    	$self->save_object({
+				type => "FBAFormulation",
+				reference => "FBAFormulation/".$fbaform->uuid(),
+				object => $fbaform
+			});
 	    	$model->add("fbaFormulations",$fbaform);
-	    	$store->save_object($ref,$model);
-	    } elsif ($opts->{saveas}) {
-			$ref = $helper->process_ref_string($opts->{saveas}, "model", $auth->username);
-			print STDERR "Saving model with FBA solution as new model ".$ref."...\n" if($opts->{verbose});
-			$model->add("fbaFormulations",$fbaform);
-			$store->save_object($ref,$model);
+	    	$self->save_model($model);
 	    }
     }
 }

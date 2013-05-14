@@ -244,9 +244,13 @@ sub cloneObject {
 	return $class->new($data);
 }
 
+sub dependencies {
+	return [];
+}
+
 sub toJSON {
     my $self = shift;
-    my $args = args([],{pp => 0}, @_);
+    my $args = ModelSEED::utilities::args([],{pp => 0}, @_);
     my $data = $self->serializeToDB();
     my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($args->{pp} == 1);
@@ -266,7 +270,7 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = args(["format"], {}, @_);
+	my $args = ModelSEED::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "readable") {
 		return $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
@@ -373,7 +377,7 @@ sub interpretReference {
 
 sub parseReferenceList {
 	my $self = shift;
-	my $args = args([], { string => "none", delimiter => "|", data => "obj", class => undef }, @_);
+	my $args = ModelSEED::utilities::args([], { string => "none", delimiter => "|", data => "obj", class => undef }, @_);
 	my $output = [];
 	if (!defined($args->{array})) {
 		$args->{array} = ModelSEED::utilities::parseArrayString($args);
@@ -395,7 +399,7 @@ sub parseReferenceList {
 ######################################################################
 sub htmlComponents {
 	my $self = shift;
-	my $args = args([],{}, @_);
+	my $args = ModelSEED::utilities::args([],{}, @_);
 	my $data = $self->_createReadableData();
 	my $output = {
 		title => $self->_type()." Viewer",
@@ -428,7 +432,7 @@ sub htmlComponents {
 
 sub createHTML {
 	my $self = shift;
-	my $args = args([],{internal => 0}, @_);
+	my $args = ModelSEED::utilities::args([],{internal => 0}, @_);
 	my $document = "";
 	if ($args->{internal} == 0) {
 		$document .= $htmlheader."\n";
@@ -588,7 +592,7 @@ sub remove {
 
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        error("Object doesn't have attribute with name: $attribute");
+        ModelSEED::utilities::error("Object doesn't have attribute with name: $attribute");
     }
 
     my $removedCount = 0;
@@ -613,7 +617,7 @@ sub getLinkedObject {
     my $source = lc($attribute);
     if ($sourceType eq 'ModelSEED::Store') {
     	if (!defined($self->store)) {
-        	error("Getting object from undefined store!");
+        	ModelSEED::utilities::error("Getting object from undefined store!");
         }
         if (ref($self->store) eq "ModelSEED::Store") {
         	my $refName = lc(substr($attribute, 0,1)).substr($attribute,1);
@@ -795,6 +799,17 @@ sub annotation {
     error("Cannot find Annotation object in tree!");
 }
 
+sub configuration {
+    my ($self) = @_;
+    my $parent = $self->parent();
+    if (defined($parent) && ref($parent) eq "ModelSEED::MS::Configuration") {
+        return $parent;
+    } elsif (defined($parent)) {
+        return $parent->configuration();
+    }
+    error("Cannot find Configuration object in tree!");
+}
+
 sub mapping {
     my ($self) = @_;
     my $parent = $self->parent();
@@ -912,6 +927,16 @@ sub updateLinks {
     		}
     	} 
     }
+}
+
+sub msStoreID {
+	my ($self) = @_;
+	return $self->{_msStoreID};
+}
+
+sub msStoreRef {
+	my ($self) = @_;
+	return $self->{_msStoreRef};
 }
 
 sub _build_object {

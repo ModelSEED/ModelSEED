@@ -6,6 +6,7 @@
 ########################################################################
 package ModelSEED::MS::DB::User;
 use ModelSEED::MS::BaseObject;
+use ModelSEED::MS::UserStore;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::BaseObject';
@@ -13,7 +14,7 @@ extends 'ModelSEED::MS::BaseObject';
 
 our $VERSION = 1;
 # PARENT:
-has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metaclass => 'Typed');
+has parent => (is => 'rw', isa => 'ModelSEED::MS::Configuration', weak_ref => 1, type => 'parent', metaclass => 'Typed');
 
 
 # ATTRIBUTES:
@@ -23,10 +24,15 @@ has password => (is => 'rw', isa => 'Str', printOrder => '0', required => 1, typ
 has email => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has firstname => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 has lastname => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
+has primaryStoreName => (is => 'rw', isa => 'Str', printOrder => '0', default => '', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
 has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass => 'Typed');
+
+
+# SUBOBJECTS:
+has userStores => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { return []; }, type => 'encompassed(UserStore)', metaclass => 'Typed', reader => '_userStores', printOrder => '-1');
 
 
 # LINKS:
@@ -85,10 +91,18 @@ my $attributes = [
             'default' => '',
             'type' => 'Str',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'primaryStoreName',
+            'default' => '',
+            'type' => 'Str',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, login => 1, password => 2, email => 3, firstname => 4, lastname => 5};
+my $attribute_map = {uuid => 0, login => 1, password => 2, email => 3, firstname => 4, lastname => 5, primaryStoreName => 6};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -120,9 +134,16 @@ sub _links {
   }
 }
 
-my $subobjects = [];
+my $subobjects = [
+          {
+            'printOrder' => -1,
+            'name' => 'userStores',
+            'type' => 'encompassed',
+            'class' => 'UserStore'
+          }
+        ];
 
-my $subobject_map = {};
+my $subobject_map = {userStores => 0};
 sub _subobjects {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -136,6 +157,13 @@ sub _subobjects {
     return $subobjects;
   }
 }
+
+
+# SUBOBJECT READERS:
+around 'userStores' => sub {
+  my ($orig, $self) = @_;
+  return $self->_build_all_objects('userStores');
+};
 
 
 __PACKAGE__->meta->make_immutable;
