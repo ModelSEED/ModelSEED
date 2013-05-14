@@ -2077,19 +2077,28 @@ sub computeNetworkDistances {
 	}
 	#Set cofactor.
 	my $biochemistry = $self->biochemistry();
-    my $list = [ qw(
-                       cpd00001 cpd00009 cpd00010 cpd00011 cpd00012 cpd00013 cpd00015 cpd11609 cpd11610 cpd00067 cpd00099 cpd00099 cpd12713 cpd00242 cpd00007 cpd00025
-               ) ];
-    for (my $i=0; $i < @{$list}; $i++) {
-	my $cpd = $biochemistry->getObjectByAlias("compounds",$list->[$i],"ModelSEED");
-	if (!defined($cpd)) {
-            print STDERR "Could not find ".$list->[$i]."!\n";
-	} else {
-            $cpd->isCofactor(1);
-	}
-    }
+    # list of cofactors that don't come in pairs; some of these have biosynthetic pathways
+    # and should NOT be marked as a cofactor in the very last reaction(s) that synthesize
+    # them, so each one can have a list of special case reactions
+    my $list = [
+	["cpd00001" => {"rxn00008" => 1,"rxn00066" => 1}], # H2O
+	["cpd00009" => {"rxn00001" => 1}], # Pi
+	["cpd00010" => {"rxn00100" => 1}], #CoA
+	["cpd00011" => {}], # CO2
+	["cpd00012" => {}], # PPi
+	["cpd00013" => {}], # NH3
+	["cpd00015" => {"rxn00122" => 1}], # FAD
+	["cpd00067" => {}], # H+
+	["cpd00099" => {}], # Cl-
+	["cpd00007" => {}],
+	["cpd00056" => {"rxn00438" => 1, "rxn00439" => 1, "rxn00440" => 1}],
+	["cpd00213" => {}]
+	];
+
     my $rxns = $biochemistry->reactions();
+    # prioritized list, e.g., ATP/ADP come before Pyruvate/PEP
     my $pairlist = [
+        ["cpd00002","cpd00008"],
         ["cpd00097","cpd00986"],
         ["cpd00109","cpd00110"],
         ["cpd11620","cpd11621"],
@@ -2102,11 +2111,10 @@ sub computeNetworkDistances {
         ["cpd12669","cpd12694"],
         ["cpd00003","cpd00004"],
         ["cpd00005","cpd00006"],
-        ["cpd00002","cpd00008"],
         ["cpd00002","cpd00018"],
         ["cpd00008","cpd00018"],
         ["cpd00052","cpd00096"],
-        ["cpd00002","cpd00046"],
+        ["cpd00052","cpd00046"],
         ["cpd00046","cpd00096"],
         ["cpd00062","cpd00091"],
         ["cpd00062","cpd00014"],
@@ -2115,25 +2123,47 @@ sub computeNetworkDistances {
         ["cpd00038","cpd00031"],
         ["cpd00126","cpd00031"],
         ["cpd00357","cpd00793"],
+        ["cpd00061","cpd00020"],
     ]; 
-    for (my $i=0; $i < @{$rxns}; $i++) {
- 	my $rxn = $rxns->[$i];
- 	for (my $j=0; $j < @{$pairlist}; $j++) {
-            my $pair = $pairlist->[$j];
-            my $rgts = $rxn->reagents();
-            for (my $k=0; $k < @{$rgts}; $k++) {
-                my $rgt = $rgts->[$k];
+    foreach my $rxn (@{$rxns}) {
+	my $rgts = $rxn->reagents();
+	my $num_rgts = scalar @{$rgts};
+	# first we will mark any compound that is a known cofactor,
+	# unless this is a special case reaction
+	foreach my $cofactorInfo (@$list) {
+	    my $cpdId = $cofactorInfo->[0];
+	    my $specialRxns = $cofactorInfo->[1];
+	    foreach my $rgt (@$rgts) {
+		my $markIt = 0;
+		if ($rgt->compound()->id() eq $cpdId) {
+		    print STDERR "Found match on $cpdId for ", $rxn->id(), ", checking ", keys %$specialRxns, "\n";
+		    $markIt = 1 unless exists $specialRxns->{$rxn->id()};
+		    print STDERR "markIt is $markIt\n";
+		}
+		if ($markIt) {
+		    $rgt->isCofactor(1);
+		    $num_rgts--;
+		}
+	    }
+	}
+	# now we loop through the cofactor pairs and look for cofactors
+	# on opposite sides of the equation
+	foreach my $pair (@{$pairlist}) {
+	    foreach my $rgt (@{$rgts}) {
                 if ($rgt->compound()->id() eq $pair->[0]) {
-                    for (my $m=0; $m < @{$rgts}; $m++) {
-                        my $rgtTwo = $rgts->[$m];
+		    foreach my $rgtTwo (@{$rgts}) {
                         if ($rgtTwo->compound()->id() eq $pair->[1]) {
                             if ($rgt->coefficient()*$rgtTwo->coefficient() < 0) {
                                 $rgt->isCofactor(1);
                                 $rgtTwo->isCofactor(1);
+				$num_rgts -= 2;
                             }
                         }
                     }
                 }
+		# quit if we only have two non-cofactors left
+		# otherwise we may be left with no non-cofactors
+		last if $num_rgts <= 2;
             }
  	}
     }
