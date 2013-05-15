@@ -22,8 +22,8 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'Str', printOrder => '2', default => '', type => 'attribute', metaclass => 'Typed');
-has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'Singlegenome', type => 'attribute', metaclass => 'Typed');
-has biochemistry_uuid => (is => 'rw', isa => 'Str', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
+has type => (is => 'rw', isa => 'Str', printOrder => '5', default => 'AutoModel', type => 'attribute', metaclass => 'Typed');
+has mapping_uuid => (is => 'rw', isa => 'Str', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
 has annotation_uuid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has forwardedLinks => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub {return {};}, type => 'attribute', metaclass => 'Typed');
 
@@ -37,7 +37,6 @@ has regulatoryModelRegulons => (is => 'rw', isa => 'ArrayRef[HashRef]', default 
 
 
 # LINKS:
-has biochemistry => (is => 'rw', type => 'link(ModelSEED::Store,Biochemistry,biochemistry_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_biochemistry', clearer => 'clear_biochemistry', isa => 'ModelSEED::MS::Biochemistry');
 has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'ModelSEED::MS::Mapping');
 has annotation => (is => 'rw', type => 'link(ModelSEED::Store,Annotation,annotation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_annotation', clearer => 'clear_annotation', isa => 'ModelSEED::MS::Annotation');
 
@@ -45,10 +44,6 @@ has annotation => (is => 'rw', type => 'link(ModelSEED::Store,Annotation,annotat
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_modDate { return DateTime->now()->datetime(); }
-sub _build_biochemistry {
-  my ($self) = @_;
-  return $self->getLinkedObject('ModelSEED::Store','Biochemistry',$self->biochemistry_uuid());
-}
 sub _build_mapping {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Mapping',$self->mapping_uuid());
@@ -101,14 +96,14 @@ my $attributes = [
             'req' => 0,
             'printOrder' => 5,
             'name' => 'type',
-            'default' => 'Singlegenome',
+            'default' => 'AutoModel',
             'type' => 'Str',
             'perm' => 'rw'
           },
           {
             'req' => 1,
             'printOrder' => 9,
-            'name' => 'biochemistry_uuid',
+            'name' => 'mapping_uuid',
             'type' => 'Str',
             'perm' => 'rw'
           },
@@ -129,7 +124,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, name => 3, type => 4, biochemistry_uuid => 5, annotation_uuid => 6, forwardedLinks => 7};
+my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, name => 3, type => 4, mapping_uuid => 5, annotation_uuid => 6, forwardedLinks => 7};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -145,15 +140,6 @@ sub _attributes {
 }
 
 my $links = [
-          {
-            'attribute' => 'biochemistry_uuid',
-            'weak' => 0,
-            'parent' => 'ModelSEED::Store',
-            'clearer' => 'clear_biochemistry',
-            'name' => 'biochemistry',
-            'class' => 'Biochemistry',
-            'method' => 'Biochemistry'
-          },
           {
             'attribute' => 'mapping_uuid',
             'weak' => 0,
@@ -174,7 +160,7 @@ my $links = [
           }
         ];
 
-my $link_map = {biochemistry => 0, mapping => 1, annotation => 2};
+my $link_map = {mapping => 0, annotation => 1};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

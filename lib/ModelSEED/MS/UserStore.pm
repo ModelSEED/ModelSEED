@@ -129,7 +129,8 @@ sub _buildwsTypeTrans {
 		GapFill => "GapfillingFormulation",
 		GapGen => "GapgenFormulation",
 		PromConstraints => "PROMModel",
-		ModelTemplate => "ModelTemplate"
+		ModelTemplate => "ModelTemplate",
+		RegulatoryModel => "RegulatoryModel"
 	};
 }
 

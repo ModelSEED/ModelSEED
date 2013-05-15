@@ -3666,10 +3666,10 @@ $objectDefinitions->{RegulatoryModel} = {
 			type       => 'Str',
 			len        => 32,
 			req        => 0,
-			default    => "Singlegenome"
+			default    => "AutoModel"
 		},
 		{
-			name       => 'biochemistry_uuid',
+			name       => 'mapping_uuid',
 			printOrder => 9,
 			perm       => 'rw',
 			type       => 'Str',
@@ -3701,13 +3701,6 @@ $objectDefinitions->{RegulatoryModel} = {
 	],
 	primarykeys => [qw(uuid)],
 	links       => [
-		{
-			name      => "biochemistry",
-			attribute => "biochemistry_uuid",
-			parent    => "ModelSEED::Store",
-			method    => "Biochemistry",
-			weak      => 0
-		},
 		{
 			name      => "mapping",
 			attribute => "mapping_uuid",
@@ -3767,14 +3760,6 @@ $objectDefinitions->{RegulatoryModelRegulon} = {
 			type       => 'ArrayRef',
 			req        => 0,
 			default    => "sub{return [];}"
-		},
-		{
-			name       => 'regulator_uuids',
-			printOrder => -1,
-			perm       => 'rw',
-			type       => 'ArrayRef',
-			req        => 0,
-			default    => "sub{return [];}"
 		}
 	],
 	subobjects => [
@@ -3790,13 +3775,6 @@ $objectDefinitions->{RegulatoryModelRegulon} = {
 		{
 			name      => "features",
 			attribute => "feature_uuids",
-			parent    => "Annotation",
-			method    => "features",
-			array     => 1
-		},
-		{
-			name      => "regulators",
-			attribute => "regulator_uuids",
 			parent    => "Annotation",
 			method    => "features",
 			array     => 1
@@ -3862,7 +3840,7 @@ $objectDefinitions->{RegulonStimuli} = {
 		{
 			name      => "stimuli",
 			attribute => "stimuli_uuid",
-			parent    => "Biochemistry",
+			parent    => "Mapping",
 			method    => "stimuli",
 		},
 		{

@@ -5,9 +5,9 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 # Date of module creation: 2013-03-26T04:50:36
 ########################################################################
+package ModelSEED::MS::Configuration;
 use strict;
 use ModelSEED::MS::DB::Configuration;
-package ModelSEED::MS::Configuration;
 use ModelSEED::utilities qw( error PRINTFILE config args verbose set_verbose translateArrayOptions);
 use Try::Tiny;
 use Moose;

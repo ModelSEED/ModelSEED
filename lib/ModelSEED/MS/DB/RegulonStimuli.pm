@@ -25,14 +25,14 @@ has regulator_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', defau
 
 
 # LINKS:
-has stimuli => (is => 'rw', type => 'link(Biochemistry,stimuli,stimuli_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_stimuli', clearer => 'clear_stimuli', isa => 'ModelSEED::MS::Stimuli', weak_ref => 1);
+has stimuli => (is => 'rw', type => 'link(Mapping,stimuli,stimuli_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_stimuli', clearer => 'clear_stimuli', isa => 'ModelSEED::MS::stimuli', weak_ref => 1);
 has regulators => (is => 'rw', type => 'link(Annotation,features,regulator_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_regulators', clearer => 'clear_regulators', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_stimuli {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','stimuli',$self->stimuli_uuid());
+  return $self->getLinkedObject('Mapping','stimuli',$self->stimuli_uuid());
 }
 sub _build_regulators {
   my ($self) = @_;
@@ -110,7 +110,7 @@ sub _attributes {
 my $links = [
           {
             'attribute' => 'stimuli_uuid',
-            'parent' => 'Biochemistry',
+            'parent' => 'Mapping',
             'clearer' => 'clear_stimuli',
             'name' => 'stimuli',
             'class' => 'stimuli',

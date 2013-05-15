@@ -389,7 +389,11 @@ Description:
 
 sub buildModelByLayers {
 	my ($self,$args) = @_;
-	
+	my $bios = $self->biomasses();
+	for (my $i=0; $i <@{$bios};$i++) {
+		my $bio = $bios->[$i];
+		print $bio->name();
+	}
 }
 
 =head3 createStandardFBABiomass
