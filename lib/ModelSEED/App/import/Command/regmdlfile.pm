@@ -1,4 +1,4 @@
-package ModelSEED::App::import::Command::templatefile;
+package ModelSEED::App::import::Command::regmdlfile;
 use strict;
 use common::sense;
 use ModelSEED::App::import;
