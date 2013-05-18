@@ -1,6 +1,10 @@
 package ModelSEED::utilities;
 use strict;
 use warnings;
+
+use parent qw( Exporter );
+our @EXPORT_OK = qw( config args usage error verbose set_verbose translateArrayOptions LOADFILE );
+
 use Carp qw(cluck);
 use Data::Dumper;
 use File::Temp qw(tempfile);
@@ -9,8 +13,7 @@ use File::Copy::Recursive;
 use JSON::XS;
 use ModelSEED::MS::Configuration;
 use Bio::KBase::IDServer::Client;
-use parent qw( Exporter );
-our @EXPORT_OK = qw( config args usage error verbose set_verbose translateArrayOptions LOADFILE );
+
 our $VERBOSE = undef; # A GLOBAL Reference to print verbose() calls to, or undef.
 our $CONFIG = undef;
 our $idserver = undef;
