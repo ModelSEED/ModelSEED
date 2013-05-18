@@ -4,6 +4,7 @@ use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON::XS;
+use IO::Compress::Gzip qw(gzip);
 use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
 
 use base 'ModelSEED::App::MSEEDBaseCommand';
@@ -20,6 +21,7 @@ END
 sub options {
     return (
         ["pretty|p", "Pretty-print JSON"],
+        ["zip|z", "Zip"],
     );
 }
 
@@ -27,23 +29,20 @@ sub sub_execute {
     my ($self, $opts, $args) = @_;
 	my $refs = $args;
 	if (!defined($refs->[0])) {
-        error("Must provide reference");
+        $self->usage_error("Must provide reference");
     }
+    my $data = $self->get_data({"reference" => $refs->[0]});
 	my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($opts->{pretty});
-    my $cache = {};
-    my $output = [];
-	foreach my $ref (@$refs) {
-        my $o = $self->get_object_deep($cache,$ref);
-        if(ref($o) eq 'ARRAY') {
-            push(@$output, @$o);
-        } else {
-            push(@$output, $o);
-        }
-	}
-    my $delimiter = "\n";
-    print join($delimiter, map { $JSON->encode($_) } @$output);
-	return;
+    if($opts->{zip}) {
+    	my $string = $JSON->encode($data);
+    	my $gzip_obj;
+    	gzip \$string => \$gzip_obj;
+    	print $gzip_obj;
+    } else {
+    	print $JSON->encode($data);
+    }
+    return;
 }
 
 sub get_object_deep {

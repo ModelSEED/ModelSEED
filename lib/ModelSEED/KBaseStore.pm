@@ -148,7 +148,7 @@ sub get_object {
     	$object = $class->new($object);
     	if ($type ne "Media") {
     		$object->parent($self);
-    	}#anno,
+    	}
     	if ($type eq "PROMModel") {
     		$object->uuid($output->{metadata}->[8]);
     	}
