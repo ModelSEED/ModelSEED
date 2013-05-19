@@ -146,6 +146,9 @@ sub config {
 		reload => 0,
 		config => undef
 	}, @_);
+	if (defined($ENV{MODELSEED_CONF})) {
+		$args->{filename} = $ENV{MODELSEED_CONF};
+	}
 	if (defined($args->{config})) {
 		$CONFIG = ModelSEED::MS::Config->new($args->{config});
 	} elsif (!defined($CONFIG) || $args->{reload} == 1) {

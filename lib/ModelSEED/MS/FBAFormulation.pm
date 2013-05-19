@@ -61,10 +61,10 @@ sub _buildjobdirectory {
 
 sub _buildmfatoolkitBinary {
 	my ($self) = @_;
-	my $config = ModelSEED::Configuration->new();
+	my $config = ModelSEED::utilities::config();
 	my $bin;
-	if (defined($config->user_options()->{MFATK_BIN})) {
-		$bin = $config->user_options()->{MFATK_BIN};
+	if (defined($config->MFATK_BIN())) {
+		$bin = $config->MFATK_BIN();
 	} else {
 		if ($^O =~ m/^MSWin/) {
 			$bin = ModelSEED::utilities::MODELSEEDCORE()."/software/mfatoolkit/bin/mfatoolkit";
