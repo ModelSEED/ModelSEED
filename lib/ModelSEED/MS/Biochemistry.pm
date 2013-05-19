@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
-use ModelSEED::utilities qw ( args verbose );
+use ModelSEED::utilities;
 use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';

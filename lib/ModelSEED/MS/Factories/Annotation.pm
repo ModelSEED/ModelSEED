@@ -87,7 +87,7 @@ use Class::Autouse qw(
     ModelSEED::Client::SAP
     ModelSEED::Client::MSSeedSupport
 );
-use ModelSEED::utilities qw( verbose args );
+use ModelSEED::utilities;
 use ModelSEED::MS::Utilities::GlobalFunctions;
 has auth => ( is => 'rw', does => 'ModelSEED::Auth', builder => '_build_auth' );
 has sapsvr => (

@@ -88,7 +88,7 @@ use File::Temp qw(tempdir tempfile);
 use Module::Load qw( load );
 use Cwd qw( abs_path );
 use LWP::Simple qw( getstore );
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use ModelSEED::Configuration;
 use ModelSEED::Store;
 use ModelSEED::Database::Composite;

@@ -45,7 +45,7 @@ A L<ModelSEED::MS::Annotation> object. Required.
 
 package ModelSEED::MS::Factories::FBAMODELFactory;
 use ModelSEED::Client::FBAMODEL;
-use ModelSEED::utilities qw( args verbose );
+use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::Auth

@@ -72,7 +72,7 @@ TODO: This is not implemented yet and only returns "Gram negative"
 =cut
 
 use ModelSEED::MS::Model;
-use ModelSEED::utilities qw( args verbose );
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';

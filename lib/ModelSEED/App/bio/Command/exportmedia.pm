@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Exports biochemistry media data to various formats" }
 sub usage_desc { return "bio exportmedia [ biochemistry id ] [media IDs with | delimiter] [format:exchange/readable/html/json] [options]"; }
 sub options {

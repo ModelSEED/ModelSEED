@@ -2,7 +2,7 @@ package ModelSEED::App::bio::Command::computethermo;
 use strict;
 use common::sense;
 use base 'App::Cmd::Command';
-use ModelSEED::utilities qw( args verbose set_verbose );
+use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::Store
     ModelSEED::Auth::Factory
@@ -20,7 +20,7 @@ sub opt_spec {
 sub execute {
     my ($self, $opts, $args) = @_;
 
-    set_verbose(1) if $opts->{verbose};
+    ModelSEED::utilities::set_verbose(1) if $opts->{verbose};
     
     my $auth  = ModelSEED::Auth::Factory->new->from_config;
     my $store = ModelSEED::Store->new(auth => $auth);

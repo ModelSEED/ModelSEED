@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::genome;
 use base 'ModelSEED::App::GenomeBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Construct a model using this annotated genome" }
 sub usage_desc { return "genome oldbuildModel [genome id] [model id] [options]" }
 sub description { return <<END;

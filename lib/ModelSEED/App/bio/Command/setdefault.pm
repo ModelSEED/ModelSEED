@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Sets the default biochemistry for the current user" }
 sub usage_desc { return "bio setdefault [ biochemistry id ] [ options ]" }
 sub description { return <<END;

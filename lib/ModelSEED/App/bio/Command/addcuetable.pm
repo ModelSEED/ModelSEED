@@ -1,7 +1,7 @@
 package ModelSEED::App::bio::Command::addcuetable;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -31,7 +31,7 @@ sub execute {
     $self->usage_error("Must specify a valid filename for cue table") unless(defined($args->[1]) && -e $args->[1]);
 
     #verbosity
-    set_verbose(1) if $opts->{verbose};
+    ModelSEED::utilities::set_verbose(1) if $opts->{verbose};
 
     #load table
     my $separator="\\\t";
@@ -61,11 +61,11 @@ sub execute {
     #Saving biochemistry
     if (defined($opts->{saveas})) {
         $ref = $helper->process_ref_string($opts->{saveas}, "biochemistry", $auth->username);
-        verbose "Saving biochemistry with new compounds as ".$ref."...\n";
+        ModelSEED::utilities::verbose("Saving biochemistry with new compounds as ".$ref."...\n");
 	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);
     } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
-        verbose "Saving over original biochemistry with new compounds...\n";
+        ModelSEED:utilities::verbose("Saving over original biochemistry with new compounds...\n");
         $store->save_object($ref,$biochemistry);
     }
 }

@@ -8,7 +8,7 @@
 use strict;
 use ModelSEED::MS::DB::User;
 package ModelSEED::MS::User;
-use ModelSEED::utilities qw( error PRINTFILE config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::User';

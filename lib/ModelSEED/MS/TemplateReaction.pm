@@ -11,7 +11,7 @@ package ModelSEED::MS::TemplateReaction;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::TemplateReaction';
-use ModelSEED::utilities qw( error args verbose );
+use ModelSEED::utilities;
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************

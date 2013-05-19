@@ -6,7 +6,7 @@ use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Identify changes in the model to force an objective to zero in the specified conditions" }
 sub usage_desc { return "model gapgen [model] [options]" }
 sub options {
@@ -75,17 +75,17 @@ sub sub_execute {
         print $gapgenFormulation->toJSON();
         return;
     }
-    verbose("Running gapgeneration...");
+    ModelSEED::utilities::verbose("Running gapgeneration...");
     $gapgenFormulation = $model->gapgenModel({
         gapgenFormulation => $gapgenFormulation,
     });
 	my $solutions = $gapgenFormulation->gapgenSolutions();
     if (!defined($solutions) || @{$solutions} == 0) {
-    	verbose("Could not find knockouts to meet gapgen specifications!");
+    	ModelSEED::utilities::verbose("Could not find knockouts to meet gapgen specifications!");
     	return;
     }
     my $numSolutions = @{$solutions};
-	verbose($numSolutions." viable solutions identified.");
+	ModelSEED::utilities::verbose($numSolutions." viable solutions identified.");
     if ($opts->{printraw}) {
     	for (my $i=0; $i < @{$solutions}; $i++) {
     		$solutions->[$i] = $solutions->[$i]->serializeToDB();
@@ -96,7 +96,7 @@ sub sub_execute {
     	print $gapgenFormulation->printSolutions(($index-1));
     }
     if ($opts->{integratesol}) {
-    	verbose("Automatically integrating first solution in model.");
+    	ModelSEED::utilities::verbose("Automatically integrating first solution in model.");
     	$model->integrateGapgenSolution($gapgenFormulation,0);
     }
     $self->save_object({

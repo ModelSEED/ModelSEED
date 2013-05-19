@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Changes the default namespace of a biochemistry object for use when printing ids" };
 sub usage_desc { return "bio setnamespace [ biochemistry id ] [namespace]"; }
 sub options {

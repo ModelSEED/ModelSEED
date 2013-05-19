@@ -5,7 +5,7 @@ use Class::Autouse qw(
     ModelSEED::Client::MSAccountManagement
 );
 use base 'ModelSEED::App::MSEEDBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 
 sub abstract { return "Prints a list of current settings" }
 
@@ -17,7 +17,7 @@ sub options {
 
 sub sub_execute {
     my ($self, $opts, $args) = @_;
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	my $ws;
 	if ($self->store->associatedStore->type() eq "filedb" || $self->store->associatedStore->type() eq "mongo") {
     	$ws = $config->login;

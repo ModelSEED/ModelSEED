@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Transfer the reactions from the first specified compound to the second in the biochemistry database" }
 sub usage_desc { return "bio transferrxn [ biochemistry id ] [starting compound] [receiving compound] [namespace]"; }
 sub options {

@@ -5,9 +5,10 @@
 # Development location: Mathematics and Computer Science Division, Argonne National Lab
 # Date of module creation: 2013-03-26T04:50:36
 ########################################################################
+package ModelSEED::MS::Configuration;
 use strict;
 use ModelSEED::MS::DB::Configuration;
-package ModelSEED::MS::Configuration;
+use ModelSEED::utilities;
 use Try::Tiny;
 use Moose;
 use ModelSEED::MS::User;
@@ -185,8 +186,7 @@ Description:
 
 sub logout {
     my $self = shift;
-    $self->login("Public");
-    $self->password("");
+    $self->login({username=>"Public",password=>""});
 }
 
 =head3 login
@@ -229,8 +229,8 @@ Description:
 =cut
 
 sub import_seed_account {
-    my ($self) = @_;
-	my $args = args(["username","password"], {}, @_);
+    my $self=shift;
+    my $args = ModelSEED::utilities::args(["username","password"], {}, @_);
     my $svr = ModelSEED::Client::MSAccountManagement->new();
     my $output;
     try {

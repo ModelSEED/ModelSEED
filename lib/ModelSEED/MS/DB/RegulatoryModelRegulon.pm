@@ -22,7 +22,6 @@ has notes => (is => 'rw', isa => 'Str', printOrder => '3', default => '', type =
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', required => 1, type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has feature_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
-has regulator_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -35,7 +34,6 @@ has regulonStimuli => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { 
 
 # LINKS:
 has features => (is => 'rw', type => 'link(Annotation,features,feature_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_features', clearer => 'clear_features', isa => 'ArrayRef');
-has regulators => (is => 'rw', type => 'link(Annotation,features,regulator_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_regulators', clearer => 'clear_regulators', isa => 'ArrayRef');
 
 
 # BUILDERS:
@@ -43,10 +41,6 @@ sub _build_uuid { return Data::UUID->new()->create_str(); }
 sub _build_features {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Annotation','features',$self->feature_uuids());
-}
-sub _build_regulators {
-  my ($self) = @_;
-  return $self->getLinkedObjectArray('Annotation','features',$self->regulator_uuids());
 }
 
 
@@ -90,18 +84,10 @@ my $attributes = [
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
-          },
-          {
-            'req' => 0,
-            'printOrder' => -1,
-            'name' => 'regulator_uuids',
-            'default' => 'sub{return [];}',
-            'type' => 'ArrayRef',
-            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, notes => 1, name => 2, abbreviation => 3, feature_uuids => 4, regulator_uuids => 5};
+my $attribute_map = {uuid => 0, notes => 1, name => 2, abbreviation => 3, feature_uuids => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -125,19 +111,10 @@ my $links = [
             'name' => 'features',
             'class' => 'features',
             'method' => 'features'
-          },
-          {
-            'array' => 1,
-            'attribute' => 'regulator_uuids',
-            'parent' => 'Annotation',
-            'clearer' => 'clear_regulators',
-            'name' => 'regulators',
-            'class' => 'features',
-            'method' => 'features'
           }
         ];
 
-my $link_map = {features => 0, regulators => 1};
+my $link_map = {features => 0};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

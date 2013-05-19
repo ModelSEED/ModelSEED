@@ -1,10 +1,6 @@
 package ModelSEED::utilities;
 use strict;
 use warnings;
-
-use parent qw( Exporter );
-our @EXPORT_OK = qw( config args usage error verbose set_verbose translateArrayOptions LOADFILE );
-
 use Carp qw(cluck);
 use Data::Dumper;
 use File::Temp qw(tempfile);

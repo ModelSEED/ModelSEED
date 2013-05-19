@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::mapping;
 use base 'ModelSEED::App::MappingBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Returns the associated biochemistry object" }
 sub usage_desc { return "mapping setdefault [mapping id] [options]" }
 sub options {
@@ -11,7 +11,7 @@ sub options {
 }
 sub sub_execute {
     my ($self, $opts, $args,$map) = @_;
-    my $config = config();
+    my $config = ModelSEED::utilities::config();
 	$self->store()->defaultMapping_ref($map->msStoreID());
 	$config->save_to_file();
 }

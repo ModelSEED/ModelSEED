@@ -6,7 +6,7 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Balance all the reactions in a biochemistry"; }
 sub usage_desc { return "bio balancerxns [ biochemistry id ]"; }
 sub options {

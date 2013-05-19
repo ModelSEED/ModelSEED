@@ -16,7 +16,7 @@ use Class::Autouse qw(
 );
 use ModelSEED::MS::RoleSet;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************

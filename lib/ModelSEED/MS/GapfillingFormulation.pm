@@ -8,7 +8,7 @@
 use strict;
 use ModelSEED::MS::DB::GapfillingFormulation;
 package ModelSEED::MS::GapfillingFormulation;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::GapfillingFormulation';

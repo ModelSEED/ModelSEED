@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Consolidates a single biochemistry into a nonredundant set" }
 sub usage_desc { return "bio consolidatebio [ biochemistry id ]"; }
 sub options {
@@ -20,7 +20,7 @@ sub options {
 sub sub_execute {
     my ($self, $opts, $args,$bio) = @_;
     if(!defined($opts->{namespace})){
-	verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
+	ModelSEED::utilities::verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
 	$opts->{namespace}=[$args->[0]];
     }else{
 	#need arrayref if using mergeBiochemistry()
@@ -30,10 +30,10 @@ sub sub_execute {
     my $new_name="Temp";
     $new_name = $opts->{saveas} if defined($opts->{saveas});
     my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace},name => $args->[0]});
-    verbose("Using: ",$bio->name(),"\n");
+    ModelSEED::utilities::verbose("Using: ",$bio->name(),"\n");
 
     if(!defined($opts->{mergevia})){
-	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+	ModelSEED::utilities::verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
     }else{
 	$opts->{mergevia} = translateArrayOptions({ option => $opts->{mergevia}, delimiter => "," });
 	foreach my $mergeNamespace (@{$opts->{mergevia}}){

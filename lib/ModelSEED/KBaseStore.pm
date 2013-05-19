@@ -46,7 +46,7 @@ Client or server class for accessing a KBase workspace
 
 package ModelSEED::KBaseStore;
 use Moose;
-use ModelSEED::utilities qw ( args verbose error );
+use ModelSEED::utilities;
 
 use Class::Autouse qw(
     Bio::KBase::workspaceService::Client

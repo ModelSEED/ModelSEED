@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Reads in table of compound data and adds them to the database" }
 sub usage_desc { return "bio addcpdtable [ biochemistry id ] [filename] [options]"; }
 sub options {
@@ -24,7 +24,7 @@ sub sub_execute {
     $separator = $opts->{separator}  if exists $opts->{separator};
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[0],$separator);
 
-    verbose("Loading ".$args->[1]);
+    ModelSEED::utilities::verbose("Loading ".$args->[1]);
 
     if(scalar(@{$tbl->{data}->[0]})<2){
 	$tbl = ModelSEED::utilities::LOADTABLE($args->[0],"\\\;");

@@ -15,7 +15,7 @@ use namespace::autoclean;
 use Class::Autouse qw(
     Graph::Directed
 );
-use ModelSEED::utilities qw( error args verbose );
+use ModelSEED::utilities;
 extends 'ModelSEED::MS::DB::Model';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -389,7 +389,11 @@ Description:
 
 sub buildModelByLayers {
 	my ($self,$args) = @_;
-	
+	my $bios = $self->biomasses();
+	for (my $i=0; $i <@{$bios};$i++) {
+		my $bio = $bios->[$i];
+		print $bio->name();
+	}
 }
 
 =head3 createStandardFBABiomass

@@ -1,7 +1,6 @@
 package ModelSEED::App::stores::Command::createws;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
 use base 'ModelSEED::App::StoresBaseCommand';
 sub abstract { return "Creates a new workspace." }
 sub usage_desc { return "stores createws [name of workspace] [default permissions]"; }

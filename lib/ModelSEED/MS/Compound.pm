@@ -8,7 +8,7 @@
 use strict;
 use ModelSEED::MS::DB::Compound;
 package ModelSEED::MS::Compound;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Compound';

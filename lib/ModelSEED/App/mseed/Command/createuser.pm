@@ -5,7 +5,7 @@ use Term::ReadKey;
 use Module::Load;
 use Try::Tiny;
 use Data::Dumper;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::MSEEDBaseCommand';
 
 sub abstract { return "Creates a local user account"; }
@@ -23,13 +23,12 @@ sub options {
 
 sub sub_execute {
     my ($self, $opts, $args) = @_;
-	my $username = shift @$args;
-    if (!defined($username) || length($username) == 0) {
-    	error("Must provide username!");
-    }
-    my $config = config();
+    $self->usage_error("Must specify username") unless(defined($args->[0]) || length($args->[0]));
+    my $username = $args->[0];
+
+    my $config = ModelSEED::utilities::config();
     if (defined($config->queryObject("users",{login => $username}))) {
-    	error("Specified username already exists!");
+    	ModelSEED::utilities::error("Specified username already exists!");
     }
     my $password;
     if (!defined($opts->{password})) {
@@ -43,7 +42,7 @@ sub sub_execute {
     	$password = $opts->{password};
     }
 	if (!defined($password) || length($password) == 0) {
-    	error("Must provide nonempty password!");
+    	ModelSEED::utilities::error("Must provide nonempty password!");
     }
     my $salt = join '', ('.', '/', 0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
     $password = crypt($password, $salt);

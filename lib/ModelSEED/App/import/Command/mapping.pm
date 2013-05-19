@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::import;
 use base 'ModelSEED::App::ImportBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
@@ -73,11 +73,11 @@ sub sub_execute {
             my ($fh2, $uncompressed_filename) = tempfile();
             close($fh1);
             close($fh2);
-            verbose "Fetching mapping from web...\n";
+            ModelSEED::utilities::verbose("Fetching mapping from web...\n");
             my $status = getstore($url, $compressed_filename);
             # This should probably be >= 200 <= 400? does getstore handle redirects?
             die "Unable to fetch from model_seed\n" unless($status == 200);
-            verbose "Extracting...\n";
+            ModelSEED::utilities::verbose("Extracting...\n");
             gunzip $compressed_filename => $uncompressed_filename
                 or die "Extract failed: $GunzipError\n";
             my $string;
@@ -88,7 +88,7 @@ sub sub_execute {
             }
             $data = JSON::XS->new->utf8->decode($string);
         }
-        verbose "Validating fetched mapping...\n";
+        ModelSEED::utilities::verbose("Validating fetched mapping...\n");
         $map = ModelSEED::MS::Mapping->new($data);
         $map->biochemistry_uuid($biochemistry->uuid);
         $map->biochemistry($biochemistry);

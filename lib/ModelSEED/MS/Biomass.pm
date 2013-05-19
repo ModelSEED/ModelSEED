@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::Biomass;
 package ModelSEED::MS::Biomass;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use POSIX qw(floor ceil);
 extends 'ModelSEED::MS::DB::Biomass';

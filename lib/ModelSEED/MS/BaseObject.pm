@@ -98,7 +98,7 @@ Returns an HTML document for the object.
 
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities qw( verbose error args );
+use ModelSEED::utilities;
 use Scalar::Util qw(weaken);
 our $VERSION = undef;
 
@@ -278,7 +278,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::MS::error("Unrecognized type for export: ".$args->{format});
 }
 
 ######################################################################
@@ -345,7 +345,7 @@ sub interpretReference {
 		if (defined($expectedType) && @{$array} == 1) {
 			$array = [$expectedType,"id",$ref];
 		} else {
-			error($ref." is not a valid  reference!");
+			ModelSEED::MS::error($ref." is not a valid  reference!");
 		}
 	}
 	my $refTypeProvObj = {
@@ -359,7 +359,7 @@ sub interpretReference {
 		"Biomass" => ["model","biomasses"]
 	};
 	if (!defined($refTypeProvObj->{$array->[0]})) {
-		error("No specs to handle ref type ".$array->[0]);
+		ModelSEED::MS::error("No specs to handle ref type ".$array->[0]);
 	}	
 	my $prov = $refTypeProvObj->{$array->[0]}->[0];
 	my $func = $refTypeProvObj->{$array->[0]}->[1];
@@ -370,7 +370,7 @@ sub interpretReference {
 		$obj = $self->$prov()->queryObject($func,{$array->[1] => $array->[2]});
 	}
 	if (!defined($obj)) {
-		verbose("Could not find ".$ref."!");
+		ModelSEED::utilities::verbose("Could not find ".$ref."!");
 	}
 	return ($obj,$array->[0],$array->[1],$array->[2]);
 }
@@ -561,7 +561,7 @@ sub add {
 
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        error("Object doesn't have subobject with name: $attribute");
+        ModelSEED::MS::error("Object doesn't have subobject with name: $attribute");
     }
 
     my $obj_info = {
@@ -578,7 +578,7 @@ sub add {
         $obj_info->{object} = $data_or_object;
         $obj_info->{created} = 1;
     } else {
-        error("Neither data nor object passed into " . ref($self) . "->add");
+        ModelSEED::MS::error("Neither data nor object passed into " . ref($self) . "->add");
     }
 
     $obj_info->{object}->parent($self);
@@ -647,7 +647,7 @@ sub getLinkedObject {
 			}
 		}
         return $object if defined $object;
-        error("Could not find UUID ".$uuid."!");
+        ModelSEED::MS::error("Could not find UUID ".$uuid."!");
 #        ModelSEED::Exception::BadObjectLink->throw(
 #            searchSource     => $self,
 #            searchBaseObject => $sourceObj,
@@ -677,7 +677,7 @@ sub removeLinkArrayItem {
     	my $data = $self->$method();
     	for (my $i=0; $i < @{$data}; $i++) {
 			if ($data->[$i] eq $object->uuid()) {
-				verbose("Removing object from link array.");
+				ModelSEED::utilities::verbose("Removing object from link array.");
 				if (@{$data} == 1) {
 					$self->$method([]);
 				} else {
@@ -711,7 +711,7 @@ sub replaceLinkArrayItem {
     	my $data = $self->$method();
     	for (my $i=0; $i < @{$data}; $i++) {
 			if ($data->[$i] eq $olduuid) {
-				verbose("Replacing object in link array.");
+				ModelSEED::utilities::verbose("Replacing object in link array.");
 				$data->[$i] = $newuuid;
 				my $clearer = "clear_".$link;
 				$self->$clearer();
@@ -733,7 +733,7 @@ sub addLinkArrayItem {
 			}
     	}
     	if ($found == 0) {
-    		verbose("Removing object from link array.");
+    		ModelSEED::utilities::verbose("Removing object from link array.");
     		my $clearer = "clear_".$link;
 			$self->$clearer();
 			push(@{$data},$object->uuid());
@@ -747,7 +747,7 @@ sub clearLinkArray {
     if (defined($linkdata) && $linkdata->{array} == 1) {
     	my $method = $linkdata->{attribute};
     	$self->$method([]);
-    	verbose("Clearing link array.");
+    	ModelSEED::utilities::verbose("Clearing link array.");
     	my $clearer = "clear_".$link;
 		$self->$clearer();
     }	
@@ -763,7 +763,7 @@ sub biochemistry {
 	} elsif (defined($parent)) {
         return $parent->biochemistry();
     }
-    error("Cannot find Biochemistry object in tree!");
+    ModelSEED::MS::error("Cannot find Biochemistry object in tree!");
 }
 
 sub fbaformulation {
@@ -774,7 +774,7 @@ sub fbaformulation {
     } elsif (defined($parent)) {
         return $parent->fbaformulation();
     }
-    error("Cannot find FBAFormulation object in tree!");
+    ModelSEED::MS::error("Cannot find FBAFormulation object in tree!");
 }
 
 sub model {
@@ -785,7 +785,7 @@ sub model {
     } elsif (defined($parent)) {
         return $parent->model();
     }
-    error("Cannot find Model object in tree!");
+    ModelSEED::MS::error("Cannot find Model object in tree!");
 }
 
 sub annotation {
@@ -796,7 +796,7 @@ sub annotation {
     } elsif (defined($parent)) {
         return $parent->annotation();
     }
-    error("Cannot find Annotation object in tree!");
+    ModelSEED::MS::error("Cannot find Annotation object in tree!");
 }
 
 sub configuration {
@@ -807,7 +807,7 @@ sub configuration {
     } elsif (defined($parent)) {
         return $parent->configuration();
     }
-    error("Cannot find Configuration object in tree!");
+    ModelSEED::MS::error("Cannot find Configuration object in tree!");
 }
 
 sub mapping {
@@ -818,7 +818,7 @@ sub mapping {
     } elsif (defined($parent)) {
         return $parent->mapping();
     }
-    error("Cannot find mapping object in tree!");
+    ModelSEED::MS::error("Cannot find mapping object in tree!");
 }
 
 sub biochemistrystructures {
@@ -830,7 +830,7 @@ sub biochemistrystructures {
     } elsif (defined($parent)) {
        	return $parent->biochemistrystructures();
     }
-    error("Cannot find BiochemistryStructures object in tree!");
+    ModelSEED::MS::error("Cannot find BiochemistryStructures object in tree!");
 }
 
 sub fbaproblem {
@@ -841,7 +841,7 @@ sub fbaproblem {
     } elsif (defined($parent)) {
         return $parent->fbaproblem();
     }
-    error("Cannot find fbaproblem object in tree!");
+    ModelSEED::MS::error("Cannot find fbaproblem object in tree!");
 }
 
 sub store {
@@ -947,7 +947,7 @@ sub _build_object {
     }
 	my $attInfo = $self->_subobjects($attribute);
     if (!defined($attInfo->{class})) {
-    	error("No class for attribute ".$attribute);	
+    	ModelSEED::MS::error("No class for attribute ".$attribute);	
     }
     my $class = 'ModelSEED::MS::' . $attInfo->{class};
     Module::Load::load $class;

@@ -4,7 +4,7 @@ use common::sense;
 use ModelSEED::Configuration;
 use File::stat;
 use Time::localtime;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::MSEEDBaseCommand';
 sub abstract { return "Print information from the error log"; }
 sub usage_desc { return <<END;
@@ -26,7 +26,7 @@ sub sub_execute {
     if(@$args) {
         $n = $args->[0];
     }
-    my $dir = config()->ERROR_DIR();
+    my $dir = ModelSEED::utilities::config()->ERROR_DIR();
     my ($sortedFiles, $filesModTime) = $self->_getOrderedFileList($dir);
     if($opts->{list} && $opts->{verbose}) {
         foreach my $file (@$sortedFiles) {

@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Clone a biochemistry object, giving the copy a new name" }
 sub usage_desc { return "bio clonebio [ biochemistry id ] name"; }
 sub options {

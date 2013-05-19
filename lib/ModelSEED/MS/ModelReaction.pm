@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::ModelReaction;
 package ModelSEED::MS::ModelReaction;
 use Moose;
-use ModelSEED::utilities qw( args error );
+use ModelSEED::utilities;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ModelReaction';
 #***********************************************************************************************************

@@ -4,8 +4,6 @@ use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON::XS;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
-
 use base 'ModelSEED::App::MSEEDBaseCommand';
 
 sub abstract { return "Get an object from workspace or datastore."; }
@@ -25,11 +23,10 @@ sub options {
 
 sub sub_execute {
     my ($self, $opts, $args) = @_;
-	my $refs = $args;
-	if (!defined($refs->[0])) {
-        error("Must provide reference");
-    }
-	my $JSON = JSON::XS->new->utf8(1);
+    my $refs = $args;
+    $self->usage_error("Must specify reference") unless(defined($args->[0]));
+
+    my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($opts->{pretty});
     my $cache = {};
     my $output = [];

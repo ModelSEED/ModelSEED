@@ -8,7 +8,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Model
 );
 use Text::Table;
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Prints and sets the primary properties of the Biochemistry object" }
 sub usage_desc { return "bio properties [biochemistry id] [options]" }
 sub options {

@@ -4,7 +4,6 @@ use common::sense;
 use Try::Tiny;
 use List::Util;
 use JSON::XS;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
 use base 'ModelSEED::App::MSEEDBaseCommand';
 sub abstract { return "Return references to all previous versions of an object."; }
 sub usage_desc { return "ms history [object id] [options]"; }

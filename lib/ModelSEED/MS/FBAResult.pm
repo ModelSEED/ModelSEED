@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::FBAResult;
 package ModelSEED::MS::FBAResult;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use Data::Dumper;
 extends 'ModelSEED::MS::DB::FBAResult';

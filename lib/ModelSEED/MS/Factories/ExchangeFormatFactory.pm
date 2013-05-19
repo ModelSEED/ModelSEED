@@ -8,7 +8,7 @@
 use strict;
 use Data::Dumper;
 package ModelSEED::MS::Factories::ExchangeFormatFactory;
-use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 use Class::Autouse qw(

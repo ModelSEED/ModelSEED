@@ -6,7 +6,7 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Merge two biochemistries into a nonredundant set" }
 sub usage_desc { return "bio mergebio [ biochemistry id ] [ second_biochemistry ]"; }
 sub options {

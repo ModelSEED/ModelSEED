@@ -6,7 +6,7 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Functions on alias sets"; }
 sub usage_desc { return "bio aliasSet [ biochemistry id ] [ options ]";}
 sub options {

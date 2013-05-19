@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::FBAFormulation;
 package ModelSEED::MS::FBAFormulation;
 use Moose;
 use ModelSEED::Exceptions;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::FBAFormulation';

@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Media;
 package ModelSEED::MS::Media;
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities qw( args verbose error );
+use ModelSEED::utilities;
 extends 'ModelSEED::MS::DB::Media';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:

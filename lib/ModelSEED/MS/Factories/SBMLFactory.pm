@@ -44,7 +44,7 @@ ID of the model being imported, used to reference aliases for model compounds an
 =cut
 
 package ModelSEED::MS::Factories::SBMLFactory;
-use ModelSEED::utilities qw( args verbose set_verbose );
+use ModelSEED::utilities;
 use XML::DOM;
 use XML::Parser;
 use Class::Autouse qw(

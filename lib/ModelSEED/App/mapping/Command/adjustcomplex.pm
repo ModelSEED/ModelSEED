@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::mapping;
 use base 'ModelSEED::App::MappingBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Adjusts a complex in the mapping" }
 sub usage_desc { return "mapping adjustcomplex [mapping id] [complex id] [options]" }
 sub options {

@@ -1,7 +1,7 @@
 package ModelSEED::App::stores::Command::add;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::StoresBaseCommand';
 sub abstract { return "Lists all stores currently available in this Model SEED installation." }
 sub usage_desc { return "stores add [name of store]"; }
@@ -22,7 +22,7 @@ sub sub_execute {
 	unless (defined($name)) {
         $self->usage_error("Must provide name for the store.");
     } 
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	$opts = args([],{
 		type => "workspace",
 		url => "localhost",

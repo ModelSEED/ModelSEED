@@ -1,7 +1,7 @@
 package ModelSEED::App::genome::Command::tokbase;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::GenomeBaseCommand';
 use Class::Autouse qw(
     ModelSEED::Store
@@ -28,7 +28,7 @@ sub options {
 sub sub_execute {
     my ($self, $opts, $args, $obj) = @_;
 	my $storeName = shift @$args;
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	my $store = $config->currentUser()->findStore($storeName);
 	unless (defined($store)) {
         $self->usage_error("Specified store not currently accossiated to user.");

@@ -113,7 +113,7 @@ use Moose;
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( args error );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use ModelSEED::MS::BaseObject;
 extends 'ModelSEED::MS::BaseObject';

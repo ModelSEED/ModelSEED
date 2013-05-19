@@ -7,7 +7,7 @@
 ########################################################################
 package ModelSEED::MS::Factories::TableFileFactory;
 use common::sense;
-use ModelSEED::utilities qw( args verbose );
+use ModelSEED::utilities;
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use Class::Autouse qw(
 	ModelSEED::MS::BiochemistryStructures

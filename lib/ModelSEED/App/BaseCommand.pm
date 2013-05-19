@@ -1,7 +1,7 @@
 package ModelSEED::App::BaseCommand;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::App::Helpers
@@ -69,11 +69,11 @@ sub save_object {
 sub move {
 	my ($self, $args) = @_;
 	my $args = args(["object","newid"],{
-        newstore => config()->currentUser()->primaryStore(),
+        newstore => ModelSEED::utilities::config()->currentUser()->primaryStore(),
         newworkspace => undef,
         cache => {}
     }, @_);
-    my $store = config()->currentUser()->findStore($args->{newstore});
+    my $store = ModelSEED::utilities::config()->currentUser()->findStore($args->{newstore});
     if (defined($store)) {
     	$args->{cache}->{$args->{object}->uuid()} = 1;
     	my $dependencies = $args->{object}->dependencies();
@@ -124,9 +124,9 @@ sub object_from_file {
 sub store {
     my ($self) = @_;
     if (!defined($self->opts()->{store})) {
-    	return config()->currentUser()->primaryStore();
+    	return ModelSEED::utilities::config()->currentUser()->primaryStore();
     }
-    return config()->currentUser()->findStore($self->opts()->{store});
+    return ModelSEED::utilities::config()->currentUser()->findStore($self->opts()->{store});
 }
 
 sub kbfbaclient {

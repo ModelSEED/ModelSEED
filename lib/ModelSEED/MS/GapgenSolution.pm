@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::GapgenSolution;
 package ModelSEED::MS::GapgenSolution;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::GapgenSolution';
 #***********************************************************************************************************

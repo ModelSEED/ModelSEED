@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::model;
 use base 'ModelSEED::App::ModelBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { "Calculate pairwise distances between metabolites, reactions, and roles" }
 sub usage_desc { return "ms model calcdistances [model] [options]"; }
 sub options {

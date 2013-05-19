@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Classifier;
 package ModelSEED::MS::Classifier;
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities qw( args verbose error );
+use ModelSEED::utilities;
 extends 'ModelSEED::MS::DB::Classifier';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
