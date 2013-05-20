@@ -14,7 +14,7 @@ sub options {
 }
 sub sub_execute {
     my ($self, $opts, $args,$bio) = @_;
-    my $config = config();
+    my $config = ModelSEED::utilities::config();
 	$self->store()->defaultBiochemistry_ref($bio->msStoreID());
 	$config->save_to_file();
 }

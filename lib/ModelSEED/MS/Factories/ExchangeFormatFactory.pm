@@ -49,7 +49,7 @@ Description:
 
 sub buildClassifier {
     my $self = shift;
-	my $args = args(["filename","name","mapping"],{}, @_);
+	my $args = ModelSEED::utilities::args(["filename","name","mapping"],{}, @_);
 	my $mapping = $args->{mapping};
 	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
 	my $headings = [split(/\t/,$data->[0])];
@@ -110,7 +110,7 @@ Description:
 
 sub buildFBAFormulation {
     my $self = shift;
-	my $args = args(["model"],{
+	my $args = ModelSEED::utilities::args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -119,7 +119,7 @@ sub buildFBAFormulation {
         my $pmodel = $args->{promModel};
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		media => "Media/name/Complete",
 		type => "singlegrowth",
 		simpleThermoConstraints => 0,
@@ -219,7 +219,7 @@ Description:
 
 sub buildTemplateModel {
 	my $self = shift;
-	my $args = args(["templateReactions","templateBiomass","mapping","name"],{
+	my $args = ModelSEED::utilities::args(["templateReactions","templateBiomass","mapping","name"],{
 		modelType => "GenomeScale",
 		domain => "Bacteria"
 	}, @_);
@@ -346,7 +346,7 @@ Description:
 
 sub buildGapfillingFormulation {
     my $self = shift;
-	my $args = args(["model"],{
+	my $args = ModelSEED::utilities::args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -356,7 +356,7 @@ sub buildGapfillingFormulation {
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
 		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
@@ -479,7 +479,7 @@ Description:
 
 sub buildGapgenFormulation {
     my $self = shift;
-    my $args = args(["model"], {
+    my $args = ModelSEED::utilities::args(["model"], {
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -489,7 +489,7 @@ sub buildGapgenFormulation {
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes			
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		referenceMedia => "Media/name/".$fbaform->media()->name(),
 		fbaFormulation => $fbaform,
 		mediaHypothesis => 0,
@@ -560,7 +560,7 @@ Description:
 
 sub parseExchangeFileArray {
     my $self = shift;
-	my $args = args([],{
+	my $args = ModelSEED::utilities::args([],{
 		text => undef,
 		filename => undef,
 		array => [],
@@ -618,7 +618,7 @@ Description:
 
 sub buildObjectFromExchangeFileArray {
     my $self = shift;
-	my $args = args(["array"],{
+	my $args = ModelSEED::utilities::args(["array"],{
 		Biochemistry => undef,
 		Mapping => undef,
 		Model => undef,

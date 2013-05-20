@@ -57,7 +57,7 @@ Description:
 
 sub loadFromData {
     my $self = shift;
-    my $args = args(["objective","reactions"], { model => $self->model }, @_);
+    my $args = ModelSEED::utilities::args(["objective","reactions"], { model => $self->model }, @_);
 	my $model = $args->{model};
 	$self->solutionCost($args->{objective});
 	for (my $m=0; $m < @{$args->{reactions}}; $m++) {

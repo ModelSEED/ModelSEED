@@ -65,7 +65,7 @@ sub sub_execute {
    	}
    	# Importing annotation from table file
     my $anno;
-    verbose("Getting annotation...");
+    ModelSEED::utilities::verbose("Getting annotation...");
     if (defined($opts->{filepath})) {
     	my $factory = ModelSEED::MS::Factories::TableFileFactory->new({
     		filepath => $opts->{filepath},

@@ -44,7 +44,7 @@ Description:
 
 sub classifyAnnotation {
     my $self = shift;
-	my $args = args(["annotation"],{},@_);
+	my $args = ModelSEED::utilities::args(["annotation"],{},@_);
 	my $anno = $args->{annotation};
 	my $features = $anno->features();
 	my $scores = {};

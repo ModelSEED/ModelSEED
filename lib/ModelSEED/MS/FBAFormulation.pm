@@ -745,7 +745,7 @@ Description:
 
 sub createTemporaryMedia {
     my $self = shift;
-    my $args = args(["name","media","additionalCpd"],{}, @_);
+    my $args = ModelSEED::utilities::args(["name","media","additionalCpd"],{}, @_);
 	my $newMedia = ModelSEED::MS::Media->new({
 		isDefined => 1,
 		isMinimal => 0,
@@ -791,7 +791,7 @@ Description:
 
 sub parsePhenotypeSimulations {
     my $self = shift;
-    my $args = args(["fbaPhenotypeSimulations"],{}, @_);
+    my $args = ModelSEED::utilities::args(["fbaPhenotypeSimulations"],{}, @_);
 	my $phenos = $args->{fbaPhenotypeSimulations};
 	for (my $i=0; $i < @{$phenos};$i++) {
 		my ($addnluuids,$addnlcpds,$genokouuids,$genekos,$reactionkouuids,$reactionkos) = ([],[],[],[],[],[]);
@@ -857,7 +857,7 @@ Description:
 
 sub parseObjectiveTerms {
     my $self = shift;
-    my $args = args(["objTerms"],{}, @_);
+    my $args = ModelSEED::utilities::args(["objTerms"],{}, @_);
 	my $terms = $args->{objTerms};
 	for (my $i=0; $i < @{$terms};$i++) {
 		(my $obj,my $type) = $self->interpretReference($terms->[$i]->{id});
@@ -885,7 +885,7 @@ Description:
 
 sub parseConstraints {
     my $self = shift;
-    my $args = args(["constraints"],{}, @_);
+    my $args = ModelSEED::utilities::args(["constraints"],{}, @_);
 	my $vartrans = {
 		f => "flux",ff => "forflux",rf => "revflux",
 		df => "drainflux",fdf => "fordrainflux",rdf => "revdrainflux",
@@ -988,7 +988,7 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = args(["format"], {}, @_);
+	my $args = ModelSEED::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "readable") {
 		return $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
@@ -996,7 +996,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
 =head3 htmlComponents
@@ -1010,7 +1010,7 @@ Description:
 
 sub htmlComponents {
 	my $self = shift;
-	my $args = args([],{}, @_);
+	my $args = ModelSEED::utilities::args([],{}, @_);
 	my $data = $self->_createReadableData();
 	my $output = {
 		title => "FBA Viewer",

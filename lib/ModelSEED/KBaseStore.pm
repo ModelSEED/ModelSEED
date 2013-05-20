@@ -140,7 +140,7 @@ sub get_object {
 	#Checking if object successfully retreived
 	if (!defined($output) || !defined($output->{data}) || !defined($output->{metadata})) {
 		my $msg = "Unable to retrieve object:".$type."/".$ref;
-		error($msg);
+		ModelSEED::utilities::error($msg);
 	}
     #Instantiating object
     my $object = $output->{data};

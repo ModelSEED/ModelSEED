@@ -26,11 +26,11 @@ sub sub_execute {
    		reference => $args->[0]
    	});
     $self->usage_error("Merging Biochemistry ".$args->[0]." not found") unless defined($other_biochemistry);
-    verbose("Merging: ".$other_biochemistry->name()." with ".$bio->name());
+    ModelSEED::utilities::verbose("Merging: ".$other_biochemistry->name()." with ".$bio->name());
     
     #test aliasSets for merging
     if(!defined($opts->{mergevia})){
-	verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+	ModelSEED::utilities::verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
     }else{
 	$opts->{mergevia} = translateArrayOptions({ option => $opts->{mergevia}, delimiter => "," });
 	foreach my $mergeNamespace (@{$opts->{mergevia}}){
@@ -42,7 +42,7 @@ sub sub_execute {
     }
 
     if(!defined($opts->{namespace})){
-	verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
+	ModelSEED::utilities::verbose("A default namespace was not passed and the name of the biochemistry ('".$args->[0]."') is used by default\n");
 	$opts->{namespace}=[$args->[0]];
     }else{
 	$opts->{namespace} = translateArrayOptions({ option => $opts->{namespace}, delimiter => "," });

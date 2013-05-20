@@ -111,7 +111,7 @@ has msseedsvr => (
 
 sub availableGenomes {
     my $self = shift @_;
-    my $args = args([],{
+    my $args = ModelSEED::utilities::args([],{
     	source => undef
     }, @_);
     my $source = $args->{source};
@@ -146,14 +146,14 @@ sub availableGenomes {
 
 sub build {
     my $self = shift;
-    my $args = args(["mapping","genome_id"],{
+    my $args = ModelSEED::utilities::args(["mapping","genome_id"],{
     	source => undef
     }, @_);
 	unless(defined($args->{source})) {
 		$args->{source} = $self->genomeSource($args->{genome_id});	
-        verbose("Genome source is " . $args->{source});
+        ModelSEED::utilities::verbose("Genome source is " . $args->{source});
 	}
-    verbose("Getting genome attributes...");
+    ModelSEED::utilities::verbose("Getting genome attributes...");
 	my $genomeData = $self->_getGenomeAttributes($args->{genome_id});
     my $annoationObj = ModelSEED::MS::Annotation->new({
         name => $genomeData->{name}
@@ -202,7 +202,7 @@ sub build {
 
 sub _getRoleObject {
     my $self = shift;
-	my $args = args(["roleString","mapping"], {}, @_);
+	my $args = ModelSEED::utilities::args(["roleString","mapping"], {}, @_);
 	my $searchName = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($args->{roleString});
 	my $roleObj = $args->{mapping}->queryObject("roles",{searchname => $searchName});
 	if (!defined($roleObj)) {

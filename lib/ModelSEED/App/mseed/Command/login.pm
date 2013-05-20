@@ -38,7 +38,7 @@ sub sub_execute {
     } else {
     	$password = $opts->{password};
     }
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	$config->login({
 		username => $username,
 		password => $password

@@ -35,9 +35,9 @@ sub save_genome {
     if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for genome:".$ref);
+    	ModelSEED::utilities::verbose("New alias set for genome:".$ref);
     }
-    verbose("Saving genome to:".$ref);
+    ModelSEED::utilities::verbose("Saving genome to:".$ref);
     $self->save_object({
 	   	type => "Annotation",
 	   	reference => $ref,

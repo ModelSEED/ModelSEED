@@ -45,7 +45,7 @@ Description:
 
 sub getCreateStructure {
     my $self = shift;
-	my $args = args( ["data","type"], {}, @_);
+	my $args = ModelSEED::utilities::args( ["data","type"], {}, @_);
 	my $structure = $self->queryObject("structures",{
 		type => $args->{type},
 		data => $args->{data}

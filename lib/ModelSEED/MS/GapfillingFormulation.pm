@@ -150,7 +150,7 @@ Description:
 
 sub calculateReactionCosts {
     my $self = shift;
-    my $args = args(["modelreaction"], {}, @_);
+    my $args = ModelSEED::utilities::args(["modelreaction"], {}, @_);
 	my $rxn = $args->{modelreaction};
 	my $rcosts = 1;
 	my $fcosts = 1;
@@ -460,7 +460,7 @@ Description:
 
 sub createSolutionsFromArray {
     my $self = shift;
-    my $args = args(["data"], { model => $self->model,subopt => 0 }, @_ );
+    my $args = ModelSEED::utilities::args(["data"], { model => $self->model,subopt => 0 }, @_ );
 	my $data = $args->{data};
 	my $mdl = $args->{model};
 	my $bio = $mdl->biochemistry();
@@ -538,7 +538,7 @@ sub createSolutionsFromArray {
 
 sub parseGeneCandidates {
     my $self = shift;
-    my $args = args(["geneCandidates"], {}, @_);
+    my $args = ModelSEED::utilities::args(["geneCandidates"], {}, @_);
 	for (my $i=0; $i < @{$args->{geneCandidates}};$i++) {
 		my $candidate = $args->{geneCandidates}->[$i];
 		my $ftr = $self->interpretReference($candidate->{feature},"Feature");
@@ -582,7 +582,7 @@ sub parseGeneCandidates {
 
 sub parseSetMultipliers {
     my $self = shift;
-    my $args = args(["sets"], {}, @_);
+    my $args = ModelSEED::utilities::args(["sets"], {}, @_);
 	for (my $i=0; $i < @{$args->{sets}};$i++) {
 		my $set = $args->{sets}->[$i];
 		my $obj = $self->interpretReference($set->{set},"Reactionset");

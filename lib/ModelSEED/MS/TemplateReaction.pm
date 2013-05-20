@@ -32,7 +32,7 @@ use ModelSEED::utilities;
 #***********************************************************************************************************
 sub addRxnToModel {
     my $self = shift;
-	my $args = args(["annotation","model"],{}, @_);
+	my $args = ModelSEED::utilities::args(["annotation","model"],{}, @_);
 	my $mdl = $args->{model};
 	my $anno = $args->{annotation};
 	#Gathering roles from annotation

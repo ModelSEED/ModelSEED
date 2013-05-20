@@ -88,7 +88,7 @@ sub _buildroleHash {
 	my ($self) = @_;
 	my $roleFeatures;
 	my $features = $self->features();
-    verbose("Processing " . scalar(@$features) . " features...");
+    ModelSEED::utilities::verbose("Processing " . scalar(@$features) . " features...");
 	for (my $i=0; $i < @{$features}; $i++) {
 		my $ftr = $features->[$i];
 		my $ftrroles = $ftr->featureroles();
@@ -119,7 +119,7 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = args(["format"], {}, @_);
+	my $args = ModelSEED::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "readable") {
 		return $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
@@ -127,7 +127,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
 sub roles {
@@ -173,7 +173,7 @@ sub featuresInRoleSet {
 
 sub createStandardFBAModel {
     my $self = shift;
-	my $args = args([],{
+	my $args = ModelSEED::utilities::args([],{
 		prefix => "Seed",
 		mapping => $self->mapping(),
 		verbose => 0,
@@ -209,7 +209,7 @@ sub classifyGenomeFromAnnotation {
 	my $map = $self->mapping();
 	my $classifier = $map->typeClassifier();
 	my $class = $classifier->classifyAnnotation({annotation => $self});
-	verbose("Classifier used to classify genome as ".$class->name()."!");
+	ModelSEED::utilities::verbose("Classifier used to classify genome as ".$class->name()."!");
 	return $class->name();
 }
 

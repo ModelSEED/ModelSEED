@@ -23,7 +23,7 @@ sub sub_execute {
         $self->usage_error("Must provide name for the store.");
     } 
 	my $config = ModelSEED::utilities::config();
-	$opts = args([],{
+	$opts = ModelSEED::utilities::args([],{
 		type => "workspace",
 		url => "localhost",
 		database => "msws",

@@ -55,7 +55,7 @@ Description:
 
 sub modelCoverage {
     my $self = shift;
-    my $args = args(["model"],{}, @_);
+    my $args = ModelSEED::utilities::args(["model"],{}, @_);
 	#TODO Implement modelCoverage function in ReactionSet
 	return 1;
 }
@@ -72,7 +72,7 @@ Description:
 
 sub containsReaction {
     my $self = shift;
-	my $args = args(["reaction"], {}, @_);
+	my $args = ModelSEED::utilities::args(["reaction"], {}, @_);
 	#TODO Implement containsReaction function in ReactionSet
 	return 1;
 }

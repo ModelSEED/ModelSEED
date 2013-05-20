@@ -62,7 +62,7 @@ sub _buildcompartment {
 	my ($self) = @_;
 	my $comp = $self->biochemistry()->queryObject("compartments",{name => "Cytosol"});
 	if (!defined($comp)) {
-		error("Could not find cytosol compartment in biochemistry!");	
+		ModelSEED::utilities::error("Could not find cytosol compartment in biochemistry!");	
 	}
 	return $comp;
 }
@@ -133,17 +133,17 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
+    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
         my $hcpd = $self->biochemistry()->checkForProton();
  	if (!defined($hcpd) && $args->{hashed}==1) {
-	    error("Could not find proton in biochemistry!");
+	    ModelSEED::utilities::error("Could not find proton in biochemistry!");
 	}
         my $wcpd = $self->biochemistry()->checkForWater();
  	if (!defined($wcpd) && $args->{water}==1) {
-	    error("Could not find water in biochemistry!");
+	    ModelSEED::utilities::error("Could not find water in biochemistry!");
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
 		my $id = $rgt->[$i]->compound_uuid();
@@ -219,7 +219,7 @@ Description:
 
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation","aliasType"], {compartment=>"c"}, @_);
+    my $args = ModelSEED::utilities::args(["equation","aliasType"], {compartment=>"c"}, @_);
 	my $bio = $self->parent();
 	my @TempArray = split(/\s+/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
@@ -415,7 +415,7 @@ Description:
 
 sub estimateThermoReversibility{
     my $self=shift;
-    my $args = args([], { direction=>0 }, @_);
+    my $args = ModelSEED::utilities::args([], { direction=>0 }, @_);
 
     ModelSEED::utilities::set_verbose(1);
 
@@ -558,7 +558,7 @@ sub estimateThermoReversibility{
 	}
     }
     if($Source eq "None"){
-	verbose("Cannot use heuristics with atypical biochemistry aliases");
+	ModelSEED::utilities::verbose("Cannot use heuristics with atypical biochemistry aliases");
 	return "Error";
     }
 
@@ -567,7 +567,7 @@ sub estimateThermoReversibility{
 	if($cpdObj){
 	    $PhoIDs{$cpd}{"UUID"}=$cpdObj->uuid();
 	}else{
-	    verbose("Unable to find phopsphate compound in biochemistry: $cpd");
+	    ModelSEED::utilities::verbose("Unable to find phopsphate compound in biochemistry: $cpd");
 	    return "Error";
 	}
     }
@@ -613,7 +613,7 @@ sub estimateThermoReversibility{
 	if($cpdObj){
 	    $GasIDs{$cpd}{"UUID"}=$cpdObj->uuid();
 	}else{
-	    verbose("Unable to find gas compound in biochemistry: $cpd");
+	    ModelSEED::utilities::verbose("Unable to find gas compound in biochemistry: $cpd");
 	    return "Error";
 	}
     }
@@ -679,7 +679,7 @@ sub estimateThermoReversibility{
 	    $LowEIDs{$cpd}{"UUID"}=$cpdObj->uuid();
 	    $LowEUUIDs{$cpdObj->uuid()}=1;
 	}else{
-	    verbose("Unable to find low energy compound in biochemistry: $cpd");
+	    ModelSEED::utilities::verbose("Unable to find low energy compound in biochemistry: $cpd");
 	    return "Error";
 	}
     }
@@ -727,7 +727,7 @@ Description:
 
 sub checkReactionMassChargeBalance {
     my $self = shift;
-    my $args = args([], {rebalanceProtons => 0,rebalanceWater => 0}, @_);
+    my $args = ModelSEED::utilities::args([], {rebalanceProtons => 0,rebalanceWater => 0}, @_);
     my $atomHash;
     my $netCharge = 0;
     my $status = "OK";
@@ -845,7 +845,7 @@ sub checkReactionMassChargeBalance {
     }
 
     if($args->{rebalanceWater} && join("",sort keys %$imbalancedAtoms) eq "HO" && ($imbalancedAtoms->{"H"}/$imbalancedAtoms->{"O"}) == 2){
-	verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"});
+	ModelSEED::utilities::verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"});
 
 	if(scalar(keys %$waterCompHash)==0){
 	    #must create water reagent
@@ -896,7 +896,7 @@ sub checkReactionMassChargeBalance {
     }
     
     if ($args->{rebalanceProtons} && join("",keys %$imbalancedAtoms) eq "H") {
-	verbose("Adjusting ".$self->id()." protons by ".$imbalancedAtoms->{"H"});
+	ModelSEED::utilities::verbose("Adjusting ".$self->id()." protons by ".$imbalancedAtoms->{"H"});
 	
 	if(scalar(keys %$protonCompHash)==0){
 	    #must create proton reagent

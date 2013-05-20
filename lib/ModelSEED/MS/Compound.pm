@@ -58,7 +58,7 @@ Description:
 
 sub addStructure {
     my $self = shift;
-    my $args = args(["data","type"], { overwrite => 0 }, @_);
+    my $args = ModelSEED::utilities::args(["data","type"], { overwrite => 0 }, @_);
 	#Checking that parent exists and has linked BiochemistryStructures
 	if (!defined($self->parent()) || !defined($self->parent()->biochemistrystructures())) {
 		ModelSEED::utilities::ERROR("Cannot add structure to a compound with no accessible BiochemistryStructures object. Make sure you have a BiochemistryStructures object in the parent biochemistry.");

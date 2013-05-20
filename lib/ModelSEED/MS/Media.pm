@@ -56,7 +56,7 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = args(["format"], {}, @_);
+	my $args = ModelSEED::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "exchange") {
 		return $self->printExchange();
 	} elsif (lc($args->{format}) eq "readable") {
@@ -66,7 +66,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
 =head3 printExchange

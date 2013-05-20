@@ -20,13 +20,13 @@ sub sub_execute {
 	#Standard commands to handle where output will be printed
     my $out_fh = \*STDOUT;
     #Performing computation
-	verbose("Computing network distances...\n");
+	ModelSEED::utilities::verbose("Computing network distances...\n");
 	my $tbl = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
 		roles => $opts->{roles}
 	});
 	#Printing results
-	verbose("Printing results...\n");
+	ModelSEED::utilities::verbose("Printing results...\n");
 	if ($opts->{matrix} == 1) {
 		ModelSEED::utilities::PRINTTABLE("STDOUT",$tbl,"\t");
 	} else {

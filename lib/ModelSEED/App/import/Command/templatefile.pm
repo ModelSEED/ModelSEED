@@ -33,7 +33,7 @@ sub sub_execute {
 	   		reference => $opts->{mapping}
 	   	});
     } else {
-    	$map = config()->currentUser()->primaryStore()->defaultMapping();
+    	$map = ModelSEED::utilities::config()->currentUser()->primaryStore()->defaultMapping();
     }
     #Handling filepath if specified
     if(defined($opts->{filepath})) {

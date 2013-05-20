@@ -27,7 +27,7 @@ sub sub_execute {
     $bio->defaultNameSpace($args->[2]);
 
     my $reactionsToTransfer = $bio->findReactionsWithReagent($cpdOne->uuid());
-    verbose("Copying ".scalar(@$reactionsToTransfer)." reactions and switching ".$args->[0]." to ".$args->[1]."\n");
+    ModelSEED::utilities::verbose("Copying ".scalar(@$reactionsToTransfer)." reactions and switching ".$args->[0]." to ".$args->[1]."\n");
 
     foreach my $rxn (@$reactionsToTransfer){
 	my $tmp_rxn=$rxn->cloneObject();
@@ -39,14 +39,14 @@ sub sub_execute {
 	}
 
 	if($tmp_rxn->checkForDuplicateReagents()){
-	    verbose("Reaction ".$rxn->id()." rejected because compound switch leads to duplicates in the same compartment\n");
+	    ModelSEED::utilities::verbose("Reaction ".$rxn->id()." rejected because compound switch leads to duplicates in the same compartment\n");
 	    next;
 	}elsif($bio->checkForDuplicateReaction($tmp_rxn)){
-	    verbose("Reaction ".$rxn->id()." rejected because new reaction already exists\n");
+	    ModelSEED::utilities::verbose("Reaction ".$rxn->id()." rejected because new reaction already exists\n");
 	    next;
 	}
 
-	verbose("Adding new version of ".$rxn->id()." with ".$args->[1]."\n");
+	ModelSEED::utilities::verbose("Adding new version of ".$rxn->id()." with ".$args->[1]."\n");
 	$bio->add('reactions',$tmp_rxn);
 	foreach my $set ( grep { $_->attribute() eq 'reactions' } @{$bio->aliasSets()} ){
 	    if($rxn->getAlias($set->name())){

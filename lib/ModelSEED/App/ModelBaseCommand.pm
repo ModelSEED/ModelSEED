@@ -35,9 +35,9 @@ sub save_model {
     if ($self->opts()->{saveas}) {
     	my $newid = $self->opts()->{saveas};
     	$ref =~ s/\/[^\/]+$/\/$newid/;
-    	verbose("New alias set for model:".$ref);
+    	ModelSEED::utilities::verbose("New alias set for model:".$ref);
     }
-    verbose("Saving model to:".$ref);
+    ModelSEED::utilities::verbose("Saving model to:".$ref);
     $self->save_object({
 	   	type => "Model",
 	   	reference => $ref,

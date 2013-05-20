@@ -69,7 +69,7 @@ sub listAvailableModels {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
+    my $args = ModelSEED::utilities::args(["id", "annotation"], { verbose => 0 }, @_);
     # Get basic model data
     my $data;
     my $config = \%{$self->auth_config};

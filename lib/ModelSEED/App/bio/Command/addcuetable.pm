@@ -65,7 +65,7 @@ sub execute {
 	$biochemistry->name($opts->{saveas});
     	$store->save_object($ref,$biochemistry);
     } elsif (!defined($opts->{dry}) || $opts->{dry} == 0) {
-        ModelSEED:utilities::verbose("Saving over original biochemistry with new compounds...\n");
+        ModelSEED::utilities::verbose("Saving over original biochemistry with new compounds...\n");
         $store->save_object($ref,$biochemistry);
     }
 }

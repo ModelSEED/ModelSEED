@@ -18,7 +18,7 @@ sub sub_execute {
         $self->usage_error("Must provide name of store to delete");
     } 
 	my $config = ModelSEED::utilities::config();
-	$opts = args([],{
+	$opts = ModelSEED::utilities::args([],{
 		"delete" => 0,
 		name => $name
 	},%{$opts});

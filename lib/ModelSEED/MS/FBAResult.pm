@@ -45,7 +45,7 @@ Description:
 
 sub buildFromOptSolution {
     my $self = shift;
-    my $args = args(["LinOptSolution"],{}, @_);
+    my $args = ModelSEED::utilities::args(["LinOptSolution"],{}, @_);
 	my $solvars = $args->{LinOptSolution}->solutionvariables();
 	for (my $i=0; $i < @{$solvars}; $i++) {
 		my $var = $solvars->[$i];

@@ -240,7 +240,7 @@ Description:
 
 sub addReagentToReaction {
     my $self = shift;
-    my $args = args(["coefficient","modelcompound_uuid"],{}, @_);
+    my $args = ModelSEED::utilities::args(["coefficient","modelcompound_uuid"],{}, @_);
 	my $rgts = $self->modelReactionReagents();
 	for (my $i=0; $i < @{$rgts}; $i++) {
 		if ($rgts->[$i]->modelcompound_uuid() eq $args->{modelcompound_uuid}) {
@@ -267,7 +267,7 @@ Description:
 
 sub addModelReactionProtein {
     my $self = shift;
-    my $args = args(["proteinDataTree","complex_uuid"], {}, @_);
+    my $args = ModelSEED::utilities::args(["proteinDataTree","complex_uuid"], {}, @_);
 	my $prots = $self->modelReactionProteins();
 	for (my $i=0; $i < @{$prots}; $i++) {
 		if ($prots->[$i]->complex_uuid() eq $args->{complex_uuid}) {
@@ -318,7 +318,7 @@ Description:
 
 sub setGPRFromArray {
 	my $self = shift;
-    my $args = args(["gpr"],{}, @_);
+    my $args = ModelSEED::utilities::args(["gpr"],{}, @_);
 	my $anno = $self->parent()->annotation();
 	$self->modelReactionProteins([]);
 	foreach my $prot (@{$self->modelReactionProteins()}) {
@@ -342,7 +342,7 @@ sub setGPRFromArray {
 		    			if (defined($args->{gpr}->[$i]->[$j]->[$k])) {
 		    				my $ftr = $anno->queryObject("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
 		    				if (!defined($ftr)) {
-		    					error("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!");
+		    					ModelSEED::utilities::error("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!");
 							}
 		    				$subunit->add("modelReactionProteinSubunitGenes",{
 					    		feature_uuid => $ftr->uuid()

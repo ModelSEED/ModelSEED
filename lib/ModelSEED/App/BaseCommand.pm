@@ -58,7 +58,7 @@ sub get_data {
 sub save_object {
 	my ($self, $args) = @_;
 	if (defined($self->opts()->{dryrun}) && $self->opts()->{dryrun} == 1) {
-		verbose("Dry run selected. Results not saved!");
+		ModelSEED::utilities::verbose("Dry run selected. Results not saved!");
 		return;
 	}
 	my $input = $self->store()->parseReference($args->{reference},$args->{type});
@@ -68,7 +68,7 @@ sub save_object {
 
 sub move {
 	my ($self, $args) = @_;
-	my $args = args(["object","newid"],{
+	my $args = ModelsEED::utilities::args(["object","newid"],{
         newstore => ModelSEED::utilities::config()->currentUser()->primaryStore(),
         newworkspace => undef,
         cache => {}
@@ -97,7 +97,7 @@ sub move {
 sub save_data {
 	my ($self, $args) = @_;
 	if (defined($self->opts()->{dryrun}) && $self->opts()->{dryrun} == 1) {
-		verbose("Dry run selected. Results not saved!");
+		ModelSEED::utilities::verbose("Dry run selected. Results not saved!");
 		return;
 	}
 	my $input = $self->store()->parseReference($args->{reference},$args->{type});
@@ -112,7 +112,7 @@ sub opts {
 
 sub object_from_file {
     my ($self, $args) = @_;
-    $args = args(["type","filename"], {
+    $args = ModelSEED::utilities::args(["type","filename"], {
 		store => undef
     }, $args);
     return $self->store()->object_from_file({
