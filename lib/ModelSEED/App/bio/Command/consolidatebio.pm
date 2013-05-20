@@ -27,9 +27,10 @@ sub sub_execute {
 	#only need one namespace if using consolidatebio
 	$opts->{namespace}=[$opts->{namespace}];
     }
+
     my $new_name="Temp";
     $new_name = $opts->{saveas} if defined($opts->{saveas});
-    my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace},name => $new_name});
+    my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace}->[0],name => $new_name});
     ModelSEED::utilities::verbose("Using: ",$bio->name(),"\n");
 
     if(!defined($opts->{mergevia})){
@@ -66,7 +67,11 @@ sub sub_execute {
 
     $new_biochemistry->mergeBiochemistry($bio,$opts);
 
-    $self->save_bio($new_biochemistry);
+    $self->save_object({
+    	type => "Biochemistry",
+    	reference => $new_name,
+    	object => $new_biochemistry
+    });
 }
 
 1;
