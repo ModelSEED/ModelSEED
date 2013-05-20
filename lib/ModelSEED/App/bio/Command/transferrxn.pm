@@ -59,6 +59,6 @@ sub sub_execute {
 	}
     }
 
-#    $self->save_bio($bio);
+    $self->save_bio($bio);
 }
 1;
