@@ -17,7 +17,7 @@ sub options {
         ["mergeto|m=s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
         ["separator|t=s", "Column separator for file. Default is tab"],
         ["addmergealias|g", "Add identifiers to merging namespace."],
-		["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
+	["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
 }
 sub sub_execute {
