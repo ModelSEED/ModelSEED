@@ -8,10 +8,10 @@ sub abstract { return "Reads in table of compound data and adds them to the data
 sub usage_desc { return "bio addcpdtable [ biochemistry id ] [filename] [options]"; }
 sub options {
     return (
-        ["namespace|c:s", "Name space for aliases added"],
-        ["mergeto|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
+        ["namespace|c=s", "Name space for aliases added"],
+        ["mergeto|m=s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
         ["matchbyname|n", "Use search names to match compounds"],
-        ["separator|t:s", "Column separator for file. Default is tab"],
+        ["separator|t=s", "Column separator for file. Default is tab"],
         ["addmergealias|g", "Add identifiers to merging namespace."],
 		["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
     );
@@ -40,7 +40,7 @@ sub sub_execute {
     #processing table
     my $mergeto = [];
     if (defined($opts->{mergeto})) {
-	$mergeto = translateArrayOptions({
+	$mergeto = ModelSEED::utilities::translateArrayOptions({
 	    option => $opts->{mergeto},
 	    delimiter => ","});
     }

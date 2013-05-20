@@ -113,7 +113,7 @@ sub hasReagent {
 	return 0;	
     }
     for (my $i=0; $i < @{$rgts}; $i++) {
-	if ($rgts->[0]->compound_uuid() eq $rgt_uuid) {
+	if ($rgts->[$i]->compound_uuid() eq $rgt_uuid) {
 	    return 1;
 	}
     }

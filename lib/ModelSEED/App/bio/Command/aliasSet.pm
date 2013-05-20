@@ -13,8 +13,8 @@ sub options {
     return (
         ["validate", "Run validation logic on alias set"],
         ["list", "List available alias sets"],
-        ["store|s:s", "Identify which store to save the annotation to"],
-        ["mapping|m:s", "Select the preferred mapping object to use when importing the annotation"],
+        ["store|s=s", "Identify which store to save the annotation to"],
+        ["mapping|m=s", "Select the preferred mapping object to use when importing the annotation"],
         ["help|h|?", "Print this usage information"],
     );
 }

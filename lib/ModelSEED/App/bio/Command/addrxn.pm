@@ -11,13 +11,13 @@ sub abstract { return "Adds a single reaction to the database from input argumen
 sub usage_desc { return "bio addrxn [ biochemistry id ] [id] [equation]"; }
 sub options {
     return (
-        ["names|n:s", "Abbreviation"],
-        ["abbreviation|b:s", "Molecular formula"],
-        ["enzymes|z:s", "Associated EC number"],
-        ["direction|d:s", "Default directionality for reaction"],
-        ["deltag|g:s", "Gibbs free energy (kcal/mol)"],
-        ["deltagerr|e:s", "Uncertainty in Gibbs energy"],
-        ["namespace|n:s", "Namespace under which IDs will be added"],
+        ["names|n=s", "Abbreviation"],
+        ["abbreviation|b=s", "Molecular formula"],
+        ["enzymes|z=s", "Associated EC number"],
+        ["direction|d=s", "Default directionality for reaction"],
+        ["deltag|g=s", "Gibbs free energy (kcal/mol)"],
+        ["deltagerr|e=s", "Uncertainty in Gibbs energy"],
+        ["namespace|n=s", "Namespace under which IDs will be added"],
     );
 }
 sub sub_execute {

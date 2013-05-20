@@ -12,9 +12,9 @@ sub abstract { return "Reads in table of compound data and adds them to the data
 sub usage_desc { return "bio addcpdtable [< biochemistry | biochemistry] [filename] [options]"; }
 sub opt_spec {
     return (
-        ["saveas|a:s", "New alias for altered biochemistry"],
+        ["saveas|a=s", "New alias for altered biochemistry"],
         ["verbose|v", "Print verbose status information"],
-	["separator|t:s", "Column separator for file. Default is tab"],
+	["separator|t=s", "Column separator for file. Default is tab"],
         ["dry|d", "Perform a dry run; that is, do everything but saving"],
     );
 }

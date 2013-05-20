@@ -8,6 +8,7 @@ use Class::Autouse qw(
 sub parent_options {
     my ( $class, $app ) = @_;
     return (
+	[ 'saveas=s' => "Save object with a new name" ],
         $class->options($app),
     );
 }

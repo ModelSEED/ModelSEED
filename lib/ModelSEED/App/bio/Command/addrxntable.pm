@@ -11,11 +11,11 @@ sub abstract { return "Reads in table of reaction data and adds them to the data
 sub usage_desc { return "bio addrxntable [ biochemistry id ] [filename] [options]"; }
 sub options {
     return (
-        ["rxnnamespace|r:s", "Name space for reaction IDs"],
-        ["cpdnamespace|c:s", "Name space for compound IDs in equation"],
+        ["rxnnamespace|r=s", "Name space for reaction IDs"],
+        ["cpdnamespace|c=s", "Name space for compound IDs in equation"],
         ["autoadd|u","Automatically add any missing compounds to DB"],
-        ["mergeto|m:s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
-        ["separator|t:s", "Column separator for file. Default is tab"],
+        ["mergeto|m=s@", "Name space of identifiers used for merging reactions. Comma delimiter accepted."],
+        ["separator|t=s", "Column separator for file. Default is tab"],
         ["addmergealias|g", "Add identifiers to merging namespace."],
 		["balancedonly|b", "Attempt to balance reactions and reject imbalanced reactions before adding to biochemistry"]
     );
@@ -49,7 +49,7 @@ sub sub_execute {
     #processing table
     my $mergeto = [];
     if (defined($opts->{mergeto})) {
-	$mergeto = translateArrayOptions({
+	$mergeto = ModelSEED::utilities::translateArrayOptions({
 	    option => $opts->{mergeto},
 	    delimiter => ","});
     }

@@ -15,7 +15,7 @@ sub options {
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
         ["roles|r","Calculate distances between roles (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
-        ["threshold|t:s","Only print pairs with distance under threshold"],
+        ["threshold|t=s","Only print pairs with distance under threshold"],
     );
 }
 sub sub_execute {

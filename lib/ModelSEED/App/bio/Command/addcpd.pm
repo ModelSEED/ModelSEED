@@ -11,14 +11,14 @@ END
 }
 sub options {
     return (
-    	["abbreviation|b:s", "Abbreviation"],
-        ["formula|f:s", "Molecular formula"],
-        ["mass|m:s", "Molecular weight"],
-        ["charge|c:s", "Molecular charge"],
-        ["deltag|g:s", "Gibbs free energy (kcal/mol)"],
-        ["deltagerr|e:s", "Uncertainty in Gibbs energy"],
-        ["altnames:s", "Alternative names"],
-        ["namespace|n:s", "Name space for aliases added"],
+    	["abbreviation|b=s", "Abbreviation"],
+        ["formula|f=s", "Molecular formula"],
+        ["mass|m=s", "Molecular weight"],
+        ["charge|c=s", "Molecular charge"],
+        ["deltag|g=s", "Gibbs free energy (kcal/mol)"],
+        ["deltagerr|e=s", "Uncertainty in Gibbs energy"],
+        ["altnames=s", "Alternative names"],
+        ["namespace|n=s", "Name space for aliases added"],
     );
 }
 sub sub_execute {
