@@ -16,6 +16,7 @@ sub options {
 sub sub_execute {
     my ($self, $opts, $args,$bio) = @_;
     $self->usage_error("Must specify the name of the new biochemistry") unless(defined($args->[0]));
+    $opts->{saveas}=$args->[0];
     $self->save_bio($bio);
 }
 
