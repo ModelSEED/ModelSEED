@@ -1,7 +1,7 @@
 package ModelSEED::App::stores::Command::rm;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::StoresBaseCommand';
 sub abstract { return "Removes the specified store from the Model SEED configuration." }
 sub usage_desc { return "stores rm [name of store]"; }
@@ -17,8 +17,8 @@ sub sub_execute {
 	unless (defined($name)) {
         $self->usage_error("Must provide name of store to delete");
     } 
-	my $config = config();
-	$opts = args([],{
+	my $config = ModelSEED::utilities::config();
+	$opts = ModelSEED::utilities::args([],{
 		"delete" => 0,
 		name => $name
 	},%{$opts});

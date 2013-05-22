@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Merge the two specified compounds in the biochemistry database" }
 sub usage_desc { return "bio mergecpd [ biochemistry id ] [merged compound] [discarded compound]"; }
 sub options {

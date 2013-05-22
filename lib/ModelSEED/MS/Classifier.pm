@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Classifier;
 package ModelSEED::MS::Classifier;
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities qw( args verbose error );
+use ModelSEED::utilities;
 extends 'ModelSEED::MS::DB::Classifier';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
@@ -44,7 +44,7 @@ Description:
 
 sub classifyAnnotation {
     my $self = shift;
-	my $args = args(["annotation"],{},@_);
+	my $args = ModelSEED::utilities::args(["annotation"],{},@_);
 	my $anno = $args->{annotation};
 	my $features = $anno->features();
 	my $scores = {};

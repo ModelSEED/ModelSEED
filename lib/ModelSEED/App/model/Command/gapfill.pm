@@ -6,7 +6,7 @@ use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Fill gaps in the reaction network for a model"; }
 sub usage_desc { return "model gapfill [model] [options]"; }
 sub options {
@@ -39,6 +39,8 @@ sub options {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+	["cplextimelimit:s", "Time limit for CPLEX solver in seconds: defaults to 3600 seconds"],
+	["milptimelimit:s", "Time limit for MILP recursion in seconds: defaults to 3600 seconds"],
         ["loadsolution|l:s", "Loading existing solution into model"],
         ["norun", "Do not gapfill; print out the configuration as JSON"],
         ["integratesol|i", "Integrate first solution into model"],
@@ -67,7 +69,9 @@ sub sub_execute {
         defaultmaxflux   => "defaultMaxFlux",
         defaultmaxuptake => "defaultMaxDrainFlux",
         defaultminuptake => "defaultMinDrainFlux",
-        numsolutions	 => "numberOfSolutions"
+        numsolutions	 => "numberOfSolutions",
+	cplextimelimit   => "cplexTimeLimit",
+        milptimelimit    => "milpRecursionTimeLimit",
     };
     my $overrideList = {
         nomediahyp      => "!mediaHypothesis",
@@ -113,11 +117,11 @@ sub sub_execute {
         return;
     }
     my $result;
-    verbose("Running Gapfilling...");
+    ModelSEED::utilities::verbose("Running Gapfilling...");
     $gapfillingFormulation = $model->gapfillModel({gapfillingFormulation => $gapfillingFormulation});
     my $solutions = $gapfillingFormulation->gapfillingSolutions();
     if (!defined($solutions) || @{$solutions} == 0) {
-    	verbose("Reactions passing user criteria were insufficient to enable objective!");
+    	ModelSEED::utilities::verbose("Reactions passing user criteria were insufficient to enable objective!");
     	return;
     }
     my $numSolutions = @{$solutions};
@@ -131,7 +135,7 @@ sub sub_execute {
     	print $gapfillingFormulation->printStudy(($index-1));
     }
     if ($opts->{integratesol}) {
-    	verbose("Automatically integrating first solution in model.");
+    	ModelSEED::utilities::verbose("Automatically integrating first solution in model.");
     	$model->integrateGapfillSolution($gapfillingFormulation,0);
     }
     $self->save_object({

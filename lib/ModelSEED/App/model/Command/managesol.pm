@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::model;
 use base 'ModelSEED::App::ModelBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     Data::UUID

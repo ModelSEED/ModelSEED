@@ -113,7 +113,7 @@ use Moose;
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( args error );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use ModelSEED::MS::BaseObject;
 extends 'ModelSEED::MS::BaseObject';
@@ -144,7 +144,7 @@ sub add {
         $obj_info->{object} = $data_or_object;
         $obj_info->{created} = 1;
     } else {
-        error("Neither data nor object passed into " . ref($self) . "->add");
+        ModelSEED::utilities::error("Neither data nor object passed into " . ref($self) . "->add");
     }
     my $method = "_$attribute";
 	$obj_info->{object}->parent($self);
@@ -357,7 +357,7 @@ sub _buildIndex {
 	my $subatt = $args->{subAttribute};
 	my $newIndex  = {};
 	if ($att =~ m/^682F57E0/) {
-		error("Bad call to _buildIndex!");
+		ModelSEED::utilities::error("Bad call to _buildIndex!");
 	}
 	my $method = "_$att";
 	my $subobjs = $self->$method();

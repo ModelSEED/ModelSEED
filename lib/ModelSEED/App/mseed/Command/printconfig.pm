@@ -2,6 +2,7 @@ package ModelSEED::App::mseed::Command::printconfig;
 use strict;
 use common::sense;
 use Text::Table;
+use ModelSEED::utilities;
 use base 'ModelSEED::App::MSEEDBaseCommand';
 
 sub abstract { return "Print current configuration options" }
@@ -14,7 +15,7 @@ sub options {
 
 sub sub_execute {
     my ($self, $opts, $args) = @_;
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	my $tbl = [];
 	my $configs = [qw(CPLEX_LICENCE ERROR_DIR MFATK_CACHE MFATK_BIN)];
 	foreach my $var (@{$configs}) {

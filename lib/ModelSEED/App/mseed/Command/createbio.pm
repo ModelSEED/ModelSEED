@@ -7,7 +7,6 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Creates an empty biochemistry"; }
 sub usage_desc { return "ms createbio [ biochemistry id ] [name]"; }
 sub options {
@@ -17,6 +16,7 @@ sub options {
 }
 sub sub_execute {
     my ($self, $opts, $args) = @_;
+    $self->usage_error("Must specify a biochemistry id") unless(defined($args->[0]));
     $opts->{namespace}='ModelSEED' if !defined($opts->{namespace});
     my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace},
 							     name => $args->[0]});

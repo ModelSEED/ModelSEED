@@ -6,14 +6,14 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Balance all the reactions in a biochemistry"; }
 sub usage_desc { return "bio balancerxns [ biochemistry id ]"; }
 sub options {
     return (
-    	["namespace|n:s", "Default name space for biochemistry"],
+    	["namespace|n=s", "Default name space for biochemistry"],
     	["water|w", "Balance with water if possible"],
-		["protons|p", "Do not balance protons (default is to balance protons)"]
+	["protons|p", "Do not balance protons (default is to balance protons)"]
    	);
 }
 sub sub_execute {

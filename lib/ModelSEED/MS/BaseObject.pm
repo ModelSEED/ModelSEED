@@ -98,7 +98,7 @@ Returns an HTML document for the object.
 
 use Moose;
 use namespace::autoclean;
-use ModelSEED::utilities qw( verbose error args );
+use ModelSEED::utilities;
 use Scalar::Util qw(weaken);
 our $VERSION = undef;
 

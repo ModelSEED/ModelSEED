@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::mapping;
 use base 'ModelSEED::App::MappingBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Adjusts a role set in the mapping" }
 sub usage_desc { return "mapping adjustroleset [mapping id] [roleset id] [options]" }
 sub options {

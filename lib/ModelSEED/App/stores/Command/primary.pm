@@ -1,7 +1,7 @@
 package ModelSEED::App::stores::Command::primary;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'ModelSEED::App::StoresBaseCommand';
 sub abstract { return "Selects or prints the current primary store." }
 sub usage_desc { return "stores primary [name of store]"; }
@@ -12,7 +12,7 @@ sub options {
 sub sub_execute {
     my ($self, $opts, $args) = @_;
 	my $name = shift @$args;
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	if (!defined($name)) {
 		$name = $config->currentUser()->primaryStoreName();
 	} else {

@@ -4,7 +4,6 @@ use common::sense;
 use ModelSEED::App::mapping;
 use base 'ModelSEED::App::MappingBaseCommand';
 use Text::Table;
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Prints and sets the primary properties of the mapping object" }
 sub usage_desc { return "mapping properties [mapping id] [options]" }
 sub options {

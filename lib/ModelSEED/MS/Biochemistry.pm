@@ -10,7 +10,7 @@ use ModelSEED::MS::DB::Biochemistry;
 use ModelSEED::MS::BiochemistryStructures;
 package ModelSEED::MS::Biochemistry;
 use Moose;
-use ModelSEED::utilities qw ( args verbose );
+use ModelSEED::utilities;
 use ModelSEED::Configuration;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Biochemistry';
@@ -70,7 +70,7 @@ C<directory> is the directory to save the tables into.
 
 sub printDBFiles {
     my $self = shift;
-    my $args = args([],{
+    my $args = ModelSEED::utilities::args([],{
         forceprint => 0,
         directory  => $self->dataDirectory."/fbafiles/",
     }, @_);
@@ -124,7 +124,7 @@ Description:
 
 sub makeDBModel {
     my $self = shift;
-    my $args = args([],{
+    my $args = ModelSEED::utilities::args([],{
 		balancedOnly => 1,
 		gapfillingFormulation => undef,
 		annotation_uuid => "00000000-0000-0000-0000-000000000000",
@@ -208,7 +208,7 @@ Description:
 
 sub export {
     my $self = shift;
-	my $args = args(["format"], {}, @_);
+	my $args = ModelSEED::utilities::args(["format"], {}, @_);
 	if (lc($args->{format}) eq "readable") {
 		return $self->toReadableString();
 	} elsif (lc($args->{format}) eq "html") {
@@ -216,7 +216,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
 =head3 findCreateEquivalentCompartment
@@ -232,7 +232,7 @@ Description:
 
 sub findCreateEquivalentCompartment {
     my $self = shift;
-	my $args = args(["compartment"], {create => 1}, @_);
+	my $args = ModelSEED::utilities::args(["compartment"], {create => 1}, @_);
 	my $incomp = $args->{compartment};
 	my $outcomp = $self->queryObject("compartments",{
 		name => $incomp->name()
@@ -262,7 +262,7 @@ Description:
 
 sub findCreateEquivalentCompound {
     my $self = shift;
-	my $args = args(["compound"], {create => 1}, @_);
+	my $args = ModelSEED::utilities::args(["compound"], {create => 1}, @_);
 	my $incpd = $args->{compound};
 	my $outcpd = $self->queryObject("compounds",{
 		name => $incpd->name()
@@ -305,7 +305,7 @@ Description:
 
 sub findCreateEquivalentReaction {
     my $self = shift;
-	my $args = args(["reaction"], {create => 1}, @_);
+	my $args = ModelSEED::utilities::args(["reaction"], {create => 1}, @_);
 	my $inrxn = $args->{reaction};
 	my $outrxn = $self->queryObject("reactions",{
 		definition => $inrxn->definition()
@@ -402,16 +402,16 @@ Description:
 
 sub addCompartmentFromHash {
     my ($self,$arguments) = @_;
-    $arguments = args(["name","id"],{ hierarchy=>3 }, $arguments);
+    $arguments = ModelSEED::utilities::args(["name","id"],{ hierarchy=>3 }, $arguments);
 
     #check to see if compartment doesn't already exist
     my $cpt = $self->queryObject("compartments",{name => $arguments->{name}});
     if (defined($cpt)) {
-	verbose("Compartment found with matching name ".$arguments->{name});
+	ModelSEED::utilities::verbose("Compartment found with matching name ".$arguments->{name});
 	return $cpt;
     }
 
-    verbose("Creating compartment ".$arguments->{name}." with id: ".$arguments->{id});
+    ModelSEED::utilities::verbose("Creating compartment ".$arguments->{name}." with id: ".$arguments->{id});
     $cpt = $self->add("compartments",{
 	id => $arguments->{id},
 	name => $arguments->{name},
@@ -430,16 +430,16 @@ Description:
 
 sub addCueFromHash {
     my ($self,$arguments) = @_;
-    $arguments = args(["name"],{ energy=>[10000000], error=>[10000000], charge=>[10000000] }, $arguments);
+    $arguments = ModelSEED::utilities::args(["name"],{ energy=>[10000000], error=>[10000000], charge=>[10000000] }, $arguments);
 
     #check to see if cue doesn't already exist
     my $cue = $self->queryObject("cues",{name => $arguments->{name}});
     if (defined($cue)) {
-	verbose("Cue found with matching name ".$arguments->{name});
+	ModelSEED::utilities::verbose("Cue found with matching name ".$arguments->{name});
 	return $cue;
     }
 
-    verbose("Creating cue ".$arguments->{name});
+    ModelSEED::utilities::verbose("Creating cue ".$arguments->{name});
     $cue = $self->add("cues",{
 	name => $arguments->{name}->[0],
 	smallMolecule => $arguments->{smallMolecule}->[0],
@@ -463,7 +463,7 @@ Description:
 
 sub addCompoundFromHash {
     my ($self,$arguments) = @_;
-    $arguments = args(["names","id"],{
+    $arguments = ModelSEED::utilities::args(["names","id"],{
 	namespace => $self->defaultNameSpace(),
 	matchbyname => 0,
 	mergeto => [],
@@ -484,7 +484,7 @@ sub addCompoundFromHash {
     # Checking for id uniqueness within scope of own aliasType
     my $cpd = $self->getObjectByAlias("compounds",$arguments->{id}->[0],$arguments->{namespace});
     if (defined($cpd)) {
-	verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
+	ModelSEED::utilities::verbose("Compound found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{namespace});
 	if($arguments->{addmergealias}){
 	    foreach my $aliasType (@{$arguments->{mergeto}}){
 		$self->addAlias({ attribute => "compounds",
@@ -506,7 +506,7 @@ sub addCompoundFromHash {
 
 	$cpd = $self->getObjectByAlias("compounds",$matchingId,$aliasType);
 	if (defined($cpd)) {
-	    verbose("Compound found with matching id ".$matchingId." for namespace ".$aliasType);
+	    ModelSEED::utilities::verbose("Compound found with matching id ".$matchingId." for namespace ".$aliasType);
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
 			      alias => $arguments->{id}->[0],
@@ -532,7 +532,7 @@ sub addCompoundFromHash {
        (scalar( grep { $_ =~ /proton/i } @{$arguments->{names}} )>0)){
 	$cpd=$self->checkForProton();
 	if(defined($cpd)){
-	    verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}}));
+	    ModelSEED::utilities::verbose("Proton found: ".$arguments->{id}->[0].":".join("|",@{$arguments->{names}}));
 	    $self->addAlias({ attribute => "compounds",
 			      aliasName => $arguments->{namespace},
 			      alias => $arguments->{id}->[0],
@@ -565,7 +565,7 @@ sub addCompoundFromHash {
 	    }
 
 	    if (defined($cpd)){
-		verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name);
+		ModelSEED::utilities::verbose("Compound (".$arguments->{id}->[0].") matched based on name ".$name);
 		
 		$self->addAlias({attribute => "compounds",
 				 aliasName => $arguments->{namespace},
@@ -587,7 +587,7 @@ sub addCompoundFromHash {
     }
 
     # Actually creating compound
-    verbose("Creating compound ".$arguments->{id}->[0]);
+    ModelSEED::utilities::verbose("Creating compound ".$arguments->{id}->[0]);
 
     $cpd = $self->add("compounds",{
 	name => $arguments->{names}->[0],
@@ -647,7 +647,7 @@ Description:
 
 sub addReactionFromHash {
     my ($self,$arguments) = @_;
-	$arguments = args(["equation","id"], {
+	$arguments = ModelSEED::utilities::args(["equation","id"], {
 	    names => undef,
 	    equationAliasType => $self->defaultNameSpace(),
 	    reactionIDaliasType => $self->defaultNameSpace(),
@@ -666,7 +666,7 @@ sub addReactionFromHash {
 	#Checking for id uniqueness
 	my $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$arguments->{reactionIDaliasType});
 	if (defined($rxn)) {
-		verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType});
+		ModelSEED::utilities::verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$arguments->{reactionIDaliasType});
 		if($arguments->{addmergealias}){
 		    foreach my $aliasType (@{$arguments->{mergeto}}){
 			$self->addAlias({ attribute => "reactions",
@@ -682,7 +682,7 @@ sub addReactionFromHash {
         foreach my $aliasType (@{$arguments->{mergeto}}){
 	    $rxn = $self->getObjectByAlias("reactions",$arguments->{id}->[0],$aliasType);
 	    if( defined($rxn) ){
-			verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
+			ModelSEED::utilities::verbose("Reaction found with matching id ".$arguments->{id}->[0]." for namespace ".$aliasType);
 			#Alias needs to be created for original namespace if found in different namespace
 			$self->addAlias({
 			    attribute => "reactions",
@@ -726,10 +726,10 @@ sub addReactionFromHash {
 	    rxnId => $arguments->{id}->[0],
 	    compartment => $arguments->{compartment}->[0]
 	})) {
-	    verbose("Reaction ".$arguments->{id}->[0]." was rejected");
+	    ModelSEED::utilities::verbose("Reaction ".$arguments->{id}->[0]." was rejected");
 	    return undef;
 	}else{
-	    #verbose("Reaction ".$arguments->{id}->[0]." passed\n");
+	    #ModelSEED::utilities::verbose("Reaction ".$arguments->{id}->[0]." passed\n");
 	}
 
 	# Generate equation search string and check to see if reaction not already in database
@@ -752,7 +752,7 @@ sub addReactionFromHash {
 		    $aliasSetName="could not find ID";
 		}
 	    }
-	    verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]);
+	    ModelSEED::utilities::verbose("Reaction ".$alias." (".$aliasSetName.") found with matching equation for Reaction ".$arguments->{id}->[0]);
 	    $self->addAlias({ attribute => "reactions",
 			      aliasName => $arguments->{reactionIDaliasType},
 			      alias => $arguments->{id}->[0],
@@ -777,7 +777,7 @@ sub addReactionFromHash {
     if($arguments->{balancedonly}==1){
 	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1});
 	if($result->{balanced}==0 && (defined($result->{error}) || defined($result->{imbalancedAtoms}))){
-	    verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status());
+	    ModelSEED::utilities::verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status());
 	    return;
 	}
     }
@@ -915,7 +915,7 @@ sub mergeBiochemistry {
 	}
     	my $uuidTranslation = {};
     	$opts->{touched}={};
-	verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name());
+	ModelSEED::utilities::verbose("Merging ".scalar(@$objs)." ".$type." from ".$bio->name()." with ".scalar(@{$self->$type()})." from ".$self->name());
     	for (my $j=0; $j < @{$objs}; $j++) {
 		    my $obj = $objs->[$j];
 		    my $aliases={};
@@ -951,13 +951,13 @@ sub mergeBiochemistry {
 			}else{
 			    $dupObjId=$dupObj->id();
 			}
-			verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObjId);
+			ModelSEED::utilities::verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObjId);
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
-				    verbose("Skipping searchname ".$alias." as its already present");
+				    ModelSEED::utilities::verbose("Skipping searchname ".$alias." as its already present");
 				}else{
-				    verbose("Adding alias ".$alias." from ".$aliasName." for ".$dupObj->uuid()); 
+				    ModelSEED::utilities::verbose("Adding alias ".$alias." from ".$aliasName." for ".$dupObj->uuid()); 
 				    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$dupObj->uuid()});
 				}
 			    }
@@ -966,11 +966,11 @@ sub mergeBiochemistry {
 			$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
 			$obj->uuid($dupObj->uuid());
 		    } else {
-			verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry");
+			ModelSEED::utilities::verbose("Adding new ".substr($type,0,-1)." (".$objId.") to biochemistry");
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
-				    verbose("Skipping searchname ".$alias." as its already present\n");
+				    ModelSEED::utilities::verbose("Skipping searchname ".$alias." as its already present\n");
 				}else{
 				    $self->addAlias({attribute=>$type,aliasName=>$aliasName,alias=>$alias,uuid=>$obj->uuid()});
 				}
@@ -1071,7 +1071,7 @@ sub checkForDuplicateCompound {
 	    foreach my $alias (@{$obj->getAliases($mergeNamespace)}){
 		my $dupObj = $self->getObjectByAlias("compounds",$alias,$mergeNamespace);
 		if($dupObj && ( !exists($opts->{touched}{$dupObj->uuid()} ) || defined($opts->{consolidate}) )){
-		    verbose("Duplicate compound found using $alias in $mergeNamespace");
+		    ModelSEED::utilities::verbose("Duplicate compound found using $alias in $mergeNamespace");
 		    return $dupObj;
 		}
 	    }

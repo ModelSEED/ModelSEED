@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Adds a single compound to the database from input arguments" }
 sub usage_desc { return "bio addcpd [ biochemistry id ] [id] [ name ] [ options ]" }
 sub description { return <<END;
@@ -11,14 +11,14 @@ END
 }
 sub options {
     return (
-    	["abbreviation|b:s", "Abbreviation"],
-        ["formula|f:s", "Molecular formula"],
-        ["mass|m:s", "Molecular weight"],
-        ["charge|c:s", "Molecular charge"],
-        ["deltag|g:s", "Gibbs free energy (kcal/mol)"],
-        ["deltagerr|e:s", "Uncertainty in Gibbs energy"],
-        ["altnames:s", "Alternative names"],
-        ["namespace|n:s", "Name space for aliases added"],
+    	["abbreviation|b=s", "Abbreviation"],
+        ["formula|f=s", "Molecular formula"],
+        ["mass|m=s", "Molecular weight"],
+        ["charge|c=s", "Molecular charge"],
+        ["deltag|g=s", "Gibbs free energy (kcal/mol)"],
+        ["deltagerr|e=s", "Uncertainty in Gibbs energy"],
+        ["altnames=s", "Alternative names"],
+        ["namespace|n=s", "Name space for aliases added"],
     );
 }
 sub sub_execute {

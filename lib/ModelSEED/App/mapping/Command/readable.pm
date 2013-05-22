@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::mapping;
 use base 'ModelSEED::App::MappingBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Prints a readable format for the object" }
 sub usage_desc { return "mapping readable [mapping id] [options]" }
 sub options {

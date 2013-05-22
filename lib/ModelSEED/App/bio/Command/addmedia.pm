@@ -6,16 +6,16 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Adds a specified media condition to the database"; }
 sub usage_desc { return "bio addmedia [ biochemistry id ] [name] [compounds] [options]"; }
 sub options {
     return (
         ["isdefined","Media is defined"],
         ["isminimal","Media is a minimal media"],
-        ["type:s","Type of the media"],
-        ["concentrations|n:s", "',' delimited array of concentrations"],
-        ["namespace|n:s", "Namespace under which IDs will be added"],
+        ["type=s","Type of the media"],
+        ["concentrations|n=s", "',' delimited array of concentrations"],
+        ["namespace|n=s", "Namespace under which IDs will be added"],
     );
 }
 sub sub_execute {

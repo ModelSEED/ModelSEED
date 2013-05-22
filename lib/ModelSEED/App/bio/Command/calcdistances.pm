@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Calculate pairwise distances between metabolites, reactions, and roles"; }
 sub usage_desc { return "bio calcdistances [ biochemistry id ] [options]"; }
 sub options {
@@ -15,7 +15,7 @@ sub options {
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
         ["roles|r","Calculate distances between roles (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
-        ["threshold|t:s","Only print pairs with distance under threshold"],
+        ["threshold|t=s","Only print pairs with distance under threshold"],
     );
 }
 sub sub_execute {

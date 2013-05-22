@@ -6,7 +6,7 @@ use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Identify changes in the model to force an objective to zero in the specified conditions" }
 sub usage_desc { return "model gapgen [model] [options]" }
 sub options {
@@ -26,6 +26,9 @@ sub options {
         ["defaultmaxflux:s","Maximum flux to use as default"],
         ["defaultmaxuptake:s","Maximum uptake flux to use as default"],
         ["defaultminuptake:s","Minimum uptake flux to use as default"],
+	["cplextimelimit:s", "Time limit for CPLEX solver in seconds: defaults to 3600 seconds"],
+	["milptimelimit:s", "Time limit for MILP recursion in seconds: defaults to 3600 seconds"],
+        ["norun", "Do not gapfill; print out the configuration as JSON"],
         ["integratesol|i", "Integrate first solution into model"],
         ["printraw|r", "Print raw data instead of readable data"],
         ["saveas|a:s", "New name the results should be saved to"]
@@ -40,7 +43,8 @@ sub sub_execute {
 	my $fbaoverrides = {
 		media => "media",notes => "notes",objfraction => "objectiveConstraintFraction",
 		objective => "objectiveString",rxnko => "geneKO",geneko => "reactionKO",uptakelim => "uptakeLimits",
-		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux"
+		defaultmaxflux => "defaultMaxFlux",defaultmaxuptake => "defaultMaxDrainFlux",defaultminuptake => "defaultMinDrainFlux",
+		cplextimelimit => "cplexTimeLimit",milptimelimit    => "milpRecursionTimeLimit",
 	};
 	my $overrideList = {
 		refmedia => "referenceMedia",nomediahyp => "!mediaHypothesis",nobiomasshyp => "!biomassHypothesis",
@@ -55,7 +59,9 @@ sub sub_execute {
 				$input->{overrides}->{$overrideList->{$argument}} = 1;
 			}
 		} else {
+		    if(defined($opts->{$argument})){
 			$input->{overrides}->{$overrideList->{$argument}} = $opts->{$argument};
+		    }
 		}
 	}
 	foreach my $argument (keys(%{$fbaoverrides})) {
@@ -65,17 +71,21 @@ sub sub_execute {
 	}
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $gapgenFormulation = $exchange_factory->buildGapgenFormulation($input);
-    verbose("Running gapgeneration...");
+    if ($opts->{norun}) {
+        print $gapgenFormulation->toJSON();
+        return;
+    }
+    ModelSEED::utilities::verbose("Running gapgeneration...");
     $gapgenFormulation = $model->gapgenModel({
         gapgenFormulation => $gapgenFormulation,
     });
 	my $solutions = $gapgenFormulation->gapgenSolutions();
     if (!defined($solutions) || @{$solutions} == 0) {
-    	verbose("Could not find knockouts to meet gapgen specifications!");
+    	ModelSEED::utilities::verbose("Could not find knockouts to meet gapgen specifications!");
     	return;
     }
     my $numSolutions = @{$solutions};
-	verbose($numSolutions." viable solutions identified.");
+	ModelSEED::utilities::verbose($numSolutions." viable solutions identified.");
     if ($opts->{printraw}) {
     	for (my $i=0; $i < @{$solutions}; $i++) {
     		$solutions->[$i] = $solutions->[$i]->serializeToDB();
@@ -86,7 +96,7 @@ sub sub_execute {
     	print $gapgenFormulation->printSolutions(($index-1));
     }
     if ($opts->{integratesol}) {
-    	verbose("Automatically integrating first solution in model.");
+    	ModelSEED::utilities::verbose("Automatically integrating first solution in model.");
     	$model->integrateGapgenSolution($gapgenFormulation,0);
     }
     $self->save_object({

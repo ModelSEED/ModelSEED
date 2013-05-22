@@ -3,15 +3,15 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Reads in table of compound data and adds them to the database" }
 sub usage_desc { return "bio addcpdtable [ biochemistry id ] [filename] [options]"; }
 sub options {
     return (
-        ["namespace|c:s", "Name space for aliases added"],
-        ["mergeto|m:s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
+        ["namespace|c=s", "Name space for aliases added"],
+        ["mergeto|m=s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
         ["matchbyname|n", "Use search names to match compounds"],
-        ["separator|t:s", "Column separator for file. Default is tab"],
+        ["separator|t=s", "Column separator for file. Default is tab"],
         ["addmergealias|g", "Add identifiers to merging namespace."],
 		["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
     );
@@ -24,7 +24,7 @@ sub sub_execute {
     $separator = $opts->{separator}  if exists $opts->{separator};
     my $tbl = ModelSEED::utilities::LOADTABLE($args->[0],$separator);
 
-    verbose("Loading ".$args->[1]);
+    ModelSEED::utilities::verbose("Loading ".$args->[1]);
 
     if(scalar(@{$tbl->{data}->[0]})<2){
 	$tbl = ModelSEED::utilities::LOADTABLE($args->[0],"\\\;");
@@ -40,7 +40,7 @@ sub sub_execute {
     #processing table
     my $mergeto = [];
     if (defined($opts->{mergeto})) {
-	$mergeto = translateArrayOptions({
+	$mergeto = ModelSEED::utilities::translateArrayOptions({
 	    option => $opts->{mergeto},
 	    delimiter => ","});
     }

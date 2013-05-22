@@ -8,7 +8,7 @@
 use strict;
 use Data::Dumper;
 package ModelSEED::MS::Factories::ExchangeFormatFactory;
-use ModelSEED::utilities qw( args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 use Class::Autouse qw(
@@ -49,7 +49,7 @@ Description:
 
 sub buildClassifier {
     my $self = shift;
-	my $args = args(["filename","name","mapping"],{}, @_);
+	my $args = ModelSEED::utilities::args(["filename","name","mapping"],{}, @_);
 	my $mapping = $args->{mapping};
 	my $data = ModelSEED::utilities::LOADFILE($args->{filename});
 	my $headings = [split(/\t/,$data->[0])];
@@ -110,7 +110,7 @@ Description:
 
 sub buildFBAFormulation {
     my $self = shift;
-	my $args = args(["model"],{
+	my $args = ModelSEED::utilities::args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -119,7 +119,7 @@ sub buildFBAFormulation {
         my $pmodel = $args->{promModel};
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		media => "Media/name/Complete",
 		type => "singlegrowth",
 		simpleThermoConstraints => 0,
@@ -219,7 +219,7 @@ Description:
 
 sub buildTemplateModel {
 	my $self = shift;
-	my $args = args(["templateReactions","templateBiomass","mapping","name"],{
+	my $args = ModelSEED::utilities::args(["templateReactions","templateBiomass","mapping","name"],{
 		modelType => "GenomeScale",
 		domain => "Bacteria"
 	}, @_);
@@ -346,7 +346,7 @@ Description:
 
 sub buildGapfillingFormulation {
     my $self = shift;
-	my $args = args(["model"],{
+	my $args = ModelSEED::utilities::args(["model"],{
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -356,7 +356,7 @@ sub buildGapfillingFormulation {
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
 		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
@@ -429,6 +429,8 @@ rxn01267 )),
 		transporterMultiplier => 1,
 		gapfillingGeneCandidates => [],
 		reactionSetMultipliers => [],
+                cplexTimeLimit => 3600,
+                milpRecursionTimeLimit => 3600,
 	}, $data);
 	#Creating gapfilling formulation object
 	my $gapform = ModelSEED::MS::GapfillingFormulation->new({
@@ -451,6 +453,8 @@ rxn01267 )),
 		biomassHypothesis => $data->{biomassHypothesis},
 		gprHypothesis => $data->{gprHypothesis},
 		reactionAdditionHypothesis => $data->{reactionAdditionHypothesis},
+		timePerSolution => $data->{cplexTimeLimit},
+		totalTimeLimit => $data->{milpRecursionTimeLimit},
 	});
 	$gapform->parseGeneCandidates({geneCandidates => $data->{gapfillingGeneCandidates}});
 	$gapform->parseSetMultipliers({sets => $data->{reactionSetMultipliers}});
@@ -475,7 +479,7 @@ Description:
 
 sub buildGapgenFormulation {
     my $self = shift;
-    my $args = args(["model"], {
+    my $args = ModelSEED::utilities::args(["model"], {
 		text => undef,
 		filename => undef,
 		overrides => {}
@@ -485,13 +489,15 @@ sub buildGapgenFormulation {
 	my $fbaform = $self->buildFBAFormulation($args->{overrides}->{fbaFormulation});
 	my $data = $self->parseExchangeFileArray($args);
 	#Setting default values for exchange format attributes			
-	$data = args([],{
+	$data = ModelSEED::utilities::args([],{
 		referenceMedia => "Media/name/".$fbaform->media()->name(),
 		fbaFormulation => $fbaform,
 		mediaHypothesis => 0,
 		biomassHypothesis => 0,
 		gprHypothesis => 0,
 		reactionRemovalHypothesis => 1,
+                cplexTimeLimit => 3600,
+                milpRecursionTimeLimit => 3600,
 	}, $data);
 	#Finding (or creating) the media
 	(my $media) = $model->interpretReference($data->{referenceMedia},"Media");
@@ -511,6 +517,8 @@ sub buildGapgenFormulation {
 		biomassHypothesis => $data->{biomassHypothesis},
 		gprHypothesis => $data->{gprHypothesis},
 		reactionRemovalHypothesis => $data->{reactionRemovalHypothesis},
+		timePerSolution => $data->{cplexTimeLimit},
+		totalTimeLimit => $data->{milpRecursionTimeLimit},
 	});
 	return $gapgenform;
 }
@@ -552,7 +560,7 @@ Description:
 
 sub parseExchangeFileArray {
     my $self = shift;
-	my $args = args([],{
+	my $args = ModelSEED::utilities::args([],{
 		text => undef,
 		filename => undef,
 		array => [],
@@ -592,6 +600,7 @@ sub parseExchangeFileArray {
 	}
 	#Setting overrides
 	foreach my $key (%{$args->{overrides}}) {
+#	    print $key,"\n" if !exists($args->{overrides}->{$key});
 		$data->{$key} = $args->{overrides}->{$key};
 	}
 	return $data;
@@ -609,7 +618,7 @@ Description:
 
 sub buildObjectFromExchangeFileArray {
     my $self = shift;
-	my $args = args(["array"],{
+	my $args = ModelSEED::utilities::args(["array"],{
 		Biochemistry => undef,
 		Mapping => undef,
 		Model => undef,

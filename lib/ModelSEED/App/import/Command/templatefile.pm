@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::import;
 use base 'ModelSEED::App::ImportBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Cwd qw(getcwd);
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
@@ -33,7 +33,7 @@ sub sub_execute {
 	   		reference => $opts->{mapping}
 	   	});
     } else {
-    	$map = config()->currentUser()->primaryStore()->defaultMapping();
+    	$map = ModelSEED::utilities::config()->currentUser()->primaryStore()->defaultMapping();
     }
     #Handling filepath if specified
     if(defined($opts->{filepath})) {

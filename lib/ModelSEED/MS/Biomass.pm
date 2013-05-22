@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::Biomass;
 package ModelSEED::MS::Biomass;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use POSIX qw(floor ceil);
 extends 'ModelSEED::MS::DB::Biomass';
@@ -32,7 +32,7 @@ has "index"  => ( is => 'rw', isa => 'Int',printOrder => '-1', type => 'msdata',
 # hashed : boolean, if true, return a md5 sum of the string in place of the string
 sub _equation_builder {
     my $self = shift;
-    my $args = args([], {
+    my $args = ModelSEED::utilities::args([], {
         format => "uuid",
         hashed => 0,
         rescale => 0
@@ -226,7 +226,7 @@ Description:
 =cut
 sub adjustBiomassReaction {
     my $self = shift;
-    my $args = args(["modelcompound","coefficient"],{}, @_);
+    my $args = ModelSEED::utilities::args(["modelcompound","coefficient"],{}, @_);
 	my $biocpds = $self->biomasscompounds();
 	my $found = 0;
 	for (my $i=0; $i < @{$biocpds}; $i++) {
@@ -262,7 +262,7 @@ Description:
 =cut
 sub loadFromEquation {
     my $self = shift;
-    my $args = args(["equation"],{
+    my $args = ModelSEED::utilities::args(["equation"],{
     	aliasType => undef,
     	addMissingCompounds => 0
     }, @_);

@@ -7,7 +7,7 @@
 ########################################################################
 package ModelSEED::MS::Factories::TableFileFactory;
 use common::sense;
-use ModelSEED::utilities qw( args verbose );
+use ModelSEED::utilities;
 use ModelSEED::MS::Utilities::GlobalFunctions;
 use Class::Autouse qw(
 	ModelSEED::MS::BiochemistryStructures
@@ -203,7 +203,7 @@ sub loadFtrTbl {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id","biochemistry"], {
+    my $args = ModelSEED::utilities::args(["id","biochemistry"], {
     	annotation => undef,
     }, @_);
 	my $bio = $args->{biochemistry};
@@ -251,7 +251,7 @@ sub createModel {
 		my $row = $tbl->row($i);
 		my $rxn = $bio->getObjectByAlias("reactions",$row->id(),"ModelSEED");
 		if (!defined($rxn)) {
-			verbose("Reaction ".$row->id()." not found!");
+			ModelSEED::utilities::verbose("Reaction ".$row->id()." not found!");
 		} else {
 			my $direction = "=";
 			if ($row->direction() eq "=>") {
@@ -283,7 +283,7 @@ sub createModel {
 							});
 						}
 						if (!defined($ftrObj)) {
-							verbose("Unable to find feature for:".$ftrID."\n");
+							ModelSEED::utilities::verbose("Unable to find feature for:".$ftrID."\n");
 							if($anno->genomes()->[0]){
 							    $ftrObj = $anno->add("features",{id => $ftrID,
 											     genome_uuid => $anno->genomes()->[0]->uuid()});
@@ -543,7 +543,7 @@ sub parseSingleProtein {
 
 sub createBiochemistry {
     my $self = shift;
-    my $args = args([], {
+    my $args = ModelSEED::utilities::args([], {
 		name => $self->namespace()."/primary.biochemistry",
 		addAliases => 1,
 		addStructuralCues => 1,
@@ -861,7 +861,7 @@ sub createBiochemistry {
 
 sub addAliases {
     my $self = shift;
-    my $args = args(["biochemistry"], {}, @_);
+    my $args = ModelSEED::utilities::args(["biochemistry"], {}, @_);
 	my $biochemistry = $args->{biochemistry};
 	#Adding compound aliases
 	print "Handling compound aliases!\n" if($args->{verbose});
@@ -898,7 +898,7 @@ sub addAliases {
 
 sub createMapping {
     my $self = shift;
-    my $args = args(["biochemistry"], {
+    my $args = ModelSEED::utilities::args(["biochemistry"], {
 		name => $self->namespace()."/primary.mapping",
         verbose => 0,
 	}, @_);
@@ -1116,7 +1116,7 @@ sub createMapping {
 
 sub createAnnotation {
     my $self = shift;
-    my $args = args(["genome","mapping"], {}, @_);
+    my $args = ModelSEED::utilities::args(["genome","mapping"], {}, @_);
 	if (!-e $self->filepath()."/".$args->{genome}.".tbl") {
 		ModelSEED::utilities::ERROR("Input genome ".$args->{genome}." not found in available flatfiles!");
 	}

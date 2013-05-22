@@ -9,7 +9,7 @@ use Class::Autouse qw(
     ModelSEED::Solver::FBA
 );
 use base 'ModelSEED::App::ModelBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Run flux balance analysis on the model" }
 sub usage_desc { return "model runfba [model id] [options]" }
 sub options {
@@ -97,7 +97,7 @@ sub sub_execute {
         return;
     }
     # Running FBA
-    verbose("Running FBA...");
+    ModelSEED::utilities::verbose("Running FBA...");
     my $results = $fbaform->runFBA(); 
     if (!defined($results)) {
     	print STDERR " FBA failed with no solution returned!\n";

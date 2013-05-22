@@ -45,7 +45,7 @@ A L<ModelSEED::MS::Annotation> object. Required.
 
 package ModelSEED::MS::Factories::FBAMODELFactory;
 use ModelSEED::Client::FBAMODEL;
-use ModelSEED::utilities qw( args verbose );
+use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::Auth
@@ -69,7 +69,7 @@ sub listAvailableModels {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
+    my $args = ModelSEED::utilities::args(["id", "annotation"], { verbose => 0 }, @_);
     # Get basic model data
     my $data;
     my $config = \%{$self->auth_config};

@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::GapgenSolution;
 package ModelSEED::MS::GapgenSolution;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::GapgenSolution';
 #***********************************************************************************************************
@@ -57,7 +57,7 @@ Description:
 
 sub loadFromData {
     my $self = shift;
-    my $args = args(["objective","reactions"], { model => $self->model }, @_);
+    my $args = ModelSEED::utilities::args(["objective","reactions"], { model => $self->model }, @_);
 	my $model = $args->{model};
 	$self->solutionCost($args->{objective});
 	for (my $m=0; $m < @{$args->{reactions}}; $m++) {

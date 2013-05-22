@@ -16,7 +16,7 @@ use Class::Autouse qw(
 );
 use ModelSEED::MS::RoleSet;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************
@@ -154,7 +154,7 @@ Description:
 
 sub buildSubsystemReactionSets {
     my $self = shift;
-    my $args = args([], {}, @_);
+    my $args = ModelSEED::utilities::args([], {}, @_);
 	my $subsystemHash;
 	my $subsystemRoles;
 	#First, placing all roles in subsystems into a hash

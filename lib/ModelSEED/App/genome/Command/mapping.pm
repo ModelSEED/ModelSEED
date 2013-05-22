@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::genome;
 use base 'ModelSEED::App::GenomeBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Prints the name of the mapping linked to the genome" }
 sub usage_desc { return "genome mapping [genome id] [options]" }
 sub options {

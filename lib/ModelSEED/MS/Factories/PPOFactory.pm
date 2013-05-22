@@ -29,7 +29,7 @@ has figmodel => ( is => 'rw', isa => 'ModelSEED::FIGMODEL', required => 1 );
 # FUNCTIONS:
 sub createModel {
     my $self = shift;
-    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
+    my $args = ModelSEED::utilities::args(["id", "annotation"], { verbose => 0 }, @_);
 	# Retrieving model data
     print "Getting model metadata...\n" if($args->{verbose});
     my $id = $args->{id};
@@ -106,7 +106,7 @@ sub createModel {
 
 sub createBiochemistry {
 	my $self = shift;
-	my $args = args([], {
+	my $args = ModelSEED::utilities::args([], {
 		name => $self->namespace()."/primary.biochemistry",
 		database => $self->figmodel()->database(),
 		addAliases => 1,
@@ -401,7 +401,7 @@ sub createBiochemistry {
 
 sub addAliases {
     my $self = shift;
-    my $args = args(["biochemistry"], { database => $self->figmodel()->database() }, @_);
+    my $args = ModelSEED::utilities::args(["biochemistry"], { database => $self->figmodel()->database() }, @_);
 	my $biochemistry = $args->{biochemistry};
 	#Adding compound aliases
 	print "Handling compound aliases!\n" if($args->{verbose});
@@ -436,7 +436,7 @@ sub addAliases {
 
 sub createMapping {
     my $self = shift;
-    my $args = args(["biochemistry"], {
+    my $args = ModelSEED::utilities::args(["biochemistry"], {
 		name => $self->namespace()."/primary.mapping",
 		database => $self->figmodel()->database(),
         verbose => 0,
@@ -834,7 +834,7 @@ sub createMapping {
 
 sub createAnnotation {
     my $self = shift;
-    my $args = args(["genome","mapping"], {}, @_);
+    my $args = ModelSEED::utilities::args(["genome","mapping"], {}, @_);
 	if (!defined($args->{name})) {
 		$args->{name} = $self->namespace()."/".$args->{genome}.".annotation";
 	}

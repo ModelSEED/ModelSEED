@@ -6,15 +6,15 @@ use base 'ModelSEED::App::BioBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Functions on alias sets"; }
 sub usage_desc { return "bio aliasSet [ biochemistry id ] [ options ]";}
 sub options {
     return (
         ["validate", "Run validation logic on alias set"],
         ["list", "List available alias sets"],
-        ["store|s:s", "Identify which store to save the annotation to"],
-        ["mapping|m:s", "Select the preferred mapping object to use when importing the annotation"],
+        ["store|s=s", "Identify which store to save the annotation to"],
+        ["mapping|m=s", "Select the preferred mapping object to use when importing the annotation"],
         ["help|h|?", "Print this usage information"],
     );
 }

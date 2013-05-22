@@ -9,7 +9,6 @@ use Class::Autouse qw(
     ModelSEED::Auth::Factory
     ModelSEED::App::Helpers
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { "Print CytoSEED version of the model" }
 sub usage_desc { return "ms model cytoseed [model] [options]"; }
 sub options {

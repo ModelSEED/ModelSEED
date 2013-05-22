@@ -9,7 +9,7 @@ use strict;
 use ModelSEED::MS::DB::FBAResult;
 package ModelSEED::MS::FBAResult;
 use Moose;
-use ModelSEED::utilities qw( args );
+use ModelSEED::utilities;
 use namespace::autoclean;
 use Data::Dumper;
 extends 'ModelSEED::MS::DB::FBAResult';
@@ -45,7 +45,7 @@ Description:
 
 sub buildFromOptSolution {
     my $self = shift;
-    my $args = args(["LinOptSolution"],{}, @_);
+    my $args = ModelSEED::utilities::args(["LinOptSolution"],{}, @_);
 	my $solvars = $args->{LinOptSolution}->solutionvariables();
 	for (my $i=0; $i < @{$solvars}; $i++) {
 		my $var = $solvars->[$i];

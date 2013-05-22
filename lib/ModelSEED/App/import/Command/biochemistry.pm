@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::import;
 use base 'ModelSEED::App::ImportBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use File::Temp qw(tempfile);
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use LWP::Simple;
@@ -64,7 +64,7 @@ sub sub_execute {
             my ($fh2, $uncompressed_filename) = tempfile();
             close($fh1);
             close($fh2);
-            verbose("Fetching biochemistry from web...");
+            ModelSEED::utilities::verbose("Fetching biochemistry from web...");
             my $status = getstore($url, $compressed_filename);
             # This should probably be >= 200 <= 400? does getstore handle redirects?
             die "Unable to fetch from model_seed\n" unless($status == 200);
@@ -80,10 +80,10 @@ sub sub_execute {
             }
             $data = JSON::XS->new->utf8->decode($string);
         }
-        verbose("Validating fetched biochemistry...");
+        ModelSEED::utilities::verbose("Validating fetched biochemistry...");
         $bio = ModelSEED::MS::Biochemistry->new($data);
     }
-    verbose("Saved biochemistry to $alias!");
+    ModelSEED::utilities::verbose("Saved biochemistry to $alias!");
     $self->save_object({
     	object => $bio,
     	type => "Biochemistry",

@@ -46,7 +46,7 @@ Client or server class for accessing a KBase workspace
 
 package ModelSEED::KBaseStore;
 use Moose;
-use ModelSEED::utilities qw ( args verbose error );
+use ModelSEED::utilities;
 
 use Class::Autouse qw(
     Bio::KBase::workspaceService::Client
@@ -140,7 +140,7 @@ sub get_object {
 	#Checking if object successfully retreived
 	if (!defined($output) || !defined($output->{data}) || !defined($output->{metadata})) {
 		my $msg = "Unable to retrieve object:".$type."/".$ref;
-		error($msg);
+		ModelSEED::utilities::error($msg);
 	}
     #Instantiating object
     my $object = $output->{data};

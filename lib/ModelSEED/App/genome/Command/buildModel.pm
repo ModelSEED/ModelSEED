@@ -3,7 +3,7 @@ use strict;
 use common::sense;
 use ModelSEED::App::genome;
 use base 'ModelSEED::App::GenomeBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Class::Autouse qw(
     ModelSEED::MS::Annotation
     ModelSEED::MS::Mapping

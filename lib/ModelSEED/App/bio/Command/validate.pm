@@ -7,7 +7,7 @@ use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
     ModelSEED::MS::Model
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Validates the biochemistry data searching for inconsistencies" }
 sub usage_desc { return "bio validate [ biochemistry id ] [options]"; }
 sub opt_spec {

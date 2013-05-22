@@ -8,7 +8,7 @@
 package ModelSEED::MS::Configuration;
 use strict;
 use ModelSEED::MS::DB::Configuration;
-use ModelSEED::utilities qw( error PRINTFILE config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use Try::Tiny;
 use Moose;
 use ModelSEED::MS::User;
@@ -27,7 +27,7 @@ sub _buildcurrentUser {
 	my ($self) = @_;
 	my $user = $self->queryObject("users",{login => $self->username()});
 	if (!defined($user)) {
-		error("Currently logged user ".$self->username()." does not exist!");
+		ModelSEED::utilities::error("Currently logged user ".$self->username()." does not exist!");
 	}
 	$user->check_password($self->password());
 	return $user;
@@ -91,7 +91,7 @@ sub add_store {
     }, @_);
 	my $store = $self->queryObject("stores",{name => $args->{name}});
 	if (defined($store)) {
-		error("A store with name ".$args->{name}." already exists!");
+		ModelSEED::utilities::error("A store with name ".$args->{name}." already exists!");
 	}
 	$self->validate_store_type($args->{type});
 	$store = $self->add("stores",$args);
@@ -123,10 +123,10 @@ sub remove_store {
     }, @_);
 	my $store = $self->queryObject("stores",{name => $args->{name}});
 	if (!defined($store)) {
-		error("A store with name ".$args->{name}." does not exist!");
+		ModelSEED::utilities::error("A store with name ".$args->{name}." does not exist!");
 	}
 	if ($args->{delete} == 1) {
-		error("Cannot delete stores yet!");
+		ModelSEED::utilities::error("Cannot delete stores yet!");
 	}
 	$self->currentUser()->remove_user_store({
 		store => $store,
@@ -148,7 +148,7 @@ sub select_store {
     my $name = shift;
 	my $store = $self->queryObject("stores",{name => $name});
 	if (!defined($store)) {
-		error("A store with name ".$name." does not exist!");
+		ModelSEED::utilities::error("A store with name ".$name." does not exist!");
 	}
 	$self->currentUser()->primaryStoreName($name);
 }
@@ -171,7 +171,7 @@ sub validate_store_type {
 		mongodb => 1
 	};
 	if (!defined($types->{$type})) {
-		error($type." is not a valid type of store!");
+		ModelSEED::utilities::error($type." is not a valid type of store!");
 	}
 }
 
@@ -186,8 +186,7 @@ Description:
 
 sub logout {
     my $self = shift;
-    $self->login("Public");
-    $self->password("");
+    $self->login({username=>"Public",password=>""});
 }
 
 =head3 login
@@ -230,8 +229,8 @@ Description:
 =cut
 
 sub import_seed_account {
-    my ($self) = @_;
-	my $args = args(["username","password"], {}, @_);
+    my $self=shift;
+    my $args = ModelSEED::utilities::args(["username","password"], {}, @_);
     my $svr = ModelSEED::Client::MSAccountManagement->new();
     my $output;
     try {
@@ -240,7 +239,7 @@ sub import_seed_account {
         die "Error in communicating with SEED authorization service.";
     };
     if (defined($output->{error})) {
-        error($output->{error});
+        ModelSEED::utilities::error($output->{error});
     }
     my $user = ModelSEED::MS::User->new({
         login => $output->{username},

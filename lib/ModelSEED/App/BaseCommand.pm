@@ -1,7 +1,7 @@
 package ModelSEED::App::BaseCommand;
 use strict;
 use common::sense;
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 use base 'App::Cmd::Command';
 use Class::Autouse qw(
     ModelSEED::App::Helpers
@@ -58,7 +58,7 @@ sub get_data {
 sub save_object {
 	my ($self, $args) = @_;
 	if (defined($self->opts()->{dryrun}) && $self->opts()->{dryrun} == 1) {
-		verbose("Dry run selected. Results not saved!");
+		ModelSEED::utilities::verbose("Dry run selected. Results not saved!");
 		return;
 	}
 	my $input = $self->store()->parseReference($args->{reference},$args->{type});
@@ -68,12 +68,12 @@ sub save_object {
 
 sub move {
 	my ($self, $args) = @_;
-	my $args = args(["object","newid"],{
-        newstore => config()->currentUser()->primaryStore(),
+	my $args = ModelsEED::utilities::args(["object","newid"],{
+        newstore => ModelSEED::utilities::config()->currentUser()->primaryStore(),
         newworkspace => undef,
         cache => {}
     }, @_);
-    my $store = config()->currentUser()->findStore($args->{newstore});
+    my $store = ModelSEED::utilities::config()->currentUser()->findStore($args->{newstore});
     if (defined($store)) {
     	$args->{cache}->{$args->{object}->uuid()} = 1;
     	my $dependencies = $args->{object}->dependencies();
@@ -97,7 +97,7 @@ sub move {
 sub save_data {
 	my ($self, $args) = @_;
 	if (defined($self->opts()->{dryrun}) && $self->opts()->{dryrun} == 1) {
-		verbose("Dry run selected. Results not saved!");
+		ModelSEED::utilities::verbose("Dry run selected. Results not saved!");
 		return;
 	}
 	my $input = $self->store()->parseReference($args->{reference},$args->{type});
@@ -112,7 +112,7 @@ sub opts {
 
 sub object_from_file {
     my ($self, $args) = @_;
-    $args = args(["type","filename"], {
+    $args = ModelSEED::utilities::args(["type","filename"], {
 		store => undef
     }, $args);
     return $self->store()->object_from_file({
@@ -124,9 +124,9 @@ sub object_from_file {
 sub store {
     my ($self) = @_;
     if (!defined($self->opts()->{store})) {
-    	return config()->currentUser()->primaryStore();
+    	return ModelSEED::utilities::config()->currentUser()->primaryStore();
     }
-    return config()->currentUser()->findStore($self->opts()->{store});
+    return ModelSEED::utilities::config()->currentUser()->findStore($self->opts()->{store});
 }
 
 sub kbfbaclient {

@@ -5,8 +5,6 @@ use Try::Tiny;
 use List::Util;
 use JSON::XS;
 use IO::Compress::Gzip qw(gzip);
-use ModelSEED::utilities qw( config args verbose set_verbose translateArrayOptions);
-
 use base 'ModelSEED::App::MSEEDBaseCommand';
 
 sub abstract { return "Get an object from workspace or datastore."; }
@@ -27,12 +25,12 @@ sub options {
 
 sub sub_execute {
     my ($self, $opts, $args) = @_;
-	my $refs = $args;
-	if (!defined($refs->[0])) {
-        $self->usage_error("Must provide reference");
-    }
+    my $refs = $args;
+    $self->usage_error("Must specify reference") unless(defined($args->[0]));
+
+    my $refs = $args;
     my $data = $self->get_data({"reference" => $refs->[0]});
-	my $JSON = JSON::XS->new->utf8(1);
+    my $JSON = JSON::XS->new->utf8(1);
     $JSON->pretty(1) if($opts->{pretty});
     if($opts->{zip}) {
     	my $string = $JSON->encode($data);

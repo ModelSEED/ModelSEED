@@ -3,7 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::model;
 use base 'ModelSEED::App::ModelBaseCommand';
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
 sub abstract { return "Returns the associated annotation object" }
 sub usage_desc { return "model genome [model]" }
 sub options {

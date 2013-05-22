@@ -6,7 +6,7 @@ use base 'ModelSEED::App::ModelBaseCommand';
 use Class::Autouse qw(
     ModelSEED::MS::Factories::ExchangeFormatFactory
 );
-use ModelSEED::utilities qw( config error args verbose set_verbose translateArrayOptions);
+use ModelSEED::utilities;
 sub abstract { return "Simulate table of growth phenotypes" }
 sub usage_desc { return "model simphenotypes [model id] [filename] [options]" }
 sub options {
@@ -84,7 +84,7 @@ sub sub_execute {
 	my $exchange_factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
 	my $fbaform = $exchange_factory->buildFBAFormulation($input);
     #Running FBA
-    verbose("Running FBA...");
+    ModelSEED::utilities::verbose("Running FBA...");
     my $fbaResult = $fbaform->runFBA();
     #Standard commands that save results of the analysis to the database
     if (!defined($fbaResult) || @{$fbaResult->fbaPhenotypeSimultationResults()} == 0) {

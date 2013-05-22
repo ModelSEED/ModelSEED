@@ -44,7 +44,7 @@ ID of the model being imported, used to reference aliases for model compounds an
 =cut
 
 package ModelSEED::MS::Factories::SBMLFactory;
-use ModelSEED::utilities qw( args verbose set_verbose );
+use ModelSEED::utilities;
 use XML::DOM;
 use XML::Parser;
 use Class::Autouse qw(
@@ -61,7 +61,7 @@ use namespace::autoclean;
 
 sub parseSBML {
     my $self = shift;
-    my $args = args(["filename"],{
+    my $args = ModelSEED::utilities::args(["filename"],{
     	modelid => undef,
     }, @_);
 	#Opening and parsing file
@@ -137,7 +137,7 @@ sub parseSBML {
 
 sub openParseSBMLFile {
 	my $self = shift;
-	my $args = args(["filename"],{
+	my $args = ModelSEED::utilities::args(["filename"],{
     	namespace => undef,
        	annotation => undef
     }, @_);
@@ -150,7 +150,7 @@ sub openParseSBMLFile {
 
 sub parseModelName {
 	my $self = shift;
-	my $args = args(["document"],{}, @_);
+	my $args = ModelSEED::utilities::args(["document"],{}, @_);
 	my $doc = $args->{document};
     my $mdls = [$doc->getElementsByTagName("model")];
     my $data = {
@@ -178,7 +178,7 @@ sub parseModelName {
 
 sub parseCompartments {
     my $self = shift;
-	my $args = args(["document","biochemistry"],{"model" => undef}, @_);
+	my $args = ModelSEED::utilities::args(["document","biochemistry"],{"model" => undef}, @_);
     my $trans = $self->compartmentTranslation();
     my $doc = $args->{document};
     my $bio = $args->{biochemistry};
@@ -228,7 +228,7 @@ sub parseCompartments {
     
 sub parseCompounds {
     my $self = shift;
-	my $args = args(["document","biochemistry","biocmphash","mdlcmphash"],{
+	my $args = ModelSEED::utilities::args(["document","biochemistry","biocmphash","mdlcmphash"],{
 		"model" => undef
 	}, @_);
 	my $trans = $self->compartmentTranslation();
@@ -319,7 +319,7 @@ sub parseCompounds {
 
 sub parseReactions {
 	my $self = shift;
-	my $args = args(["document","biochemistry","biocmphash","mdlcmphash","biocpdhash","biocpdcmphash","mdlcpdhash"],{
+	my $args = ModelSEED::utilities::args(["document","biochemistry","biocmphash","mdlcmphash","biocpdhash","biocpdcmphash","mdlcpdhash"],{
 		"model" => undef,
 		"annotation" => undef,
 	}, @_);

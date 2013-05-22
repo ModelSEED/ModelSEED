@@ -24,7 +24,7 @@ sub sub_execute {
     unless (defined($value)) {
         $self->usage_error("Must provide value to set");
     }
-	my $config = config();
+	my $config = ModelSEED::utilities::config();
 	$config->$var($value);
 	if (!defined($opts->{dryrun})) {
 		$config->save_to_file();
