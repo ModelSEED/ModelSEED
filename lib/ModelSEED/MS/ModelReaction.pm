@@ -305,7 +305,7 @@ Description:
 
 sub setGPRFromArray {
 	my $self = shift;
-    my $args = args(["gpr"],{}, @_);
+    my $args = ModelSEED::utilities::args(["gpr"],{}, @_);
 	my $anno = $self->parent()->annotation();
 	$self->modelReactionProteins([]);
 	for (my $i=0; $i < @{$args->{gpr}}; $i++) {
@@ -324,9 +324,10 @@ sub setGPRFromArray {
 			    	});
 		    		for (my $k=0; $k < @{$args->{gpr}->[$i]->[$j]}; $k++) {
 		    			if (defined($args->{gpr}->[$i]->[$j]->[$k])) {
-		    				my $ftr = $anno->queryObjects("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
+		    				my $ftr = $anno->queryObject("features",{id => $args->{gpr}->[$i]->[$j]->[$k]});
 		    				if (!defined($ftr)) {
-		    					error("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!");
+		    					print STDERR ("Could not find feature '".$args->{gpr}->[$i]->[$j]->[$k]."' in model annotation!\n");
+							next;
 							}
 		    				$subunit->add("modelReactionProteinSubunitGenes",{
 					    		feature_uuid => $ftr->uuid()

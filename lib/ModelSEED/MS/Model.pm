@@ -682,6 +682,7 @@ sub addReactionToModel {
 	my $args = args(["reaction"],{
 		direction => undef,
 		protons => undef,
+		gpr => undef,
 		overrideCompartment => undef
 	}, @_);
 	my $rxn = $args->{reaction};
@@ -717,6 +718,8 @@ sub addReactionToModel {
 				modelcompound_uuid => $mdlcpd->uuid()
 			});
 		}
+		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
+
 	}
 	return $mdlrxn;
 }
@@ -2477,8 +2480,13 @@ sub __upgrade__ {
 			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {#TODO KBaseStore
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
-				$parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
-                $hash->{parent} = $parent;
+				if (defined $hash->{uuid}) {
+				    $parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
+				} else {
+				    my $auth = $parent->auth;
+				    $parent->save_data("model/".$auth->username."/".$hash->{id},$hash,{schema_update => 1});
+				}
+				    $hash->{parent} = $parent;
 			}
 			return $hash;
 		};

@@ -69,7 +69,7 @@ sub listAvailableModels {
 
 sub createModel {
     my $self = shift;
-    my $args = args(["id", "annotation"], { verbose => 0 }, @_);
+    my $args = ModelSEED::utilities::args(["id", "annotation"], { verbose => 0 }, @_);
     # Get basic model data
     my $data;
     my $config = \%{$self->auth_config};
@@ -115,21 +115,21 @@ sub createModel {
         my $id = $rxn->{DATABASE}->[0];
         if ( $id =~ m/bio\d+/ ) {
             # Add as a biomass equation
-			my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
-				name => sprintf("bio%05d", $biomassIndex),
-			}));
+	    my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
+		name => sprintf("bio%05d", $biomassIndex),
+									      }));
             $bioobj->loadFromEquation({
                 equation => $rxn->{EQUATION}->[0],
                 aliasType => "ModelSEED"
-            });
-			$biomassIndex++;
-		} else {
-			my $rxn = $biochemistry->getObjectByAlias(
+				      });
+	    $biomassIndex++;
+	} else {
+	    my $rxnObj = $biochemistry->getObjectByAlias(
                 "reactions", 
                 $id,
                 "ModelSEED"
-            );
-            my $direction = $rxn->{DIRECTION}->[0];
+		);
+	    my $direction = $rxn->{DIRECTION}->[0];
             if($direction eq "=>") {
                 $direction = ">";
             } elsif ($direction eq "<=") {
@@ -137,17 +137,17 @@ sub createModel {
             } else {
                 $direction = "=";
             }
-            if(!defined($rxn)) {
+            if(!defined($rxnObj)) {
                 warn "Could not find rxn_instance for $id!\n";
                 next;
             }
-			$model->addReactionToModel({
-				reaction => $rxn,
-				direction => $direction,
-				gpr => $rxn->{PEGS}
-			});
-		}
+	    my @pegs = map { /^peg/ ? "fig|".substr($model_data->{id},4).".".$_ : $_} (split '\+', $rxn->{PEGS}->[0]);
+	    $model->addReactionToModel({
+		reaction => $rxnObj,
+		direction => $direction,
+		gpr => \@pegs});
 	}
+    }
     return $model;
 }
 
