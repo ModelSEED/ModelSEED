@@ -59,20 +59,27 @@ sub addRxnToModel {
 						$subunits->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
 					}
 				}
-			} elsif ($cpxrole->optional() == 0) {
-				$subunits->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
-				$subunits->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-				$subunits->{$cpxrole->role_uuid()}->{note} = "Complex-based-gapfilling";
 			}
 		}
-		if (defined($present == 1)) {
+		if ($present == 1) {
+			for (my $j=0; $j < @{$complexroles}; $j++) {
+				my $cpxrole = $complexroles->[$j];
+				if ($cpxrole->optional() == 0 && !defined($subunits->{$cpxrole->role_uuid()})) {
+					$subunits->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
+					$subunits->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
+					$subunits->{$cpxrole->role_uuid()}->{note} = "Complex-based-gapfilling";
+				}
+			}
 			push(@{$proteins},{subunits => $subunits,cpx => $cpx});
 		}
 	}
 	#Adding reaction
 	if (@{$proteins} == 0 && $self->type() ne "universal" && $self->type() ne "spontaneous") {
+		print "Returning!"."\n";
 		return;
 	}
+	print "Protein count:".@{$proteins}."\n";
+	print $self->type()."\n";
 	my $mdlcmp = $mdl->addCompartmentToModel({compartment => $self->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	my $mdlrxn = $mdl->add("modelreactions",{
 		reaction_uuid => $self->reaction_uuid(),
