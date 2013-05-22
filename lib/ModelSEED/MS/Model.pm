@@ -1593,7 +1593,7 @@ sub printCytoSEED {
 		my @notes = keys %notes;
 		# $modelid is a global variable
 		$rdref->{$modelid} = { "SUBSYSTEM" => [],
-				       "ASSOCIATED PEG" => \@pegs,
+				       "ASSOCIATED PEG" => @pegs == 0 ? \@notes : \@pegs, # notes contain GAP FILLING
 				       "NOTES" => \@notes };
 	    }
 	    
