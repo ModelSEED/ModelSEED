@@ -75,11 +75,8 @@ sub addRxnToModel {
 	}
 	#Adding reaction
 	if (@{$proteins} == 0 && $self->type() ne "universal" && $self->type() ne "spontaneous") {
-		print "Returning!"."\n";
 		return;
 	}
-	print "Protein count:".@{$proteins}."\n";
-	print $self->type()."\n";
 	my $mdlcmp = $mdl->addCompartmentToModel({compartment => $self->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
 	my $mdlrxn = $mdl->add("modelreactions",{
 		reaction_uuid => $self->reaction_uuid(),
