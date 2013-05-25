@@ -53,6 +53,16 @@ use Class::Autouse qw(
     Bio::KBase::workspaceService::Impl
     ModelSEED::MS::Biochemistry
     ModelSEED::MS::Annotation
+    ModelSEED::MS::Media
+    ModelSEED::MS::ModelTemplate
+    ModelSEED::MS::PROMModel
+    ModelSEED::MS::RegulatoryModel
+    ModelSEED::MS::Mapping
+    ModelSEED::MS::Classifier
+    ModelSEED::MS::BiochemistryStructures
+    ModelSEED::MS::GapfillingFormulation
+    ModelSEED::MS::FBAFormulation
+    ModelSEED::MS::GapgenFormulation
 );
 use Module::Load;
 
