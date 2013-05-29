@@ -252,6 +252,7 @@ sub get_object {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
+	$args->{type}=lc($args->{type});
     	my $msstore = $self->msstore();
     	my $ref;
     	my $id;
@@ -305,6 +306,7 @@ sub get_data {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
+	$args->{type}=lc($args->{type});
     	my $msstore = $self->msstore();
     	my $refstr = $args->{type}."/".$self->login()."/".$args->{id};
     	my $ref = ModelSEED::Reference->new(ref => $refstr);  	
@@ -370,10 +372,11 @@ sub save_data {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
+	$args->{type}=lc($args->{type});
     	my $msstore = $self->msstore();
     	my $refstr = $args->{type}."/".$self->login()."/".$args->{id};
     	my $ref = ModelSEED::Reference->new(ref => $refstr);  	
-      	$store->save_data($ref,$args->{data});
+      	$msstore->save_data($ref,$args->{data});
     } else {
     	my $wsstore = $self->wsstore();
     	my $ws = $self->wsworkspace();
