@@ -152,9 +152,14 @@ around BUILDARGS => sub {
     }
     # use configuration if that's what we want
     if(defined($args->{use_config}) && $args->{use_config}) {
-        my $Config = ModelSEED::Configuration->new();
-        ModelSEED::Exception::NoDatabase->throw() unless defined $Config->config->{stores};
-        $args->{databases} = [ @{$Config->config->{stores}} ];
+        my $primstore = ModelSEED::utilities::config()->currentUser()->primaryStore();
+        if ($primstore->associatedStore()->type() eq "filedb") {
+        	$args->{databases} = [{
+        		class => "ModelSEED::Database::FileDB",
+        		directory => $primstore->associatedStore()->url(),
+        		filename => $primstore->associatedStore()->database()
+        	}];
+        }
     }
     ModelSEED::Exception::NoDatabase->throw() unless @{$args->{databases}};
     foreach my $db (@{$args->{databases}}) {

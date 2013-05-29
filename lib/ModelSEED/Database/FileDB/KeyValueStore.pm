@@ -53,7 +53,6 @@ sub BUILD {
     unless (-d $dir) {
 	make_path($dir);
     }
-
     my $file = $self->_get_file();
 
     my $ind = -f "$file.$INDEX_EXT";
