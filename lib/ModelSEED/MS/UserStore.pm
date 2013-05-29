@@ -11,6 +11,7 @@ package ModelSEED::MS::UserStore;
 use Moose;
 use namespace::autoclean;
 use ModelSEED::Auth::Basic;
+use ModelSEED::Store;
 use ModelSEED::KBaseStore;
 extends 'ModelSEED::MS::DB::UserStore';
 #***********************************************************************************************************
