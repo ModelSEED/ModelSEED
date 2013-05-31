@@ -2570,10 +2570,10 @@ $objectDefinitions->{Stimuli} = {
 			req        => 1,
 		},
 		{
-			name       => 'compound_uuid',
+			name       => 'compound_uuids',
 			printOrder => -1,
 			perm       => 'rw',
-			type       => 'ModelSEED::uuid',
+			type       => 'ArrayRef',
 			req        => 0,
 		},
 	],
@@ -2581,11 +2581,12 @@ $objectDefinitions->{Stimuli} = {
 	primarykeys        => [qw(uuid)],
 	links              => [
 		{
-			name      => "compound",
-			attribute => "compound_uuid",
+			name      => "compounds",
+			attribute => "compound_uuids",
 			parent    => "Biochemistry",
 			method    => "compounds",
-			weak      => 0
+			weak      => 0,
+			array	  => 1
 		}
 	],
 	reference_id_types => [qw(uuid)],

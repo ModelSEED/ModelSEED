@@ -255,12 +255,13 @@ sub get_object {
     	my $msstore = $self->msstore();
     	my $ref;
     	my $id;
+    	my $type = lc(substr($args->{type},0,1)).substr($args->{type},1);
     	if ($args->{id} =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
-    		$ref = ModelSEED::Reference->new("ref" => $args->{type}."/".$args->{id});
+    		$ref = ModelSEED::Reference->new("ref" => $type."/".$args->{id});
     		$id = $args->{type}."/".$self->login()."/".$msstore->get_aliases($ref)->[0];
     	} else {
     		$id = $args->{type}."/".$self->login()."/".$args->{id};
-	    	$ref = ModelSEED::Reference->new("ref" => $args->{type}."/".$self->login()."/".$args->{id});
+	    	$ref = ModelSEED::Reference->new("ref" => $type."/".$self->login()."/".$args->{id});
     	}
 	    if(defined($ref)) {
 	    	my $obj = $msstore->get_object($ref);

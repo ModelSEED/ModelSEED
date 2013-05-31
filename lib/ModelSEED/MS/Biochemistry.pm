@@ -818,6 +818,35 @@ sub addReactionFromHash {
 	return $rxn;
 }
 
+=head3 searchForStimuli
+
+Definition:
+	ModelSEED::MS::Stimuli = ModelSEED::MS::Biochemistry->searchForStimuli(string id);
+Description:
+	Searches for the input Stimuli in the biochemistry
+
+=cut
+
+sub searchForStimuli {
+    my ($self,$id) = @_;
+	#First search by exact alias match
+	my $obj = $self->getObjectByAlias("stimuli",$id);
+	#Next, search by name
+	if (!defined($obj)) {
+		$obj = $self->queryObject("stimuli",{abbreviation => $id});
+	}
+	if (!defined($obj)) {
+		$obj = $self->queryObject("stimuli",{name => $id});
+	}
+	if (!defined($obj)) {
+		my $cpd = $self->searchForCompound($id);
+		if (defined($cpd)) {
+			$obj = $self->queryObject("stimuli",{compound_uuid => $cpd->uuid()});
+		}
+	}
+	return $obj;
+}
+
 =head3 searchForCompound
 Definition:
 	ModelSEED::MS::Compound = ModelSEED::MS::Biochemistry->searchForCompound(string);

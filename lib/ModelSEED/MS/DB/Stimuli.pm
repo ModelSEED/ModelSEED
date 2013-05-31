@@ -20,7 +20,7 @@ has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1,
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'ModelSEED::stimulitype', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
-has compound_uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
+has compound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -28,14 +28,14 @@ has ancestor_uuid => (is => 'rw', isa => 'uuid', type => 'ancestor', metaclass =
 
 
 # LINKS:
-has compound => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_compound', clearer => 'clear_compound', isa => 'ModelSEED::MS::Compound');
+has compounds => (is => 'rw', type => 'link(Biochemistry,compounds,compound_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_compounds', clearer => 'clear_compounds', isa => 'ArrayRef');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
-sub _build_compound {
+sub _build_compounds {
   my ($self) = @_;
-  return $self->getLinkedObject('Biochemistry','compounds',$self->compound_uuid());
+  return $self->getLinkedObjectArray('Biochemistry','compounds',$self->compound_uuids());
 }
 
 
@@ -74,13 +74,13 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
-            'name' => 'compound_uuid',
-            'type' => 'ModelSEED::uuid',
+            'name' => 'compound_uuids',
+            'type' => 'ArrayRef',
             'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, name => 1, abbreviation => 2, type => 3, compound_uuid => 4};
+my $attribute_map = {uuid => 0, name => 1, abbreviation => 2, type => 3, compound_uuids => 4};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -97,17 +97,18 @@ sub _attributes {
 
 my $links = [
           {
-            'attribute' => 'compound_uuid',
             'weak' => 0,
             'parent' => 'Biochemistry',
-            'clearer' => 'clear_compound',
-            'name' => 'compound',
-            'class' => 'compounds',
-            'method' => 'compounds'
+            'name' => 'compounds',
+            'attribute' => 'compound_uuids',
+            'array' => 1,
+            'clearer' => 'clear_compounds',
+            'method' => 'compounds',
+            'class' => 'compounds'
           }
         ];
 
-my $link_map = {compound => 0};
+my $link_map = {compounds => 0};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

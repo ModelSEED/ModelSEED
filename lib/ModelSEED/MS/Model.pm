@@ -1243,6 +1243,45 @@ sub printExchange {
 	return $output;
 }
 
+=head3 printModelSEED
+
+Definition:
+	string:Exchange format = ModelSEED::MS::Model->printModelSEED();
+Description:
+	Returns a string with the model in ModelSEED format
+
+=cut
+
+sub printModelSEED {
+    my $self = shift;
+	my $output = "REACTIONS\n";
+	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
+	my $reactions = $self->modelreactions();
+	foreach my $rxn (@{$reactions}) {
+		my $dir = $rxn->direction();
+		if ($dir eq ">") {
+			$dir = "=>";
+		} elsif ($dir eq "<") {
+			$dir = "<=";
+		} elsif ($dir eq "=") {
+			$dir = "<=>";
+		}
+		my $gpr = $rxn->gprString();
+		$gpr =~ s/fig\|\d+\.\d+\.//g;
+		$output .= $rxn->reaction()->id().";".$dir.";c;".$gpr.";none;1;none;none\n";
+	}
+	my $biomasses = $self->biomasses();
+	$output .= "NAME\t".$biomasses->[0]->id()."\n";
+	$output .= "DATABASE\t".$biomasses->[0]->name()."\n";
+	my $equation = $biomasses->[0]->modelequation();
+	$equation =~ s/_c0//g;
+	$equation =~ s/\+/ + /g;
+	$equation =~ s/=>/ => /g;
+	$equation =~ s/\)/) /g;
+	$output .= "EQUATION\t".$equation."\n";
+	return $output;
+}
+
 sub htmlComponents {
 	my $self = shift;
 	my $args = ModelSEED::utilities::args([],{}, @_);
@@ -1484,6 +1523,8 @@ sub export {
 		return $self->toJSON({pp => 1});
 	} elsif (lc($args->{format}) eq "cytoseed") {
 		return $self->printCytoSEED();
+	} elsif (lc($args->{format}) eq "modelseed") {
+		return $self->printModelSEED();
 	}
 	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }

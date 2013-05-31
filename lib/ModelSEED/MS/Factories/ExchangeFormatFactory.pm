@@ -34,6 +34,107 @@ use Class::Autouse qw(
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 buildRegulatoryModel
+
+Definition:
+	ModelSEED::MS::RegulatoryModel = buildRegulatoryModel({
+		filename => string,
+		type => string,
+		name => string
+	});
+Description:
+	Parses the bayesian classifier file into a classifier object
+
+=cut
+
+sub buildRegulatoryModel {
+    my $self = shift;
+	my $args = ModelSEED::utilities::args(["genes","mapping","annotation"],{
+		name => undef,
+		type => "ManualModel"
+	}, @_);
+	if (!defined($args->{name})) {
+		$args->{name} = $args->{annotation}->name();
+	}
+	my $mapping = $args->{mapping};
+	my $anno = $args->{annotation};
+	my $regmdl = ModelSEED::MS::RegulatoryModel->new({
+		defaultNameSpace => "SEED",
+		name => $args->{name},
+		type => $args->{type},
+		mapping_uuid => $args->{mapping}->uuid(),
+		annotation_uuid => $args->{annotation}->uuid(),
+	});
+	my $regulons;
+	my $missing = {};
+	for (my $i=0; $i < @{$args->{genes}}; $i++) {
+		my $gene = $args->{genes}->[$i];
+		my $geneobj = $annotation->searchForFeature($gene->[1]);
+		if (!defined($geneobj)) {
+			push(@{$missing->{genes}},$gene->[1]);
+			next;
+		}
+		$regulons->{$gene->[0]}->{genes}->{$geneobj->uuid()} = 1;
+		my $stimobj = $mapping->searchForStimuli($gene->[2]);
+		if (!defined($stimobj)) {
+			push(@{$missing->{stimuli}},$gene->[2]);
+			next;
+		}
+		if (defined($regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()})) {
+			if ($regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()} ne $gene->[3]) {
+				ModelSEED::utilities::USEWARNING("Conflicting sign for stimuli ".$gene->[2]." in regulon ".$gene->[0]);
+			}
+		} else {
+			if ($gene->[3] == -1) {
+				$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{isInhibitor} = 1;
+			} else {
+				$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{isInhibitor} = 0;
+			}
+		}
+		if (defined($gene->[5])) {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{strength} = $gene->[5];
+		} else {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{strength} = 1;
+		}
+		if (defined($gene->[6])) {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{MinConcentration} = $gene->[6];
+		} else {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{MinConcentration} = 0.0000001;
+		}
+		if (defined($gene->[7])) {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{MaxConcentration} = $gene->[7];
+		} else {
+			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{MaxConcentration} = 1;
+		}
+		my $geneobj = $annotation->searchForFeature($gene->[4]);
+		if (!defined($geneobj)) {
+			push(@{$missing->{regulators}},$gene->[1]);
+			next;
+		}
+		$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{regulators}->{$geneobj->uuid()} = 1;
+	}
+	foreach my $reg (keys(%{$regulons})) {
+		my $regulator = $regulons->{$reg};
+		my $regobj = $regmdl->add("regulatoryModelRegulons",{
+			name => $reg,
+			abbreviation => $reg,
+			feature_uuids => [keys(%{$regulons->{$reg}->{genes}})],
+		});
+		foreach my $stim (keys(%{$regulons->{$reg}->{stimuli}})) {
+			my $stimuli = $regulons->{$reg}->{stimuli}->{$stim};
+			$regobj->add("regulonStimuli",{
+				stimuli_uuid => $stim,
+				isInhibitor => $stimuli->{isInhibitor},
+				strength => $stimuli->{isInhibitor},
+				minConcentration => $stimuli->{MinConcentration},
+				maxConcentration => $stimuli->{MaxConcentration},
+				regulator_uuids => [keys(%{$stimuli->{regulators}})]
+			});
+		}
+	}
+	return ($regmdl,$missing);
+}
+
 =head3 buildClassifier
 
 Definition:

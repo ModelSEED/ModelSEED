@@ -108,6 +108,29 @@ sub _buildroleHash {
 # FUNCTIONS:
 #***********************************************************************************************************
 
+=head3 searchForFeature
+
+Definition:
+	ModelSEED::MS::Feature = ModelSEED::MS::Annotation->searchForFeature(string id);
+Description:
+	Searches for the input Feature in the annotation
+
+=cut
+
+sub searchForFeature {
+    my ($self,$feature) = @_;
+	#First search by exact alias match
+	my $obj = $self->getObjectByAlias("features",$feature);
+	#Next, search by name
+	if (!defined($obj)) {
+		$obj = $self->queryObject("features",{id => $feature});
+	}
+	if (!defined($obj)) {
+		$obj = $self->queryObject("features",{name => $feature});
+	}
+	return $obj;
+}
+
 =head3 export
 
 Definition:
