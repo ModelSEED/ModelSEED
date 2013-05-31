@@ -22,6 +22,14 @@ sub sub_execute {
 	unless (defined($name)) {
         $self->usage_error("Must provide name for the store.");
     } 
+
+    #set defaults for filedb
+    if($opts->{type} eq "filedb"){
+	$opts = ModelSEED::utilities::args([],{
+	    url => $ENV{HOME}."/.modelseed_filedb",
+	    database => "local"}, %{$opts});
+    }
+
 	my $config = ModelSEED::utilities::config();
 	$opts = ModelSEED::utilities::args([],{
 		type => "workspace",
@@ -32,6 +40,8 @@ sub sub_execute {
 		password => $config->password(),
 		accounttype => "seed"
 	},%{$opts});
+
+
 	$config->add_store($opts);
 	if (!defined($opts->{dryrun})) {
 		$config->save_to_file();
