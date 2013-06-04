@@ -2054,7 +2054,7 @@ sub buildGraph {
 }
 
 sub mark_cofactors {
-    my $self = shift @_;
+    my $mrxns = shift @_;
 	#Set cofactor.
     # list of cofactors that don't always come in pairs; some of these have biosynthetic pathways
     # and should NOT be marked as a cofactor in the very last reaction(s) that synthesize
@@ -2084,7 +2084,6 @@ sub mark_cofactors {
 	["cpd00014" => {"rxn00119" => 1, "rxn00712" => 1, "rxn06075" => 1, "rxn00117" => 1, "rxn00368" => 1}], # UDP 
 	];
 
-	my $mrxns = $self->modelreactions();
     # prioritized list, e.g., ATP/ADP come before Pyruvate/PEP
     my $pairlist = [
         ["cpd00002","cpd00008"],
@@ -2195,7 +2194,7 @@ sub computeNetworkDistances {
 		}
 	}
 
-    $self->mark_cofactors;
+    mark_cofactors($self->modelreactions());
 
 # cofactor set.
 	print STDERR "Building graph!\n";
