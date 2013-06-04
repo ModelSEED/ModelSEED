@@ -35,7 +35,7 @@ sub execute {
     my $out_fh = \*STDOUT;
     #Performing computation
 	print STDERR "Computing network distances...\n" if($opts->{verbose});
-	my $tbl = $model->computeNetworkDistances({
+	my ($tbl, $noncopairs) = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
 		roles=> $opts->{roles},
 		genes=> $opts->{genes},
