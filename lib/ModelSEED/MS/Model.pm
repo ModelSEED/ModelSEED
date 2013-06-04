@@ -2053,31 +2053,8 @@ sub buildGraph {
 	return $graph;
 }
 
-=head3 computeNetworkDistances
-
-Definition:
-	Table = ModelSEED::MS::Model->computeNetworkDistances();
-Description:
-	This command computes distances between all metabolites, reactions, and functional roles
-
-=cut
-
-sub computeNetworkDistances {
-    my $self = shift;
-	my $args = args([], { reactions => 0, roles => 0, genes => 0 }, @_);
-	my $input = {};
-	my $tbl = {headings => ["Compounds"],data => []};
-	$tbl->{detail} = [] if $args->{detail};
-	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
-		$input->{reactions} = 1;
-		$tbl = {headings => ["Reactions"],data => []};
-		if ($args->{roles} == 1) {
-			$tbl = {headings => ["Roles"],data => []};
-		}
-		elsif ($args->{genes} == 1) {
-			$tbl = {headings => ["Genes"],data => []};
-		}
-	}
+sub mark_cofactors {
+    my $self = shift @_;
 	#Set cofactor.
     # list of cofactors that don't always come in pairs; some of these have biosynthetic pathways
     # and should NOT be marked as a cofactor in the very last reaction(s) that synthesize
@@ -2190,35 +2167,36 @@ sub computeNetworkDistances {
 			}
 		}
     }
+}
 
-	# determine the number of compounds on each side of the rxn
-	open (SIF, ">model.sif");
-	open (NA, ">Name.NA");
-	print NA "NAME (class=java.lang.String)\n";
-	my $noncopairs = [];
-	foreach my $mrxn (@$mrxns) {
-		my $rxn = $mrxn->reaction();
-        my $rgts = $rxn->reagents();
-		my $num_rgts_left = 0;
-		my $num_rgts_right = 0;
-		
-        foreach my $rgt (@$rgts) {
-			if (! $rgt->isCofactor()) {
-				push (@$noncopairs,  [$rxn->id(), $rgt->compound()->id()]);
-				print SIF $rxn->id(). "\tedge\t". $rgt->compound()->name(). "\n" ;
-				print NA $rgt->compound()->name(), " =  ", $rgt->compound()->id(), "\n";
-				if ($rgt->coefficient() > 0) {
-					$num_rgts_right ++;
-				} else {
-					$num_rgts_left ++;
-				}
-			}
-        }
-		#print STDERR "Not enough reagents left for ", $mrxn->id(), "\n" if ($num_rgts_right == 0 || $num_rgts_left == 0);
-    }
-	close SIF;
-	close NA;
-		
+=head3 computeNetworkDistances
+
+Definition:
+	Table = ModelSEED::MS::Model->computeNetworkDistances();
+Description:
+	This command computes distances between all metabolites, reactions, and functional roles
+
+=cut
+
+sub computeNetworkDistances {
+    my $self = shift;
+	my $args = args([], { reactions => 0, roles => 0, genes => 0 }, @_);
+	my $input = {};
+	my $tbl = {headings => ["Compounds"],data => []};
+	$tbl->{detail} = [] if $args->{detail};
+	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
+		$input->{reactions} = 1;
+		$tbl = {headings => ["Reactions"],data => []};
+		if ($args->{roles} == 1) {
+			$tbl = {headings => ["Roles"],data => []};
+		}
+		elsif ($args->{genes} == 1) {
+			$tbl = {headings => ["Genes"],data => []};
+		}
+	}
+
+    $self->mark_cofactors;
+
 # cofactor set.
 	print STDERR "Building graph!\n";
 	my $graph = $self->buildGraph($input);
@@ -2407,7 +2385,7 @@ sub computeNetworkDistances {
 			}
 		}
 	}
-	return ($tbl, $noncopairs);
+	return $tbl;
 }
 
 sub shortest_path {
