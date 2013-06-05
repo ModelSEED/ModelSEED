@@ -69,7 +69,7 @@ sub buildRegulatoryModel {
 	my $missing = {};
 	for (my $i=0; $i < @{$args->{genes}}; $i++) {
 		my $gene = $args->{genes}->[$i];
-		my $geneobj = $annotation->searchForFeature($gene->[1]);
+		my $geneobj = $anno->searchForFeature($gene->[1]);
 		if (!defined($geneobj)) {
 			push(@{$missing->{genes}},$gene->[1]);
 			next;
@@ -106,7 +106,7 @@ sub buildRegulatoryModel {
 		} else {
 			$regulons->{$gene->[0]}->{stimuli}->{$stimobj->uuid()}->{MaxConcentration} = 1;
 		}
-		my $geneobj = $annotation->searchForFeature($gene->[4]);
+		$geneobj = $anno->searchForFeature($gene->[4]);
 		if (!defined($geneobj)) {
 			push(@{$missing->{regulators}},$gene->[1]);
 			next;

@@ -147,7 +147,7 @@ sub createEquation {
 	}
 	for (my $i=0; $i < @{$rgt}; $i++) {
 		my $id = $rgt->[$i]->compound_uuid();
-		next if $args->{hashed}==1 && $id eq $hcpd->uuid();
+		next if $args->{hashed}==1 && $id eq $hcpd->uuid() && !$self->isTransport();
 		next if $args->{hashed}==1 && $args->{water}==1 && $id eq $wcpd->uuid();
 		if ($args->{format} eq "name" || $args->{format} eq "id") {
 			my $function = $args->{format};
