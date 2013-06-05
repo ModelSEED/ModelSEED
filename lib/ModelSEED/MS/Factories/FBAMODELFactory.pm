@@ -141,7 +141,11 @@ sub createModel {
                 warn "Could not find rxn_instance for $id!\n";
                 next;
             }
-	    my @pegs = map { /^peg/ ? "fig|".substr($model_data->{id},4).".".$_ : $_} (split '\+', $rxn->{PEGS}->[0]);
+	    my @pegs;
+	    foreach my $peg (@{$rxn->{PEGS}}) {
+		push @pegs, map { /^peg/ ? "fig|".substr($model_data->{id},4).".".$_ : $_} (split '\+', $peg);
+	    }
+	    print STDERR "$id\t@pegs\n";
 	    $model->addReactionToModel({
 		reaction => $rxnObj,
 		direction => $direction,
