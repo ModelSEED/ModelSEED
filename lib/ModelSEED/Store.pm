@@ -225,7 +225,7 @@ sub _get_class {
 
 sub _coerce_ref {
     my ($self, $ref) = @_;
-    if(ref($ref) && $ref->isa('ModelSEED::Reference')) {
+    if(ref($ref) && UNIVERSAL::isa($ref,'ModelSEED::Reference')) {
         return $ref;
     }
     return ModelSEED::Reference->new(ref => $ref);
