@@ -281,8 +281,8 @@ sub buildModelFromAnnotation {
 	my $args = ModelSEED::utilities::args([],{
 		annotation => $self->annotation(),
 		mapping => $self->mapping(),
-        verbose => 0
-	}, @_);
+		verbose => 0
+					      }, @_);
 	my $mapping = $args->{mapping};
 	my $annotaton = $args->{annotation};
 	my $biochem = $mapping->biochemistry();
@@ -429,8 +429,6 @@ sub createStandardFBABiomass {
     }
 
     my @templates=@{$mapping->biomassTemplates()};
-    print STDERR scalar(@templates),"\n";
-
 	my $template = $mapping->queryObject("biomassTemplates",{class => $phylum});
 	if (!defined($template)) {
 		print "Could not find biomass template for type:".$phylum."\n";
@@ -442,6 +440,7 @@ sub createStandardFBABiomass {
 		$bio->$function($template->$function());
 	}
 	$bio->energy(40);
+
 	my $biomassComps;
 	my $biomassCompByUUID;
 	my $biomassTemplateComponents = $template->biomassTemplateComponents();
@@ -463,6 +462,7 @@ sub createStandardFBABiomass {
 	if ($gc > 1) {
 		$gc = 0.01*$gc;	
 	}
+
 	#Setting fractions to appropriate levels
 	foreach my $class (keys(%{$biomassComps})) {
 		my $fractionTotal = 0;
@@ -507,6 +507,7 @@ sub createStandardFBABiomass {
 			$coef->{$templateComp->compound_uuid()} += $biomassComps->{$class}->{$templateCompUUID};
 		}
 	}
+
 	#Setting coefficients for dependant biomass components
 	foreach my $class (keys(%{$biomassComps})) {
 		foreach my $templateCompUUID (keys(%{$biomassComps->{$class}})) {
@@ -523,6 +524,7 @@ sub createStandardFBABiomass {
 			}
 		}
 	}
+
 	#Setting biomass components
 	foreach my $cpd_uuid (keys(%{$coef})) {
 		my $cmp = $biochem->queryObject("compartments",{id => "c"});
