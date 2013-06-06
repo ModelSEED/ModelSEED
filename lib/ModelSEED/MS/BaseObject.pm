@@ -12,6 +12,7 @@ use JSON::XS;
 use Module::Load;
 use ModelSEED::MS::Metadata::Attribute::Typed;
 use ModelSEED::Exceptions;
+use ModelSEED::utilities;
 package ModelSEED::MS::BaseObject;
 
 =head1 ModelSEED::MS::BaseObject
@@ -278,7 +279,7 @@ sub export {
 	} elsif (lc($args->{format}) eq "json") {
 		return $self->toJSON({pp => 1});
 	}
-	ModelSEED::MS::error("Unrecognized type for export: ".$args->{format});
+	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
 ######################################################################
@@ -345,7 +346,7 @@ sub interpretReference {
 		if (defined($expectedType) && @{$array} == 1) {
 			$array = [$expectedType,"id",$ref];
 		} else {
-			ModelSEED::MS::error($ref." is not a valid  reference!");
+			ModelSEED::utilities::error($ref." is not a valid  reference!");
 		}
 	}
 	my $refTypeProvObj = {
@@ -359,7 +360,7 @@ sub interpretReference {
 		"Biomass" => ["model","biomasses"]
 	};
 	if (!defined($refTypeProvObj->{$array->[0]})) {
-		ModelSEED::MS::error("No specs to handle ref type ".$array->[0]);
+		ModelSEED::utilities::error("No specs to handle ref type ".$array->[0]);
 	}	
 	my $prov = $refTypeProvObj->{$array->[0]}->[0];
 	my $func = $refTypeProvObj->{$array->[0]}->[1];
@@ -561,7 +562,7 @@ sub add {
 
     my $attr_info = $self->_subobjects($attribute);
     if (!defined($attr_info)) {
-        ModelSEED::MS::error("Object doesn't have subobject with name: $attribute");
+        ModelSEED::utilities::error("Object doesn't have subobject with name: $attribute");
     }
 
     my $obj_info = {
@@ -578,7 +579,7 @@ sub add {
         $obj_info->{object} = $data_or_object;
         $obj_info->{created} = 1;
     } else {
-        ModelSEED::MS::error("Neither data nor object passed into " . ref($self) . "->add");
+        ModelSEED::utilities::error("Neither data nor object passed into " . ref($self) . "->add");
     }
 
     $obj_info->{object}->parent($self);
@@ -647,7 +648,7 @@ sub getLinkedObject {
 			}
 		}
         return $object if defined $object;
-        ModelSEED::MS::error("Could not find UUID ".$uuid."!");
+        ModelSEED::utilities::error("Could not find UUID ".$uuid."!");
 #        ModelSEED::Exception::BadObjectLink->throw(
 #            searchSource     => $self,
 #            searchBaseObject => $sourceObj,
@@ -763,7 +764,7 @@ sub biochemistry {
 	} elsif (defined($parent)) {
         return $parent->biochemistry();
     }
-    ModelSEED::MS::error("Cannot find Biochemistry object in tree!");
+    ModelSEED::utilities::error("Cannot find Biochemistry object in tree!");
 }
 
 sub fbaformulation {
@@ -774,7 +775,7 @@ sub fbaformulation {
     } elsif (defined($parent)) {
         return $parent->fbaformulation();
     }
-    ModelSEED::MS::error("Cannot find FBAFormulation object in tree!");
+    ModelSEED::utilities::error("Cannot find FBAFormulation object in tree!");
 }
 
 sub model {
@@ -785,7 +786,7 @@ sub model {
     } elsif (defined($parent)) {
         return $parent->model();
     }
-    ModelSEED::MS::error("Cannot find Model object in tree!");
+    ModelSEED::utilities::error("Cannot find Model object in tree!");
 }
 
 sub annotation {
@@ -796,7 +797,7 @@ sub annotation {
     } elsif (defined($parent)) {
         return $parent->annotation();
     }
-    ModelSEED::MS::error("Cannot find Annotation object in tree!");
+    ModelSEED::utilities::error("Cannot find Annotation object in tree!");
 }
 
 sub configuration {
@@ -807,7 +808,7 @@ sub configuration {
     } elsif (defined($parent)) {
         return $parent->configuration();
     }
-    ModelSEED::MS::error("Cannot find Configuration object in tree!");
+    ModelSEED::utilities::error("Cannot find Configuration object in tree!");
 }
 
 sub mapping {
@@ -818,7 +819,7 @@ sub mapping {
     } elsif (defined($parent)) {
         return $parent->mapping();
     }
-    ModelSEED::MS::error("Cannot find mapping object in tree!");
+    ModelSEED::utilities::error("Cannot find mapping object in tree!");
 }
 
 sub biochemistrystructures {
@@ -830,7 +831,7 @@ sub biochemistrystructures {
     } elsif (defined($parent)) {
        	return $parent->biochemistrystructures();
     }
-    ModelSEED::MS::error("Cannot find BiochemistryStructures object in tree!");
+    ModelSEED::utilities::error("Cannot find BiochemistryStructures object in tree!");
 }
 
 sub fbaproblem {
@@ -841,7 +842,7 @@ sub fbaproblem {
     } elsif (defined($parent)) {
         return $parent->fbaproblem();
     }
-    ModelSEED::MS::error("Cannot find fbaproblem object in tree!");
+    ModelSEED::utilities::error("Cannot find fbaproblem object in tree!");
 }
 
 sub store {
@@ -947,7 +948,7 @@ sub _build_object {
     }
 	my $attInfo = $self->_subobjects($attribute);
     if (!defined($attInfo->{class})) {
-    	ModelSEED::MS::error("No class for attribute ".$attribute);	
+    	ModelSEED::utilities::error("No class for attribute ".$attribute);	
     }
     my $class = 'ModelSEED::MS::' . $attInfo->{class};
     Module::Load::load $class;
