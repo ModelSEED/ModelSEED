@@ -24,13 +24,14 @@ END
 sub options {
     return (
     	["template|t=s", "Specific template to use in building a model"],
-		["mapping|m=s", "Mapping with classifiers for model building"],
-		["isplant|p", "Build a plant-specific model"],
+	["mapping|m=s", "Mapping with classifiers for model building"],
+	["isplant|p", "Build a plant-specific model"],
     );
 }
 sub sub_execute {
     my ($self, $opts, $args,$anno) = @_;
     my $modelID = shift(@{$args});
+    $self->usage_error("No id was defined for the new model!") unless defined($modelID) || $modelID != "";
     my $template;
     my $model;
     if (defined($opts->{template})) {
@@ -77,6 +78,7 @@ sub sub_execute {
         	mapping => $mapping, verbose => 1, isplant => $opts->{isplant}
 		});
 	}
+
     $self->save_object({
     	type => "Model",
     	reference => $modelID,
