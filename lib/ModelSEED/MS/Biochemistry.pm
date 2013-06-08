@@ -729,7 +729,7 @@ sub addReactionFromHash {
 	    ModelSEED::utilities::verbose("Reaction ".$arguments->{id}->[0]." was rejected");
 	    return undef;
 	}else{
-	    #ModelSEED::utilities::verbose("Reaction ".$arguments->{id}->[0]." passed\n");
+	    #ModelSEED::utilities::verbose("Reaction ".$arguments->{id}->[0]." passed: ".$rxn->equationCode());
 	}
 
 	# Generate equation search string and check to see if reaction not already in database
@@ -781,6 +781,8 @@ sub addReactionFromHash {
 	    return;
 	}
     }
+
+    ModelSEED::utilities::verbose("Creating reaction ".$arguments->{id}->[0]);
 
 	# Attach reaction to biochemistry
 	$self->add("reactions", $rxn);

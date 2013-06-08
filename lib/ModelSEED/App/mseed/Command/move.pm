@@ -1,7 +1,10 @@
 package ModelSEED::App::mseed::Command::move;
 use strict;
 use common::sense;
-use base 'App::Cmd::Command';
+use base 'ModelSEED::App::MSEEDBaseCommand';
+use Class::Autouse qw(
+	ModelSEED::MS::BaseObject
+);
 use JSON::XS;
 sub abstract { return "Moves object to new ID or workspace or store" }
 sub usage_desc { return "ms move [object reference]" }
@@ -11,7 +14,7 @@ sub opt_spec { return (
         ["newstore|n=s", "Store to which object should be copied"],
     );
 }
-sub execute {
+sub sub_execute {
     my ($self, $opts, $args) = @_;
     $self->usage_error("Must provide object ID") unless(defined($args->[0]));
     my $obj = $self->get_object({

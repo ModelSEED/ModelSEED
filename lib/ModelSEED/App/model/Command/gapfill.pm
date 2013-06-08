@@ -70,8 +70,6 @@ sub sub_execute {
         defaultmaxuptake => "defaultMaxDrainFlux",
         defaultminuptake => "defaultMinDrainFlux",
         numsolutions	 => "numberOfSolutions",
-	cplextimelimit   => "cplexTimeLimit",
-        milptimelimit    => "milpRecursionTimeLimit",
     };
     my $overrideList = {
         nomediahyp      => "!mediaHypothesis",
@@ -91,6 +89,8 @@ sub sub_execute {
         blacklistedrxns => "blacklistedReactions",
         gauranteedrxns  => "guaranteedReactions",
         allowedcmps     => "allowableCompartments",
+	cplextimelimit   => "cplexTimeLimit",
+        milptimelimit    => "milpRecursionTimeLimit",
     };
 	foreach my $argument (keys(%{$overrideList})) {
 		if ($overrideList->{$argument} =~ m/^\!(.+)$/) {
