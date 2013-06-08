@@ -57,24 +57,39 @@ sub sub_execute {
 			$regTbl->{data}->[$i]->[$regTbl->{headings}->{Gene}],
 			$regTbl->{data}->[$i]->[$regTbl->{headings}->{Stimuli}],
 			$regTbl->{data}->[$i]->[$regTbl->{headings}->{StimuliSign}],
-			$regTbl->{data}->[$i]->[$regTbl->{headings}->{Regulator}],
-			$regTbl->{data}->[$i]->[$regTbl->{headings}->{Strength}],
-			$regTbl->{data}->[$i]->[$regTbl->{headings}->{MinConcentration}],
-			$regTbl->{data}->[$i]->[$regTbl->{headings}->{MaxConcentration}]
+			undef,
+			undef,
+			undef,
+			undef
 		];
+		if (defined($regTbl->{headings}->{Regulator})) {
+			$row->[4] = $regTbl->{data}->[$i]->[$regTbl->{headings}->{Regulator}];
+		}
+		if (defined($regTbl->{headings}->{Strength})) {
+			$row->[5] = $regTbl->{data}->[$i]->[$regTbl->{headings}->{Strength}];
+		}
+		if (defined($regTbl->{headings}->{MinConcentration})) {
+			$row->[6] = $regTbl->{data}->[$i]->[$regTbl->{headings}->{MinConcentration}];
+		}
+		if (defined($regTbl->{headings}->{MaxConcentration})) {
+			$row->[7] = $regTbl->{data}->[$i]->[$regTbl->{headings}->{MaxConcentration}];
+		}
 		push(@{$genes},$row);
 	}
 	#Building and running ModelTemplate 
 	my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new(
 		store => $self->store()
 	);
-	my $regModel = $factory->buildRegulatoryModel({
+	(my $regModel,my $missing) = $factory->buildRegulatoryModel({
 		genes => $genes,
 		name => $args->[2],
 		type => $opts->{type},
 		mapping => $map,
 		annotation => $anno 
 	});
+	
+	
+	
 	#Saving model in database
     $self->save_object({
     	object => $regModel,
