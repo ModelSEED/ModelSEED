@@ -145,7 +145,6 @@ sub createModel {
 	    foreach my $peg (@{$rxn->{PEGS}}) {
 		push @pegs, map { /^peg/ ? "fig|".substr($model_data->{id},4).".".$_ : $_} (split '\+', $peg);
 	    }
-	    print STDERR "$id\t@pegs\n";
 	    $model->addReactionToModel({
 		reaction => $rxnObj,
 		direction => $direction,

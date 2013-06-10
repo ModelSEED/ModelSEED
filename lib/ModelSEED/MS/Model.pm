@@ -2060,13 +2060,14 @@ sub mark_cofactors {
     # and should NOT be marked as a cofactor in the very last reaction(s) that synthesize
     # them, so each one can have a list of special case reactions
     my $list = [
-	["cpd00002" => {"rxn00062" => 1,"rxn05145" => 1,"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn00065" => 1}], # ATP
-	["cpd00008" => {"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn10052" => 1, "rxn00095" => 1}], # ADP
+#	["cpd00002" => {"rxn00062" => 1,"rxn05145" => 1,"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn00065" => 1}], # ATP
+#	["cpd00008" => {"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn10052" => 1, "rxn00095" => 1}], # ADP
 	["cpd00001" => {"rxn00008" => 1,"rxn00066" => 1, "rxn05319" => 1}], # H2O
 	["cpd00009" => {"rxn00001" => 1,"rxn05145" => 1, "rxn00001" => 1, "rxn05312" => 1}], # Pi
 	["cpd00010" => {"rxn00100" => 1}], #CoA
 	["cpd00011" => {"rxn10114" => 1,"rxn00102" => 1, "rxn00114" => 1, "rxn05467" => 1, "rxn05064" => 1, "rxn00002" => 1}], # CO2
-	["cpd00012" => {"rxn00001" => 1}], # PPi
+	["cpd00012" => {"rxn00001" => 1,"rxn00104"=>1}], # PPi
+	["cpd00421" => {"rxn00104" => 1}], # PPPi
 	["cpd00013" => {"rxn05466" => 1, "rxn00114" => 1, "rxn05064" => 1, "rxn00002" => 1}], # NH3
 	["cpd00015" => {"rxn00122" => 1}], # FAD
 	["cpd00067" => {}], # H+
@@ -2122,8 +2123,14 @@ sub mark_cofactors {
 		["cpd15499","cpd15500"],
 		["cpd15352","cpd15353"],
     ]; 
+
+    my $unidirectional = { "rxn05296"=>1, "rxn05294"=>1, "rxn05295"=>1 }; # Protein, DNA, RNA synthesis should be unidirectional
+
     foreach my $mrxn (@{$mrxns}) {
 		my $rxn = $mrxn->reaction();
+		if (exists $unidirectional->{$rxn->id()}) {
+		    $rxn->direction(">");
+		}
 		my $rgts = $rxn->reagents();
 		my $num_rgts = scalar @{$rgts};
 		# first we will mark any compound that is a known cofactor,
@@ -2334,20 +2341,19 @@ sub computeNetworkDistances {
 						for (my $m=0;$m < @genes2; $m++) {
 							my $indexTwo = $geneHash->{$genes2[$m]}+1;
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+							    my ($prev, undef) = split ";", $tbl->{data}->[$indexOne]->[$indexTwo];
 							    my ($path_length, $vertices) = &shortest_path($rxns->[$i]->id(), $rxns->[$j]->id(), $apsp);
-							    if (defined $path_length && ($path_length < $tbl->{data}->[$indexOne]->[$indexTwo])) {
-								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    if (defined $path_length && ($path_length < $prev)) {
+								$tbl->{data}->[$indexOne]->[$indexTwo] = $path_length;
 								if ($args->{detail}) {
-								    my @vs = @$vertices;
-								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0; 
+								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @$vertices" if @$vertices > 0;
 								}
 							    }
 							} else {
 							    my ($path_length, $vertices) = &shortest_path($rxns->[$i]->id(), $rxns->[$j]->id(), $apsp);
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $path_length;
 							    if ($args->{detail}) {
-								my @vs = @$vertices;
-								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @$vertices" if @$vertices > 0;
 							    }
 							}
 						}
