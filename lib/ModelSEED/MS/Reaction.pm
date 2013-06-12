@@ -133,7 +133,7 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
+    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1, reverse=>0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
@@ -200,10 +200,14 @@ sub createEquation {
 			} 
 		}
 	}
-	if ($args->{hashed} == 1) {
-	        return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
-	}
-	return $reactcode.$sign.$productcode;
+    my $reaction_string = $reactcode.$sign.$productcode;
+    if($args->{reverse}==1){
+	$reaction_string = $productcode.$sign.$reactcode;
+    }
+    if ($args->{hashed} == 1) {
+	return Digest::MD5::md5_hex($reaction_string);
+    }
+    return $reaction_string;
 }
 
 =head3 loadFromEquation
