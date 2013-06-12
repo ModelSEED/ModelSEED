@@ -735,6 +735,12 @@ sub addReactionFromHash {
 	# Generate equation search string and check to see if reaction not already in database
 	my $code = $rxn->equationCode();
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
+
+    #attempt reverse string in case
+    if (!defined($searchRxn)) {
+	$code = $rxn->equationCode({reverse=>1});
+	$searchRxn = $self->queryObject("reactions",{equationCode => $code});
+    }
 	if (defined($searchRxn)) {
 	    # Check to see if searchRxn has alias from same namespace
 	    my $alias = $searchRxn->getAlias($arguments->{reactionIDaliasType});
