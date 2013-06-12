@@ -18,6 +18,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
@@ -37,10 +38,17 @@ sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
 }
+
 sub _buildequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
+
+sub _buildrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"uuid",hashed=>1,reverse=>1});
+}
+
 sub _buildcompfreeequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
