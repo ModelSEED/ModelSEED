@@ -1257,7 +1257,7 @@ Description:
 sub printModelSEED {
     my $self = shift;
 	my $output = "REACTIONS\n";
-	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
+	$output .= "LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG;EQUATION;SUBSYSTEM;CONFIDENCE;REFERENCE;NOTES\n";
 	my $reactions = $self->modelreactions();
 	foreach my $rxn (@{$reactions}) {
 		my $dir = $rxn->direction();
@@ -1270,7 +1270,7 @@ sub printModelSEED {
 		}
 		my $gpr = $rxn->gprString();
 		$gpr =~ s/fig\|\d+\.\d+\.//g;
-		$output .= $rxn->reaction()->id().";".$dir.";c;".$gpr.";none;1;none;none\n";
+		$output .= $rxn->reaction()->id().";".$dir.";c;".$gpr.";".$rxn->equation().";none;1;none;none\n";
 	}
 	my $biomasses = $self->biomasses();
 	$output .= "NAME\t".$biomasses->[0]->id()."\n";
