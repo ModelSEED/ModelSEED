@@ -737,9 +737,9 @@ sub addReactionFromHash {
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
 
     #attempt reverse string in case
-    if (!defined($searchRxn)) {
+    if (!defined($searchRxn)){
 	$code = $rxn->revEquationCode();
-	$searchRxn = $self->queryObject("reactions",{revEquationCode => $code});
+	$searchRxn = $self->queryObject("reactions",{equationCode => $code});
     }
 	if (defined($searchRxn)) {
 	    # Check to see if searchRxn has alias from same namespace
