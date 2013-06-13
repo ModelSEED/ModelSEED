@@ -1089,7 +1089,15 @@ Description:
 
 sub checkForDuplicateReaction {
     my ($self,$obj,$opts) = @_;
-    return $self->queryObject("reactions",{equationCode => $obj->equationCode()});
+    my $code = $obj->equationCode();
+    my $result = $self->queryObject("reactions",{equationCode => $code});
+    
+    if(!$result){
+	$code = $obj->revEquationCode();
+	$result = $self->queryObject("reactions",{equationCode => $code});
+    }
+
+    return $result;
 }
 
 =head3 checkForDuplicateCompound
