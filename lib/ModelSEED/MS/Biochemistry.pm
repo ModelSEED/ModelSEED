@@ -735,6 +735,12 @@ sub addReactionFromHash {
 	# Generate equation search string and check to see if reaction not already in database
 	my $code = $rxn->equationCode();
 	my $searchRxn = $self->queryObject("reactions",{equationCode => $code});
+
+    #attempt reverse string in case
+    if (!defined($searchRxn)){
+	$code = $rxn->revEquationCode();
+	$searchRxn = $self->queryObject("reactions",{equationCode => $code});
+    }
 	if (defined($searchRxn)) {
 	    # Check to see if searchRxn has alias from same namespace
 	    my $alias = $searchRxn->getAlias($arguments->{reactionIDaliasType});
@@ -1083,7 +1089,15 @@ Description:
 
 sub checkForDuplicateReaction {
     my ($self,$obj,$opts) = @_;
-    return $self->queryObject("reactions",{equationCode => $obj->equationCode()});
+    my $code = $obj->equationCode();
+    my $result = $self->queryObject("reactions",{equationCode => $code});
+    
+    if(!$result){
+	$code = $obj->revEquationCode();
+	$result = $self->queryObject("reactions",{equationCode => $code});
+    }
+
+    return $result;
 }
 
 =head3 checkForDuplicateCompound

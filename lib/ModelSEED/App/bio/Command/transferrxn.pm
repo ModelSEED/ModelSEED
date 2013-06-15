@@ -11,7 +11,10 @@ use ModelSEED::utilities;
 sub abstract { return "Transfer the reactions from the first specified compound to the second in the biochemistry database" }
 sub usage_desc { return "bio transferrxn [ biochemistry id ] [starting compound] [receiving compound] [namespace]"; }
 sub options {
-    return ();
+    return (
+        ["filename|f=s", "Name of file for output of new reaction ids"],
+        ["append|a", "Whether to append to output file"],
+	);
 }
 sub sub_execute {
     my ($self, $opts, $args,$bio) = @_;
@@ -28,6 +31,15 @@ sub sub_execute {
 
     my $reactionsToTransfer = $bio->findReactionsWithReagent($cpdOne->uuid());
     ModelSEED::utilities::verbose("Copying ".scalar(@$reactionsToTransfer)." reactions and switching ".$args->[0]." to ".$args->[1]."\n");
+
+    my $fh;
+    if(defined($opts->{filename})){
+	if(defined($opts->{append}) && $opts->{append} == 1 && -f $opts->{filename}){
+	    open($fh, ">> ".$opts->filename);
+	}else{
+	    open($fh, "> ".$opts->filename);
+	}
+    }
 
     foreach my $rxn (@$reactionsToTransfer){
 	my $tmp_rxn=$rxn->cloneObject();
@@ -50,9 +62,13 @@ sub sub_execute {
 	$bio->add('reactions',$tmp_rxn);
 	foreach my $set ( grep { $_->attribute() eq 'reactions' } @{$bio->aliasSets()} ){
 	    if($rxn->getAlias($set->name())){
-		my $tmp_alias=$rxn->getAlias($set->name());
+		my $rxn_alias=$rxn->getAlias($set->name());
+		my $tmp_alias = "";
 		if($set->name() eq $args->[2]){
-		    $tmp_alias.="_".$cpdOne->getAlias($set->name())."x".$cpdTwo->getAlias($set->name());
+		    $tmp_alias = $rxn_alias."_".$cpdOne->getAlias($set->name())."x".$cpdTwo->getAlias($set->name());
+		    if($fh){
+			print $fh $args->[1],"\t",$rxn_alias,"\t",$tmp_alias,"\n";
+		    }
 		}
 		$bio->addAlias({attribute=>'reactions',aliasName=>$set->name(),alias=>$tmp_alias,uuid=>$tmp_rxn->uuid()});
 	    }

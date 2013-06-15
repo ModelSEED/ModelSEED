@@ -18,6 +18,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
+has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
@@ -37,10 +38,17 @@ sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
 }
+
 sub _buildequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1});
 }
+
+sub _buildrevequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"uuid",hashed=>1,reverse=>1});
+}
+
 sub _buildcompfreeequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
@@ -133,7 +141,7 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1 }, @_);
+    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1, reverse=>0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
@@ -200,10 +208,14 @@ sub createEquation {
 			} 
 		}
 	}
-	if ($args->{hashed} == 1) {
-	        return Digest::MD5::md5_hex($reactcode.$sign.$productcode);
-	}
-	return $reactcode.$sign.$productcode;
+    my $reaction_string = $reactcode.$sign.$productcode;
+    if($args->{reverse}==1){
+	$reaction_string = $productcode.$sign.$reactcode;
+    }
+    if ($args->{hashed} == 1) {
+	return Digest::MD5::md5_hex($reaction_string);
+    }
+    return $reaction_string;
 }
 
 =head3 loadFromEquation
