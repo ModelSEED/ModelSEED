@@ -110,7 +110,7 @@ sub sub_execute {
 				reference => "FBAFormulation/".$fbaform->uuid(),
 				object => $fbaform
 			});
-	    	$model->add("fbaFormulations",$fbaform);
+			$model->addLinkArrayItem("fbaFormulations",$fbaform);
 	    	$self->save_model($model);
 	    }
 	    if ($opts->{html}) {

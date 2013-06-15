@@ -734,7 +734,7 @@ sub addLinkArrayItem {
 			}
     	}
     	if ($found == 0) {
-    		ModelSEED::utilities::verbose("Removing object from link array.");
+    		ModelSEED::utilities::verbose("Adding object to link array.");
     		my $clearer = "clear_".$link;
 			$self->$clearer();
 			push(@{$data},$object->uuid());
