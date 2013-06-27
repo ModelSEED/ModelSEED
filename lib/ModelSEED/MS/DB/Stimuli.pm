@@ -19,6 +19,7 @@ has parent => (is => 'rw', isa => 'ModelSEED::MS::Biochemistry', weak_ref => 1, 
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
 has name => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
 has abbreviation => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', type => 'attribute', metaclass => 'Typed');
+has description => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '2', type => 'attribute', metaclass => 'Typed');
 has type => (is => 'rw', isa => 'ModelSEED::stimulitype', printOrder => '3', required => 1, type => 'attribute', metaclass => 'Typed');
 has compound_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', type => 'attribute', metaclass => 'Typed');
 
@@ -65,6 +66,13 @@ my $attributes = [
             'perm' => 'rw'
           },
           {
+            'req' => 0,
+            'printOrder' => 2,
+            'name' => 'description',
+            'type' => 'ModelSEED::varchar',
+            'perm' => 'rw'
+          },
+          {
             'req' => 1,
             'printOrder' => 3,
             'name' => 'type',
@@ -80,7 +88,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, name => 1, abbreviation => 2, type => 3, compound_uuids => 4};
+my $attribute_map = {uuid => 0, name => 1, abbreviation => 2, description => 3, type => 4, compound_uuids => 5};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
