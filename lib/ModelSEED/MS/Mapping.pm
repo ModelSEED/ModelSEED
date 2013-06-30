@@ -24,6 +24,7 @@ extends 'ModelSEED::MS::DB::Mapping';
 #***********************************************************************************************************
 has roleReactionHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleReactionHash' );
 has typeClassifier => ( is => 'rw', isa => 'ModelSEED::MS::Classifier',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildtypeClassifier' );
+has roleComplexHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleComplexHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -44,6 +45,20 @@ sub _buildroleReactionHash {
 		}
 	}
 	return $roleReactionHash;
+}
+sub _buildroleComplexHash {
+	my ($self) = @_;
+	my $roleComplexHash = {};
+	my $complexes = $self->complexes();
+	for (my $i=0; $i < @{$complexes}; $i++) {
+		my $complex = $complexes->[$i];
+		my $cpxroles = $complex->complexroles();
+		for (my $j=0; $j < @{$cpxroles}; $j++) {
+			my $role = $cpxroles->[$j]->role();
+			$roleComplexHash->{$role->uuid()}->{$complex->uuid()} = $complex;
+		}
+	}
+	return $roleComplexHash;
 }
 sub _buildtypeClassifier {
     my ($self) = @_;
@@ -331,6 +346,7 @@ sub adjustRoleset {
     	type => undef,
     	rolesToAdd => [],
     	rolesToRemove => [],
+    	clearRoles => 0,
     	"delete" => 0
     }, @_);
 	my $ss;
@@ -366,10 +382,13 @@ sub adjustRoleset {
 	if (defined($args->{type})) {
 		$ss->type($args->{type});
 	}
+	if (defined($args->{clearRoles})) {
+		$ss->clearLinkArray("roles");
+	}
   	for (my $i=0; $i < @{$args->{rolesToAdd}}; $i++) {
   		my $role = $self->searchForRole($args->{rolesToAdd}->[$i]);
   		if (defined($role)) {
-  			$ss->addLinkArrayItem($role);
+  			$ss->addLinkArrayItem("roles",$role);
   		} else {
   			print "Role ".$args->{rolesToAdd}->[$i]." not found!\n";
   		}
@@ -377,7 +396,7 @@ sub adjustRoleset {
    	for (my $i=0; $i < @{$args->{rolesToRemove}}; $i++) {
   		my $role = $self->searchForRole($args->{rolesToRemove}->[$i]);
   		if (defined($role)) {
-  			$ss->removeLinkArrayItem($role);
+  			$ss->removeLinkArrayItem("roles",$role);
   		}
    	}
    	return $ss;
