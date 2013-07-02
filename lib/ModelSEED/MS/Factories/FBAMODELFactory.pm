@@ -90,6 +90,8 @@ sub createModel {
     }
     print "Loading linked objects...\n" if($args->{verbose});
     my $annotation = $args->{annotation};
+    my $genomes = $annotation->genomes;
+    my $genome_id = $genomes->[0]->id;
     my $mapping      = $annotation->mapping;
     my $biochemistry = $mapping->biochemistry;
     my $model = $self->store->create("Model", {
@@ -143,7 +145,7 @@ sub createModel {
             }
 	    my @pegs;
 	    foreach my $peg (@{$rxn->{PEGS}}) {
-		push @pegs, map { /^peg/ ? "fig|".substr($model_data->{id},4).".".$_ : $_} (split '\+', $peg);
+		push @pegs, map { /^peg/ ? "fig|".$genome_id.".".$_ : $_} (split '\+', $peg);
 	    }
 	    $model->addReactionToModel({
 		reaction => $rxnObj,
