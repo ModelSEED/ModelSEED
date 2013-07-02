@@ -13,7 +13,7 @@ package ModelSEED::MS::Model;
 use Moose;
 use namespace::autoclean;
 use Class::Autouse qw(
-    Graph::Directed
+    Graph::Undirected
 );
 use ModelSEED::utilities qw( error args verbose );
 extends 'ModelSEED::MS::DB::Model';
@@ -1990,7 +1990,7 @@ Description:
 sub buildGraph {
     my $self = shift;
 	my $args = args([], {reactions => 0}, @_);
-	my $graph = Graph::Directed->new;
+	my $graph = Graph::Undirected->new;
 	if ($args->{reactions} == 0) {
 		my $cpds = $self->modelcompounds();
 		for (my $i=0;$i < @{$cpds}; $i++) {
@@ -2000,8 +2000,10 @@ sub buildGraph {
 	}
 	my $rxns = $self->modelreactions();
 	my $rxnStartHash;
+        my $removerxns = { "rxn05296_c0"=>1, "rxn05294_c0"=>1, "rxn05295_c0"=>1 }; # Protein, DNA, RNA synthesis should be removed
 	
 	for (my $i=0; $i < @{$rxns}; $i++) {
+		next if (exists $removerxns->{$rxns->[$i]->id()});
 		if ($args->{reactions} == 1) {
 		    $graph->add_vertex($rxns->[$i]->id());
 		}
@@ -2035,6 +2037,7 @@ sub buildGraph {
 	}
 	if ($args->{reactions} == 1) {
 		for (my $i=0; $i < @{$rxns}; $i++) {
+		    next if (exists $removerxns->{$rxns->[$i]->id()});
 			my $rgts = $rxns->[$i]->modelReactionReagents();
 			for (my $j=0; $j < @{$rgts}; $j++) {
 				my $rgt = $rgts->[$j];
@@ -2069,7 +2072,7 @@ sub mark_cofactors {
 	["cpd00012" => {"rxn00001" => 1,"rxn00104"=>1}], # PPi
 	["cpd00421" => {"rxn00104" => 1}], # PPPi
 	["cpd00013" => {"rxn05466" => 1, "rxn00114" => 1, "rxn05064" => 1, "rxn00002" => 1}], # NH3
-	["cpd00015" => {"rxn00122" => 1}], # FAD
+#	["cpd00015" => {"rxn00122" => 1}], # FAD
 	["cpd00067" => {}], # H+
 	["cpd00099" => {"rxn10473" => 1}], # Cl-
 	["cpd00007" => {"rxn00006" => 1, "rxn05468" => 1}], #O2
@@ -2088,6 +2091,7 @@ sub mark_cofactors {
     # prioritized list, e.g., ATP/ADP come before Pyruvate/PEP
     my $pairlist = [
         ["cpd00002","cpd00008"],
+	["cpd00015","cpd00982"],
         ["cpd00097","cpd00986"],
         ["cpd00109","cpd00110"],
         ["cpd11620","cpd11621"],
@@ -2124,13 +2128,8 @@ sub mark_cofactors {
 		["cpd15352","cpd15353"],
     ]; 
 
-    my $unidirectional = { "rxn05296"=>1, "rxn05294"=>1, "rxn05295"=>1 }; # Protein, DNA, RNA synthesis should be unidirectional
-
     foreach my $mrxn (@{$mrxns}) {
 		my $rxn = $mrxn->reaction();
-		if (exists $unidirectional->{$rxn->id()}) {
-		    $rxn->direction(">");
-		}
 		my $rgts = $rxn->reagents();
 		my $num_rgts = scalar @{$rgts};
 		# first we will mark any compound that is a known cofactor,
