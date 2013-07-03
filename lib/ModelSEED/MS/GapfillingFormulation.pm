@@ -350,6 +350,7 @@ sub prepareFBAFormulation {
 		$form->inputfiles()->{"InactiveModelReactions.txt"}->[0] = "bio1";
 	}
 	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
+	push(@{$form->outputfiles}, "ProblemReport.txt");
 	if ($self->biomassHypothesis() == 1) {
 		$form->parameters()->{"Biomass modification hypothesis"} = 1;
 		$self->addBiomassComponentReactions();
