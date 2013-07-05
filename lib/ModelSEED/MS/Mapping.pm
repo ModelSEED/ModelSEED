@@ -231,7 +231,7 @@ sub adjustComplex {
 	if (defined($args->{name})) {
 		$cpx->name($args->{name});
 	}
-    if (defined($args->{clearRoles})) {
+    if (defined($args->{clearRoles}) && $args->{clearRoles} == 1) {
 		$cpx->complexroles([]);
 	}
   	for (my $i=0; $i < @{$args->{rolesToRemove}}; $i++) {
@@ -382,7 +382,7 @@ sub adjustRoleset {
 	if (defined($args->{type})) {
 		$ss->type($args->{type});
 	}
-	if (defined($args->{clearRoles})) {
+	if (defined($args->{clearRoles}) && $args->{clearRoles} == 1) {
 		$ss->clearLinkArray("roles");
 	}
   	for (my $i=0; $i < @{$args->{rolesToAdd}}; $i++) {
