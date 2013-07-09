@@ -169,6 +169,19 @@ sub createModel {
 		direction => $direction,
 		gpr => \@pegs});
 	}
+	if ($args->{id} eq 'iSO783') {
+	    foreach my $id qw/rxn10832/ {
+		my $rxnObj = $biochemistry->getObjectByAlias(
+		    "reactions", 
+		    $id,
+		    "ModelSEED"
+		    );
+		$model->addReactionToModel({
+		    reaction => $rxnObj,
+		    direction => '=',
+		    gpr => ['Manual']});
+	    }
+	}
     }
     return $model;
 }
