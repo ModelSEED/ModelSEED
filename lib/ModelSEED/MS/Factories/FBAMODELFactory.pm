@@ -121,7 +121,8 @@ sub createModel {
 	    $rxn->{EQUATION}->[0] =~ s/6e-06/.000006/g;
 	    $rxn->{EQUATION}->[0] =~ s/6\.9e-05/.000069/g;
 	    $rxn->{EQUATION}->[0] =~ s/3e-06/.000003/g;
-#	    $rxn->{EQUATION}->[0] =~ s/ \+ 0.027781 cpd17032\[e\]//g;
+	    $rxn->{EQUATION}->[0] =~ s/0\.010152 cpd15647 \+ //g;
+	    $rxn->{EQUATION}->[0] =~ s/0\.000421 cpd15648 \+ //g;
 	    $rxn->{EQUATION}->[0] =~ s/\[e\]//g;
 
             # Add as a biomass equation
