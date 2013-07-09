@@ -121,7 +121,7 @@ sub createModel {
 	    $rxn->{EQUATION}->[0] =~ s/6e-06/.000006/g;
 	    $rxn->{EQUATION}->[0] =~ s/6\.9e-05/.000069/g;
 	    $rxn->{EQUATION}->[0] =~ s/3e-06/.000003/g;
-	    $rxn->{EQUATION}->[0] =~ s/\[e\]//g;
+	    $rxn->{EQUATION}->[0] =~ s/ \+ 0.027781 cpd17032\[e\]//g;
 
             # Add as a biomass equation
 	    my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
