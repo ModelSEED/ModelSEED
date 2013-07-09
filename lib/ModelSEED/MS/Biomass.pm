@@ -139,7 +139,7 @@ sub _parse_equation_string {
             my $compartment = "c0";
             # match compound[comparment]
             if ( $TempArray[$i] =~ m/^[a-zA-Z0-9]+\[([a-zA-Z]+)\]/ ) {
-#                $compartment = lc($1);
+                $compartment = lc($1);
                 if ( length($compartment) == 1 ) {
                     $compartment .= "0";
                 }
@@ -279,7 +279,6 @@ sub loadFromEquation {
         my $coefficient = $reagent->{coefficient};
 
 	print "$compound\t$compartment\n";
-	$compartment = "c0";
 
         my $comp = $mod->queryObject("modelcompartments",{label => $compartment});
         if (!defined($comp)) {

@@ -708,10 +708,6 @@ sub addReactionToModel {
 		for (my $i=0; $i < @{$rgts}; $i++) {
 			my $rgt = $rgts->[$i];
 			my $rgtcmp = $self->addCompartmentToModel({compartment => $rgt->compartment(),pH => 7,potential => 0,compartmentIndex => 0});
-			if ($rxn->id eq "rxn13740") {
-			    print STDERR "Found rxn13740\n";
-			    $rgtcmp = $mdlcmp;
-			}
 			my $coefficient = $rgt->coefficient();
 			my $mdlcpd = $self->addCompoundToModel({
 				compound => $rgt->compound(),
