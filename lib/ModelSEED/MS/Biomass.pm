@@ -139,8 +139,8 @@ sub _parse_equation_string {
             my $compartment = "c0";
             # match compound[comparment]
             if ( $TempArray[$i] =~ m/^[a-zA-Z0-9]+\[([a-zA-Z]+)\]/ ) {
-                $compartment = lc($1);
-                if ( length($compartment) == 0 ) {
+#                $compartment = lc($1);
+                if ( length($compartment) == 1 ) {
                     $compartment .= "0";
                 }
             }
@@ -268,12 +268,19 @@ sub loadFromEquation {
     }, @_);
     my $mod = $self->parent();
     my $bio = $self->parent()->biochemistry();
+    use Data::Dumper;
+    print &Dumper($args->{equation});
+
     my $reagentHashes = $self->_parse_equation_string($args->{equation});
     my $missingCompounds = [];
     foreach my $reagent (@$reagentHashes) {
         my $compound    = $reagent->{compound};
         my $compartment = $reagent->{compartment};
         my $coefficient = $reagent->{coefficient};
+
+	print "$compound\t$compartment\n";
+	$compartment = "c0";
+
         my $comp = $mod->queryObject("modelcompartments",{label => $compartment});
         if (!defined($comp)) {
             ModelSEED::utilities::USEWARNING("Unrecognized compartment '".$compartment."' used in biomass equation!");

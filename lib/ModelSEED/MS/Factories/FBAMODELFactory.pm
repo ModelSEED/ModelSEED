@@ -116,6 +116,13 @@ sub createModel {
     foreach my $rxn (@$rxns) {
         my $id = $rxn->{DATABASE}->[0];
         if ( $id =~ m/bio\d+/ ) {
+
+	    $rxn->{EQUATION}->[0] =~ s/5e-05/.00005/g;
+	    $rxn->{EQUATION}->[0] =~ s/6e-06/.000006/g;
+	    $rxn->{EQUATION}->[0] =~ s/6\.9e-05/.000069/g;
+	    $rxn->{EQUATION}->[0] =~ s/3e-06/.000003/g;
+	    $rxn->{EQUATION}->[0] =~ s/\[e\]//g;
+
             # Add as a biomass equation
 	    my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
 		name => sprintf("bio%05d", $biomassIndex),
@@ -144,8 +151,17 @@ sub createModel {
                 next;
             }
 	    my @pegs;
-	    foreach my $peg (@{$rxn->{PEGS}}) {
-		push @pegs, map { /^peg/ ? "fig|".$genome_id.".".$_ : $_} (split '\+', $peg);
+	    if ($args->{id} eq 'iSO783') {
+		foreach my $peg (@{$rxn->{PEGS}}) {
+		    while ($peg =~ /(peg\.\d+)/g) {
+			push @pegs, "fig|".$genome_id.".".$1;
+		    }
+		}
+
+	    } else {
+		foreach my $peg (@{$rxn->{PEGS}}) {
+		    push @pegs, map { /^peg/ ? "fig|".$genome_id.".".$_ : $_} (split '\+', $peg);
+		}
 	    }
 	    $model->addReactionToModel({
 		reaction => $rxnObj,
