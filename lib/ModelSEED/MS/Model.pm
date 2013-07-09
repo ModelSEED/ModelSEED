@@ -1696,6 +1696,10 @@ sub printCytoSEED {
 	my $reaction_classifications = {};
 
 	foreach my $fbaFormulation (@{$model->fbaFormulations()}) {
+	    if (! defined $fbaFormulation) {
+		print STDERR "FBA formulation is not defined\n";
+		next;
+	    }
 	    if ($fbaFormulation->maximizeObjective()) {
 		my @fbaFormulationResults = @{$fbaFormulation->fbaResults()};
 		if (@fbaFormulationResults != 1) {
