@@ -129,8 +129,6 @@ sub createModel {
 	    $rxn->{EQUATION}->[0] =~ s/0\.000421 cpd15648 \+ //g;
 	    # keep peptidoglycan inside the cell
 	    $rxn->{EQUATION}->[0] =~ s/\[e\]//g;
-	    # add amino acids to check growth
-	    $rxn->{EQUATION}->[0] = "cpd00035 + cpd00051 + cpd00132 + cpd00041 + cpd00084 + cpd00023 + cpd00053 + cpd00119 + cpd00322 + cpd00107 + cpd00060 + cpd00066 + cpd00129 + cpd00054 + cpd00161 + cpd00065 + cpd00069 + cpd00156 + " . $rxn->{EQUATION}->[0];
 
             # Add as a biomass equation
 	    my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
