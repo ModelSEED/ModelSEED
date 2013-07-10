@@ -117,13 +117,20 @@ sub createModel {
         my $id = $rxn->{DATABASE}->[0];
         if ( $id =~ m/bio\d+/ ) {
 
+	    # SO: change scientific notation to decimal
 	    $rxn->{EQUATION}->[0] =~ s/5e-05/.00005/g;
 	    $rxn->{EQUATION}->[0] =~ s/6e-06/.000006/g;
 	    $rxn->{EQUATION}->[0] =~ s/6\.9e-05/.000069/g;
 	    $rxn->{EQUATION}->[0] =~ s/3e-06/.000003/g;
+	    # SO: get rid of acyl-glycerophosphoethanolamine and acyl-glycerophosphoglycerol
+	    # from the biomass because they are products of phospholipases and couldn't get
+	    # them to grow on BU0_AF
 	    $rxn->{EQUATION}->[0] =~ s/0\.010152 cpd15647 \+ //g;
 	    $rxn->{EQUATION}->[0] =~ s/0\.000421 cpd15648 \+ //g;
+	    # keep peptidoglycan inside the cell
 	    $rxn->{EQUATION}->[0] =~ s/\[e\]//g;
+	    # add amino acids to check growth
+	    $rxn->{EQUATION}->[0] = "cpd00035 + cpd00051 + cpd00132 + cpd00041 + cpd00084 + cpd00023 + cpd00053 + cpd00119 + cpd00322 + cpd00107 + cpd00060 + cpd00066 + cpd00129 + cpd00054 + cpd00161 + cpd00065 + cpd00069 + cpd00156 + " . $rxn->{EQUATION}->[0];
 
             # Add as a biomass equation
 	    my $bioobj = $model->add("biomasses", ModelSEED::MS::Biomass->new({
@@ -153,6 +160,7 @@ sub createModel {
                 next;
             }
 	    my @pegs;
+	    # SO: pegs are separated by AND and OR; for now just collect all the pegs
 	    if ($args->{id} eq 'iSO783') {
 		foreach my $peg (@{$rxn->{PEGS}}) {
 		    while ($peg =~ /(peg\.\d+)/g) {
@@ -170,6 +178,8 @@ sub createModel {
 		direction => $direction,
 		gpr => \@pegs});
 	}
+	# SO: add reaction for CoA transport so it can grow on BU0_AF without using biosynthetic genes
+	# which appear to be turned off based on gxp data
 	if ($args->{id} eq 'iSO783') {
 	    foreach my $id qw/rxn10832/ {
 		my $rxnObj = $biochemistry->getObjectByAlias(
