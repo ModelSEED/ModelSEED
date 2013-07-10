@@ -176,10 +176,10 @@ sub createModel {
 		direction => $direction,
 		gpr => \@pegs});
 	}
-	# SO: add reaction for Pantothenate transport so it can grow on BU0_AF without using biosynthetic genes
+	# SO: add reaction for transporters so it can grow on BU0_AF without using biosynthetic genes
 	# which appear to be turned off based on gxp data
 	if ($args->{id} eq 'iSO783') {
-	    foreach my $id qw/rxn10180/ {
+	    foreach my $id (qw//) {
 		my $rxnObj = $biochemistry->getObjectByAlias(
 		    "reactions", 
 		    $id,
