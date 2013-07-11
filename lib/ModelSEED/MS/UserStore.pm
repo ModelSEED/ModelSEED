@@ -253,22 +253,21 @@ sub get_object {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
-	$args->{type}=lc($args->{type});
     	my $msstore = $self->msstore();
     	my $ref;
     	my $id;
     	my $type = lc(substr($args->{type},0,1)).substr($args->{type},1);
     	if ($args->{id} =~ m/[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}/) {
     		$ref = ModelSEED::Reference->new("ref" => $type."/".$args->{id});
-    		$id = $args->{type}."/".$self->login()."/".$msstore->get_aliases($ref)->[0];
+    		$id = $type."/".$self->login()."/".$msstore->get_aliases($ref)->[0];
     	} else {
-    		$id = $args->{type}."/".$self->login()."/".$args->{id};
+    		$id = $type."/".$self->login()."/".$args->{id};
 	    	$ref = ModelSEED::Reference->new("ref" => $type."/".$self->login()."/".$args->{id});
     	}
 	    if(defined($ref)) {
 	    	my $obj = $msstore->get_object($ref);
 	    	$obj->{_msStoreID} = $id;
-	    	$obj->{_msStoreRef} = $args->{type}."/".$obj->uuid();
+	    	$obj->{_msStoreRef} = $type."/".$obj->uuid();
 	       	return $obj;
 	    } else {
 	       	return (undef);
@@ -308,9 +307,9 @@ sub get_data {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
-	$args->{type}=lc($args->{type});
+    	my $type = lc(substr($args->{type},0,1)).substr($args->{type},1);
     	my $msstore = $self->msstore();
-    	my $refstr = $args->{type}."/".$self->login()."/".$args->{id};
+    	my $refstr = $type."/".$self->login()."/".$args->{id};
     	my $ref = ModelSEED::Reference->new(ref => $refstr);  	
       	if(defined($ref)) {
         	return $msstore->get_data($ref);
@@ -374,9 +373,9 @@ sub save_data {
     }, @_);
     my $store = $self->associatedStore();
     if ($store->type() eq "filedb" || $store->type() eq "mongo") {
-	$args->{type}=lc($args->{type});
+    	my $type = lc(substr($args->{type},0,1)).substr($args->{type},1);
     	my $msstore = $self->msstore();
-    	my $refstr = $args->{type}."/".$self->login()."/".$args->{id};
+    	my $refstr = $type."/".$self->login()."/".$args->{id};
     	my $ref = ModelSEED::Reference->new(ref => $refstr);  	
       	$msstore->save_data($ref,$args->{data});
     } else {
