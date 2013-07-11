@@ -13,7 +13,7 @@ sub options {
         ["matchbyname|n", "Use search names to match compounds"],
         ["separator|t=s", "Column separator for file. Default is tab"],
         ["addmergealias|g", "Add identifiers to merging namespace."],
-		["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
+	["checkforduplicates|f", "Force a check to report whether multiple compounds from the same file were merged together.  This is typically undesirable"],
     );
 }
 sub sub_execute {

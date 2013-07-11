@@ -14,11 +14,12 @@ sub options {
 	["mergevia|m=s@", "Name space of identifiers used for merging compounds. Comma delimiter accepted."],
 	["namespace|n=s@", "Default namespace for printing identifiers"],
     	["noaliastransfer|t", "Do not transfer aliases to merged compound"],
+	["consolidate|c", "Allow for consolidation of merging biochemistry"],
 	["checkforduplicates|f=s", "Force a check to report whether multiple compounds from the same file were merged together, which is typically undesirable.  Parameter requires single namespace"],
     );
 }
 sub sub_execute {
-    my ($self, $opts, $args,$bio) = @_;
+    my ($self, $opts, $args, $bio) = @_;
     $self->usage_error("Must specify a biochemistry to be merged") unless(defined($args->[0]));
     print "Using: ",$bio->name(),"\n";
 	my $other_biochemistry = $self->get_object({

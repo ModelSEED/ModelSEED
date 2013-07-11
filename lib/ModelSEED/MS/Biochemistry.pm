@@ -944,6 +944,7 @@ sub mergeBiochemistry {
     	"compoundSets" => "checkForDuplicateCompoundSet",
     	"reactionSets" => "checkForDuplicateReactionSet"
     };
+
     foreach my $type (@{$typelist}) {
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
@@ -1115,7 +1116,7 @@ sub checkForDuplicateCompound {
 	    next if !$obj->getAlias($mergeNamespace);
 	    foreach my $alias (@{$obj->getAliases($mergeNamespace)}){
 		my $dupObj = $self->getObjectByAlias("compounds",$alias,$mergeNamespace);
-		if($dupObj && ( !exists($opts->{touched}{$dupObj->uuid()} ) || defined($opts->{consolidate}) )){
+		if($dupObj && ( !exists($opts->{touched}{$dupObj->uuid()}) || defined($opts->{consolidate}) )){
 		    ModelSEED::utilities::verbose("Duplicate compound found using $alias in $mergeNamespace");
 		    return $dupObj;
 		}
@@ -1144,7 +1145,12 @@ sub sortObjectsByNamespace {
     my %touchedObjs=();
     
     foreach my $aliasName (@$aliasNames){
-	my $aliases = $bio->queryObject("aliasSets",{name=>$aliasName,attribute=>$type})->aliases();
+	my $set = $bio->queryObject("aliasSets",{name=>$aliasName,attribute=>$type});
+	if(!$set){
+	    print STDERR "Warning: $aliasName not found\n";
+	    next;
+	}
+	my $aliases = $set->aliases();
 	foreach my $alias (sort keys %$aliases){
 	    foreach my $uuid (@{$aliases->{$alias}}){
 		my $obj=$bio->getObject($type,$uuid);
