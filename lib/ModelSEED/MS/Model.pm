@@ -2009,6 +2009,7 @@ sub buildGraph {
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		next if (exists $removerxns->{$rxns->[$i]->id()});
 		if ($args->{reactions} == 1) {
+#		    print STDERR "Adding vertex for ", $rxns->[$i]->id(), "\n";
 		    $graph->add_vertex($rxns->[$i]->id());
 		}
 		my $rgts = $rxns->[$i]->modelReactionReagents();
@@ -2016,6 +2017,7 @@ sub buildGraph {
 			my $rgt = $rgts->[$j];
 			if (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne "<") {
 				if ($args->{reactions} == 1) {
+#				    print STDERR "\tAdding ", $rgt->modelcompound()->id(), " as a start cpd\n";
 				    $rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
 				} else {
 					for (my $k=0; $k < @{$rgts}; $k++) {
@@ -2027,6 +2029,7 @@ sub buildGraph {
 				}
 			} elsif (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne ">") {
 				if ($args->{reactions} == 1) {
+#				    print STDERR "\tAdding ", $rgt->modelcompound()->id(), " as a start cpd\n";
 				    $rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
 				} else {
 					for (my $k=0; $k < @{$rgts}; $k++) {
@@ -2047,10 +2050,14 @@ sub buildGraph {
 				my $rgt = $rgts->[$j];
 				if (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne "<") {
 					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
+					    next if $rxns->[$i]->id() eq $rxnid;
+#					    print STDERR "Adding an edge for ", $rxns->[$i]->id(), " and ", $rxnid, " based on ", $rgt->modelcompound()->id(), "\n";
 					    $graph->add_edge($rxns->[$i]->id(),$rxnid);
 					}
 				} elsif (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne ">") {
 					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
+					    next if $rxns->[$i]->id() eq $rxnid;
+#					    print STDERR "Adding an edge for ", $rxns->[$i]->id(), " and ", $rxnid, " based on ", $rgt->modelcompound()->id(), "\n";
 					    $graph->add_edge($rxns->[$i]->id(),$rxnid);
 					}
 				}
