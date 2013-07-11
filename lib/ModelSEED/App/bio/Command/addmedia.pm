@@ -88,15 +88,18 @@ sub assertion {
         print "The following is in ours, but not in them.\n";
         foreach my $cpd_id (keys %{$fluxSpec->{$exp}}) {
             if (!exists $mediaSpec->{$exp}->{$cpd_id}) {
-                print "\t$cpd_id\t",join(',', @{$cpd_idsToName->{$cpd_id}}),"\n";
-                $sol->{"ours"}->{$cpd_id} = 1;
+
+                my $str = "$cpd_id\t".join(',', @{$cpd_idsToName->{$cpd_id}});
+                print "\t$str","\n";
+                $sol->{"ours"}->{$str} = 1;
             }
         }
         print "The following is in them, but not in ours.\n";
         foreach my $cpd_id (keys %{$mediaSpec->{$exp}}) {
             if (!exists $fluxSpec->{$exp}->{$cpd_id}) {
-                print "\t$cpd_id\t ", $mediaSpec->{$exp}->{$cpd_id},"\n";
-                $sol->{"their"}->{$cpd_id} = 1;
+                my $str = "$cpd_id\t ". $mediaSpec->{$exp}->{$cpd_id};
+                print "\t$str","\n";
+                $sol->{"their"}->{$str} = 1;
             }
         }
         print "These are unknowns:\n";
@@ -108,8 +111,10 @@ sub assertion {
 
     foreach (keys %$sol) {
         print "$_\n";
-        my @ids = keys %{$sol->{$_}};
-        print "\t@ids\n";
+        my @ids = sort keys %{$sol->{$_}};
+        foreach (@ids) {
+            print "\t$_\n";
+        }        
     }
 }
 
