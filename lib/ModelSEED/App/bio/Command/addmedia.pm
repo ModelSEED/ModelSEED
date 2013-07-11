@@ -53,6 +53,9 @@ sub execute {
         $DB::single = 1;
         
         while (my ($exp, $fluxmap) = each %$fluxSpec) {
+            if (exists $fluxmap->{"Complete"}) {
+                next; # need to be handled when it runs FBA.
+            }
             my $data = {
                 "name" => $exp,
                 "compounds" => join(';', keys $fluxmap),
@@ -204,6 +207,9 @@ sub readExpDesc {
             if ($name eq "aeration") {
                 warn "Unexpected aeration value $value\n" if (!exists $aeration{$value});
                 $value = $aeration{$value};
+            }
+            elsif ($name eq 'yeast_extract') {
+                $fluxSpec->{$exp}->{"Complete"} = 1; 
             }
             else {
                 next;            
