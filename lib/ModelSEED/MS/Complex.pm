@@ -29,7 +29,15 @@ has reactionList => (
     lazy       => 1,
     builder    => '_build_reactionList'
 );
-
+has roleTuples => (
+    is         => 'rw',
+    isa        => 'ArrayRef',
+    printOrder => '3',
+    type       => 'msdata',
+    metaclass  => 'Typed',
+    lazy       => 1,
+    builder    => '_build_roleTuples'
+);
 
 sub isActivatedWithRoles {
     my ($self, $args) = @_;
@@ -51,7 +59,6 @@ sub isActivatedWithRoles {
         }
     }
 }
-
 sub createModelReactionProtein {
     my ($self, $args) = @_;
     $args = ModelSEED::utilities::ARGS(
@@ -66,8 +73,6 @@ sub createModelReactionProtein {
     $hash->{note} = $args->{note} if defined $args->{note};
     return ModelSEED::MS::ModelReactionProtein->new($hash);
 }
-
-
 sub _build_roleList {
 	my ($self) = @_;
 	my $roleList = "";
@@ -91,6 +96,16 @@ sub _build_reactionList {
 		$reactionList .= $cpxrxns->[$i]->id();		
 	}
 	return $reactionList;
+}
+sub _build_roleTuples {
+    my ($self) = @_;
+    my $roletuples = [];
+    my $roles = $self->complexroles();
+    for (my $i=0; $i < @{$roles}; $i++) {
+    	my $role = $roles->[$i];
+    	push(@{$roletuples},[$role->role()->id(),$role->type(),$role->optional(),$role->triggering()]);
+    }
+    return $roletuples;
 }
 
 __PACKAGE__->meta->make_immutable;

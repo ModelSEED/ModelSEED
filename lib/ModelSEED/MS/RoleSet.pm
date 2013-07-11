@@ -15,6 +15,7 @@ extends 'ModelSEED::MS::DB::RoleSet';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has roleList => ( is => 'rw', isa => 'Str',printOrder => '5', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleList' );
+has roleIDs => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildroleIDs' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -30,7 +31,15 @@ sub _buildroleList {
 	}
 	return $roleList;
 }
-
+sub _buildroleIDs {
+	my ($self) = @_;
+	my $roleIDs = [];
+	my $roles = $self->roles();
+	for (my $i=0; $i < @{$roles}; $i++) {
+		push(@{$roleIDs},$roles->[$i]->id());		
+	}
+	return $roleIDs;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:

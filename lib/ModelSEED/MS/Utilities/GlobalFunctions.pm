@@ -14,7 +14,7 @@ sub convertRoleToSearchRole {
 	$rolename = lc($rolename);
 	$rolename =~ s/[\d\-]+\.[\d\-]+\.[\d\-]+\.[\d\-]+//g;
 	$rolename =~ s/\s//g;
-	$rolename =~ s/#.*//;
+	$rolename =~ s/\#.*$//g;
 	return $rolename;
 }
 
@@ -53,8 +53,10 @@ sub functionToRoles {
 		"golgi\\sapparatus" => "g",
 		"endoplasmic\\sreticulum" => "e"
 	};
-	if ($function =~ /#(.*)$/) {
-		$output->{comment} = $1;
+	my $array = [split(/\#/,$function)];
+	$function = shift(@{$array});
+	$output->{comment} = join("#",@{$array});
+	if (length($output->{comment}) > 0) {
 		foreach my $comp (keys(%{$compartmentTranslation})) {
 			if ($output->{comment} =~ /$comp/) {
 				if ($output->{compartments}->[0] eq "u") {

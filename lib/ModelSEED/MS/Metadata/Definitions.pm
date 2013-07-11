@@ -2563,6 +2563,13 @@ $objectDefinitions->{Stimuli} = {
 			req        => 0,
 		},
 		{
+			name       => 'description',
+			printOrder => 2,
+			perm       => 'rw',
+			type       => 'ModelSEED::varchar',
+			req        => 0,
+		},
+		{
 			name       => 'type',
 			printOrder => 3,
 			perm       => 'rw',

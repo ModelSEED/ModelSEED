@@ -14,13 +14,29 @@ extends 'ModelSEED::MS::DB::TemplateBiomass';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-
+has compoundTuples => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompoundTuples' );
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-
-
+sub _buildcompoundTuples {
+	my ($self) = @_;
+	my $compounds = [];
+	my $cpds = $self->templateBiomassComponents();
+	for (my $i=0; $i <@{$cpds}; $i++) {
+		my $cpd = $cpds->[$i];
+		my $links = [];
+		my $linkcpds = $cpd->linkedCompounds();
+		for (my $j=0;$j < @{$linkcpds};$j++) {
+			push(@{$links},[$cpd->linkCoefficients()->[$j],$linkcpds->[$j]->id()]);
+		}
+		push(@{$compounds},[
+			$cpd->compound()->id(),$cpd->compartment()->id(),$cpd->class(),$cpd->universal(),$cpd->coefficientType(),$cpd->coefficient(),
+			$links
+		]);
+	}
+	return $compounds;
+}
 
 #***********************************************************************************************************
 # CONSTANTS:

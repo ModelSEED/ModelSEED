@@ -8,6 +8,7 @@
 use strict;
 use YAML::XS;
 use XML::LibXML;
+use File::Temp;
 use ModelSEED::MS::DB::Model;
 package ModelSEED::MS::Model;
 use Moose;
@@ -21,6 +22,7 @@ extends 'ModelSEED::MS::DB::Model';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has features => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatures' );
+has featureHash => ( is => 'rw', isa => 'HashRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildfeatureHash' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -38,6 +40,20 @@ sub _buildfeatures {
 		}
 	}
 	return [keys(%{$ftrhash})];
+}
+
+sub _buildfeatureHash {
+	my ($self) = @_;
+	my $ftrhash = {};
+	my $rxns = $self->modelreactions();
+	for (my $i=0; $i < @{$rxns};$i++) {
+		my $rxn = $rxns->[$i];
+		my $ftrs = $rxn->featureUUIDs();
+		foreach my $ftr (@{$ftrs}) {
+			$ftrhash->{$ftr}->{$rxn->uuid()} = $rxn;
+		}
+	}
+	return $ftrhash;
 }
 
 #***********************************************************************************************************
@@ -1527,10 +1543,61 @@ sub export {
 		return $self->printCytoSEED();
 	} elsif (lc($args->{format}) eq "modelseed") {
 		return $self->printModelSEED();
+	} elsif (lc($args->{format}) eq "excel") {
+		return $self->printExcel();
 	}
 	ModelSEED::utilities::error("Unrecognized type for export: ".$args->{format});
 }
 
+=head3 printExcel
+
+Definition:
+	string printExcel();
+Description:
+	Prints model data in excel
+
+=cut
+
+sub printExcel {
+	my ($self) = @_;
+	#my ($fh, $filename) = File::Temp::tempfile("xls-XXXXXX");
+    #close($fh);
+    my $filename = "/Users/chenry/model.xls";
+	require "Spreadsheet/WriteExcel.pm";
+	my $wkbk = Spreadsheet::WriteExcel->new($filename);
+	my $sheet = $wkbk->add_worksheet("Compounds");
+	$sheet->write_row(0,0,["ID","Name","Abbreviation","Formula","Charge","DeltaG","Compartment"]);
+	my $cpds = $self->modelcompounds();
+	for (my $i=0; $i < @{$cpds}; $i++) {
+		my $cpd = $cpds->[$i];
+		$sheet->write_row($i+1,0,[$cpd->compound()->id(),$cpd->compound()->name(),$cpd->compound()->abbreviation(),$cpd->compound()->formula(),$cpd->compound()->defaultCharge(),$cpd->compound()->deltaG(),$cpd->modelcompartment()->label()]);
+	}	
+	$sheet = $wkbk->add_worksheet("Reactions");
+	$sheet->write_row(0,0,["ID","Name","Equation","Definition","EC","Compartment","DeltaG"]);
+	my $rxns = $self->modelreactions();
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i];
+		$sheet->write_row($i+1,0,[$rxn->reaction()->id(),$rxn->reaction()->name(),$rxn->reaction()->equation(),$rxn->reaction()->definition(),join("|",@{$rxn->reaction()->getAliases("Enzyme Class")}),$rxn->modelcompartment()->label(),$rxn->reaction()->deltaG()]);
+	}
+	$sheet = $wkbk->add_worksheet("Genes");
+	$sheet->write_row(0,0,["ID","Type","Functions","Contig","Start","Stop","Direction","Reactions"]);
+	my $ftrs = $self->annotation()->features();
+	my $ftrHash = $self->featureHash();
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		my $ftr = $ftrs->[$i];
+		my $reactionList = [];
+		foreach my $rxnuuid (keys(%{$ftrHash->{$ftr->uuid()}})) {
+			push(@{$reactionList},$ftrHash->{$ftr->uuid()}->{$rxnuuid}->id());
+		}
+		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
+	}
+	#print $filename."\n";
+	my $output;
+	open(my $fh, "<:raw", $filename);
+	my $data = <$fh>;
+	close($fh);
+	return $data;
+}
 
 =head3 printCytoSEED
 

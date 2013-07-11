@@ -16,6 +16,7 @@ extends 'ModelSEED::MS::DB::Role';
 #***********************************************************************************************************
 has searchname => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildsearchname' );
 has reactions => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildreactions' );
+has complexIDs => ( is => 'rw', isa => 'ArrayRef',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcomplexIDs' );
 
 #***********************************************************************************************************
 # BUILDERS:
@@ -37,6 +38,17 @@ sub _buildreactions {
 		}
 	}
 	return $rxnlist;
+}
+sub _buildcomplexIDs {
+	my ($self) = @_;
+	my $hash = $self->parent()->roleComplexHash();
+	my $complexes = [];
+	if (defined($hash->{$self->uuid()})) {
+		foreach my $cpxid (keys(%{$hash->{$self->uuid()}})) {
+			push(@{$complexes},$hash->{$self->uuid()}->{$cpxid}->id());
+		}
+	}
+	return $complexes;
 }
 
 #***********************************************************************************************************

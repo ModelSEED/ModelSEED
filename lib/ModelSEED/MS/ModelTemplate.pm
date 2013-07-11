@@ -31,6 +31,67 @@ sub _buildbiochemistry {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub adjustReaction {
+	my $self = shift;
+    my $args = ModelSEED::utilities::args(["reaction"], {
+    	compartment => "c",
+    	direction => undef,
+    	type => undef,
+    	"new" => 0,
+    	complexesToRemove => [],
+    	complexesToAdd => [],
+    	"delete" => 0,
+    	clearComplexes => 0
+    }, @_);
+	my $bio = $self->biochemistry();
+	my $rxn = $bio->searchForReaction($args->{reaction});
+	ModelSEED::utilities::error("Specified reaction ".$args->{reaction}." not found!") unless(defined($rxn));
+	my $cmp = $bio->searchForCompartment($args->{compartment});
+	ModelSEED::utilities::error("Specified compartment ".$args->{compartment}." not found!") unless(defined($cmp));
+	my $temprxn = $self->queryObjects("templateReactions",{
+		compartment_uuid => $cmp->uuid(),
+		reaction_uuid => $rxn->uuid()
+	});
+	if (!defined($temprxn)) {
+		if (defined($args->{"new"}) && $args->{"new"} == 1) {
+			$temprxn = ModelSEED::MS::TemplateReaction->new({
+				compartment_uuid => $cmp->uuid(),
+				reaction_uuid => $rxn->uuid()
+			});
+			$self->add("templateReactions",$temprxn);
+		} else {
+			ModelSEED::utilities::error("Specified template reaction not found and new reaction not specified!");
+		}
+	} elsif (defined($args->{"delete"}) && $args->{"delete"} == 1) {
+		$self->remove("templateReactions",$temprxn);
+		return $temprxn;
+	}
+	if (defined($args->{direction})) {
+		$temprxn->direction($args->{direction});
+	}
+	if (defined($args->{type})) {
+		$temprxn->type($args->{type});
+	}
+    if (defined($args->{clearComplexes}) && $args->{clearComplexes} == 1) {
+		$temprxn->clearLinkArray("complexes");
+	}
+  	for (my $i=0; $i < @{$args->{complexesToRemove}}; $i++) {
+  		my $cpx = $self->mapping()->searchForComplex($args->{complexesToRemove}->[$i]);
+    	if (defined($cpx)) {
+    		$temprxn->removeLinkArrayItem("complexes",$cpx);
+    	}
+   	}
+    for (my $i=0; $i < @{$args->{complexesToAdd}}; $i++) {
+    	my $cpx = $self->mapping()->searchForComplex($args->{complexesToAdd}->[$i]);
+    	if (defined($cpx)) {
+    		$temprxn->addLinkArrayItem("complexes",$cpx);
+    	} else {
+  			ModelSEED::utilities::error("Specified complex ".$args->{complexesToAdd}->[$i]." not found!");
+  		}
+   	}
+   	return $temprxn;
+}
+
 sub buildModel {
     my $self = shift;
 	my $args = ModelSEED::utilities::args(["annotation"],{}, @_);
