@@ -1648,13 +1648,14 @@ sub printCytoSEED {
 	}
 
 	my $biomasses = $model->biomasses();
+	my $biomass;
 
 	if (@$biomasses == 0) {
 	    print STDERR "No biomass\n";
 	    $result->{"biomass_reaction_details"} = {};
 	}
 	else {
-	    my $biomass = $biomasses->[0];
+	    $biomass = $biomasses->[0];
 	    if (@$biomasses != 1) {
 		print STDERR "Multiple biomasses, using the first one\n";
 	    }
@@ -1686,7 +1687,7 @@ sub printCytoSEED {
 
 	    $result->{"biomass_reaction_details"} = { 
 		$modelid => {
-		    "DATABASE" => ["bio00000"], # FIX
+		    "DATABASE" => [$biomass->id()], 
 		    "EQUATION" => [$equation] 
 		}
 	    };
@@ -1716,17 +1717,30 @@ sub printCytoSEED {
 		my @reactionVariables = @{$fbaResult->fbaReactionVariables()};
 		next if @reactionVariables == 0; # FBA failed
 
-		foreach my $rVar (@reactionVariables) {
-		    my $flux = {};
-		    my $modelreaction = $rVar->modelreaction();
-		    my $reaction = $modelreaction->reaction();
-		    $flux->{"reaction"} = $reaction->id();
-		    $flux->{"flux"} = $rVar->value();
-		    push @$fluxes, $flux;
-		    if ($fbaFormulation->fva()) {
-			my $class = $rVar->{"class"};
-			my $min = $rVar->{"min"};
-			my $max = $rVar->{"max"};
+		if ($fbaFormulation->fva()) {
+		    my @classifications;
+
+		    foreach my $rVar (@reactionVariables) {
+			my $modelreaction = $rVar->modelreaction();
+			my $reaction = $modelreaction->reaction();
+			push @classifications, [$reaction->id(), $rVar->{"class"}, $rVar->{"min"}, $rVar->{"max"}, $rVar->{"value"}];
+		    }
+
+		    # roundabout way to get biomass result since the biomass reaction variable isn't being saved
+		    foreach my $cVar (@{$fbaResult->fbaCompoundVariables()}) {
+			my $modelcpd = $cVar->modelcompound();
+			my $cpd = $modelcpd->compound();
+			next unless $cpd->id() eq 'cpd11416';
+			push @classifications, [$biomass->id(), "Positive", -$cVar->{"max"}, -$cVar->{"min"}, -$cVar->{"value"}];
+		    }
+
+		    foreach my $rxnInfo (@classifications) {
+			my ($rid, $class, $min, $max, $value) = @$rxnInfo;
+			my $flux = {};
+			$flux->{"reaction"} = $rid;
+			$flux->{"flux"} = $value;
+			push @$fluxes, $flux;
+
 			my $dir;
 			if ($class eq "Positive") {
 			    $class = "essential";
@@ -1753,20 +1767,19 @@ sub printCytoSEED {
 			    $dir = "NA";
 			}
 			else {
-			    print STDERR "For reaction ", $reaction->id(), ", class is ", $class, "\n";
+			    print STDERR "For reaction ", $rid, ", class is ", $class, "\n";
 			    $class = "dead";
 			    $dir = "NA";
 			}
-			push @{$reaction_classifications->{$reaction->id()}->{"class"}}, $class;
-			push @{$reaction_classifications->{$reaction->id()}->{"class_directionality"}}, $dir;
-			push @{$reaction_classifications->{$reaction->id()}->{"max_flux"}}, $max;
-			push @{$reaction_classifications->{$reaction->id()}->{"min_flux"}}, $min;
-			push @{$reaction_classifications->{$reaction->id()}->{"media"}}, $fbaFormulation->media()->name();
-			push @{$reaction_classifications->{$reaction->id()}->{"reaction"}}, $reaction->id();
+			push @{$reaction_classifications->{$rid}->{"class"}}, $class;
+			push @{$reaction_classifications->{$rid}->{"class_directionality"}}, $dir;
+			push @{$reaction_classifications->{$rid}->{"max_flux"}}, $max;
+			push @{$reaction_classifications->{$rid}->{"min_flux"}}, $min;
+			push @{$reaction_classifications->{$rid}->{"media"}}, $fbaFormulation->media()->name();
+			push @{$reaction_classifications->{$rid}->{"reaction"}}, $rid;
 		    }
 		}
-
-		if (! $fbaFormulation->fva()) {
+		else {
 		    push @{$fba_results}, $fba;
 		}
 	    }    
