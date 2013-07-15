@@ -70,7 +70,7 @@ sub execute {
             }            
             &addMedia($biochemistry, $data);        
         }        
-        print STDERR "The following is compelete media.(STDOUT)\n";
+        print STDERR "The following is Complete media.(STDOUT)\n";
         print join(";", @complete);
     }
     
@@ -131,12 +131,15 @@ sub addMedia {
     my ($biochemistry, $data) = @_;
     my $factory = ModelSEED::MS::Factories::ExchangeFormatFactory->new();
     my $obj = $factory->createFromAPI("Media",$biochemistry,$data);
-        my $existingMedia = $biochemistry->queryObject("media",{id => $obj->id()});
+    my $existingMedia = $biochemistry->queryObject("media",{id => $obj->id()});
     if (defined($existingMedia)) {
         $obj->uuid($existingMedia->uuid());
         $biochemistry->remove("media",$existingMedia);
     }
     print STDERR "Adding ", $obj->id(), "\n";
+    foreach my $mc (@{$obj->mediacompounds()}) {
+	print STDERR "\t", $mc->compound()->id(), "\t", $mc->compound()->name(), "\t", $mc->concentration(), "\n";
+    }
     $biochemistry->add("media",$obj);            
 }
 
