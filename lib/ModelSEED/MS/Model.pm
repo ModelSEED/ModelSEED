@@ -314,6 +314,10 @@ sub buildModelFromAnnotation {
 		}
 	}
     warn "Constructing reactions...\n" if($args->{verbose});
+
+    my %Found_Roles=();
+    my %Found_Rxns=();
+
 	my $complexes = $mapping->complexes();
 	for (my $i=0; $i < @{$complexes};$i++) {
 		my $cpx = $complexes->[$i];
@@ -323,6 +327,7 @@ sub buildModelFromAnnotation {
 		for (my $j=0; $j < @{$complexroles}; $j++) {
 			my $cpxrole = $complexroles->[$j];
 			if (defined($roleFeatures->{$cpxrole->role_uuid()})) {
+			    $Found_Roles{$cpxrole->role()->name()}=1;
 				foreach my $compartment (keys(%{$roleFeatures->{$cpxrole->role_uuid()}})) {
 					my $origcomp = $compartment;
 					if ($compartment eq "u") {
@@ -355,6 +360,8 @@ sub buildModelFromAnnotation {
 			if ($compartments->{$cmp}->{present} == 1) {
 				for (my $j=0; $j < @{$complexreactions}; $j++) {
 					my $cpxrxn = $complexreactions->[$j];
+					$Found_Rxns{$cpxrxn->uuid()}=1;
+
 					my $override = undef;
 					if ($cmp ne "c") {
 						my $biocmp = $self->biochemistry()->queryObject("compartments",{id => $cmp});
@@ -391,6 +398,8 @@ sub buildModelFromAnnotation {
 		mapping => $self->mapping(),
 		isplant => $args->{isplant},
 	});
+
+    warn scalar(keys %Found_Roles)," found, creating ",scalar(keys %Found_Rxns)," reactions in the model\n" if($args->{verbose});
 }
 
 =head3 buildModelByLayers

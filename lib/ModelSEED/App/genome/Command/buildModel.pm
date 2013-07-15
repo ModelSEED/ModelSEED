@@ -29,7 +29,7 @@ sub options {
     );
 }
 sub sub_execute {
-    my ($self, $opts, $args,$anno) = @_;
+    my ($self, $opts, $args, $anno) = @_;
     my $modelID = shift(@{$args});
     $self->usage_error("No id was defined for the new model!") unless defined($modelID) || $modelID != "";
     my $template;
