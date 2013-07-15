@@ -47,13 +47,16 @@ sub execute {
         my ($nameToCpd_ids, $cpd_idsToName) = read_media_cpds("/cygdrive/c/home/workspace/media_cpds.txt");
         my ($fluxSpec, $unknowns) = readExpDesc($opts->{"file"}, $nameToCpd_ids);
         
-        my $mediaSpec = readOut("/cygdrive/c/home/workspace/media.out");        
-        &assertion($fluxSpec, $mediaSpec, $unknowns, $cpd_idsToName);
+        # my $mediaSpec = readOut("/cygdrive/c/home/workspace/media.out");        
+        # &assertion($fluxSpec, $mediaSpec, $unknowns, $cpd_idsToName);
 
         $DB::single = 1;
         
+        my @complete;
         while (my ($exp, $fluxmap) = each %$fluxSpec) {
             if (exists $fluxmap->{"Complete"}) {
+                print STDERR "$exp is Complete\n";
+                push @complete, $exp;
                 next; # need to be handled when it runs FBA.
             }
             my $data = {
@@ -65,7 +68,9 @@ sub execute {
                 $data->{$option} = $opts->{$option};
             }            
             &addMedia($biochemistry, $data);        
-        }
+        }        
+        print STDERR "The following is compelete media.(STDOUT)\n";
+        print join(";", @complete);
     }
     
     if (defined($opts->{saveas})) {
@@ -164,7 +169,7 @@ sub readOut {
 sub read_media_cpds {
     my ($path) = @_;
 
-    open(FILE, "<$path");
+    open(FILE, "<$path") or die "Cannot open $path: $!\n";
     my $nameToCpd_ids = {};
     my $cpd_idsToName = {}; # for assertion.
     while(<FILE>) {
