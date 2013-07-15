@@ -89,6 +89,28 @@ sub _buildtypeClassifier {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 mappingToTemplateModel
+Definition:
+	ModelSEED::MS::ModelTemplate = ModelSEED::MS::Mapping->mappingToTemplateModel();
+Description:
+	Generates a model template from the mapping data
+
+=cut
+
+sub mappingToTemplateModel {
+	my ($self,$args) = @_;
+	$args = ModelSEED::utilities::args(["name"], {
+		type => "GenomeScale",
+		domain => "Bacteria"
+	}, $args);
+	my $ModelTemplate = ModelSEED::MS::ModelTemplate->new({
+		name => $args->{name},
+		type => $args->{type},
+		domain => $args->{domain},
+		mapping_uuid => $self->uuid()
+	});
+	return $ModelTemplate;
+}
 
 =head3 searchForComplex
 Definition:

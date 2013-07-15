@@ -31,6 +31,56 @@ sub _buildbiochemistry {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+sub roleToReactions {
+	my $self = shift;
+	my $roleToRxn = [];
+	my $complexes = {};
+	my $rxns = $self->templateReactions();
+	my $rolehash = {};
+	for (my $i=0;$i<@{$rxns};$i++) {
+		my $rxn = $rxns->[$i];
+		my $cpxs = $rxn->complexes();
+		for (my $j=0;$j < @{$cpxs};$j++) {
+			my $cpx = $cpxs->[$j];
+			if (!defined($complexes->{$cpx->uuid()})) {
+				$complexes->{$cpx->uuid()} = {
+					complex => $cpx->id(),
+					name => $cpx->name(),
+					reactions => []
+				};
+			}
+			push(@{$complexes->{$cpx->uuid()}->{reactions}},{
+				reaction => $rxn->reaction()->id(),
+				direction => $rxn->direction(),
+				compartment => $rxn->compartment()->id(),
+				equation => $rxn->reaction()->definition()
+			});	
+			my $roles = $cpx->complexroles();
+		    for (my $k=0; $k < @{$roles}; $k++) {
+		    	my $role = $roles->[$k]->role();
+		    	if (!defined($rolehash->{$role->uuid()})) {
+		    		$rolehash->{$role->uuid()} = {
+		    			role => $role->id(),
+		    			name => $role->name(),
+		    			complexes => []
+		    		};
+		    		push(@{$roleToRxn},$rolehash->{$role->uuid()});
+		    	}
+		    	my $found = 0;
+		    	for (my $m=0; $m < @{$rolehash->{$role->uuid()}->{complexes}}; $m++) {
+		    		if ($rolehash->{$role->uuid()}->{complexes}->[$m] eq $complexes->{$cpx->uuid()}) {
+		    			$found = 1;
+		    		}
+		    	}
+		    	if ($found == 0) {
+		    		push(@{$rolehash->{$role->uuid()}->{complexes}},$complexes->{$cpx->uuid()});
+		    	}
+		    }
+		}
+	}
+	return $roleToRxn;
+}
+
 sub adjustReaction {
 	my $self = shift;
     my $args = ModelSEED::utilities::args(["reaction"], {
