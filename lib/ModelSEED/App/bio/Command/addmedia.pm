@@ -44,7 +44,7 @@ sub execute {
         &addMedia($biochemistry, $data);
     }
     else {
-        my ($nameToCpd_ids, $cpd_idsToName) = read_media_cpds("/cygdrive/c/home/workspace/media_cpds.txt");
+        my ($nameToCpd_ids, $cpd_idsToName) = read_media_cpds("media_cpds.txt");
         my ($fluxSpec, $unknowns) = readExpDesc($opts->{"file"}, $nameToCpd_ids);
         
         # my $mediaSpec = readOut("/cygdrive/c/home/workspace/media.out");        
@@ -54,6 +54,7 @@ sub execute {
         
         my @complete;
         while (my ($exp, $fluxmap) = each %$fluxSpec) {
+	    $exp =~ s/\./_/g;
             if (exists $fluxmap->{"Complete"}) {
                 print STDERR "$exp is Complete\n";
                 push @complete, $exp;
@@ -61,8 +62,8 @@ sub execute {
             }
             my $data = {
                 "name" => $exp,
-                "compounds" => join(';', keys $fluxmap),
-                "concentrations" => join(';', values $fluxmap),
+                "compounds" => join(';', keys %$fluxmap),
+                "concentrations" => join(';', values %$fluxmap),
             };
             foreach my $option (keys %{$opts}) {
                 $data->{$option} = $opts->{$option};
@@ -135,6 +136,7 @@ sub addMedia {
         $obj->uuid($existingMedia->uuid());
         $biochemistry->remove("media",$existingMedia);
     }
+    print STDERR "Adding ", $obj->id(), "\n";
     $biochemistry->add("media",$obj);            
 }
 
