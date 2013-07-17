@@ -46,7 +46,7 @@ sub execute {
     else {
         my ($nameToCpd_ids, $cpd_idsToName) = read_media_cpds("media_cpds.txt");
         my ($fluxSpec, $unknowns) = readExpDesc($opts->{"file"}, $nameToCpd_ids);
-        
+
         # my $mediaSpec = readOut("/cygdrive/c/home/workspace/media.out");        
         # &assertion($fluxSpec, $mediaSpec, $unknowns, $cpd_idsToName);
 
@@ -235,7 +235,7 @@ sub readExpDesc {
             &updateFluxSpec($fluxSpec, $exp, $nameToCpd_ids->{$name}, $value);
         }
         else {
-            $unknowns->{$exp}->{$name} = $value;
+            $unknowns->{$name} = $value;
         }        
     }
     close(DEC);
