@@ -34,8 +34,13 @@ sub readExpDesc {
 sub checkIfRan {
     my ($model) = @_;
     my $ran = {};
-    foreach my $media (map {$_->media->name()} @{$model->fbaFormulations}) {
-        $ran->{$media} = 1;
+    foreach my $fba (@{$model->fbaFormulations}) {
+	if (defined $fba) {
+	    my $media = $fba->media();
+	    if (defined $media) {
+		$ran->{$media->name()} = 1;
+	    }
+	}
     }
 
     return $ran;
@@ -59,15 +64,18 @@ my ($model_ref, $exp_spec) = @ARGV;
 my $ran = &checkIfRan($model);
 
 my $experiments = &readExpDesc($exp_spec);
-print "There are ", scalar keys %$experiments, "experiments\n";
+print "There are ", scalar keys %$experiments, " experiments\n";
 
 foreach my $exp (keys %$experiments) {
-    my $command = "model runfba $model_ref --fva -o -v -f dump --media $exp";
-    print "$command\n";
     if (exists $ran->{$exp}) {
-        print "The data already exists.\n";
+        print "The data already exists for $exp.\n";
+	(my $media) = $model->interpretReference("Media/name/$exp","Media");
+	print "media is ", $media->name(), "\n";
     }
     else {
+	my $command = "model runfba $model_ref --fva -o -v -f /tmp/$exp --media $exp";
+	print "$command\n";
+	next;
         my $result = `$command`;
         if ($result =~ /formulation not found/) {
             $result = "skipped. It might be equivalent to Complete.";
