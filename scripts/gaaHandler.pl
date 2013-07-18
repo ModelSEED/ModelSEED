@@ -43,7 +43,7 @@ while (--$count >= 0)  {
     print $uuid $form->uuid();
     close $uuid;
 
-    my $command = "perl ./simpleGeneActivityAnalysis.pl ". $ref->alias_string. " -j $file";
+    my $command = "perl ../scripts/simpleGeneActivityAnalysis.pl ". $ref->alias_string. " -j $file";
     my $exchange = `$command`;    
     my $singleGeneCalls = YAML::XS::Load($exchange);
 
