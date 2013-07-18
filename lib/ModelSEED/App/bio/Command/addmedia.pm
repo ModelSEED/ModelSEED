@@ -226,7 +226,7 @@ sub readExpDesc {
             }
         }
         # "", undef, either case, we don't need them.
-        next if ($value eq "" or !defined $value);
+        next if ($value eq "" or $value == 0 or !defined $value);
 
         # resume original name
         ($name) = split(' ', $name) if ($name =~ /cpd\d{5}/);
@@ -237,8 +237,10 @@ sub readExpDesc {
         else {
             $unknowns->{$name} = $value;
         }        
+	$fluxSpec->{$exp}->{"cpd00001"} = 100;
     }
-    close(DEC);
+    close(DESC);
+    # just add water
     return $fluxSpec, $unknowns;
 }
 

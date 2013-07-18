@@ -69,18 +69,19 @@ print "There are ", scalar keys %$experiments, " experiments\n";
 foreach my $exp (keys %$experiments) {
     if (exists $ran->{$exp}) {
         print "The data already exists for $exp.\n";
-	(my $media) = $model->interpretReference("Media/name/$exp","Media");
-	print "media is ", $media->name(), "\n";
     }
     else {
-	my $command = "model runfba $model_ref --fva -o -v -f /tmp/$exp --media $exp";
-	print "$command\n";
-	next;
-        my $result = `$command`;
-        if ($result =~ /formulation not found/) {
-            $result = "skipped. It might be equivalent to Complete.";
+	(my $media) = $model->interpretReference("Media/name/$exp","Media");
+	if (defined $media) {
+	    print "media is defined: ", $media->name(), "\n";
+	    my $command = "model runfba $model_ref --fva -o -v -f /tmp/$exp --media $exp";
+	    print "$command\n";
+	    my $result = `$command`;
+	    print $result;
+	}
+	else {
+	    print "media is not defined: ", $exp, ". It might be equivalent to Complete.\n";
         }
-        print $result;
     }
 }
 

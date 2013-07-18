@@ -2,7 +2,6 @@
 use strict;
 use common::sense;
 use Class::Autouse qw(
-    Term::ProgressBar
     YAML::XS
     File::Temp
     JSON::XS
@@ -27,16 +26,19 @@ warn "Model not found; You must supply a valid model name." unless(defined($mode
 $DB::single = 1;
 
 my $forms = $model->fbaFormulations();
-my $count = 0;
-my $max = @$forms;
-my $progress = Term::ProgressBar->new({name  => 'Outliers',
-                                      count => $max,
-                                     ETA   => 'linear', });
-$progress->max_update_rate(1);
-
+my $count = scalar @$forms;
+$model = 0;
+$forms = 0;
 my $geneCalls = {};
 
-foreach my $form (@$forms) {
+while (--$count >= 0)  {
+    ($model, $ref) = $helper->get_object("model",$args,$store);
+    $forms = $model->fbaFormulations();
+    my $form = $forms->[$count];
+    if ($form->fbaResults()->[0]->objectiveValue() < .000001) {
+	print STDERR "No growth on ", $form->media->name, "\n";
+	next;
+    }
     my ($uuid, $file) = File::Temp::tempfile();
     print $uuid $form->uuid();
     close $uuid;
@@ -44,10 +46,11 @@ foreach my $form (@$forms) {
     my $command = "perl ./simpleGeneActivityAnalysis.pl ". $ref->alias_string. " -j $file";
     my $exchange = `$command`;    
     my $singleGeneCalls = YAML::XS::Load($exchange);
-#    print STDERR $singleGeneCalls->{"media"}, "\n";
 
     $geneCalls->{$singleGeneCalls->{"media"}} = $singleGeneCalls->{"data"}; 
-    $progress->update($count++);
+    $model = 0;
+    $forms = 0;
+    $form = 0;
 }
 
 # save file just in case.
