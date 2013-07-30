@@ -40,9 +40,9 @@ sub _buildroleList {
 		}
 		$roleList .= $self->featureroles()->[$i]->role()->name();
 	}
-	if (length($compartments) > 0) {
-		$roleList .= " #".$compartments;
-	}
+	#if (length($compartments) > 0) {
+		#$roleList .= " #".$compartments;
+	#}
 	return $roleList;
 }
 
