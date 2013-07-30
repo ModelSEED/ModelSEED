@@ -107,6 +107,60 @@ sub _buildroleHash {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+=head3 GenerateGenomeObject
+
+Definition:
+	{} = ModelSEED::MS::Annotation->GenerateGenomeObject();
+Description:
+	Generates a KBase style genome object from the annotation object
+
+=cut
+
+sub GenerateGenomeObject {
+    my ($self,$args) = @_;
+    $args = ModelSEED::utilities::args([],{
+		domain => "Bacteria",
+		genome => 0,
+		geneticcode => 11,
+	}, $args);
+	my $genomeobj = $self->genomes()->[$args->{genome}];
+	my $genome = {
+		source => "SEED",
+		source_id => $genomeobj->id(),
+		features => [],
+		taxonomy => $genomeobj->taxonomy(),
+		size => $genomeobj->size(),
+		scientific_name => $genomeobj->name(),
+		domain => $args->{domain},
+		gc => $genomeobj->gc(),
+		genetic_code => $args->{geneticcode},
+		id => $genomeobj->id(),
+		annotation_uuid => $self->uuid()
+	};
+	my $ftrs = $self->features();
+	for (my $i=0; $i < @{$ftrs}; $i++) {
+		my $ftr = $ftrs->[$i];
+		my $direction = "+";
+		if (defined($ftr->direction()) && $ftr->direction() eq "rev") {
+			$direction = "-";
+		}
+		my $length = ($ftr->stop()-$ftr->start());
+		push(@{$genome->{features}},{
+			location => [[
+				$ftr->contig(),
+            	$ftr->start(),
+            	$direction,
+            	$length
+			]],
+			protein_translation => $ftr->sequence(),
+			function => $ftr->roleList(),
+			aliases => [],
+			id => $ftr->id(),
+			annotations => []
+		});
+	}
+	return $genome;
+}
 
 =head3 searchForFeature
 

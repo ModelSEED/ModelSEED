@@ -105,10 +105,96 @@ sub mappingToTemplateModel {
 	}, $args);
 	my $ModelTemplate = ModelSEED::MS::ModelTemplate->new({
 		name => $args->{name},
-		type => $args->{type},
+		modelType => $args->{type},
 		domain => $args->{domain},
 		mapping_uuid => $self->uuid()
 	});
+	my $cpxs = $self->complexes();
+	my $rxnHash;
+	my $cmp = $self->biochemistry()->queryObject("compartments",{
+		id => "c"
+	});
+	for (my $i=0; $i < @{$cpxs}; $i++) {
+		my $cpx = $cpxs->[$i];
+		my $rxns = $cpx->reactions();
+		for (my $j=0; $j < @{$rxns}; $j++) {
+			my $rxn = $rxns->[$j];
+			if (!defined($rxnHash->{$rxn->uuid()})) {
+				$rxnHash->{$rxn->uuid()} = {
+					reaction_uuid => $rxn->uuid(),
+					compartment_uuid => $cmp->uuid(),
+					complex_uuids => [],
+					direction => $rxn->thermoReversibility(),
+					type => "conditional"
+				};
+			}
+			push(@{$rxnHash->{$rxn->uuid()}->{complex_uuids}},$cpx->uuid());
+		}
+	}
+	my $rxns = $self->universalReactions();
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i]->reaction();
+		if ($rxns->[$i]->type() eq "spontaneous") {
+			if (!defined($rxnHash->{$rxn->uuid()})) {
+				$rxnHash->{$rxn->uuid()} = {
+					reaction_uuid => $rxn->uuid(),
+					compartment_uuid => $cmp->uuid(),
+					complex_uuids => [],
+					direction => $rxn->thermoReversibility(),
+					type => "spontaneous"
+				};
+			} else {
+				$rxnHash->{$rxn->uuid()}->{type} = "spontaneous";
+			}
+		} else {
+			if (!defined($rxnHash->{$rxn->uuid()})) {
+				$rxnHash->{$rxn->uuid()} = {
+					reaction_uuid => $rxn->uuid(),
+					compartment_uuid => $cmp->uuid(),
+					complex_uuids => [],
+					direction => $rxn->thermoReversibility(),
+					type => "universal"
+				};
+			} else {
+				$rxnHash->{$rxn->uuid()}->{type} = "universal";
+			}
+		}
+	}
+	foreach my $rxnuuid (keys(%{$rxnHash})) {
+		$ModelTemplate->add("templateReactions",$rxnHash->{$rxnuuid});
+	}
+	my $bios = $self->biomassTemplates();
+	for (my $i=0; $i < @{$bios}; $i++) {
+		my $bio = $bios->[$i];
+		my $biomass = {
+			name => "bio".($i+1),
+			type => $bio->class(),
+			other => 0,
+			dna => $bio->dna(),
+			rna => $bio->rna(),
+			protein => $bio->protein(),
+			lipid => $bio->cofactor(),
+			cellwall => $bio->cofactor(),
+			cofactor => $bio->cofactor(),
+			energy => $bio->energy(),
+			templateBiomassComponents => []
+		};
+		my $biocpds = $bio->biomassTemplateComponents();
+		for (my $j=0; $j < @{$biocpds};$j++) {
+			my $biocpd = $biocpds->[$j];
+			push(@{$biomass->{templateBiomassComponents}},{
+				class => $biocpd->class(),
+				universal => 1,
+				compound_uuid => $biocpd->compound_uuid(),
+				compartment_uuid => $cmp->uuid(),
+				coefficientType => $biocpd->coefficientType(),
+				coefficient => $biocpd->coefficient(),
+				linkCoefficients => [],
+				linkedCompound_uuids => []
+			});
+		}
+		$ModelTemplate->add("templateBiomasses",$biomass);
+	}
 	return $ModelTemplate;
 }
 
