@@ -17,6 +17,7 @@ extends 'ModelSEED::MS::DB::Reaction';
 #***********************************************************************************************************
 has definition => ( is => 'rw',printOrder => 3, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has equation => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
+has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationdirection' );
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
@@ -34,9 +35,15 @@ sub _builddefinition {
 	my ($self) = @_;
 	return $self->createEquation({format=>"name",hashed=>0});
 }
+
 sub _buildequation {
 	my ($self) = @_;
 	return $self->createEquation({format=>"id",hashed=>0});
+}
+
+sub _buildequationdirection {
+	my ($self) = @_;
+	return $self->createEquation({format=>"id",hashed=>0,direction=>1});
 }
 
 sub _buildequationcode {
@@ -141,7 +148,7 @@ Description:
 
 sub createEquation {
     my $self = shift;
-    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1, reverse=>0 }, @_);
+    my $args = ModelSEED::utilities::args([], { format => "uuid", hashed => 0, water => 0, compts=>1, reverse=>0, direction=>0 }, @_);
 	my $rgt = $self->reagents();
 	my $rgtHash;
         my $rxnCompID = $self->compartment()->id();
@@ -184,6 +191,10 @@ sub createEquation {
 	my $reactcode = "";
 	my $productcode = "";
 	my $sign = " <=> ";
+    if($args->{direction}==1){
+	$sign = " => " if $self->direction() eq ">";
+	$sign = " <= " if $self->direction() eq "<";
+    }
 	my $sortedCpd = [sort(keys(%{$rgtHash}))];
 	for (my $i=0; $i < @{$sortedCpd}; $i++) {
 	    my $printId=$sortedCpd->[$i];
