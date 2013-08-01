@@ -26,13 +26,23 @@ sub _buildgenomeID {
 }
 sub _buildroleList {
 	my ($self) = @_;
+	my $compartments = "";
 	my $roleList = "";
 	for (my $i=0; $i < @{$self->featureroles()}; $i++) {
+		if (length($self->featureroles()->[$i]->compartment()) > 0 && $self->featureroles()->[$i]->compartment() !~ m/cytosol/) {
+			if (length($compartments) > 0) {
+				$compartments .= ";";
+			}
+			$compartments .= $self->featureroles()->[$i]->compartment();
+		}
 		if (length($roleList) > 0) {
 			$roleList .= ";";
 		}
 		$roleList .= $self->featureroles()->[$i]->role()->name();
 	}
+	#if (length($compartments) > 0) {
+		#$roleList .= " #".$compartments;
+	#}
 	return $roleList;
 }
 
