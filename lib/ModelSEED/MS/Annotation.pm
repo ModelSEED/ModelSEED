@@ -76,6 +76,24 @@ use ModelSEED::utilities;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';
+
+my $cmpTranslation = {
+	extracellular => "e",
+    cellwall => "w",
+    periplasm => "p",
+    cytosol => "c",
+    golgi => "g",
+    endoplasm => "r",
+    lysosome => "l",
+    nucleus => "n",
+    chloroplast => "h",
+    mitochondria => "m",
+    peroxisome => "x",
+    vacuole => "v",
+    plastid => "d",
+    unknown => "u",
+};
+
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
@@ -94,7 +112,17 @@ sub _buildroleHash {
 		my $ftrroles = $ftr->featureroles();
 		for (my $j=0; $j < @{$ftrroles}; $j++) {
 			my $ftrrole = $ftrroles->[$j];
-			push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$ftrrole->compartment()}},$ftr);
+			my $compartmentStr = $ftrrole->compartment();
+			my $cmparray = [split(/;/,$compartmentStr)];
+			for (my $k=0; $k < @{$cmparray}; $k++) {
+				my $abbrev = $cmparray->[$k];
+				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
+					$abbrev = $cmpTranslation->{$cmparray->[$k]};
+				} elsif (length($cmparray->[$k]) > 1 && !defined($cmpTranslation->{$cmparray->[$k]})) {
+					print STDERR "Compartment ".$cmparray->[$k]." not found!\n";
+				}
+				push(@{$roleFeatures->{$ftrrole->role_uuid()}->{$abbrev}},$ftr);
+			}
 		}
 	}
 	return $roleFeatures;

@@ -42,6 +42,7 @@ has transporterMultiplier => (is => 'rw', isa => 'Num', printOrder => '15', defa
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has timePerSolution => (is => 'rw', isa => 'Int', printOrder => '16', type => 'attribute', metaclass => 'Typed');
 has totalTimeLimit => (is => 'rw', isa => 'Int', printOrder => '17', type => 'attribute', metaclass => 'Typed');
+has completeGapfill => (is => 'rw', isa => 'Bool', printOrder => '18', default => '0', type => 'attribute', metaclass => 'Typed');
 
 
 # ANCESTOR:
@@ -268,10 +269,18 @@ my $attributes = [
             'name' => 'totalTimeLimit',
             'type' => 'Int',
             'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 18,
+            'name' => 'completeGapfill',
+            'default' => '0',
+            'type' => 'Bool',
+            'perm' => 'rw'
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, blacklistedReaction_uuids => 9, allowableCompartment_uuids => 10, reactionActivationBonus => 11, drainFluxMultiplier => 12, directionalityMultiplier => 13, deltaGMultiplier => 14, noStructureMultiplier => 15, noDeltaGMultiplier => 16, biomassTransporterMultiplier => 17, singleTransporterMultiplier => 18, transporterMultiplier => 19, modDate => 20, timePerSolution => 21, totalTimeLimit => 22};
+my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, blacklistedReaction_uuids => 9, allowableCompartment_uuids => 10, reactionActivationBonus => 11, drainFluxMultiplier => 12, directionalityMultiplier => 13, deltaGMultiplier => 14, noStructureMultiplier => 15, noDeltaGMultiplier => 16, biomassTransporterMultiplier => 17, singleTransporterMultiplier => 18, transporterMultiplier => 19, modDate => 20, timePerSolution => 21, totalTimeLimit => 22, completeGapfill => 23};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -1956,6 +1956,14 @@ $objectDefinitions->{GapfillingFormulation} = {
 			perm       => 'rw',
 			type       => 'Int',
 			req        => 0
+		},
+		{
+			name       => 'completeGapfill',
+			printOrder => 18,
+			perm       => 'rw',
+			type       => 'Bool',
+			req        => 0,
+			default    => "0"
 		}
 	],
 	subobjects => [
