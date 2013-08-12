@@ -181,6 +181,97 @@ sub get_object {
     return $object;
 }
 
+sub get_objects {
+	my ($self, $type, $refs,$dataOnly) = @_;
+    if (!defined($dataOnly)) {
+    	$dataOnly = 0;
+    }
+    my $output = [];
+    #If the object is cached, returning the cached object
+    my $finalrefs = [];
+    my $refindecies = {};
+    if ($dataOnly == 0) {
+	    for (my $i=0; $i < @{$refs}; $i++) {
+	    	if (defined($self->cache()->{$type}->{$refs->[$i]})) {
+	    		$output->[$i] = $self->cache()->{$type}->{$refs->[$i]};
+	    	} else {
+	    		push(@{$finalrefs},$refs->[$i]);
+	    		$refindecies->{$refs->[$i]} = $i;
+	    	}
+	    }
+    } else {
+    	for (my $i=0; $i < @{$refs}; $i++) {
+    		$refindecies->{$refs->[$i]} = $i;
+    	}
+    	$finalrefs = $refs;
+    }
+    #If this is a ModelSEED type, we identify the class and translate to a workspace type
+    my $class;
+    if (defined($self->_mstypetrans()->{$type})) {
+    	$class = "ModelSEED::MS::".$type;
+    	$type = $self->_mstypetrans()->{$type};
+    } elsif (defined($self->_wstypetrans()->{$type})) {
+    	$class = "ModelSEED::MS::".$self->_wstypetrans()->{$type};
+    }
+    #Setting the auth
+    my $auth;
+	if ($self->auth() ne "") {
+		$auth = $self->auth();	
+	}
+    #Getting the data out of the workspace
+    my $input = {
+    	ids => [],
+    	types => [],
+    	workspaces => [],
+		auth => $auth
+    };
+    for (my $i=0; $i < @{$finalrefs}; $i++) {
+    	my $ref = $finalrefs->[$i];
+    	if ($ref =~ m/(.+)\/([^\/]+)$/) {
+			push(@{$input->{ids}},$2);
+			push(@{$input->{workspaces}},$1);
+			push(@{$input->{types}},$type);
+		} else {
+			push(@{$input->{ids}},$ref);
+			push(@{$input->{workspaces}},"NO_WORKSPACE");
+			push(@{$input->{types}},$type);
+		}
+    }
+    my $objs = $self->workspace()->get_objects($input);
+    if (!defined($objs)) {
+		ModelSEED::utilities::error("Unable to retrieve objects!");
+    }
+    for (my $i=0; $i < @{$objs}; $i++) {
+    	$output->[$refindecies->{$refs->[$i]}] = $objs->[$i]->{data};
+    	if (defined($class) && $dataOnly == 0) {
+	    	$output->[$refindecies->{$refs->[$i]}] = $class->new($output->[$refindecies->{$refs->[$i]}]);
+	    	if ($type ne "Media") {
+	    		$output->[$refindecies->{$refs->[$i]}]->parent($self);
+	    	}
+	    	if ($type eq "PROMModel") {
+	    		$output->[$refindecies->{$refs->[$i]}]->uuid($objs->[$i]->{metadata}->[8]);
+	    	}
+	    	$output->[$refindecies->{$refs->[$i]}]->uuid($refs->[$i]);
+	    }
+	    if (defined($objs->[$i]->{metadata})) {
+			$output->[$refindecies->{$refs->[$i]}]->{_kbaseWSMeta}->{wsid} = $objs->[$i]->{metadata}->[0];
+			$output->[$refindecies->{$refs->[$i]}]->{_kbaseWSMeta}->{ws} = $objs->[$i]->{metadata}->[7];
+			$output->[$refindecies->{$refs->[$i]}]->{_kbaseWSMeta}->{wsinst} = $objs->[$i]->{metadata}->[3];
+			$output->[$refindecies->{$refs->[$i]}]->{_kbaseWSMeta}->{wsref} = $objs->[$i]->{metadata}->[8];
+			$output->[$refindecies->{$refs->[$i]}]->{_kbaseWSMeta}->{wsmeta} = $objs->[$i]->{metadata};
+			$output->[$refindecies->{$refs->[$i]}]->{_msStoreID} = $type."/".$objs->[$i]->{metadata}->[7]."/".$objs->[$i]->{metadata}->[0];
+			$output->[$refindecies->{$refs->[$i]}]->{_msStoreRef} = $type."/".$objs->[$i]->{metadata}->[8];
+		}
+    }
+    #Adding object to cache
+    if ($type ne "Media" && $dataOnly == 0) {
+    	for (my $i=0; $i < @{$refs}; $i++) {
+	    	$self->cache()->{$type}->{$refs->[$i]} = $output->[$i];
+	    }
+    }
+    return $output;
+}
+
 sub save_object {
     my ($self, $ref, $object, $config) = @_;
     #TODO

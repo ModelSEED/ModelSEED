@@ -420,7 +420,7 @@ sub createJobDirectory {
 		}
 	}
 	#Setting exchange species
-	my $exchange = "Biomass[c]:-10000:0";
+	my $exchange = "Biomass[c]:-10000:0;cpd02701[c]:-10000:0";
 	#TODO
 	#Setting the objective
 	my $objective = "MAX";
