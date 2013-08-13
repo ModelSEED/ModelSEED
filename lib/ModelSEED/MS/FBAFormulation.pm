@@ -63,9 +63,7 @@ sub _buildmfatoolkitBinary {
 	my ($self) = @_;
 	my $config = ModelSEED::utilities::config();
 	my $bin;
-	print STDERR "TEST\n";
 	if (defined($config->MFATK_BIN()) && length($config->MFATK_BIN()) > 0) {
-		print STDERR "Binary:".$config->MFATK_BIN()."\n";
 		$bin = $config->MFATK_BIN();
 	} else {
 		if ($^O =~ m/^MSWin/) {
@@ -77,9 +75,7 @@ sub _buildmfatoolkitBinary {
 			$bin = `which mfatoolkit 2>/dev/null`;
 			chomp $bin;
 		}
-		print STDERR "Binary1:".$bin."\n";
 	}
-	print STDERR "Binary2:".$bin."\n";
 	if ((! defined $bin) || (!-e $bin)) {
         ModelSEED::Exception::MissingConfig->throw(
             variable => 'MFATK_BIN',
