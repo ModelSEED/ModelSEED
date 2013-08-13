@@ -64,7 +64,7 @@ sub _buildmfatoolkitBinary {
 	my $config = ModelSEED::utilities::config();
 	my $bin;
 	print STDERR "TEST\n";
-	if (defined($config->MFATK_BIN())) {
+	if (defined($config->MFATK_BIN()) && length($config->MFATK_BIN()) > 0) {
 		print STDERR "Binary:".$config->MFATK_BIN()."\n";
 		$bin = $config->MFATK_BIN();
 	} else {
