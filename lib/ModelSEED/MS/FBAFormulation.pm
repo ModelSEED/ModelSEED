@@ -63,7 +63,7 @@ sub _buildmfatoolkitBinary {
 	my ($self) = @_;
 	my $config = ModelSEED::utilities::config();
 	my $bin;
-	if (defined($config->MFATK_BIN())) {
+	if (defined($config->MFATK_BIN()) && length($config->MFATK_BIN()) > 0) {
 		$bin = $config->MFATK_BIN();
 	} else {
 		if ($^O =~ m/^MSWin/) {
@@ -420,7 +420,7 @@ sub createJobDirectory {
 		}
 	}
 	#Setting exchange species
-	my $exchange = "Biomass[c]:-10000:0";
+	my $exchange = "Biomass[c]:-10000:0;cpd02701[c]:-10000:0";
 	#TODO
 	#Setting the objective
 	my $objective = "MAX";
