@@ -55,6 +55,7 @@ sub functionToRoles {
 	};
 	my $array = [split(/\#/,$function)];
 	$function = shift(@{$array});
+	$function =~ s/\s+$//;
 	$output->{comment} = join("#",@{$array});
 	if (length($output->{comment}) > 0) {
 		foreach my $comp (keys(%{$compartmentTranslation})) {
