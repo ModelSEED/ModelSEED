@@ -14,7 +14,7 @@ package ModelSEED::MS::Model;
 use Moose;
 use namespace::autoclean;
 use Class::Autouse qw(
-    Graph::Directed
+    Graph::Undirected
 );
 use ModelSEED::utilities;
 extends 'ModelSEED::MS::DB::Model';
@@ -733,6 +733,7 @@ sub addReactionToModel {
 	my $args = ModelSEED::utilities::args(["reaction"],{
 		direction => undef,
 		protons => undef,
+		gpr => undef,
 		overrideCompartment => undef
 	}, @_);
 	my $rxn = $args->{reaction};
@@ -768,6 +769,7 @@ sub addReactionToModel {
 				modelcompound_uuid => $mdlcpd->uuid()
 			});
 		}
+		$mdlrxn->setGPRFromArray({"gpr" => [[$args->{gpr}]]});
 	}
 	return $mdlrxn;
 }
@@ -1715,7 +1717,7 @@ sub printCytoSEED {
 		my @notes = keys %notes;
 		# $modelid is a global variable
 		$rdref->{$modelid} = { "SUBSYSTEM" => [],
-				       "ASSOCIATED PEG" => \@pegs,
+				       "ASSOCIATED PEG" => @pegs == 0 ? \@notes : \@pegs, # notes contain GAP FILLING
 				       "NOTES" => \@notes };
 	    }
 	    
@@ -1771,13 +1773,14 @@ sub printCytoSEED {
 	}
 
 	my $biomasses = $model->biomasses();
+	my $biomass;
 
 	if (@$biomasses == 0) {
 	    print STDERR "No biomass\n";
 	    $result->{"biomass_reaction_details"} = {};
 	}
 	else {
-	    my $biomass = $biomasses->[0];
+	    $biomass = $biomasses->[0];
 	    if (@$biomasses != 1) {
 		print STDERR "Multiple biomasses, using the first one\n";
 	    }
@@ -1809,7 +1812,7 @@ sub printCytoSEED {
 
 	    $result->{"biomass_reaction_details"} = { 
 		$modelid => {
-		    "DATABASE" => ["bio00000"], # FIX
+		    "DATABASE" => [$biomass->id()], 
 		    "EQUATION" => [$equation] 
 		}
 	    };
@@ -1819,6 +1822,10 @@ sub printCytoSEED {
 	my $reaction_classifications = {};
 
 	foreach my $fbaFormulation (@{$model->fbaFormulations()}) {
+	    if (! defined $fbaFormulation) {
+		print STDERR "FBA formulation is not defined\n";
+		next;
+	    }
 	    if ($fbaFormulation->maximizeObjective()) {
 		my @fbaFormulationResults = @{$fbaFormulation->fbaResults()};
 		if (@fbaFormulationResults != 1) {
@@ -1835,17 +1842,30 @@ sub printCytoSEED {
 		my @reactionVariables = @{$fbaResult->fbaReactionVariables()};
 		next if @reactionVariables == 0; # FBA failed
 
-		foreach my $rVar (@reactionVariables) {
-		    my $flux = {};
-		    my $modelreaction = $rVar->modelreaction();
-		    my $reaction = $modelreaction->reaction();
-		    $flux->{"reaction"} = $reaction->id();
-		    $flux->{"flux"} = $rVar->value();
-		    push @$fluxes, $flux;
-		    if ($fbaFormulation->fva()) {
-			my $class = $rVar->{"class"};
-			my $min = $rVar->{"min"};
-			my $max = $rVar->{"max"};
+		if ($fbaFormulation->fva()) {
+		    my @classifications;
+
+		    foreach my $rVar (@reactionVariables) {
+			my $modelreaction = $rVar->modelreaction();
+			my $reaction = $modelreaction->reaction();
+			push @classifications, [$reaction->id(), $rVar->{"class"}, $rVar->{"min"}, $rVar->{"max"}, $rVar->{"value"}];
+		    }
+
+		    # roundabout way to get biomass result since the biomass reaction variable isn't being saved
+		    foreach my $cVar (@{$fbaResult->fbaCompoundVariables()}) {
+			my $modelcpd = $cVar->modelcompound();
+			my $cpd = $modelcpd->compound();
+			next unless $cpd->id() eq 'cpd11416';
+			push @classifications, [$biomass->id(), "Positive", -$cVar->{"max"}, -$cVar->{"min"}, -$cVar->{"value"}];
+		    }
+
+		    foreach my $rxnInfo (@classifications) {
+			my ($rid, $class, $min, $max, $value) = @$rxnInfo;
+			my $flux = {};
+			$flux->{"reaction"} = $rid;
+			$flux->{"flux"} = $value;
+			push @$fluxes, $flux;
+
 			my $dir;
 			if ($class eq "Positive") {
 			    $class = "essential";
@@ -1872,20 +1892,19 @@ sub printCytoSEED {
 			    $dir = "NA";
 			}
 			else {
-			    print STDERR "For reaction ", $reaction->id(), ", class is ", $class, "\n";
+			    print STDERR "For reaction ", $rid, ", class is ", $class, "\n";
 			    $class = "dead";
 			    $dir = "NA";
 			}
-			push @{$reaction_classifications->{$reaction->id()}->{"class"}}, $class;
-			push @{$reaction_classifications->{$reaction->id()}->{"class_directionality"}}, $dir;
-			push @{$reaction_classifications->{$reaction->id()}->{"max_flux"}}, $max;
-			push @{$reaction_classifications->{$reaction->id()}->{"min_flux"}}, $min;
-			push @{$reaction_classifications->{$reaction->id()}->{"media"}}, $fbaFormulation->media()->name();
-			push @{$reaction_classifications->{$reaction->id()}->{"reaction"}}, $reaction->id();
+			push @{$reaction_classifications->{$rid}->{"class"}}, $class;
+			push @{$reaction_classifications->{$rid}->{"class_directionality"}}, $dir;
+			push @{$reaction_classifications->{$rid}->{"max_flux"}}, $max;
+			push @{$reaction_classifications->{$rid}->{"min_flux"}}, $min;
+			push @{$reaction_classifications->{$rid}->{"media"}}, $fbaFormulation->media()->name();
+			push @{$reaction_classifications->{$rid}->{"reaction"}}, $rid;
 		    }
 		}
-
-		if (! $fbaFormulation->fva()) {
+		else {
 		    push @{$fba_results}, $fba;
 		}
 	    }    
@@ -2113,7 +2132,7 @@ Description:
 sub buildGraph {
     my $self = shift;
 	my $args = ModelSEED::utilities::args([], {reactions => 0}, @_);
-	my $graph = Graph::Directed->new;
+	my $graph = Graph::Undirected->new;
 	if ($args->{reactions} == 0) {
 		my $cpds = $self->modelcompounds();
 		for (my $i=0;$i < @{$cpds}; $i++) {
@@ -2123,16 +2142,21 @@ sub buildGraph {
 	}
 	my $rxns = $self->modelreactions();
 	my $rxnStartHash;
+        my $removerxns = { "rxn05296_c0"=>1, "rxn05294_c0"=>1, "rxn05295_c0"=>1 }; # Protein, DNA, RNA synthesis should be removed
+	
 	for (my $i=0; $i < @{$rxns}; $i++) {
+		next if (exists $removerxns->{$rxns->[$i]->id()});
 		if ($args->{reactions} == 1) {
-			$graph->add_vertex($rxns->[$i]->id());	
+#		    print STDERR "Adding vertex for ", $rxns->[$i]->id(), "\n";
+		    $graph->add_vertex($rxns->[$i]->id());
 		}
 		my $rgts = $rxns->[$i]->modelReactionReagents();
 		for (my $j=0; $j < @{$rgts}; $j++) {
 			my $rgt = $rgts->[$j];
 			if (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne "<") {
 				if ($args->{reactions} == 1) {
-					$rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
+#				    print STDERR "\tAdding ", $rgt->modelcompound()->id(), " as a start cpd\n";
+				    $rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
 				} else {
 					for (my $k=0; $k < @{$rgts}; $k++) {
 						my $prod = $rgts->[$k];
@@ -2143,7 +2167,8 @@ sub buildGraph {
 				}
 			} elsif (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne ">") {
 				if ($args->{reactions} == 1) {
-					$rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
+#				    print STDERR "\tAdding ", $rgt->modelcompound()->id(), " as a start cpd\n";
+				    $rxnStartHash->{$rgt->modelcompound()->id()}->{$rxns->[$i]->id()} = 1;
 				} else {
 					for (my $k=0; $k < @{$rgts}; $k++) {
 						my $prod = $rgts->[$k];
@@ -2157,22 +2182,145 @@ sub buildGraph {
 	}
 	if ($args->{reactions} == 1) {
 		for (my $i=0; $i < @{$rxns}; $i++) {
+		    next if (exists $removerxns->{$rxns->[$i]->id()});
 			my $rgts = $rxns->[$i]->modelReactionReagents();
 			for (my $j=0; $j < @{$rgts}; $j++) {
 				my $rgt = $rgts->[$j];
 				if (!$rgt->isCofactor() && $rgt->coefficient() > 0 && $rxns->[$i]->direction() ne "<") {
 					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
-						$graph->add_edge($rxns->[$i]->id(),$rxnid);
+					    next if $rxns->[$i]->id() eq $rxnid;
+#					    print STDERR "Adding an edge for ", $rxns->[$i]->id(), " and ", $rxnid, " based on ", $rgt->modelcompound()->id(), "\n";
+					    $graph->add_edge($rxns->[$i]->id(),$rxnid);
 					}
 				} elsif (!$rgt->isCofactor() && $rgt->coefficient() < 0 && $rxns->[$i]->direction() ne ">") {
 					foreach my $rxnid (keys(%{$rxnStartHash->{$rgt->modelcompound()->id()}})) {
-						$graph->add_edge($rxns->[$i]->id(),$rxnid);
+					    next if $rxns->[$i]->id() eq $rxnid;
+#					    print STDERR "Adding an edge for ", $rxns->[$i]->id(), " and ", $rxnid, " based on ", $rgt->modelcompound()->id(), "\n";
+					    $graph->add_edge($rxns->[$i]->id(),$rxnid);
 					}
 				}
 			}
 		}
 	}
 	return $graph;
+}
+
+sub mark_cofactors {
+    my $mrxns = shift @_;
+	#Set cofactor.
+    # list of cofactors that don't always come in pairs; some of these have biosynthetic pathways
+    # and should NOT be marked as a cofactor in the very last reaction(s) that synthesize
+    # them, so each one can have a list of special case reactions
+    my $list = [
+#	["cpd00002" => {"rxn00062" => 1,"rxn05145" => 1,"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn00065" => 1}], # ATP
+#	["cpd00008" => {"rxn10042" => 1,"rxn00062" => 1,"rxn00097" => 1, "rxn10052" => 1, "rxn00095" => 1}], # ADP
+	["cpd00001" => {"rxn00008" => 1,"rxn00066" => 1, "rxn05319" => 1}], # H2O
+	["cpd00009" => {"rxn00001" => 1,"rxn05145" => 1, "rxn00001" => 1, "rxn05312" => 1}], # Pi
+	["cpd00010" => {"rxn00100" => 1}], #CoA
+	["cpd00011" => {"rxn10114" => 1,"rxn00102" => 1, "rxn00114" => 1, "rxn05467" => 1, "rxn05064" => 1, "rxn00002" => 1}], # CO2
+	["cpd00012" => {"rxn00001" => 1,"rxn00104"=>1}], # PPi
+	["cpd00421" => {"rxn00104" => 1}], # PPPi
+	["cpd00013" => {"rxn05466" => 1, "rxn00114" => 1, "rxn05064" => 1, "rxn00002" => 1}], # NH3
+#	["cpd00015" => {"rxn00122" => 1}], # FAD
+	["cpd00067" => {}], # H+
+	["cpd00099" => {"rxn10473" => 1}], # Cl-
+	["cpd00007" => {"rxn00006" => 1, "rxn05468" => 1}], #O2
+	["cpd00056" => {"rxn00438" => 1, "rxn00439" => 1, "rxn00440" => 1}], # TPP
+	["cpd00449" => {}], # dihydrolipoamide
+	["cpd11493" => {"rxn06022" =>1, "rxn06023" => 1}], # ACP
+	["cpd00213" => {}], # lipoamide NEED SYNTHETIC STEP
+	["cpd00103" => {"rxn00770" => 1, "rxn00789" => 1}], # PRPP 
+	["cpd00052" => {"rxn00409" => 1, "rxn00410" => 1, "rxn00407" => 1}], # CTP 
+	["cpd00046" => {"rxn00363" => 1, "rxn00364" => 1, "rxn00365" => 1, "rxn00368" => 1, "rxn00369" => 1, "rxn00707" => 1, "rxn01128" => 1, "rxn01510" => 1, "rxn01515" => 1, "rxn01705" => 1, "rxn01706" => 1}], # CMP 
+	["cpd00475" => {"rxn00778" => 1}], # ribose 1-phosphate
+	["cpd00509" => {"rxn01986" => 1}], # deoxy-ribose 1-phosphate 
+	["cpd00014" => {"rxn00119" => 1, "rxn00712" => 1, "rxn06075" => 1, "rxn00117" => 1, "rxn00368" => 1}], # UDP 
+	];
+
+    # prioritized list, e.g., ATP/ADP come before Pyruvate/PEP
+    my $pairlist = [
+        ["cpd00002","cpd00008"],
+	["cpd00015","cpd00982"],
+        ["cpd00097","cpd00986"],
+        ["cpd00109","cpd00110"],
+        ["cpd11620","cpd11621"],
+        ["cpd00228","cpd00823"],
+        ["cpd11665","cpd11669"],
+        ["cpd00733","cpd00734"],
+        ["cpd11807","cpd11808"],
+        ["cpd00364","cpd00415"],
+        ["cpd12505","cpd12576"],
+        ["cpd12669","cpd12694"],
+        ["cpd00003","cpd00004"],
+        ["cpd00005","cpd00006"],
+        ["cpd00002","cpd00018"],
+        ["cpd00008","cpd00018"],
+        ["cpd00052","cpd00096"],
+        ["cpd00052","cpd00046"],
+        ["cpd00046","cpd00096"],
+        ["cpd00062","cpd00091"],
+        ["cpd00062","cpd00014"],
+        ["cpd00014","cpd00091"],
+        ["cpd00038","cpd00126"],
+        ["cpd00038","cpd00031"],
+        ["cpd00126","cpd00031"],
+        ["cpd00357","cpd00793"],
+        ["cpd00061","cpd00020"],
+		["cpd15561","cpd15560"],
+		["cpd15499","cpd15500"],
+		["cpd11420","cpd11421"],
+		["cpd00024","cpd00023"],
+		["cpd00023","cpd00053"],
+		["cpd00007","cpd00025"],
+		["cpd15560","cpd15561"],
+		["cpd15499","cpd15500"],
+		["cpd15352","cpd15353"],
+    ]; 
+
+    foreach my $mrxn (@{$mrxns}) {
+		my $rxn = $mrxn->reaction();
+		my $rgts = $rxn->reagents();
+		my $num_rgts = scalar @{$rgts};
+		# first we will mark any compound that is a known cofactor,
+		# unless this is a special case reaction
+		foreach my $cofactorInfo (@$list) {
+			my $cpdId = $cofactorInfo->[0];
+			my $specialRxns = $cofactorInfo->[1];
+			foreach my $rgt (@$rgts) {
+			my $markIt = 0;
+			if ($rgt->compound()->id() eq $cpdId) {
+				#print STDERR "Found match on $cpdId for ", $rxn->id(), ", checking ", keys %$specialRxns, "\n";
+				$markIt = 1 unless exists $specialRxns->{$rxn->id()};
+				#print STDERR "markIt is $markIt\n";
+			}
+			if ($markIt) {
+				$rgt->isCofactor(1);
+				$num_rgts--;
+			}
+			}
+		}
+
+		# now we loop through the cofactor pairs and look for cofactors
+		# on opposite sides of the equation
+		foreach my $pair (@{$pairlist}) {
+			# quit if we only have three compounds left
+			# otherwise we may be left with no non-cofactors or just one
+			last if $num_rgts <= 3;
+			foreach my $rgt (@{$rgts}) {
+				if ($rgt->compound()->id() eq $pair->[0]) {
+					foreach my $rgtTwo (@{$rgts}) {
+						if ($rgtTwo->compound()->id() eq $pair->[1]) {
+							if ($rgt->coefficient()*$rgtTwo->coefficient() < 0) {
+									$rgt->isCofactor(1);
+									$rgtTwo->isCofactor(1);
+									$num_rgts -= 2;
+							}
+						}
+					}
+				}
+			}
+		}
+    }
 }
 
 =head3 computeNetworkDistances
@@ -2186,23 +2334,32 @@ Description:
 
 sub computeNetworkDistances {
     my $self = shift;
-	my $args = ModelSEED::utilities::args([], { reactions => 0, roles => 0 }, @_);
+	my $args = ModelSEED::utilities::args([], { reactions => 0, roles => 0, genes => 0 }, @_);
 	my $input = {};
 	my $tbl = {headings => ["Compounds"],data => []};
-	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+	$tbl->{detail} = [] if $args->{detail};
+	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
 		$input->{reactions} = 1;
 		$tbl = {headings => ["Reactions"],data => []};
 		if ($args->{roles} == 1) {
 			$tbl = {headings => ["Roles"],data => []};
 		}
+		elsif ($args->{genes} == 1) {
+			$tbl = {headings => ["Genes"],data => []};
+		}
 	}
+
+    mark_cofactors($self->modelreactions());
+
+# cofactor set.
 	print STDERR "Building graph!\n";
 	my $graph = $self->buildGraph($input);
 	print STDERR "Computing distances!\n";
 	my $apsp = $graph->all_pairs_shortest_paths();
 	print STDERR "Shortest paths computed!\n";
-	if ($args->{roles} == 1 || $args->{reactions} == 1) {
+	if ($args->{genes} == 1 || $args->{roles} == 1 || $args->{reactions} == 1) {
 		my ($roleHash,%rxn2roles);
+		my ($geneHash,%rxn2genes);
 		my $rxns = $self->modelreactions();
 		$tbl->{headings}->[0] = "Reactions";
 		if ($args->{roles} == 1) {
@@ -2223,9 +2380,51 @@ sub computeNetworkDistances {
 			my $count = 0;
 			foreach my $role (sort(keys(%{$roleHash}))) {
 				$roleHash->{$role} = $count;
-				$count++;
+				$count++;				
 			}
 		}
+		if ($args->{genes} == 1) {
+			$tbl->{headings}->[0] = "Genes";
+			for (my $i=0; $i < @{$rxns}; $i++) {
+			    my $modelrxn = $rxns->[$i];
+			    my %genes;
+			    my $isUniversal = 0;
+			    foreach my $protein (@{$modelrxn->modelReactionProteins()}) {
+				if ((@{$protein->modelReactionProteinSubunits()} == 0) and (length($protein->note()) > 0)) {
+				    $isUniversal = 1; # May need to check what is in note.
+				}
+				else {
+				    foreach my $subunit (@{$protein->modelReactionProteinSubunits()}) {
+					foreach my $subunitGene (@{$subunit->modelReactionProteinSubunitGenes()}) {
+					    # push id rather than object itself because there is no object for unknown genes					   
+					    $genes{$subunitGene->feature()->id()} = 1;
+					}				    				    
+				    }
+				}
+			    }		
+			    # Calculate distance for Unknown gene, too.
+			    if (keys %genes == 0 and !$isUniversal) {
+				$genes{"Unknown:". $rxns->[$i]->id()} = 1;
+			    }
+			    my @genes = keys %genes;
+			    $rxn2genes{$rxns->[$i]->id()} = \@genes;
+			    for (my $j=0;$j < @genes; $j++) {
+				$geneHash->{$genes[$j]} = 1;
+
+			    }
+			}
+			my $count = 0;
+			foreach my $role (sort(keys(%{$roleHash}))) {
+				$roleHash->{$role} = $count;
+				$count++;
+			}
+			foreach my $gene (sort(keys(%{$geneHash}))) {
+				$geneHash->{$gene} = $count;
+				$count++;
+			}
+
+		}
+
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			if ($args->{reactions} == 1) {
 				$tbl->{headings}->[$i+1] = $rxns->[$i]->id();
@@ -2237,18 +2436,26 @@ sub computeNetworkDistances {
 					$tbl->{data}->[$count]->[0] = $role;
 					$count++;
 				}
+				foreach my $gene (sort(keys(%{$geneHash}))) {
+					$tbl->{headings}->[$count+1] = $gene;
+					$tbl->{data}->[$count]->[0] = $gene;
+					$count++;
+				}
+
 			}
 			for (my $j=0;$j < @{$rxns}; $j++) {
 				if ($args->{reactions} == 1) {
 				    if ($i == $j) {
-					$tbl->{data}->[$i]->[$j+1] = 0;
-				    } else {
-					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
-					if (!defined($tbl->{data}->[$i]->[$j+1])) {
-						$tbl->{data}->[$i]->[$j+1] = -1;
-					}
+						$tbl->{data}->[$i]->[$j+1] = 0;
+				    } 
+					else {
+						my ($mindist, $vertices) = &shortest_path($rxns->[$i]->id(),  $rxns->[$j]->id(), $apsp);
+						$tbl->{data}->[$i]->[$j+1] = $mindist;
+						if ($args->{detail}) {
+							$tbl->{data}->[$i]->[$j+1] .= "; @$vertices" if @$vertices > 0;
+						}
 				    }
-				} else {
+				} elsif ($args->{roles} == 1) {
 				        my @roles1 = @{$rxn2roles{$rxns->[$i]->id()}};
 					for (my $k=0;$k < @roles1; $k++) {
 						my $indexOne = $roleHash->{$roles1[$k]->name()};
@@ -2259,17 +2466,55 @@ sub computeNetworkDistances {
 							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
 							    if ($apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id()) < $tbl->{data}->[$indexOne]->[$indexTwo]) {
 								$tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+								if ($args->{detail}) {
+								    my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+								}
 							    }
 							} else {
 							    $tbl->{data}->[$indexOne]->[$indexTwo] = $apsp->path_length($rxns->[$i]->id(), $rxns->[$j]->id());
+							    if ($args->{detail}) {
+								my @vs = $apsp->path_vertices($rxns->[$i]->id(), $rxns->[$j]->id()); 
+								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @vs" if @vs > 0;
+							    }
 							}
-							if (!defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
-							    $tbl->{data}->[$indexOne]->[$indexTwo] = -1;
+						}
+					}
+				}
+				elsif ($args->{genes} == 1) {
+				    my @genes1 = @{$rxn2genes{$rxns->[$i]->id()}};
+					for (my $k=0;$k < @genes1; $k++) {
+						my $indexOne = $geneHash->{$genes1[$k]};
+						my @genes2 = @{$rxn2genes{$rxns->[$j]->id()}};
+						for (my $m=0;$m < @genes2; $m++) {
+							my $indexTwo = $geneHash->{$genes2[$m]}+1;
+							if (defined($tbl->{data}->[$indexOne]->[$indexTwo])) {
+							    my ($prev, undef) = split ";", $tbl->{data}->[$indexOne]->[$indexTwo];
+							    my ($path_length, $vertices) = &shortest_path($rxns->[$i]->id(), $rxns->[$j]->id(), $apsp);
+							    if (defined $path_length && ($path_length < $prev)) {
+								$tbl->{data}->[$indexOne]->[$indexTwo] = $path_length;
+								if ($args->{detail}) {
+								    $tbl->{data}->[$indexOne]->[$indexTwo] .= "; @$vertices" if @$vertices > 0;
+								}
+							    }
+							} else {
+							    my ($path_length, $vertices) = &shortest_path($rxns->[$i]->id(), $rxns->[$j]->id(), $apsp);
+							    $tbl->{data}->[$indexOne]->[$indexTwo] = $path_length;
+							    if ($args->{detail}) {
+								$tbl->{data}->[$indexOne]->[$indexTwo] .= "; @$vertices" if @$vertices > 0;
+							    }
 							}
 						}
 					}
 				}
 			}
+		}
+		for (my $i=0; $i < @{$tbl->{data}}; $i++) {
+		    for (my $j=0; $j < @{$tbl->{data}->[$i]}; $j++) {
+			if (!defined($tbl->{data}->[$i]->[$j])) {
+			    $tbl->{data}->[$i]->[$j] = -1;
+			}
+		    }
 		}
 	} else {
 		my $cpds = $self->modelcompounds();
@@ -2282,6 +2527,10 @@ sub computeNetworkDistances {
 					$tbl->{data}->[$i]->[$j+1] = 0;
 				} else {
 					$tbl->{data}->[$i]->[$j+1] =  $apsp->path_length($cpds->[$i]->id(), $cpds->[$j]->id());
+					if ($args->{detail}) {
+					    my @vs = $apsp->path_vertices($cpds->[$i]->id(), $cpds->[$j]->id()); 
+					    $tbl->{data}->[$i]->[$j+1] .= "; @vs" if @vs > 0;
+					}
 					if (!defined($tbl->{data}->[$i]->[$j+1])) {
 						$tbl->{data}->[$i]->[$j+1] = -1;
 					}
@@ -2290,6 +2539,21 @@ sub computeNetworkDistances {
 		}
 	}
 	return $tbl;
+}
+
+sub shortest_path {
+	my ($rxn1, $rxn2, $apsp) = @_;
+	# check two possibilities and choose the shortest one
+	my $a =  $apsp->path_length($rxn1, $rxn2);
+	my @vs = $apsp->path_vertices($rxn1, $rxn2);
+	my $b =  $apsp->path_length($rxn2, $rxn1);
+	if (defined $a && defined $b && $b < $a)  {
+		$a = $b;
+		@vs = $apsp->path_vertices($rxn2, $rxn1);
+	}
+	
+	return ($a, \@vs);
+
 }
 
 =head3 searchForCompound
@@ -2407,8 +2671,13 @@ sub __upgrade__ {
 			if (defined($hash->{parent}) && ref($hash->{parent}) eq "ModelSEED::Store") {#TODO KBaseStore
 				my $parent = $hash->{parent};
 				delete($hash->{parent});
-				$parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
-                $hash->{parent} = $parent;
+				if (defined $hash->{uuid}) {
+				    $parent->save_data("model/".$hash->{uuid},$hash,{schema_update => 1});
+				} else {
+				    my $auth = $parent->auth;
+				    $parent->save_data("model/".$auth->username."/".$hash->{id},$hash,{schema_update => 1});
+				}
+				    $hash->{parent} = $parent;
 			}
 			return $hash;
 		};
