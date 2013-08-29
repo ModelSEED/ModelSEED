@@ -904,6 +904,7 @@ sub manualReactionAdjustment {
     	removeReaction => 0,
     	addReaction => 0
     }, @_);
+
     if ($args->{reaction} =~ m/^(.+)\[([a-z]+)(\d*)]$/) {
     	$args->{reaction} = $1;
     	$args->{compartment} = $2;
@@ -926,7 +927,7 @@ sub manualReactionAdjustment {
     			$mdlrxn->direction($args->{direction});
     		}
     		if (defined($args->{gpr})) {
-    			$mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
+		    $mdlrxn->setGPRFromArray({gpr => $args->{gpr}});
     		}
     	}
     } else {
@@ -1946,7 +1947,8 @@ sub integrateGapfillSolution {
 	my $args = ModelSEED::utilities::args(["gapfillingFormulation"], { solutionNum => 0 }, @_);
 	ModelSEED::utilities::verbose("Now integrating gapfill solution into model");
 	my $gf = $args->{gapfillingFormulation};
-	my $num = $args->{solutionNum};
+    my $num = $args->{solutionNum};
+    my $rxnProbGpr = $args->{rxnProbGpr};
 	my $gfss = $gf->gapfillingSolutions();
 	if (@{$gfss} <= $num) {
 		ModelSEED::utilities::error("Specified solution not found in gapfilling formulation!");
@@ -1974,6 +1976,7 @@ sub integrateGapfillSolution {
 	my $rxns = $sol->gapfillingSolutionReactions();
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
+		my $rxnid = $rxn->reaction()->id();
 		my $mdlrxn = $self->queryObject("modelreactions",{reaction_uuid => $rxn->reaction_uuid()});
 		if (defined($mdlrxn) && $rxn->direction() ne $mdlrxn->direction()) {
 			ModelSEED::utilities::verbose(
@@ -1988,6 +1991,10 @@ sub integrateGapfillSolution {
 				reaction => $rxn->reaction(),
 				direction => $rxn->direction()
 			});
+			# If RxnProbs object is defined, use it to assign GPRs to the integrated reactions.
+			if (defined($rxnProbGpr) && defined($rxnProbGpr->{$rxnid})) {
+			    $self->manualReactionAdjustment( { reaction => $rxnid,  gpr => $rxnProbGpr->{$rxnid} } );
+			}
 		}
 	}
 	#Checking if gapfilling formulation is in the unintegrated list 
