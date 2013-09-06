@@ -337,7 +337,7 @@ sub setGPRFromArray {
 					    my $featureId = $args->{gpr}->[$i]->[$j]->[$k];
 					    my $ftrObj = $anno->queryObject("features",{id => $featureId});
 					    if (!defined($ftrObj)) {
-						ModelSEED::utilities:error("Could not find feature $featureId in model annotation!\n");
+						ModelSEED::utilities::error("Could not find feature $featureId in model annotation!\n");
 						$prot->note($featureId);
 					    }
 					    else {
