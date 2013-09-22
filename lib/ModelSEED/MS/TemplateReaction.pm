@@ -40,11 +40,11 @@ sub _buildcomplexIDs {
 #***********************************************************************************************************
 sub addRxnToModel {
     my $self = shift;
-	my $args = ModelSEED::utilities::args(["annotation","model"],{}, @_);
+	my $args = ModelSEED::utilities::args(["role_features","model"],{}, @_);
 	my $mdl = $args->{model};
 	my $anno = $args->{annotation};
 	#Gathering roles from annotation
-	my $roleFeatures = $anno->roleHash();
+	my $roleFeatures = $args->{role_features};
 	my $cpxs = $self->complexes();
 	my $proteins = [];
 	for (my $i=0; $i < @{$cpxs}; $i++) {
