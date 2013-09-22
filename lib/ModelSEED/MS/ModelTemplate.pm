@@ -11,6 +11,24 @@ package ModelSEED::MS::ModelTemplate;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ModelTemplate';
+
+my $cmpTranslation = {
+	extracellular => "e",
+    cellwall => "w",
+    periplasm => "p",
+    cytosol => "c",
+    golgi => "g",
+    endoplasm => "r",
+    lysosome => "l",
+    nucleus => "n",
+    chloroplast => "h",
+    mitochondria => "m",
+    peroxisome => "x",
+    vacuole => "v",
+    plastid => "d",
+    unknown => "u",
+};
+
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
@@ -161,10 +179,36 @@ sub buildModel {
 		annotation => $args->{annotation}
 	});
 	my $rxns = $self->templateReactions();
+	my $roleFeatures;
+	my $features = $args->{annotation}->features();
+	for (my $i=0; $i < @{$features}; $i++) {
+		my $ftr = $features->[$i];
+		my $ftrroles = $ftr->featureroles();
+		for (my $j=0; $j < @{$ftrroles}; $j++) {
+			my $ftrrole = $ftrroles->[$j];
+			my $compartmentStr = $ftrrole->compartment();
+			my $cmparray = [split(/;/,$compartmentStr)];
+			for (my $k=0; $k < @{$cmparray}; $k++) {
+				my $abbrev = $cmparray->[$k];
+				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
+					$abbrev = $cmpTranslation->{$cmparray->[$k]};
+				} elsif (length($cmparray->[$k]) > 1 && !defined($cmpTranslation->{$cmparray->[$k]})) {
+					print STDERR "Compartment ".$cmparray->[$k]." not found!\n";
+				}
+				my $subroles = [split(/;/,$ftrrole->role()->searchname())];
+				for (my $m=0; $m < @{$subroles}; $m++) {
+					my $role = $self->mapping()->searchForRole($subroles->[$m]);
+					if (defined($role)) {
+						push(@{$roleFeatures->{$role->uuid()}->{$abbrev}},$ftr);
+					}
+				}
+			}
+		}
+	}
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		$rxn->addRxnToModel({
-			annotation => $args->{annotation},
+			role_features => $roleFeatures,
 			model => $mdl
 		});
 	}
@@ -172,7 +216,7 @@ sub buildModel {
 	for (my $i=0; $i < @{$bios}; $i++) {
 		my $bio = $bios->[$i];
 		$bio->addBioToModel({
-			annotation => $args->{annotation},
+			gc => $args->{annotation}->genomes()->[0]->gc(),
 			model => $mdl
 		});
 	}

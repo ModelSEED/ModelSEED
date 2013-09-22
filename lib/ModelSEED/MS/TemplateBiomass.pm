@@ -47,11 +47,10 @@ sub _buildcompoundTuples {
 #***********************************************************************************************************
 sub addBioToModel {
     my $self = shift;
-	my $args = ModelSEED::utilities::args(["annotation","model"],{}, @_);
+	my $args = ModelSEED::utilities::args(["gc","model"],{}, @_);
 	my $mdl = $args->{model};
-	my $anno = $args->{annotation};
 	my $biochem = $mdl->biochemistry();
-	my $gc = $anno->genomes()->[0]->gc();
+	my $gc = $args->{gc};
 	if ($gc > 1) {
 		$gc = 0.01*$gc;	
 	}

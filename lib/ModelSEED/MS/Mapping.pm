@@ -233,6 +233,9 @@ sub searchForRole {
 	if (!defined($roleobj)) {
 		$roleobj = $self->queryObject("roles",{name => $id});
 	}
+	if (!defined($roleobj)) {
+		$roleobj = $self->queryObject("roles",{searchname => $id});
+	}
 	return $roleobj;
 }
 
