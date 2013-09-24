@@ -21,6 +21,7 @@ has equationDir => ( is => 'rw',printOrder => 4, isa => 'Str', type => 'msdata',
 has equationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has revEquationCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevequationcode' );
 has equationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildcompfreeequationcode' );
+has revEquationCompFreeCode => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildrevcompfreeequationcode' );
 has equationFormula => ( is => 'rw', isa => 'Str', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationformula' );
 has balanced => ( is => 'rw', isa => 'Bool',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildbalanced' );
 has mapped_uuid  => ( is => 'rw', isa => 'ModelSEED::uuid',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildmapped_uuid' );
@@ -60,6 +61,12 @@ sub _buildcompfreeequationcode {
 	my ($self) = @_;
 	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0});
 }
+
+sub _buildrevcompfreeequationcode {
+	my ($self) = @_;
+	return $self->createEquation({format=>"uuid",hashed=>1,compts=>0,reverse=>1});
+}
+
 sub _buildequationformula {
     my ($self,$args) = @_;
     return $self->createEquation({format=>"formula",hashed=>0,water=>0});

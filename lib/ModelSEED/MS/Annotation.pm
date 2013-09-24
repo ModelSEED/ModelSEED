@@ -78,7 +78,7 @@ use namespace::autoclean;
 extends 'ModelSEED::MS::DB::Annotation';
 
 my $cmpTranslation = {
-	extracellular => "e",
+    extracellular => "e",
     cellwall => "w",
     periplasm => "p",
     cytosol => "c",
