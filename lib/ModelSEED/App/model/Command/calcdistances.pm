@@ -10,7 +10,9 @@ sub options {
     return (
         ["reactions|r","Calculate distances between reactions (metabolites default)"],
         ["roles|o","Calculate distances between roles (metabolites default)"],
+	["genes|g","Calculate distances between genes (metabolites default)"],
         ["matrix|m","Print results as a matrix"],
+        ["detail|d","Print details of each path"],
         ["threshold|t:s","Only print pairs with distance under threshold"],
     );
 }
@@ -23,7 +25,9 @@ sub sub_execute {
 	ModelSEED::utilities::verbose("Computing network distances...\n");
 	my $tbl = $model->computeNetworkDistances({
 		reactions => $opts->{reactions},
-		roles => $opts->{roles}
+		roles=> $opts->{roles},
+		genes=> $opts->{genes},
+		detail=> $opts->{detail},
 	});
 	#Printing results
 	ModelSEED::utilities::verbose("Printing results...\n");

@@ -461,9 +461,10 @@ sub buildGapfillingFormulation {
 		fbaFormulation => $fbaform,
 		balancedReactionsOnly => 1,
 		guaranteedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
-rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8
-rxn13782 rxn13783 rxn13784 rxn05294 rxn05295 rxn05296 rxn10002
-rxn10088 rxn11921 rxn11922 rxn10200 rxn11923 rxn05029 )),
+			rxn1 rxn2 rxn3 rxn4 rxn5 rxn6 rxn7 rxn8 rxn01659
+			rxn07298 rxn24256 rxn04219 rxn17241 rxn19302 rxn25468 rxn11572
+			rxn23165 rxn25469 rxn23171 rxn23067 rxn30830 rxn30910 rxn31440
+		)),
 		blacklistedReactions => join("|", map { "Reaction/ModelSEED/" . $_ } qw(
 rxn12985 rxn00238 rxn07058 rxn05305 rxn00154 rxn09037 rxn10643
 rxn11317 rxn05254 rxn05257 rxn05258 rxn05259 rxn05264 rxn05268

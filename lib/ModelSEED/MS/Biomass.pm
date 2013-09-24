@@ -140,7 +140,7 @@ sub _parse_equation_string {
             # match compound[comparment]
             if ( $TempArray[$i] =~ m/^[a-zA-Z0-9]+\[([a-zA-Z]+)\]/ ) {
                 $compartment = lc($1);
-                if ( length($compartment) == 0 ) {
+                if ( length($compartment) == 1 ) {
                     $compartment .= "0";
                 }
             }

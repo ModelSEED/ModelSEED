@@ -16,7 +16,8 @@ requires 'HTTP::Message', undef;
 requires 'IO::Interactive::Tiny', undef;
 requires 'IO::Compress::Gzip', undef;
 requires 'IO::Uncompress::Gunzip', undef;
-requires 'JSON::XS', undef;
+requires 'JSON::XS', undef
+requires 'JSON::Any', undef;
 requires 'JSON::RPC::Client', undef;
 requires 'LWP', undef;
 requires 'Module::Load', undef;

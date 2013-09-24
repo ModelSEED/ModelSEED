@@ -11,6 +11,24 @@ package ModelSEED::MS::ModelTemplate;
 use Moose;
 use namespace::autoclean;
 extends 'ModelSEED::MS::DB::ModelTemplate';
+
+my $cmpTranslation = {
+	extracellular => "e",
+    cellwall => "w",
+    periplasm => "p",
+    cytosol => "c",
+    golgi => "g",
+    endoplasm => "r",
+    lysosome => "l",
+    nucleus => "n",
+    chloroplast => "h",
+    mitochondria => "m",
+    peroxisome => "x",
+    vacuole => "v",
+    plastid => "d",
+    unknown => "u",
+};
+
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
@@ -79,6 +97,63 @@ sub roleToReactions {
 		}
 	}
 	return $roleToRxn;
+}
+
+sub adjustBiomass {
+	my $self = shift;
+    my $args = ModelSEED::utilities::args([], {
+    	biomass => $self->templateBiomasses()->[0]->uuid(),
+    	"new" => 0,
+    	"delete" => 0,
+		clearBiomassCompounds => 0,
+		name => undef,
+		type => undef,
+		other => undef,
+		protein => undef,
+		dna => undef,
+		rna => undef,
+		cofactor => undef,
+		energy => undef,
+		cellwall => undef,
+		lipid => undef,
+		compoundsToAdd => [],
+		compoundsToRemove => []
+	});
+	my $paramlist = [qw(name type other protein dna rna cofactor energy cellwall lipid compoundsToRemove compoundsToAdd)];
+	my $bio;
+	if (defined($args->{biomass})) {
+		$bio = $self->searchForBiomass($args->{biomass});
+	}
+	if (!defined($bio)) {
+		if ($args->{"new"} == 1) {
+			$bio = $self->add("templateBiomasses",{
+				name => $args->{name},
+				type => $args->{type},
+				other => $args->{other},
+				protein => $args->{protein},
+				dna => $args->{dna},
+				rna => $args->{rna},
+				cofactor => $args->{cofactor},
+				energy => $args->{energy},
+				cellwall => $args->{cellwall},
+				lipid => $args->{lipid},
+				templateBiomassComponents => []
+			});
+		} else {
+			ModelSEED::utilities::error("Biomass ".$args->{biomass}." not found!");
+		}	
+	}
+	if ($args->{"delete"} == 1) {
+		$self->remove("templateBiomasses",$bio);
+	}
+	foreach my $param (@{$paramlist}) {
+		$bio->$param($args->{$param});
+	}
+	
+	
+	
+
+
 }
 
 sub adjustReaction {
@@ -161,10 +236,36 @@ sub buildModel {
 		annotation => $args->{annotation}
 	});
 	my $rxns = $self->templateReactions();
+	my $roleFeatures;
+	my $features = $args->{annotation}->features();
+	for (my $i=0; $i < @{$features}; $i++) {
+		my $ftr = $features->[$i];
+		my $ftrroles = $ftr->featureroles();
+		for (my $j=0; $j < @{$ftrroles}; $j++) {
+			my $ftrrole = $ftrroles->[$j];
+			my $compartmentStr = $ftrrole->compartment();
+			my $cmparray = [split(/;/,$compartmentStr)];
+			for (my $k=0; $k < @{$cmparray}; $k++) {
+				my $abbrev = $cmparray->[$k];
+				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
+					$abbrev = $cmpTranslation->{$cmparray->[$k]};
+				} elsif (length($cmparray->[$k]) > 1 && !defined($cmpTranslation->{$cmparray->[$k]})) {
+					print STDERR "Compartment ".$cmparray->[$k]." not found!\n";
+				}
+				my $subroles = [split(/;/,$ftrrole->role()->searchname())];
+				for (my $m=0; $m < @{$subroles}; $m++) {
+					my $role = $self->mapping()->searchForRole($subroles->[$m]);
+					if (defined($role)) {
+						push(@{$roleFeatures->{$role->uuid()}->{$abbrev}},$ftr);
+					}
+				}
+			}
+		}
+	}
 	for (my $i=0; $i < @{$rxns}; $i++) {
 		my $rxn = $rxns->[$i];
 		$rxn->addRxnToModel({
-			annotation => $args->{annotation},
+			role_features => $roleFeatures,
 			model => $mdl
 		});
 	}
@@ -172,11 +273,30 @@ sub buildModel {
 	for (my $i=0; $i < @{$bios}; $i++) {
 		my $bio = $bios->[$i];
 		$bio->addBioToModel({
-			annotation => $args->{annotation},
+			gc => $args->{annotation}->genomes()->[0]->gc(),
 			model => $mdl
 		});
 	}
 	return $mdl;
+}
+
+=head3 searchForBiomass
+
+Definition:
+	ModelSEED::MS::TemplateBiomass ModelSEED::MS::TemplateModel->searchForBiomass(string:id);
+Description:
+	Search for biomass in template model
+	
+=cut
+
+sub searchForBiomass {
+    my $self = shift;
+    my $id = shift;
+    my $obj = $self->queryObject("templateBiomasses",{uuid => $id});
+    if (!defined($obj)) {
+    	$obj = $self->queryObject("templateBiomasses",{name => $id});
+    }
+    return $obj;
 }
 
 __PACKAGE__->meta->make_immutable;
