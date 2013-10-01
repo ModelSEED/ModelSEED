@@ -254,9 +254,9 @@ sub buildModel {
 				}
 				my $subroles = [split(/;/,$ftrrole->role()->searchname())];
 				for (my $m=0; $m < @{$subroles}; $m++) {
-					my $role = $self->mapping()->searchForRole($subroles->[$m]);
-					if (defined($role)) {
-						push(@{$roleFeatures->{$role->uuid()}->{$abbrev}},$ftr);
+					my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
+					for (my $n=0; $n < @{$roles};$n++) {
+						push(@{$roleFeatures->{$roles->[$n]->uuid()}->{$abbrev}},$ftr);
 					}
 				}
 			}
