@@ -244,7 +244,7 @@ sub buildModel {
 		for (my $j=0; $j < @{$ftrroles}; $j++) {
 			my $ftrrole = $ftrroles->[$j];
 			my $compartmentStr = $ftrrole->compartment();
-			my $cmparray = [split(/;/,$compartmentStr)];
+			my $cmparray = [split(/[;\|]/,$compartmentStr)];
 			for (my $k=0; $k < @{$cmparray}; $k++) {
 				my $abbrev = $cmparray->[$k];
 				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
