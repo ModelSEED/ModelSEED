@@ -42,7 +42,7 @@ sub functionToRoles {
 	};
 	my $compartmentTranslation = {
 		"cytosolic" => "c",
-		"plastidial" => "t",
+		"plastidial" => "d",
 		"mitochondrial" => "m",
 		"peroxisomal" => "x",
 		"lysosomal" => "l",
@@ -51,21 +51,36 @@ sub functionToRoles {
 		"plasma\\smembrane" => "p",
 		"cell\\swall" => "w",
 		"golgi\\sapparatus" => "g",
-		"endoplasmic\\sreticulum" => "e"
+		"endoplasmic\\sreticulum" => "r",
+		extracellular => "e",
+	    cellwall => "w",
+	    periplasm => "p",
+	    cytosol => "c",
+	    golgi => "g",
+	    endoplasm => "r",
+	    lysosome => "l",
+	    nucleus => "n",
+	    chloroplast => "h",
+	    mitochondria => "m",
+	    peroxisome => "x",
+	    vacuole => "v",
+	    plastid => "d",
+	    unknown => "u"
 	};
 	my $array = [split(/\#/,$function)];
 	$function = shift(@{$array});
 	$function =~ s/\s+$//;
 	$output->{comment} = join("#",@{$array});
+	my $compHash = {};
 	if (length($output->{comment}) > 0) {
 		foreach my $comp (keys(%{$compartmentTranslation})) {
 			if ($output->{comment} =~ /$comp/) {
-				if ($output->{compartments}->[0] eq "u") {
-					$output->{compartments} = [];
-				}
-				push(@{$output->{compartments}},$compartmentTranslation->{$comp});
+				$compHash->{$compartmentTranslation->{$comp}} = 1;
 			}
 		}
+	}
+	if (keys(%{$compHash}) > 0) {
+		$output->{compartments} = [keys(%{$compHash})];
 	}
 	if ($function =~ /\s*;\s/) {
 		$output->{delimiter} = ";";

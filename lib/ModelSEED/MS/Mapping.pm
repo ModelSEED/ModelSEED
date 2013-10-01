@@ -452,7 +452,7 @@ sub adjustRoleset {
 	my $self = shift;
     my $args = ModelSEED::utilities::args(["id"], {
     	name => undef,
-    	class => undef,
+    	primclass => undef,
     	subclass => undef,
     	type => undef,
     	rolesToAdd => [],
@@ -484,8 +484,8 @@ sub adjustRoleset {
 	if (defined($args->{name})) {
 		$ss->name($args->{name});
 	}
-	if (defined($args->{class})) {
-		$ss->class($args->{class});
+	if (defined($args->{primclass})) {
+		$ss->class($args->{primclass});
 	}
 	if (defined($args->{subclass})) {
 		$ss->subclass($args->{subclass});
