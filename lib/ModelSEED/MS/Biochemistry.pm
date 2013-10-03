@@ -781,14 +781,15 @@ sub addReactionFromHash {
     #and only add reaction if it passes those checks
     #saves having to delete the reaction too
     if($arguments->{balancedonly}==1){
-	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1});
+	my $result = $rxn->checkReactionMassChargeBalance({rebalanceProtons=>1,saveStatus=>1});
+
 	if($result->{balanced}==0 && (defined($result->{error}) || defined($result->{imbalancedAtoms}))){
 	    ModelSEED::utilities::verbose("Rejecting: ".$rxn->id()." based on status: ".$rxn->status());
 	    return;
 	}
     }
 
-    ModelSEED::utilities::verbose("Creating reaction ".$arguments->{id}->[0]);
+    ModelSEED::utilities::verbose("Creating reaction ".$rxn->uuid()." (".$arguments->{id}->[0].")");
 
 	# Attach reaction to biochemistry
 	$self->add("reactions", $rxn);
@@ -964,6 +965,7 @@ sub mergeBiochemistry {
 			    }
 			}
 		    }
+
 		    my $objId="";
 		    if($type eq "cues"){
 			$objId=$obj->name();
@@ -989,7 +991,9 @@ sub mergeBiochemistry {
 			}else{
 			    $dupObjId=$dupObj->id();
 			}
+
 			ModelSEED::utilities::verbose("Duplicate ".substr($type,0,-1)." found; ".$objId." merged to ".$dupObjId);
+
 			foreach my $aliasName (keys %$aliases){
 			    foreach my $alias (keys %{$aliases->{$aliasName}}){
 				if($aliasName eq "searchname" && $self->getObjectByAlias("compounds",$alias,"searchname")){
@@ -1000,6 +1004,16 @@ sub mergeBiochemistry {
 				}
 			    }
 			}
+
+			#If compounds, and one has "noformula" while the other has: make sure the properties get copied over
+			if($type eq "compounds" && $dupObj->formula() eq "noformula" && $obj->formula() ne "noformula"){
+			    ModelSEED::utilities::verbose("Copying over formula from $objId to $dupObjId\n");
+			}
+
+			if($type eq "compounds" && $dupObj->formula() eq "nogroups" && $obj->formula() ne "nogroups"){
+			    ModelSEED::utilities::verbose("Copying over groups from $objId to $dupObjId\n");
+			}
+
 			$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
 			$opts->{touched}{$dupObj->uuid()}{$obj->uuid()}=1;
 			$obj->uuid($dupObj->uuid());

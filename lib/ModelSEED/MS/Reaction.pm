@@ -757,7 +757,7 @@ Description:
 
 sub checkReactionMassChargeBalance {
     my $self = shift;
-    my $args = ModelSEED::utilities::args([], {rebalanceProtons => 0,rebalanceWater => 0}, @_);
+    my $args = ModelSEED::utilities::args([], {rebalanceProtons => 0,rebalanceWater => 0, saveStatus => 0}, @_);
     my $atomHash;
     my $netCharge = 0;
     my $status = "OK";
@@ -1002,7 +1002,10 @@ sub checkReactionMassChargeBalance {
 	
     }
     
-    $self->status($status);
+    if($args->{saveStatus} == 1){
+	$self->status($status);
+    }
+
     return $results;
 }
 
