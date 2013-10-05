@@ -244,6 +244,78 @@ sub findCreateEquivalentBiomass {
 	return $outbio;
 }
 
+=head3 addMediaReactions
+
+Definition:
+    ModelSEED::MS::Model->addTransportersFromMedia({
+           media => ModelSEED::MS::Media(REQ)
+    })
+
+Description:
+    Search the model for reactions that contain EXTRACELLULAR versions of each compound in media "media".
+    If none is present, it searches the biochemistry and adds the first one that it finds (note - we might
+    later want to define some kind of priority system for them)
+
+=cut
+
+sub addMediaReactions {
+    my $self = shift;
+    my $args = ModelSEED::utilities::args( ["media"], {}, @_);
+    my $media = $args->{media};
+    # Find extracellular compartment's UUID
+    my $bio = $self->biochemistry();
+    my $ex = $bio->queryObject("compartments", { name => "Extracellular"});
+    if (!defined($ex)) {
+	die "Unable to find extracellular compartment in biochemistry object...";
+    }
+    my $ex_uuid = $ex->uuid();
+
+    # Now we try to see if the extracellular versions of each media compound are present...
+    my $media_cpds = $media->mediacompounds();
+    for (my $i = 0; $i < @{$media_cpds}; $i++) {
+	my $cpd_uuid = $media_cpds->[$i]->compound_uuid();
+	# See if the extracellular version of this compound is in any of our reactions. If it is, 
+	# we are OK with it. If not we need to get a reaction that has this property out of the biochemistry object
+	# and add it to the model
+	# (note - it would be faster to save all the transporters before and only
+	# iterate over them)
+	my $OK = 0;
+	my $model_rxns = $self->modelreactions();
+	for ( my $j=0; $j<@{$model_rxns}; $j++ ) {
+	    my $rxn = $self->getLinkedObject('Biochemistry', 'reactions', $model_rxns->[$j]->reaction_uuid());
+	    if ( ! $rxn->isTransport() ) {
+		continue;
+	    }
+	    if ( $rxn->hasReagentInCompartment($cpd_uuid, $ex_uuid) ) {
+		$OK = 1;
+		last;
+	    }
+	}
+	if ( $OK ) {
+	    continue;
+	}
+	# Look for the transporter in the biochemistry object's reactions now and if we find it, add it to the model.
+	my $bio_rxns = $bio->reactions();
+	for ( my $j=0; $j<@{$bio_rxns}; $j++ ) {
+	    my $rxn = $bio_rxns->[$j];
+	    if ( ! $rxn->isTransport() ) {
+		continue;
+	    }
+	    if ( $rxn->hasReagentInCompartment($cpd_uuid, $ex_uuid) ) {
+		# We just take the first transporter that will transport the compound we want.
+		# We could get more sophisticated (e.g. make sure eveyrthing in the extracellular compartment is
+		# present in the media).
+		$self->addReactionToModel({ reaction => $rxn });
+		$OK = 1;
+		last;
+	    }
+	}
+	if ( ! $OK ) {
+	    print STDERR "WARNING: Unable to find transporter for compound ${cpd_uuid} in the biochemistry object...";
+	}
+    }
+}
+
 =head3 mergeModel
 
 Definition:
