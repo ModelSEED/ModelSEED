@@ -260,58 +260,72 @@ Description:
 
 sub addMediaReactions {
     my $self = shift;
-    my $args = ModelSEED::utilities::args( ["media"], {}, @_);
+    my $args = ModelSEED::utilities::args( ["media", "biochemistry"], {}, @_);
     my $media = $args->{media};
+    my $bio = $args->{biochemistry};
+
     # Find extracellular compartment's UUID
-    my $bio = $self->biochemistry();
     my $ex = $bio->queryObject("compartments", { name => "Extracellular"});
     if (!defined($ex)) {
 	die "Unable to find extracellular compartment in biochemistry object...";
     }
     my $ex_uuid = $ex->uuid();
 
+    # Generate lists of transporters
+    my $model_rxns = $self->modelreactions();
+    my $model_transporters = [];
+    for (my $i=0; $i<@{$model_rxns}; $i++) {
+	# convert ModelReaction TO to Reaction TO (note - should I be using ModelReaction directly? Not sure how to do that at this point)
+	my $rxn = $self->getLinkedObject('Biochemistry', 'reactions', $model_rxns->[$i]->reaction_uuid());
+	if ( $rxn->isTransport() ) {
+	    push(@{$model_transporters},$rxn);
+	}
+    }
+    my $bio_rxns = $bio->reactions();
+    my $bio_transporters = [];
+    for (my $i=0; $i<@{$bio_rxns}; $i++) {
+	if ( $bio_rxns->[$i]->isTransport() ) {
+	    push(@{$bio_transporters}, $bio_rxns->[$i]);
+	}
+    }
+
     # Now we try to see if the extracellular versions of each media compound are present...
     my $media_cpds = $media->mediacompounds();
     for (my $i = 0; $i < @{$media_cpds}; $i++) {
 	my $cpd_uuid = $media_cpds->[$i]->compound_uuid();
+	my $cpd_name = $media_cpds->[$i]->compound()->id();
 	# See if the extracellular version of this compound is in any of our reactions. If it is, 
 	# we are OK with it. If not we need to get a reaction that has this property out of the biochemistry object
 	# and add it to the model
-	# (note - it would be faster to save all the transporters before and only
-	# iterate over them)
 	my $OK = 0;
-	my $model_rxns = $self->modelreactions();
-	for ( my $j=0; $j<@{$model_rxns}; $j++ ) {
-	    my $rxn = $self->getLinkedObject('Biochemistry', 'reactions', $model_rxns->[$j]->reaction_uuid());
-	    if ( ! $rxn->isTransport() ) {
-		continue;
-	    }
+	for ( my $j=0; $j<@{$model_transporters}; $j++ ) {
+	    my $rxn = $model_transporters->[$j];
 	    if ( $rxn->hasReagentInCompartment($cpd_uuid, $ex_uuid) ) {
 		$OK = 1;
 		last;
 	    }
 	}
 	if ( $OK ) {
-	    continue;
+#	    print STDERR "Compound ${cpd_name} already has transporter in model\n";
+	    next;
 	}
-	# Look for the transporter in the biochemistry object's reactions now and if we find it, add it to the model.
-	my $bio_rxns = $bio->reactions();
-	for ( my $j=0; $j<@{$bio_rxns}; $j++ ) {
-	    my $rxn = $bio_rxns->[$j];
-	    if ( ! $rxn->isTransport() ) {
-		continue;
-	    }
+
+	for ( my $j=0; $j<@{$bio_transporters}; $j++ ) {
+	    my $rxn = $bio_transporters->[$j];
 	    if ( $rxn->hasReagentInCompartment($cpd_uuid, $ex_uuid) ) {
 		# We just take the first transporter that will transport the compound we want.
 		# We could get more sophisticated (e.g. make sure eveyrthing in the extracellular compartment is
 		# present in the media).
 		$self->addReactionToModel({ reaction => $rxn });
+		push(@{$model_transporters}, $rxn);
+		my $rxnid = $rxn->id();
+		print STDERR "Transport reaction ${rxnid} added for compound ${cpd_name}\n";
 		$OK = 1;
 		last;
 	    }
 	}
 	if ( ! $OK ) {
-	    print STDERR "WARNING: Unable to find transporter for compound ${cpd_uuid} in the biochemistry object...";
+	    print STDERR "WARNING: Unable to find transporter for compound ${cpd_name} in the biochemistry object...\n";
 	}
     }
 }
