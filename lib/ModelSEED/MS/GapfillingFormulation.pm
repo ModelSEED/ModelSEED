@@ -486,7 +486,9 @@ sub createSolutionsFromArray {
 	my $mdl = $args->{model};
 	my $bio = $mdl->biochemistry();
 	for (my $i=0; $i < @{$data}; $i++) {
-		if ($data->[$i] =~ m/^bio/) {
+	    # If more than one reaction is used as a target we need to use the line (the last line I presume) that
+	    # contains all the solutions.
+	    if ( $i == @{$data} ) {
 			my $array = [split(/\t/,$data->[$i])];
 			if (defined($array->[1])) {
 				my $solutionsArray = [split(/\|/,$array->[1])];
