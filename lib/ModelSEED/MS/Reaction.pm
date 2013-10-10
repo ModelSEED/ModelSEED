@@ -135,6 +135,28 @@ sub hasReagent {
     return 0;
 }
 
+=head3 hasReagentInCompartment
+
+Definition:
+	boolean = ModelSEED::MS::Reaction->hasReagentInCompartment(string(uuid), string(uuid));
+Description:
+	Checks to see if a reaction contains a reagent in a specific oompartment
+=cut
+
+sub hasReagentInCompartment {
+    my ($self,$rgt_uuid,$cmp_uuid) = @_;
+    my $rgts = $self->reagents();
+    if (!defined($rgts->[0])) {
+	return 0;	
+    }
+    for (my $i=0; $i < @{$rgts}; $i++) {
+	if ($rgts->[$i]->compound_uuid() eq $rgt_uuid && $rgts->[$i]->compartment_uuid() eq $cmp_uuid) {
+	    return 1;
+	}
+    }
+    return 0;
+}
+
 =head3 createEquation
 Definition:
 	string = ModelSEED::MS::Reaction->createEquation({
