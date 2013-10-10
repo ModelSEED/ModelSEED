@@ -107,7 +107,7 @@ sub _buildequation {
 }
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
-	return $self->modelcompartment()->label();
+	return $self->modelcompartment()->id();
 }
 sub _buildgprString {
 	my ($self) = @_;

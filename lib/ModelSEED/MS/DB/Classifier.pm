@@ -35,12 +35,12 @@ has classifierClassifications => (is => 'rw', isa => 'ArrayRef[HashRef]', defaul
 
 
 # LINKS:
-has Mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_Mapping', clearer => 'clear_Mapping', isa => 'ModelSEED::MS::Mapping');
+has mapping => (is => 'rw', type => 'link(ModelSEED::Store,Mapping,mapping_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_mapping', clearer => 'clear_mapping', isa => 'ModelSEED::MS::Mapping');
 
 
 # BUILDERS:
 sub _build_uuid { return Data::UUID->new()->create_str(); }
-sub _build_Mapping {
+sub _build_mapping {
   my ($self) = @_;
   return $self->getLinkedObject('ModelSEED::Store','Mapping',$self->mapping_uuid());
 }
@@ -101,14 +101,14 @@ my $links = [
             'attribute' => 'mapping_uuid',
             'weak' => 0,
             'parent' => 'ModelSEED::Store',
-            'clearer' => 'clear_Mapping',
-            'name' => 'Mapping',
+            'clearer' => 'clear_mapping',
+            'name' => 'mapping',
             'class' => 'Mapping',
             'method' => 'Mapping'
           }
         ];
 
-my $link_map = {Mapping => 0};
+my $link_map = {mapping => 0};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {

@@ -280,6 +280,54 @@ sub buildModel {
 	return $mdl;
 }
 
+sub buildModelFromFunctions {
+    my $self = shift;
+	my $args = ModelSEED::utilities::args(["functions","id"],{}, @_);
+	my $mdl = ModelSEED::MS::Model->new({
+		id => $args->{id},
+		version => 0,
+		type => $self->modelType(),
+		growth => 0,
+		status => "Reconstructed",
+		current => 1,
+		mapping_uuid => $self->mapping()->uuid(),
+		mapping => $self->mapping(),
+		biochemistry_uuid => $self->mapping()->biochemistry()->uuid(),
+		biochemistry => $self->mapping()->biochemistry(),
+	});
+	my $rxns = $self->templateReactions();
+	my $roleFeatures = {};
+	foreach my $function (keys(%{$args->{functions}})) {
+		my $searchrole = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($function);
+		print "1:".$searchrole."\n";
+		my $subroles = [split(/;/,$searchrole)];
+		for (my $m=0; $m < @{$subroles}; $m++) {
+			print "2:".$subroles->[$m]."\n";
+			my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
+			for (my $n=0; $n < @{$roles};$n++) {
+				print "3:".$roles->[$n]->uuid()."\n";
+				$roleFeatures->{$roles->[$n]->uuid()}->{"c"}->[0] = "Role-based-annotation";
+			}
+		}
+	}
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i];
+		$rxn->addRxnToModel({
+			role_features => $roleFeatures,
+			model => $mdl
+		});
+	}
+	my $bios = $self->templateBiomasses();
+	for (my $i=0; $i < @{$bios}; $i++) {
+		my $bio = $bios->[$i];
+		$bio->addBioToModel({
+			gc => 0.5,
+			model => $mdl
+		});
+	}
+	return $mdl;
+}
+
 =head3 searchForBiomass
 
 Definition:

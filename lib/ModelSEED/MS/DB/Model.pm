@@ -22,6 +22,9 @@ has parent => (is => 'rw', isa => 'Ref', weak_ref => 1, type => 'parent', metacl
 
 # ATTRIBUTES:
 has uuid => (is => 'rw', isa => 'ModelSEED::uuid', printOrder => '0', lazy => 1, builder => '_build_uuid', type => 'attribute', metaclass => 'Typed');
+has kbid => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has source_id => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
+has source => (is => 'rw', isa => 'Str', printOrder => '0', type => 'attribute', metaclass => 'Typed');
 has defaultNameSpace => (is => 'rw', isa => 'Str', printOrder => '3', default => 'ModelSEED', type => 'attribute', metaclass => 'Typed');
 has modDate => (is => 'rw', isa => 'Str', printOrder => '-1', lazy => 1, builder => '_build_modDate', type => 'attribute', metaclass => 'Typed');
 has id => (is => 'rw', isa => 'ModelSEED::varchar', printOrder => '1', required => 1, type => 'attribute', metaclass => 'Typed');
@@ -34,6 +37,9 @@ has current => (is => 'rw', isa => 'Int', printOrder => '4', default => '1', typ
 has mapping_uuid => (is => 'rw', isa => 'Str', printOrder => '8', type => 'attribute', metaclass => 'Typed');
 has biochemistry_uuid => (is => 'rw', isa => 'Str', printOrder => '9', required => 1, type => 'attribute', metaclass => 'Typed');
 has annotation_uuid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has Genome_wsid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has MetagenomeAnno_wsid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
+has ModelTemplate_wsid => (is => 'rw', isa => 'Str', printOrder => '10', type => 'attribute', metaclass => 'Typed');
 has fbaFormulation_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapfilling_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has integratedGapfillingSolutions => (is => 'rw', isa => 'HashRef', printOrder => '-1', default => sub{return {};}, type => 'attribute', metaclass => 'Typed');
@@ -113,6 +119,27 @@ my $attributes = [
             'printOrder' => 0,
             'name' => 'uuid',
             'type' => 'ModelSEED::uuid',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'kbid',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'source_id',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 0,
+            'name' => 'source',
+            'type' => 'Str',
             'perm' => 'rw'
           },
           {
@@ -210,6 +237,27 @@ my $attributes = [
           },
           {
             'req' => 0,
+            'printOrder' => 10,
+            'name' => 'Genome_wsid',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 10,
+            'name' => 'MetagenomeAnno_wsid',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => 10,
+            'name' => 'ModelTemplate_wsid',
+            'type' => 'Str',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
             'printOrder' => -1,
             'name' => 'fbaFormulation_uuids',
             'default' => 'sub{return [];}',
@@ -274,7 +322,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, defaultNameSpace => 1, modDate => 2, id => 3, name => 4, version => 5, type => 6, status => 7, growth => 8, current => 9, mapping_uuid => 10, biochemistry_uuid => 11, annotation_uuid => 12, fbaFormulation_uuids => 13, integratedGapfilling_uuids => 14, integratedGapfillingSolutions => 15, unintegratedGapfilling_uuids => 16, integratedGapgen_uuids => 17, integratedGapgenSolutions => 18, unintegratedGapgen_uuids => 19, forwardedLinks => 20};
+my $attribute_map = {uuid => 0, kbid => 1, source_id => 2, source => 3, defaultNameSpace => 4, modDate => 5, id => 6, name => 7, version => 8, type => 9, status => 10, growth => 11, current => 12, mapping_uuid => 13, biochemistry_uuid => 14, annotation_uuid => 15, Genome_wsid => 16, MetagenomeAnno_wsid => 17, ModelTemplate_wsid => 18, fbaFormulation_uuids => 19, integratedGapfilling_uuids => 20, integratedGapfillingSolutions => 21, unintegratedGapfilling_uuids => 22, integratedGapgen_uuids => 23, integratedGapgenSolutions => 24, unintegratedGapgen_uuids => 25, forwardedLinks => 26};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
