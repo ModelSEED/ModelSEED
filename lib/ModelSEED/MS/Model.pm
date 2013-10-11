@@ -885,7 +885,7 @@ sub addCompartmentToModel {
 	if (!defined($mdlcmp)) {
 		$mdlcmp = $self->add("modelcompartments",{
 			compartment_uuid => $args->{compartment}->uuid(),
-			label => $args->{compartment}->id()."0",
+			label => $args->{compartment}->id().$args->{compartmentIndex},
 			pH => $args->{pH},
 			compartmentIndex => $args->{compartmentIndex},
 		});
