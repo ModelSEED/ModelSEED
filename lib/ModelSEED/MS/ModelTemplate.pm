@@ -299,13 +299,10 @@ sub buildModelFromFunctions {
 	my $roleFeatures = {};
 	foreach my $function (keys(%{$args->{functions}})) {
 		my $searchrole = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($function);
-		print "1:".$searchrole."\n";
 		my $subroles = [split(/;/,$searchrole)];
 		for (my $m=0; $m < @{$subroles}; $m++) {
-			print "2:".$subroles->[$m]."\n";
 			my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
 			for (my $n=0; $n < @{$roles};$n++) {
-				print "3:".$roles->[$n]->uuid()."\n";
 				$roleFeatures->{$roles->[$n]->uuid()}->{"c"}->[0] = "Role-based-annotation";
 			}
 		}

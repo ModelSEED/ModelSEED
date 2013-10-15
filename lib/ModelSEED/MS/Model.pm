@@ -1689,7 +1689,6 @@ sub printExcel {
 		}
 		$sheet->write_row($i+1,0,[$ftr->id(),$ftr->type(),$ftr->roleList(),$ftr->contig(),$ftr->start(),$ftr->stop(),$ftr->direction(),join("|",@{$reactionList})]);
 	}
-	#print $filename."\n";
 	my $output;
 	open(my $fh, "<:raw", $filename);
 	my $data = <$fh>;
@@ -1765,10 +1764,6 @@ sub printCytoSEED {
 		    }
 		}
 	    }
-#	    my $direction = $reaction->direction();
-#	    if ($direction ne "=") {
-#		print STDERR "$msid direction: $direction\n";
-#	    }
 	    my $equation = (join " + ", @substrates)." <=> ".(join " + ",  @products);
 
 	    my $reversibility = $reaction->thermoReversibility();

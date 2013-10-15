@@ -178,6 +178,9 @@ sub get_object {
     if ($type ne "Media" && $dataOnly == 0) {
     	$self->cache()->{$type}->{$ref} = $object;
     }
+    if ($type eq "Model" && !defined($object->annotation_uuid())) {
+    	$object->annotation_uuid("kbase/GenericGenome");
+    }
     return $object;
 }
 
