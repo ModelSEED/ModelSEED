@@ -179,7 +179,7 @@ sub get_object {
     	$self->cache()->{$type}->{$ref} = $object;
     }
     if ($type eq "Model" && !defined($object->annotation_uuid())) {
-    	$object->annotation_uuid("kbase/GenericGenome");
+    	$object->annotation_uuid("B4159688-E9E9-11E2-87AF-43F64331C093");
     }
     return $object;
 }
