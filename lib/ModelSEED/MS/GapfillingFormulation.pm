@@ -271,6 +271,15 @@ sub prepareFBAFormulation {
 	my $inactiveList = ["bio1"];
 	if ($self->completeGapfill() eq "1") {
 		my $rxns = $self->model()->modelreactions();
+		if (@{$self->targetedreactions()} > 0) {
+			$rxns = [];
+			for (my $i=0; @{$self->targetedreactions()}; $i++) {
+				my $mdlrxn = $self->model()->queryObject("modelreactions",{id => $self->targetedreactions()->[$i]->id()."_c0"});
+				if (defined($mdlrxn)) {
+					push(@{$rxns},$mdlrxn);
+				}
+			}
+		}
 		my $rxnhash = {};
 		for (my $i=0; $i < @{$rxns}; $i++) {
 			$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	

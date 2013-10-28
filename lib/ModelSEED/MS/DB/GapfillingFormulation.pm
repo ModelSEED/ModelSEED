@@ -28,6 +28,7 @@ has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '4', default => '
 has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '5', default => '1', type => 'attribute', metaclass => 'Typed');
 has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '6', default => '1', type => 'attribute', metaclass => 'Typed');
 has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has targetedreaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has reactionActivationBonus => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -59,6 +60,7 @@ has gapfillingSolutions => (is => 'rw', isa => 'ArrayRef[HashRef]', default => s
 has model => (is => 'rw', type => 'link(ModelSEED::Store,Model,model_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_model', clearer => 'clear_model', isa => 'ModelSEED::MS::Model');
 has fbaFormulation => (is => 'rw', type => 'link(ModelSEED::Store,FBAFormulation,fbaFormulation_uuid)', metaclass => 'Typed', lazy => 1, builder => '_build_fbaFormulation', clearer => 'clear_fbaFormulation', isa => 'ModelSEED::MS::FBAFormulation');
 has guaranteedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,guaranteedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_guaranteedReactions', clearer => 'clear_guaranteedReactions', isa => 'ArrayRef');
+has targetedreactions => (is => 'rw', type => 'link(Biochemistry,reactions,targetedreaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_targetedreactions', clearer => 'clear_targetedreactions', isa => 'ArrayRef');
 has blacklistedReactions => (is => 'rw', type => 'link(Biochemistry,reactions,blacklistedReaction_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_blacklistedReactions', clearer => 'clear_blacklistedReactions', isa => 'ArrayRef');
 has allowableCompartments => (is => 'rw', type => 'link(Biochemistry,compartments,allowableCompartment_uuids)', metaclass => 'Typed', lazy => 1, builder => '_build_allowableCompartments', clearer => 'clear_allowableCompartments', isa => 'ArrayRef');
 
@@ -77,6 +79,10 @@ sub _build_fbaFormulation {
 sub _build_guaranteedReactions {
   my ($self) = @_;
   return $self->getLinkedObjectArray('Biochemistry','reactions',$self->guaranteedReaction_uuids());
+}
+sub _build_targetedreactions {
+  my ($self) = @_;
+  return $self->getLinkedObjectArray('Biochemistry','reactions',$self->targetedreaction_uuids());
 }
 sub _build_blacklistedReactions {
   my ($self) = @_;
@@ -157,6 +163,14 @@ my $attributes = [
             'req' => 0,
             'printOrder' => -1,
             'name' => 'guaranteedReaction_uuids',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
+            'name' => 'targetedreaction_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
             'perm' => 'rw'
@@ -280,7 +294,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, blacklistedReaction_uuids => 9, allowableCompartment_uuids => 10, reactionActivationBonus => 11, drainFluxMultiplier => 12, directionalityMultiplier => 13, deltaGMultiplier => 14, noStructureMultiplier => 15, noDeltaGMultiplier => 16, biomassTransporterMultiplier => 17, singleTransporterMultiplier => 18, transporterMultiplier => 19, modDate => 20, timePerSolution => 21, totalTimeLimit => 22, completeGapfill => 23};
+my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, targetedreaction_uuids => 9, blacklistedReaction_uuids => 10, allowableCompartment_uuids => 11, reactionActivationBonus => 12, drainFluxMultiplier => 13, directionalityMultiplier => 14, deltaGMultiplier => 15, noStructureMultiplier => 16, noDeltaGMultiplier => 17, biomassTransporterMultiplier => 18, singleTransporterMultiplier => 19, transporterMultiplier => 20, modDate => 21, timePerSolution => 22, totalTimeLimit => 23, completeGapfill => 24};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {
@@ -325,6 +339,15 @@ my $links = [
           },
           {
             'array' => 1,
+            'attribute' => 'targetedreaction_uuids',
+            'parent' => 'Biochemistry',
+            'clearer' => 'clear_targetedreactions',
+            'name' => 'targetedreactions',
+            'class' => 'reactions',
+            'method' => 'reactions'
+          },
+          {
+            'array' => 1,
             'attribute' => 'blacklistedReaction_uuids',
             'parent' => 'Biochemistry',
             'clearer' => 'clear_blacklistedReactions',
@@ -343,7 +366,7 @@ my $links = [
           }
         ];
 
-my $link_map = {model => 0, fbaFormulation => 1, guaranteedReactions => 2, blacklistedReactions => 3, allowableCompartments => 4};
+my $link_map = {model => 0, fbaFormulation => 1, guaranteedReactions => 2, targetedreactions => 3, blacklistedReactions => 4, allowableCompartments => 5};
 sub _links {
   my ($self, $key) = @_;
   if (defined($key)) {
