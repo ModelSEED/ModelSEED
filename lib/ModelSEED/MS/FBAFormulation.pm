@@ -330,16 +330,18 @@ sub createJobDirectory {
 		if (!defined($cpdhash->{$cpd->compound()->id()."_".$index})) {
 			my $line = "";
 			$cpdhash->{$cpd->compound()->id()."_".$index} = 1;
-			if ($cpd->modelcompartment()->compartmentIndex() == 0) {
-				$line .= $cpd->compound()->abbreviation()."\t".$cpd->compound()->defaultCharge()."\t";
-				$line .= $cpd->compound()->deltaG()."\t".$cpd->compound()->deltaGErr()."\t";
-				$line .= $cpd->compound()->formula()."\t".$cpd->compound()->id()."\t";
-				$line .= $cpd->compound()->mass()."\t".$cpd->compound()->name();
-			} else {
-				$line .= $cpd->compound()->abbreviation()."_".$index."\t".$cpd->compound()->defaultCharge()."\t";
-				$line .= $cpd->compound()->deltaG()."\t".$cpd->compound()->deltaGErr()."\t";
-				$line .= $cpd->compound()->formula()."\t".$cpd->compound()->id()."_".$index."\t";
-				$line .= $cpd->compound()->mass()."\t".$cpd->compound()->name()."_".$index;
+			my $cols = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
+			for (my $j=0; $j < @{$cols}; $j++) {
+				my $function = $cols->[$j];
+				if ($j > 0) {
+					$line .= "\t";
+				}
+				if (defined($cpd->compound()->$function())) {	
+					$line .= $cpd->compound()->$function();
+					if ($index > 0 && $function =~ m/(name)|(id)|(abbreviation)/) {
+						$line .= "_".$index;
+					}
+				}
 			}
 			push(@{$BioCpd},$line);
 		}
@@ -351,12 +353,11 @@ sub createJobDirectory {
 	for (my $i=0; $i < @{$mdlrxn}; $i++) {
 		my $rxn = $mdlrxn->[$i];
 		my $direction = $rxn->direction();
-		if ($direction eq "=") {
-			$direction = "<=>";	
-		} elsif ($direction eq ">") {
-			$direction = "=>";
+		my $rxndir = "<=>";
+		if ($direction eq ">") {
+			$rxndir = "=>";
 		} elsif ($direction eq "<") {
-			$direction = "<=";
+			$rxndir = "<=";
 		}
 		my $id = $rxn->reaction()->id();
 		my $name = $rxn->reaction()->name();
@@ -402,7 +403,7 @@ sub createJobDirectory {
 					$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->compound()->id().$suffix;
 				}
 			}
-			my $equation = $reactants." ".$direction." ".$products;
+			my $equation = $reactants." ".$rxndir." ".$products;
 			my $rxnline = $rxn->reaction()->abbreviation()."\t".$rxn->reaction()->deltaG()."\t"
 				.$rxn->reaction()->deltaGErr()."\t".$equation."\t".$id."\t".$name."\t"
 				.$rxn->reaction()->thermoReversibility()."\t".$rxn->reaction()->status()."\t"
@@ -416,11 +417,17 @@ sub createJobDirectory {
 			my $cpd = $mdlcpd->[$i];
 			if (!defined($cpdhash->{$cpd->id()."_0"})) {
 				my $line = "";
+				my $cols = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
 				$cpdhash->{$cpd->id()."_0"} = 1;
-				$line .= $cpd->abbreviation()."\t".$cpd->defaultCharge()."\t";
-				$line .= $cpd->deltaG()."\t".$cpd->deltaGErr()."\t";
-				$line .= $cpd->unchargedFormula()."\t".$cpd->id()."\t";
-				$line .= $cpd->mass()."\t".$cpd->name();
+				for (my $j=0; $j < @{$cols}; $j++) {
+					my $function = $cols->[$j];
+					if ($j > 0) {
+						$line .= "\t";
+					}
+					if (defined($cpd->$function())) {
+						$line .= $cpd->$function();
+					}
+				}
 				push(@{$BioCpd},$line);
 			}
 		}
@@ -456,20 +463,30 @@ sub createJobDirectory {
 				}
 				my $direction = $rxn->thermoReversibility();
 				if (!defined($direction)) {
-					print $rxn->id()."\n";
+					$direction = "=";
 				}
-				if ($direction eq "=") {
-					$direction = "<=>";	
-				} elsif ($direction eq ">") {
-					$direction = "=>";
+				my $rxndir = "<=>";
+				if ($direction eq ">") {
+					$rxndir = "=>";
 				} elsif ($direction eq "<") {
-					$direction = "<=";
+					$rxndir = "<=";
 				}
-				my $equation = $reactants." ".$direction." ".$products;
-				my $rxnline = $rxn->abbreviation()."\t".$rxn->deltaG()."\t"
-					.$rxn->deltaGErr()."\t".$equation."\t".$rxn->id()."\t".$rxn->name()."\t"
-					.$rxn->thermoReversibility()."\t".$rxn->status()."\t"
-					.$rxn->thermoReversibility();
+				my $equation = $reactants." ".$rxndir." ".$products;
+				my $cols = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","direction"];
+				my $rxnline = "";
+				for (my $j=0; $j < @{$cols}; $j++) {
+					my $function = $cols->[$j];
+					if ($j > 0) {
+						$rxnline .= "\t";
+					}
+					if ($function eq "direction") {
+						$rxnline .= $direction;
+					} elsif ($function eq "equation") {
+						$rxnline .= $equation;
+					} elsif (defined($rxn->$function())) {
+						$rxnline .= $rxn->$function();
+					}
+				}
 				push(@{$BioRxn},$rxnline);
 			}
 		}
@@ -646,7 +663,6 @@ sub createJobDirectory {
 		$optMetabolite = 0;
 	}
 	#Setting parameters
-	print "All reversible:".$self->allReversible()."\n";
 	my $parameters = {
 		"perform MFA" => 1,
 		"Default min drain flux" => $self->defaultMinDrainFlux(),
