@@ -454,7 +454,7 @@ sub createJobDirectory {
 						$products .= "(".$rgt->coefficient().") ".$rgt->compound()->id().$suffix;
 					}
 				}
-				my $direction = $rxn->reaction()->thermoReversibility();
+				my $direction = $rxn->thermoReversibility();
 				if ($direction eq "=") {
 					$direction = "<=>";	
 				} elsif ($direction eq ">") {
@@ -463,10 +463,10 @@ sub createJobDirectory {
 					$direction = "<=";
 				}
 				my $equation = $reactants." ".$direction." ".$products;
-				my $rxnline = $rxn->reaction()->abbreviation()."\t".$rxn->reaction()->deltaG()."\t"
-					.$rxn->reaction()->deltaGErr()."\t".$equation."\t".$rxn->id()."\t".$rxn->name()."\t"
-					.$rxn->reaction()->thermoReversibility()."\t".$rxn->reaction()->status()."\t"
-					.$rxn->reaction()->thermoReversibility();
+				my $rxnline = $rxn->abbreviation()."\t".$rxn->deltaG()."\t"
+					.$rxn->deltaGErr()."\t".$equation."\t".$rxn->id()."\t".$rxn->name()."\t"
+					.$rxn->thermoReversibility()."\t".$rxn->status()."\t"
+					.$rxn->thermoReversibility();
 				push(@{$BioRxn},$rxnline);
 			}
 		}

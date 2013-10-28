@@ -287,6 +287,8 @@ sub prepareFBAFormulation {
 			}	
 		}
 	}
+	print "Inactive reactions:".join(";",@{$inactiveList})."\n";
+	$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
 	$form->fluxUseVariables(1);
 	$form->decomposeReversibleFlux(1);
 	#Setting up dissapproved compartments
@@ -355,20 +357,6 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"Add positive use variable constraints"} = 0;
 	$form->parameters()->{"Biomass modification hypothesis"} = 0;
 	$form->parameters()->{"Biomass component reaction penalty"} = 500;
-	$form->inputfiles()->{"InactiveModelReactions.txt"} = [];
-	my $objterms = $form->fbaObjectiveTerms();
-	for (my $i=0; $i < @{$objterms}; $i++) {
-		my $term = $objterms->[$i];
-		if ($term->entityType() eq "Reaction" || $term->entityType() eq "Biomass") {
-			(my $obj) = $self->interpretReference($term->entityType()."/uuid/".$term->entity_uuid());
-			if (defined($obj)) {
-				push(@{$form->inputfiles()->{"InactiveModelReactions.txt"}},$obj->id());
-			}
-		}
-	}
-	if (@{$form->inputfiles()->{"InactiveModelReactions.txt"}} == 0) {		
-		$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
-	}
 	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
 	push(@{$form->outputfiles}, "ProblemReport.txt");
 	if ($self->biomassHypothesis() == 1) {

@@ -891,6 +891,9 @@ sub searchForReaction {
 	if (!defined($rxnobj)) {
 		$rxnobj = $self->queryObject("reactions",{name => $id});
 	}
+	if (!defined($rxnobj)) {
+		$rxnobj = $self->queryObject("reactions",{uuid => $id});
+	}
 	return $rxnobj;
 }
 
