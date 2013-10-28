@@ -249,6 +249,7 @@ sub prepareFBAFormulation {
 	} else {
 		$form = $self->fbaFormulation();
 	}
+	$form->allReversible(1);
 	if ($form->media()->name() eq "Complete") {
 		if ($form->defaultMaxDrainFlux() < 10000) {
 			$form->defaultMaxDrainFlux(10000);

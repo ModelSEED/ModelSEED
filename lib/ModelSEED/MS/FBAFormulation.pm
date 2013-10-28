@@ -333,12 +333,12 @@ sub createJobDirectory {
 			if ($cpd->modelcompartment()->compartmentIndex() == 0) {
 				$line .= $cpd->compound()->abbreviation()."\t".$cpd->compound()->defaultCharge()."\t";
 				$line .= $cpd->compound()->deltaG()."\t".$cpd->compound()->deltaGErr()."\t";
-				$line .= $cpd->compound()->unchargedFormula()."\t".$cpd->compound()->id()."\t";
+				$line .= $cpd->compound()->formula()."\t".$cpd->compound()->id()."\t";
 				$line .= $cpd->compound()->mass()."\t".$cpd->compound()->name();
 			} else {
 				$line .= $cpd->compound()->abbreviation()."_".$index."\t".$cpd->compound()->defaultCharge()."\t";
 				$line .= $cpd->compound()->deltaG()."\t".$cpd->compound()->deltaGErr()."\t";
-				$line .= $cpd->compound()->unchargedFormula()."\t".$cpd->compound()->id()."_".$index."\t";
+				$line .= $cpd->compound()->formula()."\t".$cpd->compound()->id()."_".$index."\t";
 				$line .= $cpd->compound()->mass()."\t".$cpd->compound()->name()."_".$index;
 			}
 			push(@{$BioCpd},$line);
@@ -455,6 +455,9 @@ sub createJobDirectory {
 					}
 				}
 				my $direction = $rxn->thermoReversibility();
+				if (!defined($direction)) {
+					print $rxn->id()."\n";
+				}
 				if ($direction eq "=") {
 					$direction = "<=>";	
 				} elsif ($direction eq ">") {
@@ -643,6 +646,7 @@ sub createJobDirectory {
 		$optMetabolite = 0;
 	}
 	#Setting parameters
+	print "All reversible:".$self->allReversible()."\n";
 	my $parameters = {
 		"perform MFA" => 1,
 		"Default min drain flux" => $self->defaultMinDrainFlux(),
