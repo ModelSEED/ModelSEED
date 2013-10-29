@@ -1849,7 +1849,7 @@ $objectDefinitions->{GapfillingFormulation} = {
 			default    => "sub{return [];}"
 		},
 		{
-			name       => 'targetedreaction_uuids',
+			name       => 'targetedreactions',
 			printOrder => -1,
 			perm       => 'rw',
 			type       => 'ArrayRef',
@@ -2011,13 +2011,6 @@ $objectDefinitions->{GapfillingFormulation} = {
 		{
 			name      => "guaranteedReactions",
 			attribute => "guaranteedReaction_uuids",
-			parent    => "Biochemistry",
-			method    => "reactions",
-			array     => 1
-		},
-		{
-			name      => "targetedreactions",
-			attribute => "targetedreaction_uuids",
 			parent    => "Biochemistry",
 			method    => "reactions",
 			array     => 1

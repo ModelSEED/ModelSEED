@@ -2053,6 +2053,10 @@ sub integrateGapfillSolution {
 	if (@{$gfss} <= $num) {
 		ModelSEED::utilities::error("Specified solution not found in gapfilling formulation!");
 	}
+	my $IntegrationReport = {
+		added => [],
+		reversed => []
+	};
 	my $sol = $gfss->[$num];
 	$sol->integrated(1);
 	#Integrating biomass removals into model
@@ -2082,11 +2086,13 @@ sub integrateGapfillSolution {
 			ModelSEED::utilities::verbose(
 				"Making ".$mdlrxn->id()." reversible."
 			);
+			push(@{$IntegrationReport->{reversed}},$rxnid);
 			$mdlrxn->direction("=");
 		} else {
 			ModelSEED::utilities::verbose(
 				"Adding ".$rxn->reaction()->id()." to model in ".$rxn->direction()." direction."
 			);
+			push(@{$IntegrationReport->{added}},$rxnid);
 			$self->addReactionToModel({
 				reaction => $rxn->reaction(),
 				direction => $rxn->direction()
@@ -2101,6 +2107,7 @@ sub integrateGapfillSolution {
 	$self->removeLinkArrayItem("unintegratedGapfillings",$gf);
 	$self->addLinkArrayItem("integratedGapfillings",$gf);
 	$self->integratedGapfillingSolutions()->{$gf->uuid()} = $num;
+	return $IntegrationReport;
 }
 
 =head3 gapgenModel

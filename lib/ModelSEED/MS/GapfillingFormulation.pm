@@ -270,34 +270,28 @@ sub prepareFBAFormulation {
 	$form->defaultMinDrainFlux(-10000);
 	my $inactiveList = ["bio1"];
 	if ($self->completeGapfill() eq "1") {
-		my $rxns = $self->model()->modelreactions();
 		if (@{$self->targetedreactions()} > 0) {
-			$rxns = [];
-			for (my $i=0; @{$self->targetedreactions()}; $i++) {
-				my $mdlrxn = $self->model()->queryObject("modelreactions",{id => $self->targetedreactions()->[$i]->id()."_c0"});
-				if (defined($mdlrxn)) {
-					push(@{$rxns},$mdlrxn);
+			$inactiveList = $self->targetedreactions();
+		} else {
+			my $rxns = $self->model()->modelreactions();
+			my $rxnhash = {};
+			for (my $i=0; $i < @{$rxns}; $i++) {
+				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
+			}
+			my $priorities = $self->reactionPriorities();
+			for (my $i=0; $i < @{$priorities}; $i++) {
+				if (defined($rxnhash->{$priorities->[$i]})) {
+					push(@{$inactiveList},$priorities->[$i]);
+					$rxnhash->{$priorities->[$i]} = 1;
 				}
 			}
-		}
-		my $rxnhash = {};
-		for (my $i=0; $i < @{$rxns}; $i++) {
-			$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
-		}
-		my $priorities = $self->reactionPriorities();
-		for (my $i=0; $i < @{$priorities}; $i++) {
-			if (defined($rxnhash->{$priorities->[$i]})) {
-				push(@{$inactiveList},$priorities->[$i]);
-				$rxnhash->{$priorities->[$i]} = 1;
+			for (my $i=0; $i < @{$rxns}; $i++) {
+				if ($rxnhash->{$rxns->[$i]->reaction()->id()} == 0) {
+					push(@{$inactiveList},$rxns->[$i]->reaction()->id());
+				}	
 			}
 		}
-		for (my $i=0; $i < @{$rxns}; $i++) {
-			if ($rxnhash->{$rxns->[$i]->reaction()->id()} == 0) {
-				push(@{$inactiveList},$rxns->[$i]->reaction()->id());
-			}	
-		}
 	}
-	print "Inactive reactions:".join(";",@{$inactiveList})."\n";
 	$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
 	$form->fluxUseVariables(1);
 	$form->decomposeReversibleFlux(1);
