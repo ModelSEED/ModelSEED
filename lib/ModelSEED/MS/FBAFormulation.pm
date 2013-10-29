@@ -293,7 +293,6 @@ sub runFBA {
 	if (!-e $self->jobDirectory()."/runMFAToolkit.sh") {
 		$self->createJobDirectory();
 	}
-	$self->biochemistry()->printDBFiles();
 	system($self->command());
 	my $fbaresults = $self->add("fbaResults",{});
 	$fbaresults->loadMFAToolkitResults();
