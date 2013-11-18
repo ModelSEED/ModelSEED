@@ -403,10 +403,25 @@ sub createJobDirectory {
 				}
 			}
 			my $equation = $reactants." ".$rxndir." ".$products;
-			my $rxnline = $rxn->reaction()->abbreviation()."\t".$rxn->reaction()->deltaG()."\t"
-				.$rxn->reaction()->deltaGErr()."\t".$equation."\t".$id."\t".$name."\t"
-				.$rxn->reaction()->thermoReversibility()."\t".$rxn->reaction()->status()."\t"
-				.$rxn->reaction()->thermoReversibility();
+			my $cols = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","direction"];
+			my $rxnline = "";
+			for (my $j=0; $j < @{$cols}; $j++) {
+				my $function = $cols->[$j];
+				if ($j > 0) {
+					$rxnline .= "\t";
+				}
+				if ($function eq "direction") {
+					$rxnline .= $direction;
+				} elsif ($function eq "equation") {
+					$rxnline .= $equation;
+				} elsif ($function eq "id") {
+					$rxnline .= $id;
+				} elsif ($function eq "name") {
+					$rxnline .= $name;
+				} elsif (defined($rxn->reaction()->$function())) {
+					$rxnline .= $rxn->reaction()->$function();
+				}
+			}
 			push(@{$BioRxn},$rxnline);
 		}
 	}
