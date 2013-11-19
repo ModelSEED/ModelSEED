@@ -136,9 +136,14 @@ sub get_object {
     #Getting the data out of the workspace
     my $output;
     if ($ref =~ m/(.+)\/([^\/]+)$/) {
+		my $id = $2;
+		my $ws = $1;
+		if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
+			$id = "default-mapping";
+		}
 		$output = $self->workspace()->get_object({
-			id => $2,
-			workspace => $1,
+			id => $id,
+			workspace => $ws,
 			type => $type,
 			auth => $auth
 		});
