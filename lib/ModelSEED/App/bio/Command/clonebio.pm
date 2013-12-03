@@ -3,10 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use Class::Autouse qw(
-    ModelSEED::MS::Factories::ExchangeFormatFactory
-    ModelSEED::MS::Model
-);
 use ModelSEED::utilities;
 sub abstract { return "Clone a biochemistry object, giving the copy a new name" }
 sub usage_desc { return "bio clonebio [ biochemistry id ] name"; }
