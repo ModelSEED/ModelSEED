@@ -108,7 +108,7 @@ sub calculateAtomsFromFormula {
         my ($self) = @_;
 	my $atoms = {};
 	my $formula = $self->formula();
-	if (length($formula) == 0 || $formula eq "noformula") {
+	if ($formula eq "noformula"){
 		$atoms->{error} = "No formula";
 	} else {
 	    foreach my $component ( split(/\./,$formula) ){
