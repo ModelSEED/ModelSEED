@@ -6,7 +6,7 @@ use base 'ModelSEED::App::BioBaseCommand';
 use ModelSEED::utilities;
 sub abstract { return "Balance all the reactions in a biochemistry"; }
 sub usage_desc { return "bio balancerxns [name]"; }
-sub opt_spec {
+sub options {
     return (
 	["direction|d", "Update directionality to match computed thermoReversibility (default value: 1)",]
    	);
@@ -14,8 +14,6 @@ sub opt_spec {
 
 sub sub_execute {
     my ($self, $opts, $args, $bio) = @_;
-
-    ModelSEED::utilities::set_verbose(1) if $opts->{verbose};
     
     my $args={direction=>1};
     if(defined($opts->{direction})){
@@ -27,6 +25,7 @@ sub sub_execute {
 	$rxn->calculateEnergyofReaction();
 	$rxn->estimateThermoReversibility($args);
     }
+
     $self->save_bio($bio);
 }
 
