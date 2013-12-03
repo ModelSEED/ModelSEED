@@ -24,7 +24,7 @@ sub _buildaliasesByuuid {
 	my ($self) = @_;
 	my $hash = {};
 	my $aliases = $self->aliases();
-	foreach my $alias (keys(%$aliases)) {
+	foreach my $alias (sort keys(%$aliases)) {
 		foreach my $uuid (@{$aliases->{$alias}}) {
 			push(@{$hash->{$uuid}},$alias);
 		}	
