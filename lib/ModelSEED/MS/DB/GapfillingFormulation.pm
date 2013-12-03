@@ -28,6 +28,7 @@ has gprHypothesis => (is => 'rw', isa => 'Bool', printOrder => '4', default => '
 has reactionAdditionHypothesis => (is => 'rw', isa => 'Bool', printOrder => '5', default => '1', type => 'attribute', metaclass => 'Typed');
 has balancedReactionsOnly => (is => 'rw', isa => 'Bool', printOrder => '6', default => '1', type => 'attribute', metaclass => 'Typed');
 has guaranteedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
+has targetedreactions => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has blacklistedReaction_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has allowableCompartment_uuids => (is => 'rw', isa => 'ArrayRef', printOrder => '-1', default => sub{return [];}, type => 'attribute', metaclass => 'Typed');
 has reactionActivationBonus => (is => 'rw', isa => 'Num', printOrder => '7', default => '0', type => 'attribute', metaclass => 'Typed');
@@ -164,6 +165,14 @@ my $attributes = [
           {
             'req' => 0,
             'printOrder' => -1,
+            'name' => 'targetedreactions',
+            'default' => 'sub{return [];}',
+            'type' => 'ArrayRef',
+            'perm' => 'rw'
+          },
+          {
+            'req' => 0,
+            'printOrder' => -1,
             'name' => 'blacklistedReaction_uuids',
             'default' => 'sub{return [];}',
             'type' => 'ArrayRef',
@@ -280,7 +289,7 @@ my $attributes = [
           }
         ];
 
-my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, blacklistedReaction_uuids => 9, allowableCompartment_uuids => 10, reactionActivationBonus => 11, drainFluxMultiplier => 12, directionalityMultiplier => 13, deltaGMultiplier => 14, noStructureMultiplier => 15, noDeltaGMultiplier => 16, biomassTransporterMultiplier => 17, singleTransporterMultiplier => 18, transporterMultiplier => 19, modDate => 20, timePerSolution => 21, totalTimeLimit => 22, completeGapfill => 23};
+my $attribute_map = {uuid => 0, fbaFormulation_uuid => 1, model_uuid => 2, mediaHypothesis => 3, biomassHypothesis => 4, gprHypothesis => 5, reactionAdditionHypothesis => 6, balancedReactionsOnly => 7, guaranteedReaction_uuids => 8, targetedreactions => 9, blacklistedReaction_uuids => 10, allowableCompartment_uuids => 11, reactionActivationBonus => 12, drainFluxMultiplier => 13, directionalityMultiplier => 14, deltaGMultiplier => 15, noStructureMultiplier => 16, noDeltaGMultiplier => 17, biomassTransporterMultiplier => 18, singleTransporterMultiplier => 19, transporterMultiplier => 20, modDate => 21, timePerSolution => 22, totalTimeLimit => 23, completeGapfill => 24};
 sub _attributes {
   my ($self, $key) = @_;
   if (defined($key)) {

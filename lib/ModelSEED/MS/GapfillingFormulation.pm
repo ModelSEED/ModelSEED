@@ -249,6 +249,7 @@ sub prepareFBAFormulation {
 	} else {
 		$form = $self->fbaFormulation();
 	}
+	$form->allReversible(1);
 	if ($form->media()->name() eq "Complete") {
 		if ($form->defaultMaxDrainFlux() < 10000) {
 			$form->defaultMaxDrainFlux(10000);
@@ -269,24 +270,29 @@ sub prepareFBAFormulation {
 	$form->defaultMinDrainFlux(-10000);
 	my $inactiveList = ["bio1"];
 	if ($self->completeGapfill() eq "1") {
-		my $rxns = $self->model()->modelreactions();
-		my $rxnhash = {};
-		for (my $i=0; $i < @{$rxns}; $i++) {
-			$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
-		}
-		my $priorities = $self->reactionPriorities();
-		for (my $i=0; $i < @{$priorities}; $i++) {
-			if (defined($rxnhash->{$priorities->[$i]})) {
-				push(@{$inactiveList},$priorities->[$i]);
-				$rxnhash->{$priorities->[$i]} = 1;
+		if (@{$self->targetedreactions()} > 0) {
+			$inactiveList = $self->targetedreactions();
+		} else {
+			my $rxns = $self->model()->modelreactions();
+			my $rxnhash = {};
+			for (my $i=0; $i < @{$rxns}; $i++) {
+				$rxnhash->{$rxns->[$i]->reaction()->id()} = 0;	
+			}
+			my $priorities = $self->reactionPriorities();
+			for (my $i=0; $i < @{$priorities}; $i++) {
+				if (defined($rxnhash->{$priorities->[$i]})) {
+					push(@{$inactiveList},$priorities->[$i]);
+					$rxnhash->{$priorities->[$i]} = 1;
+				}
+			}
+			for (my $i=0; $i < @{$rxns}; $i++) {
+				if ($rxnhash->{$rxns->[$i]->reaction()->id()} == 0) {
+					push(@{$inactiveList},$rxns->[$i]->reaction()->id());
+				}	
 			}
 		}
-		for (my $i=0; $i < @{$rxns}; $i++) {
-			if ($rxnhash->{$rxns->[$i]->reaction()->id()} == 0) {
-				push(@{$inactiveList},$rxns->[$i]->reaction()->id());
-			}	
-		}
 	}
+	$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
 	$form->fluxUseVariables(1);
 	$form->decomposeReversibleFlux(1);
 	#Setting up dissapproved compartments
@@ -355,20 +361,6 @@ sub prepareFBAFormulation {
 	$form->parameters()->{"Add positive use variable constraints"} = 0;
 	$form->parameters()->{"Biomass modification hypothesis"} = 0;
 	$form->parameters()->{"Biomass component reaction penalty"} = 500;
-	$form->inputfiles()->{"InactiveModelReactions.txt"} = [];
-	my $objterms = $form->fbaObjectiveTerms();
-	for (my $i=0; $i < @{$objterms}; $i++) {
-		my $term = $objterms->[$i];
-		if ($term->entityType() eq "Reaction" || $term->entityType() eq "Biomass") {
-			(my $obj) = $self->interpretReference($term->entityType()."/uuid/".$term->entity_uuid());
-			if (defined($obj)) {
-				push(@{$form->inputfiles()->{"InactiveModelReactions.txt"}},$obj->id());
-			}
-		}
-	}
-	if (@{$form->inputfiles()->{"InactiveModelReactions.txt"}} == 0) {		
-		$form->inputfiles()->{"InactiveModelReactions.txt"} = $inactiveList;
-	}
 	push(@{$form->outputfiles}, "CompleteGapfillingOutput.txt");
 	push(@{$form->outputfiles}, "ProblemReport.txt");
 	if ($self->biomassHypothesis() == 1) {
@@ -485,75 +477,86 @@ sub createSolutionsFromArray {
 	my $data = $args->{data};
 	my $mdl = $args->{model};
 	my $bio = $mdl->biochemistry();
-	for (my $i=0; $i < @{$data}; $i++) {
-		if ($data->[$i] =~ m/^bio/) {
-			my $array = [split(/\t/,$data->[$i])];
-			if (defined($array->[1])) {
-				my $solutionsArray = [split(/\|/,$array->[1])];
-				for (my $k=0; $k < @{$solutionsArray}; $k++) {
-					if (length($solutionsArray->[$k]) > 0) {
-						my $count = 0;
-						my $rxnHash;
-						my $gfsolution = $self->add("gapfillingSolutions",{suboptimal => $args->{subopt}});
-						my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
-						for (my $j=0; $j < @{$subarray}; $j++) {
-							if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
-								my $cpdid = $2;
-								my $sign = $1;
-								my $bio = $mdl->biomasses()->[0];
-								my $biocpds = $bio->biomasscompounds();
-								my $found = 0;
-								for (my $m=0; $m < @{$biocpds}; $m++) {
-									my $biocpd = $biocpds->[$m];
-									if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
-										$found = 1;
-										push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
-										push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
-									}
-								}
-								if ($found == 0) {
-									ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
-								}
-								$count += 5;
-							} elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
-								my $comp = "c";
-								my $rxnid = $2;
-								my $sign = $1;
-								if ($sign eq "+") {
-									$sign = ">";
-								} else {
-									$sign = "<";
-								}
-								my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
-								if (!defined($rxn)) {
-									ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
-								}
-								my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
-								if (!defined($rxn)) {
-									ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
-								}
-								if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
-									$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
-								} else {
-									$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
-								}
-								$count++;
-							}
-						}
+	my $line;
+	for (my $i=(@{$data}-1); $i >= 0; $i--) {
+		my $array = [split(/\t/,$data->[$i])];
+		if ($array->[1] =~ m/rxn\d+/) {
+			$line = $i;
+			last;
+		}
+	}
+	if (defined($line)) {
+		my $array = [split(/\t/,$data->[$line])];
+		my $solutionsArray = [split(/\|/,$array->[1])];   				
+		my $gfsolution;
+		my $count = 0;
+		for (my $k=0; $k < @{$solutionsArray}; $k++) {
+			if (length($solutionsArray->[$k]) > 0) {
+				my $rxnHash;
+				if ($k == 0 || $self->completeGapfill() ne "1") {
+					if (defined($gfsolution)) {
 						$gfsolution->solutionCost($count);
-						foreach my $ruuid (keys(%{$rxnHash})) {
-							foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
-								$gfsolution->add("gapfillingSolutionReactions",{
-									reaction_uuid => $ruuid,
-									compartment_uuid => $cuuid,
-									direction => $rxnHash->{$ruuid}->{$cuuid}
-								});
+					}
+					$count = 0;
+					$gfsolution = $self->add("gapfillingSolutions",{suboptimal => $args->{subopt}});
+				}
+				my $subarray = [split(/[,;]/,$solutionsArray->[$k])];
+				for (my $j=0; $j < @{$subarray}; $j++) {
+					if ($subarray->[$j] =~ m/([\+])(.+)DrnRxn/) {
+						my $cpdid = $2;
+						my $sign = $1;
+						my $bio = $mdl->biomasses()->[0];
+						my $biocpds = $bio->biomasscompounds();
+						my $found = 0;
+						for (my $m=0; $m < @{$biocpds}; $m++) {
+							my $biocpd = $biocpds->[$m];
+							if ($biocpd->modelcompound()->compound()->id() eq $cpdid) {
+								$found = 1;
+								push(@{$gfsolution->biomassRemovals()},$biocpd->modelcompound());
+								push(@{$gfsolution->biomassRemoval_uuids()},$biocpd->modelcompound()->uuid());	
 							}
 						}
+						if ($found == 0) {
+							ModelSEED::utilities::ERROR("Could not find compound to remove from biomass ".$cpdid."!");
+						}
+						$count += 5;
+					} elsif ($subarray->[$j] =~ m/([\-\+])(.+)/) {
+						my $comp = "c";
+						my $rxnid = $2;
+						my $sign = $1;
+						if ($sign eq "+") {
+							$sign = ">";
+						} else {
+							$sign = "<";
+						}
+						my $rxn = $mdl->biochemistry()->queryObject("reactions",{id => $rxnid});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction ".$rxnid."!");
+						}
+						my $cmp = $mdl->biochemistry()->queryObject("compartments",{id => $comp});
+						if (!defined($rxn)) {
+							ModelSEED::utilities::ERROR("Could not find gapfilled reaction compartment ".$comp."!");
+						}
+						if (defined($rxnHash->{$rxn->uuid()}->{$cmp->uuid()}) && $rxnHash->{$rxn->uuid()}->{$cmp->uuid()} ne $sign) {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = "=";
+						} else {
+							$rxnHash->{$rxn->uuid()}->{$cmp->uuid()} = $sign;
+						}
+						$count++;
+					}
+				}
+				foreach my $ruuid (keys(%{$rxnHash})) {
+					foreach my $cuuid (keys(%{$rxnHash->{$ruuid}})) {
+						$gfsolution->add("gapfillingSolutionReactions",{
+							reaction_uuid => $ruuid,
+							compartment_uuid => $cuuid,
+							direction => $rxnHash->{$ruuid}->{$cuuid}
+						});
 					}
 				}
 			}
 		}
+		$gfsolution->solutionCost($count);
 	}
 }
 

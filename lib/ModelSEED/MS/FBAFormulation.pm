@@ -293,7 +293,6 @@ sub runFBA {
 	if (!-e $self->jobDirectory()."/runMFAToolkit.sh") {
 		$self->createJobDirectory();
 	}
-	$self->biochemistry()->printDBFiles();
 	system($self->command());
 	my $fbaresults = $self->add("fbaResults",{});
 	$fbaresults->loadMFAToolkitResults();
@@ -312,6 +311,8 @@ Description:
 sub createJobDirectory {
 	my ($self) = @_;
 	my $directory = $self->jobDirectory()."/";
+	File::Path::mkpath ($directory."reaction");
+	File::Path::mkpath ($directory."MFAOutput/RawData/");
 	my $translation = {
 		drainflux => "DRAIN_FLUX",
 		flux => "FLUX",
@@ -319,42 +320,232 @@ sub createJobDirectory {
 	};
 	#Print model to Model.tbl
 	my $model = $self->model();
+	my $BioCpd = ["abbrev	charge	deltaG	deltaGErr	formula	id	mass	name"];
+	my $mdlcpd = $model->modelcompounds();
+	my $cpdhash = {};
+	for (my $i=0; $i < @{$mdlcpd}; $i++) {
+		my $cpd = $mdlcpd->[$i];
+		my $index = $cpd->modelcompartment()->compartmentIndex();
+		if (!defined($cpdhash->{$cpd->compound()->id()."_".$index})) {
+			my $line = "";
+			$cpdhash->{$cpd->compound()->id()."_".$index} = 1;
+			my $cols = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
+			for (my $j=0; $j < @{$cols}; $j++) {
+				my $function = $cols->[$j];
+				if ($j > 0) {
+					$line .= "\t";
+				}
+				if (defined($cpd->compound()->$function())) {	
+					$line .= $cpd->compound()->$function();
+					if ($index > 0 && $function =~ m/(name)|(id)|(abbreviation)/) {
+						$line .= "_".$index;
+					}
+				}
+			}
+			push(@{$BioCpd},$line);
+		}
+	}
+	my $rxnhash = {};
+	my $BioRxn = ["abbrev	deltaG	deltaGErr	equation	id	name	reversibility	status	thermoReversibility"];
 	my $mdlData = ["REACTIONS","LOAD;DIRECTIONALITY;COMPARTMENT;ASSOCIATED PEG"];
 	my $mdlrxn = $model->modelreactions();
 	for (my $i=0; $i < @{$mdlrxn}; $i++) {
 		my $rxn = $mdlrxn->[$i];
 		my $direction = $rxn->direction();
-		if ($direction eq "=") {
-			$direction = "<=>";	
-		} elsif ($direction eq ">") {
-			$direction = "=>";
+		my $rxndir = "<=>";
+		if ($direction eq ">") {
+			$rxndir = "=>";
 		} elsif ($direction eq "<") {
-			$direction = "<=";
+			$rxndir = "<=";
 		}
-		my $line = $rxn->reaction()->id().";".$direction.";c;";
-		$line .= $rxn->gprString();
+		my $id = $rxn->reaction()->id();
+		my $name = $rxn->reaction()->name();
+		my $index = $rxn->modelcompartment()->compartmentIndex();	
+		if ($index != 0) {
+			$id .= "_".$index;
+			$name .= "_".$index;
+		}
+		my $line = $id.";".$direction.";".$rxn->modelcompartment()->compartment()->id().";".$rxn->gprString();
 		$line =~ s/kb\|g\.\d+\.//g;
 		$line =~ s/fig\|\d+\.\d+\.//g;
 		push(@{$mdlData},$line);
+		if (!defined($rxnhash->{$id})) {
+			$rxnhash->{$id} = 1;
+			my $reactants = "";
+			my $products = "";
+			my $rgts = $rxn->modelReactionReagents();
+			for (my $j=0;$j < @{$rgts}; $j++) {
+				my $rgt = $rgts->[$j];
+				if ($rgt->coefficient() < 0) {
+					my $suffix = "";
+					if ($rgt->modelcompound()->modelcompartment()->compartmentIndex() != 0) {
+						$suffix .= "_".$rgt->modelcompound()->modelcompartment()->compartmentIndex();
+					}
+					$suffix .= "[".$rgt->modelcompound()->modelcompartment()->compartment()->id()."]";
+					if (length($reactants) > 0) {
+						$reactants .= " + ";
+					}
+					$reactants .= "(".(-1*$rgt->coefficient()).") ".$rgt->modelcompound()->compound()->id().$suffix;
+				}
+			}
+			for (my $j=0;$j < @{$rgts}; $j++) {
+				my $rgt = $rgts->[$j];
+				if ($rgt->coefficient() > 0) {
+					my $suffix = "";
+					if ($rgt->modelcompound()->modelcompartment()->compartmentIndex() != 0) {
+						$suffix .= "_".$rgt->modelcompound()->modelcompartment()->compartmentIndex();
+					}
+					$suffix .= "[".$rgt->modelcompound()->modelcompartment()->compartment()->id()."]";
+					if (length($products) > 0) {
+						$products .= " + ";
+					}
+					$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->compound()->id().$suffix;
+				}
+			}
+			my $equation = $reactants." ".$rxndir." ".$products;
+			my $cols = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","direction"];
+			my $rxnline = "";
+			for (my $j=0; $j < @{$cols}; $j++) {
+				my $function = $cols->[$j];
+				if ($j > 0) {
+					$rxnline .= "\t";
+				}
+				if ($function eq "direction") {
+					$rxnline .= $direction;
+				} elsif ($function eq "equation") {
+					$rxnline .= $equation;
+				} elsif ($function eq "id") {
+					$rxnline .= $id;
+				} elsif ($function eq "name") {
+					$rxnline .= $name;
+				} elsif (defined($rxn->reaction()->$function())) {
+					$rxnline .= $rxn->reaction()->$function();
+				}
+			}
+			push(@{$BioRxn},$rxnline);
+		}
+	}
+	if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
+		$mdlcpd = $model->biochemistry()->compounds();
+		for (my $i=0; $i < @{$mdlcpd}; $i++) {
+			my $cpd = $mdlcpd->[$i];
+			if (!defined($cpdhash->{$cpd->id()."_0"})) {
+				my $line = "";
+				my $cols = ["abbreviation","defaultCharge","deltaG","deltaGErr","formula","id","mass","name"];
+				$cpdhash->{$cpd->id()."_0"} = 1;
+				for (my $j=0; $j < @{$cols}; $j++) {
+					my $function = $cols->[$j];
+					if ($j > 0) {
+						$line .= "\t";
+					}
+					if (defined($cpd->$function())) {
+						$line .= $cpd->$function();
+					}
+				}
+				push(@{$BioCpd},$line);
+			}
+		}
+		my $mdlrxn = $model->biochemistry()->reactions();
+		for (my $i=0; $i < @{$mdlrxn}; $i++) {
+			my $rxn = $mdlrxn->[$i];
+			if (!defined($rxnhash->{$rxn->id()})) {
+				my $line = "";
+				$rxnhash->{$rxn->id()} = 1;
+				my $reactants = "";
+				my $products = "";
+				my $rgts = $rxn->reagents();
+				for (my $j=0;$j < @{$rgts}; $j++) {
+					my $rgt = $rgts->[$j];
+					if ($rgt->coefficient() < 0) {
+						my $suffix = "[".$rgt->compartment()->id()."]";
+						if (length($reactants) > 0) {
+							$reactants .= " + ";
+						}
+						$reactants .= "(".(-1*$rgt->coefficient()).") ".$rgt->compound()->id().$suffix;
+					}
+				}
+				for (my $j=0;$j < @{$rgts}; $j++) {
+					my $rgt = $rgts->[$j];
+					if ($rgt->coefficient() > 0) {
+						my $suffix = "";
+						$suffix .= "[".$rgt->compartment()->id()."]";
+						if (length($products) > 0) {
+							$products .= " + ";
+						}
+						$products .= "(".$rgt->coefficient().") ".$rgt->compound()->id().$suffix;
+					}
+				}
+				my $direction = $rxn->thermoReversibility();
+				if (!defined($direction)) {
+					$direction = "=";
+				}
+				my $rxndir = "<=>";
+				if ($direction eq ">") {
+					$rxndir = "=>";
+				} elsif ($direction eq "<") {
+					$rxndir = "<=";
+				}
+				my $equation = $reactants." ".$rxndir." ".$products;
+				my $cols = ["abbreviation","deltaG","deltaGErr","equation","id","name","direction","status","direction"];
+				my $rxnline = "";
+				for (my $j=0; $j < @{$cols}; $j++) {
+					my $function = $cols->[$j];
+					if ($j > 0) {
+						$rxnline .= "\t";
+					}
+					if ($function eq "direction") {
+						$rxnline .= $direction;
+					} elsif ($function eq "equation") {
+						$rxnline .= $equation;
+					} elsif (defined($rxn->$function())) {
+						$rxnline .= $rxn->$function();
+					}
+				}
+				push(@{$BioRxn},$rxnline);
+			}
+		}
 	}
 	my $biomasses = $model->biomasses();
-	File::Path::mkpath ($directory."reaction");
-	File::Path::mkpath ($directory."MFAOutput/RawData/");
 	for (my $i=0; $i < @{$biomasses}; $i++) {
 		my $bio = $biomasses->[$i];
 		push(@{$mdlData},$bio->id().";=>;c;UNIVERSAL");
-		my $equation;
-		if (defined($self->parameters()->{"Complete gap filling"}) && $self->parameters()->{"Complete gap filling"} == 1) {
-			$equation = $bio->rescaledEquation();
-		} else {
-			$equation = $bio->equation();
+		my $reactants = "";
+		my $products = "";
+		my $rgts = $bio->biomasscompounds();
+		for (my $j=0;$j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			if ($rgt->coefficient() < 0) {
+				my $suffix = "";
+				if ($rgt->modelcompound()->modelcompartment()->compartmentIndex() != 0) {
+					$suffix .= "_".$rgt->modelcompound()->modelcompartment()->compartmentIndex();
+				}
+				$suffix .= "[".$rgt->modelcompound()->modelcompartment()->compartment()->id()."]";
+				if (length($reactants) > 0) {
+					$reactants .= " + ";
+				}
+				$reactants .= "(".(-1*$rgt->coefficient()).") ".$rgt->modelcompound()->compound()->id().$suffix;
+			}
 		}
-		$equation =~ s/\+/ + /g;
-		$equation =~ s/\)([a-zA-Z])/) $1/g;
-		$equation =~ s/=\>/ => /g;
-		my $bioData = ["NAME\tBiomass","DATABASE\t".$bio->id(),"EQUATION\t".$equation];
-		ModelSEED::utilities::PRINTFILE($directory."reaction/".$bio->id(),$bioData);
+		for (my $j=0;$j < @{$rgts}; $j++) {
+			my $rgt = $rgts->[$j];
+			if ($rgt->coefficient() > 0) {
+				my $suffix = "";
+				if ($rgt->modelcompound()->modelcompartment()->compartmentIndex() != 0) {
+					$suffix .= "_".$rgt->modelcompound()->modelcompartment()->compartmentIndex();
+				}
+				$suffix .= "[".$rgt->modelcompound()->modelcompartment()->compartment()->id()."]";
+				if (length($products) > 0) {
+					$products .= " + ";
+				}
+				$products .= "(".$rgt->coefficient().") ".$rgt->modelcompound()->compound()->id().$suffix;
+			}
+		}
+		my $equation = $reactants." => ".$products;
+		my $rxnline = $bio->id()."\t0\t0\t".$equation."\t".$bio->id()."\t".$bio->id()."\t>\tOK\t>";
+		push(@{$BioRxn},$rxnline);
 	}
+	ModelSEED::utilities::PRINTFILE($directory."Compounds.tbl",$BioCpd);
+	ModelSEED::utilities::PRINTFILE($directory."Reactions.tbl",$BioRxn);
 	ModelSEED::utilities::PRINTFILE($directory."Model.tbl",$mdlData);
 	#Printing additional input files specified in formulation
 	my $inputfileHash = $self->inputfiles();
@@ -651,8 +842,8 @@ sub createJobDirectory {
     $biochemid =~ s/\//_/g;
 	my $stringdb = [
 		"Name\tID attribute\tType\tPath\tFilename\tDelimiter\tItem delimiter\tIndexed columns",
-		"compound\tid\tSINGLEFILE\t\t".$dataDir."fbafiles/".$biochemid."-compounds.tbl\tTAB\tSC\tid",
-		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$dataDir."fbafiles/".$biochemid."-reactions.tbl\tTAB\t|\tid",
+		"compound\tid\tSINGLEFILE\t\t".$directory."Compounds.tbl\tTAB\tSC\tid",
+		"reaction\tid\tSINGLEFILE\t".$directory."reaction/\t".$directory."Reactions.tbl\tTAB\t|\tid",
 		"cue\tNAME\tSINGLEFILE\t\t".$mfatkdir."../etc/MFAToolkit/cueTable.txt\tTAB\t|\tNAME",
 		"media\tID\tSINGLEFILE\t".$dataDir."ReactionDB/Media/\t".$directory."media.tbl\tTAB\t|\tID;NAMES"		
 	];

@@ -1849,6 +1849,14 @@ $objectDefinitions->{GapfillingFormulation} = {
 			default    => "sub{return [];}"
 		},
 		{
+			name       => 'targetedreactions',
+			printOrder => -1,
+			perm       => 'rw',
+			type       => 'ArrayRef',
+			req        => 0,
+			default    => "sub{return [];}"
+		},
+		{
 			name       => 'blacklistedReaction_uuids',
 			printOrder => -1,
 			perm       => 'rw',
@@ -3882,6 +3890,27 @@ $objectDefinitions->{Model} = {
 			req        => 0
 		},
 		{
+			name       => 'kbid',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'source_id',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'source',
+			printOrder => 0,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
 			name       => 'defaultNameSpace',
 			printOrder => 3,
 			perm       => 'rw',
@@ -3969,6 +3998,27 @@ $objectDefinitions->{Model} = {
 		},
 		{
 			name       => 'annotation_uuid',
+			printOrder => 10,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'Genome_wsid',
+			printOrder => 10,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'MetagenomeAnno_wsid',
+			printOrder => 10,
+			perm       => 'rw',
+			type       => 'Str',
+			req        => 0
+		},
+		{
+			name       => 'ModelTemplate_wsid',
 			printOrder => 10,
 			perm       => 'rw',
 			type       => 'Str',
@@ -5061,7 +5111,7 @@ $objectDefinitions->{Classifier} = {
 	primarykeys => [qw(uuid)],
 	links       => [
 		{
-			name      => "Mapping",
+			name      => "mapping",
 			attribute => "mapping_uuid",
 			parent    => "ModelSEED::Store",
 			method    => "Mapping",

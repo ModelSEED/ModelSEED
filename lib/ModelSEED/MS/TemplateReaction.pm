@@ -63,8 +63,12 @@ sub addRxnToModel {
 					}
 					$subunits->{$cpxrole->role_uuid()}->{triggering} = $cpxrole->triggering();
 					$subunits->{$cpxrole->role_uuid()}->{optional} = $cpxrole->optional();
-					foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
-						$subunits->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
+					if ($roleFeatures->{$cpxrole->role_uuid()}->{$compartment}->[0] eq "Role-based-annotation") {
+						$subunits->{$cpxrole->role_uuid()}->{note} = "Role-based-annotation";
+					} else {
+						foreach my $feature (@{$roleFeatures->{$cpxrole->role_uuid()}->{$compartment}}) {
+							$subunits->{$cpxrole->role_uuid()}->{genes}->{$feature->uuid()} = $feature;	
+						}
 					}
 				}
 			}

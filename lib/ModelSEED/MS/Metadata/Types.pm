@@ -16,5 +16,5 @@ subtype 'ModelSEED::uuid',
 	message { "The string you provided ($_) is not a vaild UUID!" };
 	
 subtype 'ModelSEED::varchar',
-	as 'Str', where { !defined($_) || length($_) < 256 },
+	as 'Str', where { !defined($_) || length($_) < 10000 },
 	message { "The string you provided ($_) is too long to be a varchar!" };

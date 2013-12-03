@@ -136,9 +136,14 @@ sub get_object {
     #Getting the data out of the workspace
     my $output;
     if ($ref =~ m/(.+)\/([^\/]+)$/) {
+		my $id = $2;
+		my $ws = $1;
+		if ($ws eq "kbase" && $id eq "default" && $type eq "Mapping") {
+			$id = "default-mapping";
+		}
 		$output = $self->workspace()->get_object({
-			id => $2,
-			workspace => $1,
+			id => $id,
+			workspace => $ws,
 			type => $type,
 			auth => $auth
 		});
@@ -177,6 +182,9 @@ sub get_object {
     #Adding object to cache
     if ($type ne "Media" && $dataOnly == 0) {
     	$self->cache()->{$type}->{$ref} = $object;
+    }
+    if ($type eq "Model" && !defined($object->annotation_uuid())) {
+    	$object->annotation_uuid("B4159688-E9E9-11E2-87AF-43F64331C093");
     }
     return $object;
 }

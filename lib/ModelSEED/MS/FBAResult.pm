@@ -272,7 +272,15 @@ sub parseFluxFiles {
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$drainCompartmentColumns})) {
 					if ($row->[$drainCompartmentColumns->{$comp}] ne "none") {
-						my $mdlcpd = $self->model()->queryObject("modelcompounds",{id => $row->[$compoundColumn]."_".$comp."0"});
+						my $id = $row->[$compoundColumn]."_".$comp."0";
+						if ($row->[$compoundColumn] =~ m/(.+)_(\d+)/) {
+							my $cpd = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $cpd."_".$comp.$index;
+							}
+						}
+						my $mdlcpd = $self->model()->queryObject("modelcompounds",{id => $id});
 						if (defined($mdlcpd)) {
 							my $value = $row->[$drainCompartmentColumns->{$comp}];
 							if (abs($value) < 0.00000001) {
@@ -314,7 +322,15 @@ sub parseFluxFiles {
 			foreach my $row (@{$tbl->{data}}) {
 				foreach my $comp (keys(%{$fluxCompartmentColumns})) {
 					if ($row->[$fluxCompartmentColumns->{$comp}] ne "none") {
-						my $mdlrxn = $self->model()->queryObject("modelreactions",{id => $row->[$reactionColumn]."_".$comp."0"});
+						my $id = $row->[$reactionColumn]."_".$comp."0";
+						if ($row->[$reactionColumn] =~ m/(.+)_(\d+)/) {
+							my $rxn = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $rxn."_".$comp.$index;
+							}
+						}
+						my $mdlrxn = $self->model()->queryObject("modelreactions",{id => $id});
 						if (defined($mdlrxn)) {
 							my $value = $row->[$fluxCompartmentColumns->{$comp}];
 							if (abs($value) < 0.00000001) {
@@ -447,7 +463,15 @@ sub parseMetaboliteProduction {
 		my $tbl = ModelSEED::utilities::LOADTABLE($directory."/MFAOutput/MetaboliteProduction.txt",";");
 		foreach my $row (@{$tbl->{data}}) {
 			if (defined($row->[1])) {
-				my $cpd = $self->model()->queryObject("modelcompounds",{id => $row->[0]."_c0"});
+				my $id = $row->[0]."_c0";
+				if ($row->[0] =~ m/(.+)_(\d+)/) {
+					my $cpd = $1;
+					my $index = $2;
+					if ($index > 0) {
+						$id = $cpd."_c".$index;
+					}
+				}
+				my $cpd = $self->model()->queryObject("modelcompounds",{id => $id});
 				if (defined($cpd)) {
 					$self->add("fbaMetaboliteProductionResults",{
 						modelCompound_uuid => $cpd->uuid(),
@@ -651,7 +675,14 @@ sub parseFVAResults {
 					my $row = $tbl->{data}->[$i];
 					if (defined($row->[$idColumn])) {
 						my $comp = "c";
-						my $id = $row->[$idColumn]."_".$comp."0";	
+						my $id = $row->[$idColumn]."_".$comp."0";
+						if ($row->[$idColumn] =~ m/(.+)_(\d+)/) {
+							my $rxn = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $rxn."_".$comp.$index;
+							}
+						}
 						my $mdlrxn = $self->model()->queryObject("modelreactions",{id => $id});
 						if (defined($mdlrxn)) {
 							foreach my $vartype (keys(%{$vartrans})) {
@@ -746,7 +777,14 @@ sub parseFVAResults {
 					my $row = $tbl->{data}->[$i];
 					if (defined($row->[$idColumn])) {
 						my $comp = $row->[$compColumn];
-						my $id = $row->[$idColumn]."_".$comp."0";	
+						my $id = $row->[$idColumn]."_".$comp."0";
+						if ($row->[$idColumn] =~ m/(.+)_(\d+)/) {
+							my $cpd = $1;
+							my $index = $2;
+							if ($index > 0) {
+								$id = $cpd."_".$comp.$index;
+							}
+						}
 						my $mdlcpd = $self->model()->queryObject("modelcompounds",{id => $id});
 						if (defined($mdlcpd)) {
 							foreach my $vartype (keys(%{$vartrans})) {

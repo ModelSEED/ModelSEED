@@ -39,7 +39,7 @@ sub _buildabbreviation {
 }
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
-	return $self->modelcompartment()->label();
+	return $self->modelcompartment()->id();
 }
 sub _buildisBiomassCompound {
 	my ($self) = @_;

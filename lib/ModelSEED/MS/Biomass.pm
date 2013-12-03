@@ -88,7 +88,8 @@ sub _equation_builder {
         my $indecies = [sort(keys(%{$rgtHash->{$sortedCpd->[$i]}}))];
         for (my $j=0; $j < @{$indecies}; $j++) {
             my $compartment = "";
-            if ($indecies->[$j] ne "c0" && $args->{format} ne "modelid") {
+            if ($args->{format} ne "modelid") {
+            #if ($indecies->[$j] ne "c0" && $args->{format} ne "modelid") {
                 $compartment = "[".$indecies->[$j]."]";
             }
             if ($rgtHash->{$sortedCpd->[$i]}->{$indecies->[$j]} < 0) {

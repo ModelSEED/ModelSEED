@@ -82,5 +82,57 @@ sub classifyAnnotation {
 	return $largestClass;
 }
 
+=head3 classifyRoles
+
+Definition:
+	string ModelSEED::MS::Classifier->classifyRoles({
+		functions => {}
+	});
+Description:
+	Classifies based on input functions with relative abundance
+
+=cut
+
+sub classifyRoles {
+    my $self = shift;
+	my $args = ModelSEED::utilities::args(["functions"],{},@_);
+	my $scores = {};
+	my $classes = $self->classifierClassifications();
+	my $sum = 0;
+	foreach my $class (@{$classes}) {
+		$scores->{$class->uuid()} = 0;
+		$sum += $class->populationProbability();
+	}
+	foreach my $function (keys(%{$args->{functions}})) {
+		my $searchrole = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($function);
+		my $subroles = [split(/;/,$searchrole)];
+		for (my $m=0; $m < @{$subroles}; $m++) {
+			my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
+			for (my $n=0; $n < @{$roles};$n++) {
+				my $classrole = $self->queryObject("classifierRoles",{role_uuid => $roles->[$n]->uuid()});
+				if (defined($classrole)) {
+					my $roleclasses = $classrole->classifications();
+					foreach my $roleclass (@{$roleclasses}) {
+						$scores->{$roleclass->uuid()} += $args->{functions}->{$function}*$classrole->classificationProbabilities()->{$roleclass->uuid()};
+					}
+				}
+			}
+		}		
+	}
+	my $largest;
+	my $largestClass;
+	foreach my $class (@{$classes}) {
+		$scores->{$class->uuid()} += log($class->populationProbability()/$sum);
+		if (!defined($largest)) {
+			$largest = $scores->{$class->uuid()};
+			$largestClass = $class;
+		} elsif ($largest > $scores->{$class->uuid()}) {
+			$largest = $scores->{$class->uuid()};
+			$largestClass = $class;
+		}
+	}
+	return $largestClass;
+}
+
 __PACKAGE__->meta->make_immutable;
 1;

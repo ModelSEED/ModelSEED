@@ -244,7 +244,7 @@ sub buildModel {
 		for (my $j=0; $j < @{$ftrroles}; $j++) {
 			my $ftrrole = $ftrroles->[$j];
 			my $compartmentStr = $ftrrole->compartment();
-			my $cmparray = [split(/;/,$compartmentStr)];
+			my $cmparray = [split(/[;\|]/,$compartmentStr)];
 			for (my $k=0; $k < @{$cmparray}; $k++) {
 				my $abbrev = $cmparray->[$k];
 				if (length($cmparray->[$k]) > 1 && defined($cmpTranslation->{$cmparray->[$k]})) {
@@ -254,9 +254,9 @@ sub buildModel {
 				}
 				my $subroles = [split(/;/,$ftrrole->role()->searchname())];
 				for (my $m=0; $m < @{$subroles}; $m++) {
-					my $role = $self->mapping()->searchForRole($subroles->[$m]);
-					if (defined($role)) {
-						push(@{$roleFeatures->{$role->uuid()}->{$abbrev}},$ftr);
+					my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
+					for (my $n=0; $n < @{$roles};$n++) {
+						push(@{$roleFeatures->{$roles->[$n]->uuid()}->{$abbrev}},$ftr);
 					}
 				}
 			}
@@ -274,6 +274,51 @@ sub buildModel {
 		my $bio = $bios->[$i];
 		$bio->addBioToModel({
 			gc => $args->{annotation}->genomes()->[0]->gc(),
+			model => $mdl
+		});
+	}
+	return $mdl;
+}
+
+sub buildModelFromFunctions {
+    my $self = shift;
+	my $args = ModelSEED::utilities::args(["functions","id"],{}, @_);
+	my $mdl = ModelSEED::MS::Model->new({
+		id => $args->{id},
+		version => 0,
+		type => $self->modelType(),
+		growth => 0,
+		status => "Reconstructed",
+		current => 1,
+		mapping_uuid => $self->mapping()->uuid(),
+		mapping => $self->mapping(),
+		biochemistry_uuid => $self->mapping()->biochemistry()->uuid(),
+		biochemistry => $self->mapping()->biochemistry(),
+	});
+	my $rxns = $self->templateReactions();
+	my $roleFeatures = {};
+	foreach my $function (keys(%{$args->{functions}})) {
+		my $searchrole = ModelSEED::MS::Utilities::GlobalFunctions::convertRoleToSearchRole($function);
+		my $subroles = [split(/;/,$searchrole)];
+		for (my $m=0; $m < @{$subroles}; $m++) {
+			my $roles = $self->mapping()->searchForRoles($subroles->[$m]);
+			for (my $n=0; $n < @{$roles};$n++) {
+				$roleFeatures->{$roles->[$n]->uuid()}->{"c"}->[0] = "Role-based-annotation";
+			}
+		}
+	}
+	for (my $i=0; $i < @{$rxns}; $i++) {
+		my $rxn = $rxns->[$i];
+		$rxn->addRxnToModel({
+			role_features => $roleFeatures,
+			model => $mdl
+		});
+	}
+	my $bios = $self->templateBiomasses();
+	for (my $i=0; $i < @{$bios}; $i++) {
+		my $bio = $bios->[$i];
+		$bio->addBioToModel({
+			gc => 0.5,
 			model => $mdl
 		});
 	}

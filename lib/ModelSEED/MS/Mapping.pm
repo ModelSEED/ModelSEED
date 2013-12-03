@@ -227,16 +227,30 @@ Description:
 
 sub searchForRole {
 	my ($self,$id) = @_;
+	my $roles = $self->searchForRoles($id);
+	return $roles->[0];
+}
+
+=head3 searchForRoles
+Definition:
+	ModelSEED::MS::Role = ModelSEED::MS::Mapping->searchForRole(string);
+Description:
+	Searches for a role by ID, name, or alias.
+
+=cut
+
+sub searchForRoles {
+	my ($self,$id) = @_;
 	#First search by exact alias match
-	my $roleobj = $self->getObjectByAlias("roles",$id);
+	my $roleobjs = $self->getObjectsByAlias("roles",$id);
 	#Next, search by name
-	if (!defined($roleobj)) {
-		$roleobj = $self->queryObject("roles",{name => $id});
+	if (!defined($roleobjs->[0])) {
+		$roleobjs = $self->queryObjects("roles",{name => $id});
 	}
-	if (!defined($roleobj)) {
-		$roleobj = $self->queryObject("roles",{searchname => $id});
+	if (!defined($roleobjs->[0])) {
+		$roleobjs = $self->queryObjects("roles",{searchname => $id});
 	}
-	return $roleobj;
+	return $roleobjs;
 }
 
 =head3 searchForRoleSet
