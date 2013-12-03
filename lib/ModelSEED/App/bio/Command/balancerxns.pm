@@ -3,9 +3,6 @@ use strict;
 use common::sense;
 use ModelSEED::App::bio;
 use base 'ModelSEED::App::BioBaseCommand';
-use Class::Autouse qw(
-    ModelSEED::MS::Factories::ExchangeFormatFactory
-);
 use ModelSEED::utilities;
 sub abstract { return "Balance all the reactions in a biochemistry"; }
 sub usage_desc { return "bio balancerxns [ biochemistry id ]"; }
@@ -13,7 +10,8 @@ sub options {
     return (
     	["namespace|n=s", "Default name space for biochemistry"],
     	["water|w", "Balance with water if possible"],
-	["protons|p", "Do not balance protons (default is to balance protons)"]
+	["protons|p", "Do not balance protons (default is to balance protons)"],
+	["savestatus|t", "Switch for saving new reaction status (default is 1)"]
    	);
 }
 sub sub_execute {
@@ -30,9 +28,15 @@ sub sub_execute {
 	$opts->{protons}=1;
     }
 
-    foreach my $rxn (@{$bio->reactions()}){
-	my $results=$rxn->checkReactionMassChargeBalance({rebalanceProtons=>$opts->{protons},rebalanceWater=>$opts->{water}});
+    #default is to save status
+    if(!defined($opts->{savestatus})){
+	$opts->{savestatus}=1;
     }
+
+    foreach my $rxn (@{$bio->reactions()}){
+	my $results=$rxn->checkReactionMassChargeBalance({rebalanceProtons=>$opts->{protons},rebalanceWater=>$opts->{water},saveStatus=>$opts->{savestatus}});
+    }
+
     $self->save_bio($bio);
 }
 
