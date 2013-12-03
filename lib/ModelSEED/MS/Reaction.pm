@@ -249,7 +249,7 @@ Description:
 
 sub loadFromEquation {
     my $self = shift;
-    my $args = ModelSEED::utilities::args(["equation","aliasType"], {compartment=>"c"}, @_);
+    my $args = ModelSEED::utilities::args(["equation","aliasType"], {compartment=>"c",checkDuplicates=>0}, @_);
 	my $bio = $self->parent();
 	my @TempArray = split(/\s+/, $args->{equation});
 	my $CurrentlyOnReactants = 1;
@@ -343,8 +343,8 @@ sub loadFromEquation {
 	#multiple instances of the same reactant in the same compartment is unacceptable.
         #however, these aren't rejected, (no duplicate reagents are created in the code above
         #and instead are accounted for in checkReactionMassChargeBalance()
-	if(scalar( grep { $cpdCmpCount->{$_} >1 } keys %$cpdCmpCount)>0){
-	    return 1;
+	if($args->{checkDuplicates}==1 && scalar( grep { $cpdCmpCount->{$_} >1 } keys %$cpdCmpCount)>0){
+	    return 0;
 	}else{
 	    return 1;
 	}
