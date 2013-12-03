@@ -1005,13 +1005,23 @@ sub mergeBiochemistry {
 			    }
 			}
 
-			#If compounds, and one has "noformula" while the other has: make sure the properties get copied over
 			if($type eq "compounds" && $dupObj->formula() eq "noformula" && $obj->formula() ne "noformula"){
 			    ModelSEED::utilities::verbose("Copying over formula from $objId to $dupObjId\n");
+
+			    $dupObj->formula($obj->formula());
+			    $dupObj->defaultCharge($obj->defaultCharge());
+			    $dupObj->mass($obj->mass());
+			    $dupObj->unchargedFormula($obj->unchargedFormula());
+				
 			}
 
-			if($type eq "compounds" && $dupObj->formula() eq "nogroups" && $obj->formula() ne "nogroups"){
-			    ModelSEED::utilities::verbose("Copying over groups from $objId to $dupObjId\n");
+			if($type eq "compounds" && $dupObj->deltaG() == 10000000 && $obj->deltaG() ne 10000000){
+			    ModelSEED::utilities::verbose("Copying over thermodynamics from $objId to $dupObjId\n");
+			    
+			    $dupObj->cues($obj->cues());
+			    $dupObj->deltaG($obj->deltaG());
+			    $dupObj->deltaGErr($obj->deltaGErr());
+
 			}
 
 			$uuidTranslation->{$obj->uuid()} = $dupObj->uuid();
