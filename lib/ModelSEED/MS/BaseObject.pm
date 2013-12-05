@@ -323,6 +323,22 @@ sub allAliases {
     return $aliases;
 }
 
+sub hasAlias {
+    my ($self,$alias,$setName) = @_;
+    my $aliasRootClass = lc($self->_aliasowner());
+    my $rootClass = $self->$aliasRootClass();
+    my $aliasSets = $rootClass->queryObjects("aliasSets",{
+    	class => $self->_type()
+    });
+    for (my $i=0; $i < @{$aliasSets}; $i++) {
+    	my $set = $aliasSets->[$i];
+	next if $setName && $set->name() ne $setName;
+    	my %setAliases = map { $_=>1 } @{$set->aliasesByuuid->{$self->uuid()}};
+	return 1 if exists($setAliases{$alias});
+    }
+    return 0;
+}
+
 sub defaultNameSpace {
     return $_[0]->parent->defaultNameSpace();
 }
