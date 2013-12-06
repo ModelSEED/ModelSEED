@@ -118,15 +118,15 @@ sub adjustBiomass {
 		lipid => undef,
 		compoundsToAdd => [],
 		compoundsToRemove => []
-	});
-	my $paramlist = [qw(name type other protein dna rna cofactor energy cellwall lipid compoundsToRemove compoundsToAdd)];
-	my $bio;
+	}, @_);
+	my $paramlist = [qw(name type other protein dna rna cofactor energy cellwall lipid)];
+	my $tempbio;
 	if (defined($args->{biomass})) {
-		$bio = $self->searchForBiomass($args->{biomass});
+		$tempbio = $self->searchForBiomass($args->{biomass});
 	}
-	if (!defined($bio)) {
+	if (!defined($tempbio)) {
 		if ($args->{"new"} == 1) {
-			$bio = $self->add("templateBiomasses",{
+			$tempbio = $self->add("templateBiomasses",{
 				name => $args->{name},
 				type => $args->{type},
 				other => $args->{other},
@@ -144,16 +144,57 @@ sub adjustBiomass {
 		}	
 	}
 	if ($args->{"delete"} == 1) {
-		$self->remove("templateBiomasses",$bio);
+		$self->remove("templateBiomasses",$tempbio);
+		return $tempbio;
+	}
+	if ($args->{"clearBiomassCompounds"}) {
+        $tempbio->clearLinkArray("templateBiomassComponents");
 	}
 	foreach my $param (@{$paramlist}) {
-		$bio->$param($args->{$param});
+		if (defined($args->{$param})) {
+			$tempbio->$param($args->{$param});
+		}
 	}
-	
-	
-	
-
-
+    my $bio = $self->biochemistry();
+    my $comps = $tempbio->templateBiomassComponents();
+    for (my $i=0; $i < @{$args->{compoundsToRemove}}; $i++) {
+        my $cpd = $bio->searchForCompound($args->{compoundsToRemove}->[$i]);
+        for (my $j=0; $j < @{$comps}; $j++) {
+            my $comp = $comps->[$j];
+            if ($comp->compound_uuid() eq $cpd->uuid()) {
+                $tempbio->remove("templateBiomassComponents", $comp);
+            }
+        }
+    }
+    my $compound = $args->{compoundsToAdd};
+	if (defined($compound->[0])) {
+        my $cpd = $bio->searchForCompound($compound->[0]);
+        if (!defined($cpd)) {
+            ModelSEED::utilities::error("Compound ".$compound->[0]." not found!");
+        }
+        my $found = 0;
+        for (my $j=0; $j < @{$comps} && $found == 0; $j++) {
+            my $comp = $comps->[$j];
+            if ($comp->compound_uuid() eq $cpd->uuid()) {
+                $found = 1;
+            }
+        }
+        if ($found == 0) {
+	        my $cmp = $bio->searchForCompartment($compound->[1]);
+	        if (!defined($cmp)) {
+	            ModelSEED::utilities::error("Compartment ".$compound->[1]." not found!");
+	        }
+	        my $comp = ModelSEED::MS::TemplateBiomassComponent->new({
+	            class => $compound->[2],
+	            compound_uuid => $cpd->uuid(),
+	            compartment_uuid => $cmp->uuid(),
+	            coefficientType => $compound->[4],
+	            coefficient => $compound->[5],
+	        });
+			$tempbio->add("templateBiomassComponents", $comp);
+	    }
+	}
+    return $tempbio;
 }
 
 sub adjustReaction {
