@@ -747,7 +747,7 @@ sub addReactionFromHash {
 	    my $aliasSetName=$arguments->{reactionIDaliasType};
 	    # If not, need to find any alias to use (avoiding names for now)
 	    if(!$alias){
-		foreach my $set ( grep { $_->name() ne "name" || $_->name() ne "searchname" || $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
+		foreach my $set ( grep { $_->name() !~ /name/ && $_->name() ne "Enzyme Class"} @{$self->aliasSets()}){
 		    $aliasSetName=$set->name();
 		    $alias=$searchRxn->getAlias($aliasSetName);
 		    last if $alias;
