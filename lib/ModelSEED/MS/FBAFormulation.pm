@@ -615,7 +615,7 @@ sub createJobDirectory {
 	#TODO
 	#Setting the objective
 	my $objective = "MAX";
-	my $metToOpt = "none";
+	my $metToOpt = "REACTANTS;bio1";
 	my $optMetabolite = 1;
 	if ($self->fva() == 1 || $self->comboDeletions() > 0) {
 		$optMetabolite = 0;

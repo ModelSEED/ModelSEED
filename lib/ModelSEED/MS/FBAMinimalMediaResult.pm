@@ -14,13 +14,13 @@ extends 'ModelSEED::MS::DB::FBAMinimalMediaResult';
 #***********************************************************************************************************
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
-has essentialNutrients => ( is => 'rw', isa => 'Str',printOrder => '1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildessentialNutrients');
-has optionalNutrients => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildoptionalNutrients');
+has essentialNutrientList => ( is => 'rw', isa => 'Str',printOrder => '1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildessentialNutrientList');
+has optionalNutrientList => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildoptionalNutrientList');
 
 #***********************************************************************************************************
 # BUILDERS:
 #***********************************************************************************************************
-sub _buildessentialNutrients {
+sub _buildessentialNutrientList {
 	my ($self) = @_;
 	my $string = "";
 	my $essnuts = $self->essentialNutrients();
@@ -32,7 +32,7 @@ sub _buildessentialNutrients {
 	}
 	return $string;
 }
-sub _buildoptionalNutrients {
+sub _buildoptionalNutrientList {
 	my ($self) = @_;
 	my $string = "";
 	my $optnuts = $self->optionalNutrients();
