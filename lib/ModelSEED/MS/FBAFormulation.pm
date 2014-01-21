@@ -365,7 +365,7 @@ sub createJobDirectory {
 			$id .= "_".$index;
 			$name .= "_".$index;
 		}
-		my $line = $id.";".$direction.";".$rxn->modelcompartment()->compartment()->id().";".$rxn->gprString();
+		my $line = $id.";".$rxndir.";".$rxn->modelcompartment()->compartment()->id().";".$rxn->gprString();
 		$line =~ s/kb\|g\.\d+\.//g;
 		$line =~ s/fig\|\d+\.\d+\.//g;
 		push(@{$mdlData},$line);
