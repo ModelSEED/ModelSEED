@@ -191,7 +191,15 @@ sub adjustBiomass {
 	            coefficientType => $compound->[4],
 	            coefficient => $compound->[5],
 	        });
-			$tempbio->add("templateBiomassComponents", $comp);
+		if ($compound->[3]) {
+			$comp->universal(1);
+		} else {
+			$comp->universal(0);
+			# This makes the compound unusable for building a model because
+			# there needs to be a valid classifier in the TemplateBiomassComponent
+			# object but the classifier is not passed as input.
+		}
+		$tempbio->add("templateBiomassComponents", $comp);
 	    }
 	}
     return $tempbio;
