@@ -950,6 +950,7 @@ sub mergeBiochemistry {
     };
 
     foreach my $type (@{$typelist}) {
+
     	my $func = $types->{$type};
     	my $objs = $bio->$type();
 	if($type eq "compounds" && !$opts->{consolidate} && defined($opts->{mergevia})){
@@ -987,7 +988,8 @@ sub mergeBiochemistry {
 		    }
 
 		    my $dupObj = $self->$func($obj,$opts);
-		    if ( defined($dupObj) ){
+
+		    if ( defined($dupObj) && !( defined($opts->{mergeclass}) && !exists($opts->{mergeclass}{$type}) ) ){
 			my $dupObjId="";
 			if($type eq "cues"){
 			    $dupObjId=$dupObj->name();
