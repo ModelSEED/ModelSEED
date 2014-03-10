@@ -912,6 +912,18 @@ sub updateLinks {
     	}
     	return;
     }
+    if ($self->_type() eq "Biochemistry") {
+	my $old_forwards = $self->forwardedLinks();
+	
+	foreach my $old_forward (keys %$old_forwards){
+	    if(exists($translation->{$old_forward})){
+		$old_forwards->{$old_forward}=$translation->{$old_forward};
+	    }
+	}
+
+	$self->forwardedLinks($old_forwards);
+    }
+
     my $links = $self->_links();
     for (my $i=0; $i < @{$links}; $i++) {
     	my $link = $links->[$i];
