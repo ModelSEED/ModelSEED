@@ -28,7 +28,7 @@ sub _buildcompoundListString {
 			$compoundListString .= ";"	
 		}
 		my $cpd = $cpds->[$i];
-		$compoundListString .= $cpd->compound()->name();
+		$compoundListString .= $cpd->name();
 	}
 	return $compoundListString;
 }
