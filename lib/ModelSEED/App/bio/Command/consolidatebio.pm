@@ -34,8 +34,16 @@ sub sub_execute {
     my $new_biochemistry = ModelSEED::MS::Biochemistry->new({defaultNameSpace => $opts->{namespace}->[0],name => $new_name});
     ModelSEED::utilities::verbose("Consolidating: ",$bio->name(),"\n");
 
+    #set mergeclass as hash
+    if(defined($opts->{mergeclass})){
+	my %mergehash = map { $_ => 1 } split(/,/,$opts->{mergeclass});
+	$opts->{mergeclass}=\%mergehash;
+    }
+
     if(!defined($opts->{mergevia})){
-	ModelSEED::utilities::verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+	if(defined($opts->{mergeclass}) && exists($opts->{mergeclass}{'compounds'})){
+	    ModelSEED::utilities::verbose("A namespace for merging identifiers was not passed, and therefore compounds will be compared directly based on their names\n");
+	}
     }else{
 	$opts->{mergevia} = ModelSEED::utilities::translateArrayOptions({ option => $opts->{mergevia}, delimiter => "," });
 	foreach my $mergeNamespace (@{$opts->{mergevia}}){
@@ -65,10 +73,6 @@ sub sub_execute {
     #automatically set consolidate option
     #this allows mergeBiochemistry to repeat matches with the same object
     $opts->{consolidate}=1;
-
-    #set mergeclass as hash
-    my %hash = map { $_ => 1 } split(/,/,$opts->{mergeclass});
-    $opts->{mergeclass}=\%hash;
 
     $new_biochemistry->mergeBiochemistry($bio,$opts);
 
