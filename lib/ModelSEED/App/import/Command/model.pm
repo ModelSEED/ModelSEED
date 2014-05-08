@@ -61,7 +61,7 @@ sub sub_execute {
     if($opts->{list} && $opts->{source} eq 'model-seed') {
         my $ids = $factory->listAvailableModels();
         print join("\n", @$ids);
-        print "\n" if(@$ids);
+        print "\nTotal number: ", scalar @$ids, "\n" if(@$ids);
         return;
     }
     my $anno = $self->get_object({
