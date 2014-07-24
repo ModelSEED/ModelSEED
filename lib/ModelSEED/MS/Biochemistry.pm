@@ -949,6 +949,8 @@ sub mergeBiochemistry {
     	"reactionSets" => "checkForDuplicateReactionSet"
     };
 
+    $self->forwardedLinks($bio->forwardedLinks);
+
     foreach my $type (@{$typelist}) {
 
     	my $func = $types->{$type};
