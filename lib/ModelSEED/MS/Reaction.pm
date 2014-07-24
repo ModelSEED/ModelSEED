@@ -842,63 +842,63 @@ sub checkReactionMassChargeBalance {
 	}
     }
 
-	for (my $i=0; $i < @{$rgts};$i++) {
-		my $rgt = $rgts->[$i];
-
-		#Check for protons/water
-		$protonCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $rgt->compound_uuid() eq $hcpd->uuid();
-		$waterCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_uuid() eq $wcpd->uuid();
-		$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
-
-		$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
-
-		#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
-		#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
-		my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
-
-		if (defined($cpdatoms->{error})) {
-		        $self->status("CPDFORMERROR");
-			return {
-				balanced => 0,
-				error => $cpdatoms->{error}
-			};	
-		}
-
-		$netCharge += $rgt->coefficient()*$rgt->compound()->defaultCharge();
-
-		foreach my $atom (keys(%{$cpdatoms})) {
-			if (!defined($atomHash->{$atom})) {
-				$atomHash->{$atom} = 0;
-			}
-			$atomHash->{$atom} += $rgt->coefficient()*$cpdatoms->{$atom};
-		}
+    for (my $i=0; $i < @{$rgts};$i++) {
+	my $rgt = $rgts->[$i];
+	
+	#Check for protons/water
+	$protonCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $rgt->compound_uuid() eq $hcpd->uuid();
+	$waterCompHash->{$rgt->compartment_uuid()}=$rgt->compartment() if $args->{rebalanceWater} && $rgt->compound_uuid() eq $wcpd->uuid();
+	$compHash->{$rgt->compartment_uuid()}=$rgt->compartment();
+	
+	$cpdCmpCount->{$rgt->compound_uuid()."_".$rgt->compartment_uuid()}++;
+	
+	#Problems are: compounds with noformula, polymers (see next line), and reactions with duplicate compounds in the same compartment
+	#Latest KEGG formulas for polymers contain brackets and 'n', older ones contain '*'
+	my $cpdatoms = $rgt->compound()->calculateAtomsFromFormula();
+	
+	if (defined($cpdatoms->{error})) {
+	    $self->status("CPDFORMERROR");
+	    return {
+		balanced => 0,
+		error => $cpdatoms->{error}
+	    };	
 	}
-
-	#Adding protons
-        #use of defaultProtons() discontinued for time being
-	#$netCharge += $self->defaultProtons()*1;
-
-	if (!defined($atomHash->{H})) {
-		$atomHash->{H} = 0;
+	
+	$netCharge += $rgt->coefficient()*$rgt->compound()->defaultCharge();
+	
+	foreach my $atom (keys(%{$cpdatoms})) {
+	    if (!defined($atomHash->{$atom})) {
+		$atomHash->{$atom} = 0;
+	    }
+	    $atomHash->{$atom} += $rgt->coefficient()*$cpdatoms->{$atom};
 	}
-
-	#$atomHash->{H} += $self->defaultProtons();
-
-	#Checking if charge or atoms are unbalanced
-	my $results = {
-		balanced => 1
-	};
-
+    }
+    
+    #Adding protons
+    #use of defaultProtons() discontinued for time being
+    #$netCharge += $self->defaultProtons()*1;
+    
+    if (!defined($atomHash->{H})) {
+	$atomHash->{H} = 0;
+    }
+    
+    #$atomHash->{H} += $self->defaultProtons();
+    
+    #Checking if charge or atoms are unbalanced
+    my $results = {
+	balanced => 1
+    };
+    
     my $imbalancedAtoms = {};
     foreach my $atom (keys(%{$atomHash})) { 
 	if ($atomHash->{$atom} > 0.00000001 || $atomHash->{$atom} < -0.00000001) {
 	    $imbalancedAtoms->{$atom}=$atomHash->{$atom};
 	}
     }
-
+    
     if($args->{rebalanceWater} && join("",sort keys %$imbalancedAtoms) eq "HO" && ($imbalancedAtoms->{"H"}/$imbalancedAtoms->{"O"}) == 2){
 	ModelSEED::utilities::verbose("Adjusting ".$self->id()." water by ".$imbalancedAtoms->{"O"});
-
+	
 	if(scalar(keys %$waterCompHash)==0){
 	    #must create water reagent
 	    #either reaction compartment or, if transporter, defaults to compartment with highest number in hierarchy
@@ -1001,7 +1001,7 @@ sub checkReactionMassChargeBalance {
 	delete($imbalancedAtoms->{H});
 	$status.="|HB";
     }
-
+    
     foreach my $atom (keys(%{$imbalancedAtoms})) { 
 	if ($status eq "OK") {
 	    $status = "MI:";	
@@ -1027,7 +1027,7 @@ sub checkReactionMassChargeBalance {
     if($args->{saveStatus} == 1){
 	$self->status($status);
     }
-
+    
     return $results;
 }
 
