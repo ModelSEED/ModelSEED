@@ -16,6 +16,7 @@ extends 'ModelSEED::MS::DB::ModelReaction';
 # ADDITIONAL ATTRIBUTES:
 #***********************************************************************************************************
 has equation => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequation' );
+has equationCode => ( is => 'rw', isa => 'Str',printOrder => '-1', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildequationcode' );
 has definition => ( is => 'rw', isa => 'Str',printOrder => '3', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_builddefinition' );
 has name => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildname' );
 has abbreviation => ( is => 'rw', isa => 'Str',printOrder => '2', type => 'msdata', metaclass => 'Typed', lazy => 1, builder => '_buildabbreviation' );
@@ -47,64 +48,20 @@ sub _buildabbreviation {
 	return $self->reaction->abbreviation()."_".$self->modelCompartmentLabel();
 }
 sub _builddefinition {
-	my ($self) = @_;
-	my $reactants = "";
-	my $products = "";
-	my $rgts = $self->modelReactionReagents();
-	for (my $i=0; $i < @{$rgts}; $i++) {
-		my $rgt = $rgts->[$i];
-		if ($rgt->coefficient() < 0) {
-			my $coef = -1*$rgt->coefficient();
-			if (length($reactants) > 0) {
-				$reactants .= " + ";	
-			}
-			if ($coef ne "1") {
-				$reactants .= "(".$coef.")";
-			}
-			$reactants .= $rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
-		} else {
-			if (length($products) > 0) {
-				$products .= " + ";	
-			}
-			if ($rgt->coefficient() ne "1") {
-				$products .= "(".$rgt->coefficient().")";
-			}
-			$products .= $rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
-		}
-		
-	}
-	$reactants .= " ".$self->translatedDirection()." ";
-	return $reactants.$products;
+    my ($self) = @_;
+    return $self->createEquation({format=>"name",hashed=>0});
 }
+
 sub _buildequation {
-	my ($self) = @_;
-	my $reactants = "";
-	my $products = "";
-	my $rgts = $self->modelReactionReagents();
-	for (my $i=0; $i < @{$rgts}; $i++) {
-		my $rgt = $rgts->[$i];
-		if ($rgt->coefficient() < 0) {
-			my $coef = -1*$rgt->coefficient();
-			if (length($reactants) > 0) {
-				$reactants .= " + ";	
-			}
-			if ($coef ne "1") {
-				$reactants .= "(".$coef.")";
-			}
-			$reactants .= $rgt->modelcompound()->id();
-		} else {
-			if (length($products) > 0) {
-				$products .= " + ";	
-			}
-			if ($rgt->coefficient() ne "1") {
-				$products .= "(".$rgt->coefficient().")";
-			}
-			$products .= $rgt->modelcompound()->id();
-		}
-	}
-	$reactants .= " ".$self->translatedDirection()." ";
-	return $reactants.$products;
+    my ($self) = @_;
+    return $self->createEquation({format=>"id",hashed=>0});
 }
+
+sub _buildequationcode {
+    my ($self) = @_;
+    return $self->createEquation({format=>"id",hashed=>1});
+}
+
 sub _buildmodelCompartmentLabel {
 	my ($self) = @_;
 	return $self->modelcompartment()->id();
@@ -226,6 +183,70 @@ sub _buildfeatureUUIDs {
 #***********************************************************************************************************
 # FUNCTIONS:
 #***********************************************************************************************************
+
+=head3 createEquation
+Definition:
+	ModelSEED::MS::ModelReaction->addReagentToReaction({});
+Description:
+	Print the ModelReaction equation
+
+=cut
+
+sub createEquation {
+    my $self = shift;
+    my $args = ModelSEED::utilities::args([], { format => "id", hashed => 0, compts=>1, reverse=>0 }, @_);
+
+    my $rgts = $self->modelReactionReagents();
+    my $rgtHash;
+    for (my $i=0; $i < @{$rgts}; $i++) {
+	my $rgt = $rgts->[$i];
+	my $id = $rgt->modelcompound()->id();
+	if ($args->{format} eq "name"){
+	    $id=$rgt->modelcompound()->compound()->name()."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
+	}elsif($args->{format} && $args->{format} ne "id"){
+	    $id = $rgt->modelcompound()->compound()->getAlias($args->{format})."[".$rgt->modelcompound()->modelCompartmentLabel()."]";
+	}
+
+	$rgtHash->{$id}=0;
+    }
+
+    my $reactants = "";
+    my $products = "";
+    my $sortedCpd = [sort(keys(%{$rgtHash}))];
+    for (my $i=0; $i < @{$sortedCpd}; $i++) {
+	my $printId=$sortedCpd->[$i];
+	my $Coef=$rgtHash->{$printId};
+
+	if ($Coef < 0) {
+	    $Coef = -1*$Coef;
+	    if (length($reactants) > 0) {
+		$reactants .= " + ";	
+	    }
+	    if ($Coef ne "1") {
+		$reactants .= "(".$Coef.")";
+	    }
+	    $reactants .= $printId;
+	} else {
+	    if (length($products) > 0) {
+		$products .= " + ";	
+	    }
+	    if ($Coef ne "1") {
+		$products .= "(".$Coef.")";
+	    }
+	    $products .= $printId;
+	}
+    }
+    my $sign=" ".$self->translateDirection()." ";
+    my $reaction_string = $reactants.$sign.$products;
+
+    if($args->{reverse}==1){
+	$reaction_string = $products.$sign.$reactants;
+    }
+    if ($args->{hashed} == 1) {
+	return Digest::MD5::md5_hex($reaction_string);
+    }
+    return $reaction_string;
+}
 
 =head3 addReagentToReaction
 Definition:
