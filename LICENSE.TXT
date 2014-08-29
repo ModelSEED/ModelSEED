@@ -1,7 +1,7 @@
 
 Model SEED Public License (MSPL)
 
-Copyright (c) 2009-2011 University of Chicago and Fellowship for
+Copyright (c) 2009-2014 University of Chicago and Fellowship for
 Interpretation of Genomes. All Rights Reserved.
 
  1) The "Software", below, refers to the Model SEED (in
